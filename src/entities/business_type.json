@@ -1,0 +1,64 @@
+
+{
+  "name": "business_type",
+  "options": {
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["user_id", "business_type", "company_name", "created_at", "updated_at"],
+        "properties": {
+          "user_id": {
+            "bsonType": "string",
+            "description": "ユーザーID、sub_project_user_accountテーブルとリンク"
+          },
+          "business_type": {
+            "bsonType": "string",
+            "enum": ["individual", "corporation"],
+            "description": "業態形態: individual=個人事業主, corporation=法人"
+          },
+          "company_name": {
+            "bsonType": "string",
+            "description": "会社名または屋号"
+          },
+          "tax_number": {
+            "bsonType": "string",
+            "description": "法人番号または事業者登録番号"
+          },
+          "address": {
+            "bsonType": "string",
+            "description": "事業所住所"
+          },
+          "phone": {
+            "bsonType": "string",
+            "description": "事業用電話番号"
+          },
+          "email": {
+            "bsonType": "string",
+            "description": "事業用メールアドレス"
+          },
+          "representative_name": {
+            "bsonType": "string",
+            "description": "代表者名"
+          },
+          "is_active": {
+            "bsonType": "bool",
+            "description": "アクティブな業態設定かどうか"
+          },
+          "created_at": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "作成日時"
+          },
+          "updated_at": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "更新日時"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "validationLevel": "moderate",
+    "validationAction": "warn"
+  }
+}

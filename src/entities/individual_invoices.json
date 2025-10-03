@@ -1,0 +1,77 @@
+
+{
+  "name": "individual_invoices",
+  "options": {
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["user_id", "invoice_number", "issue_date", "due_date", "customer_info", "total_amount", "status", "created_at"],
+        "properties": {
+          "user_id": {
+            "bsonType": "string",
+            "description": "個人事業主ユーザーID"
+          },
+          "invoice_number": {
+            "bsonType": "string",
+            "description": "請求書番号"
+          },
+          "issue_date": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "発行日"
+          },
+          "due_date": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "支払期限"
+          },
+          "customer_info": {
+            "bsonType": "object",
+            "description": "顧客情報"
+          },
+          "items": {
+            "bsonType": "array",
+            "description": "請求項目リスト"
+          },
+          "subtotal": {
+            "bsonType": "number",
+            "minimum": 0,
+            "description": "小計"
+          },
+          "tax_amount": {
+            "bsonType": "number",
+            "minimum": 0,
+            "description": "消費税額"
+          },
+          "total_amount": {
+            "bsonType": "number",
+            "minimum": 0,
+            "description": "合計金額"
+          },
+          "status": {
+            "bsonType": "string",
+            "enum": ["draft", "sent", "paid", "overdue"],
+            "description": "請求書ステータス"
+          },
+          "notes": {
+            "bsonType": "string",
+            "description": "備考"
+          },
+          "created_at": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "作成日時"
+          },
+          "updated_at": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "更新日時"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "validationLevel": "moderate",
+    "validationAction": "warn"
+  }
+}
