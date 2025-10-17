@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "/Dashboard editing project.N",
+  "homepage": "/ainance-v2",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server.js",
-    "test-api": "node test-api.js"
+    "test-api": "node test-api.js",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.3",
@@ -70,6 +71,7 @@
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
+    "gh-pages": "^6.1.1",
     "globals": "^15.9.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",

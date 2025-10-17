@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    base: mode === 'production' ? '/Dashboard editing project.N/' : '/',
+    base: mode === 'production' ? '/ainance-v2/' : '/',
     plugins: [react()],
     build,
     esbuild,
