@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Line } from 'react-chartjs-2'
 import {
@@ -119,9 +118,33 @@ const RevenueChart: React.FC = () => {
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">収益・支出・利益推移</h3>
-      <div className="chart-container">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">収益・支出・利益推移</h3>
+        <div className="flex space-x-2">
+          <button className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">月次</button>
+          <button className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">四半期</button>
+          <button className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">年次</button>
+        </div>
+      </div>
+      <div className="chart-container h-80">
         <Line data={data} options={options} />
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-4">
+        <div className="bg-blue-50 p-3 rounded-lg">
+          <p className="text-sm text-gray-600">総収益</p>
+          <p className="text-lg font-bold text-blue-600">¥1.43M</p>
+          <p className="text-xs text-green-600">↑ 12.5%</p>
+        </div>
+        <div className="bg-green-50 p-3 rounded-lg">
+          <p className="text-sm text-gray-600">総支出</p>
+          <p className="text-lg font-bold text-green-600">¥510K</p>
+          <p className="text-xs text-red-600">↓ 3.2%</p>
+        </div>
+        <div className="bg-purple-50 p-3 rounded-lg">
+          <p className="text-sm text-gray-600">純利益</p>
+          <p className="text-lg font-bold text-purple-600">¥920K</p>
+          <p className="text-xs text-green-600">↑ 8.7%</p>
+        </div>
       </div>
     </div>
   )

@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Doughnut } from 'react-chartjs-2'
 import {
@@ -78,9 +77,52 @@ const ExpenseChart: React.FC = () => {
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">支出カテゴリ</h3>
-      <div className="chart-container">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">支出カテゴリ</h3>
+        <button className="text-sm text-blue-600 hover:text-blue-800">詳細を見る</button>
+      </div>
+      <div className="chart-container h-80">
         <Doughnut data={data} options={options} />
+      </div>
+      <div className="mt-4">
+        <h4 className="font-medium text-gray-900 mb-2">カテゴリ別支出内訳</h4>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
+              <span className="text-sm text-gray-600">交通費</span>
+            </div>
+            <span className="text-sm font-medium">¥15,500</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+              <span className="text-sm text-gray-600">食費</span>
+            </div>
+            <span className="text-sm font-medium">¥11,500</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-purple-600 rounded-full mr-2"></div>
+              <span className="text-sm text-gray-600">消耗品費</span>
+            </div>
+            <span className="text-sm font-medium">¥11,500</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-purple-300 rounded-full mr-2"></div>
+              <span className="text-sm text-gray-600">広告費</span>
+            </div>
+            <span className="text-sm font-medium">¥7,500</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-purple-100 rounded-full mr-2"></div>
+              <span className="text-sm text-gray-600">その他</span>
+            </div>
+            <span className="text-sm font-medium">¥4,000</span>
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -1,477 +1,589 @@
-
-import React, { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import {ArrowLeft, Send, Mic, MicOff, FileText, Calculator, TrendingUp, Plus, Check, X} from 'lucide-react'
-import Header from '../components/Header'
-
-interface ChatMessage {
-  id: string
-  type: 'user' | 'ai'
-  content: string
-  timestamp: Date
-  transactions?: Transaction[]
-  suggestions?: string[]
-}
+import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Mic, Square, Send, Trash2, Download, Plus, Edit3, Save, CheckCircle, Circle } from 'lucide-react';
 
 interface Transaction {
-  id: string
-  date: string
-  description: string
-  amount: number
-  category: string
-  type: 'income' | 'expense'
-  status: 'pending' | 'approved' | 'rejected'
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  category: string;
+  type: 'income' | 'expense';
 }
 
 const ChatToBook: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      type: 'ai',
-      content: 'こんにちは！会計処理のお手伝いをします。取引内容を自然な言葉で教えてください。例：「今日コンビニで文房具を1200円で買いました」',
-      timestamp: new Date(),
-      suggestions: [
-        '売上を記録したい',
-        '経費を入力したい',
-        '残高を確認したい',
-        '月次レポートを見たい'
-      ]
-    }
-  ])
-  
-  const [inputText, setInputText] = useState('')
-  const [isRecording, setIsRecording] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [pendingTransactions, setPendingTransactions] = useState<Transaction[]>([])
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<Transaction>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
+  const recognitionRef = useRef<any>(null);
 
-  const recentTransactions: Transaction[] = [
-    {
-      id: '1',
-      date: '2024-01-15',
-      description: 'セブンイレブン - 事務用品',
-      amount: 1200,
-      category: '消耗品費',
-      type: 'expense',
-      status: 'approved'
-    },
-    {
-      id: '2',
-      date: '2024-01-15',
-      description: 'ウェブサイト制作費',
-      amount: 300000,
-      category: '売上',
-      type: 'income',
-      status: 'approved'
-    },
-    {
-      id: '3',
-      date: '2024-01-14',
-      description: 'スターバックス - 打ち合わせ',
-      amount: 580,
-      category: '接待交際費',
-      type: 'expense',
-      status: 'approved'
-    }
-  ]
-
-  const quickActions = [
-    { icon: FileText, label: '売上記録', action: () => handleQuickInput('売上を記録したい') },
-    { icon: Calculator, label: '経費入力', action: () => handleQuickInput('経費を入力したい') },
-    { icon: TrendingUp, label: '残高確認', action: () => handleQuickInput('現在の残高を教えて') },
-    { icon: Plus, label: '新規取引', action: () => handleQuickInput('新しい取引を追加したい') }
-  ]
-
+  // 音声認識の初期化
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  const handleQuickInput = (text: string) => {
-    setInputText(text)
-    inputRef.current?.focus()
-  }
-
-  const processUserInput = (input: string): { transactions: Transaction[], response: string } => {
-    // シンプルなNLP処理のシミュレーション
-    const response = {
-      transactions: [] as Transaction[],
-      response: ''
+    // Web Speech APIのチェック
+    if (!('webkitSpeechRecognition' in window)) {
+      console.log('Web Speech API is not supported in this browser.');
+      return;
     }
 
-    // 売上関連
-    if (input.includes('売上') || input.includes('収入') || input.includes('入金')) {
-      const amount = extractAmount(input)
-      if (amount) {
-        response.transactions.push({
-          id: Date.now().toString(),
-          date: new Date().toISOString().split('T')[0],
-          description: input,
-          amount: amount,
-          category: '売上',
-          type: 'income',
-          status: 'pending'
-        })
-        response.response = `売上 ¥${amount.toLocaleString()} を記録しました。内容を確認して承認してください。`
-      } else {
-        response.response = '売上金額を教えてください。例：「50万円の売上がありました」'
-      }
-    }
-    // 経費関連
-    else if (input.includes('経費') || input.includes('支出') || input.includes('買いました') || input.includes('購入')) {
-      const amount = extractAmount(input)
-      if (amount) {
-        let category = '雑費'
-        if (input.includes('文房具') || input.includes('事務用品')) category = '消耗品費'
-        if (input.includes('交通費') || input.includes('電車') || input.includes('バス')) category = '旅費交通費'
-        if (input.includes('食事') || input.includes('レストラン') || input.includes('打ち合わせ')) category = '接待交際費'
-        if (input.includes('通信') || input.includes('インターネット') || input.includes('電話')) category = '通信費'
+    // @ts-ignore
+    const recognition = new window.webkitSpeechRecognition();
+    recognition.continuous = false; // 連続認識をオフに変更
+    recognition.interimResults = true;
+    recognition.lang = 'ja-JP';
 
-        response.transactions.push({
-          id: Date.now().toString(),
-          date: new Date().toISOString().split('T')[0],
-          description: input,
-          amount: amount,
-          category: category,
-          type: 'expense',
-          status: 'pending'
-        })
-        response.response = `経費 ¥${amount.toLocaleString()} (${category}) を記録しました。内容を確認して承認してください。`
-      } else {
-        response.response = '経費金額を教えてください。例：「コンビニで1200円使いました」'
-      }
-    }
-    // 残高確認
-    else if (input.includes('残高') || input.includes('現在の') || input.includes('いくら')) {
-      response.response = '現在の残高は ¥2,450,000 です。今月の売上は ¥3,200,000、支出は ¥750,000 となっています。'
-    }
-    // レポート
-    else if (input.includes('レポート') || input.includes('月次') || input.includes('分析')) {
-      response.response = '月次レポートを作成しました。今月の利益は ¥2,450,000 で、前月比 +12.5% の成長です。詳細は経営分析ページでご確認ください。'
-    }
-    else {
-      response.response = '申し訳ございませんが、理解できませんでした。以下のような形で教えてください：\n• 「コンビニで1200円使いました」\n• 「50万円の売上がありました」\n• 「現在の残高を教えて」'
-    }
-
-    return response
-  }
-
-  const extractAmount = (text: string): number | null => {
-    // 金額抽出のシンプルなロジック
-    const patterns = [
-      /(\d+)万円/,
-      /(\d+)円/,
-      /¥(\d+)/,
-      /(\d+)$/
-    ]
-
-    for (const pattern of patterns) {
-      const match = text.match(pattern)
-      if (match) {
-        let amount = parseInt(match[1])
-        if (text.includes('万円')) {
-          amount *= 10000
+    recognition.onresult = (event: any) => {
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          setTranscript(prev => prev + transcript + ' ');
+        } else {
+          interimTranscript += transcript;
         }
-        return amount
       }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('音声認識エラー:', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      // 自動再開を削除し、状態のみ更新
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const startListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.start();
+      setIsListening(true);
     }
-    return null
-  }
+  };
 
-  const handleSendMessage = async () => {
-    if (!inputText.trim() || isProcessing) return
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: inputText,
-      timestamp: new Date()
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
     }
+  };
 
-    setMessages(prev => [...prev, userMessage])
-    setInputText('')
-    setIsProcessing(true)
-
-    // AI処理をシミュレート
-    setTimeout(() => {
-      const result = processUserInput(inputText)
+  // 音声テキストから取引情報を抽出
+  const extractTransactionData = (text: string) => {
+    // 金額を抽出（数字に万、千などの単位がつく場合も考慮）
+    const amountPattern = /(\d+(?:万)?(?:千)?(?:円)?)/g;
+    const amounts = text.match(amountPattern);
+    
+    // カテゴリマッピング（優先順位付き）
+    const categoryMapping: Array<{ keywords: string[]; category: string; type: 'income' | 'expense'; priority: number }> = [
+      // 収入系（高優先度）
+      { keywords: ['売上'], category: '売上', type: 'income', priority: 10 },
+      { keywords: ['給与'], category: '給与', type: 'income', priority: 9 },
       
-      if (result.transactions.length > 0) {
-        setPendingTransactions(prev => [...prev, ...result.transactions])
+      // 支出系（中優先度）
+      { keywords: ['交通費', '電車', 'バス', 'タクシー'], category: '交通費', type: 'expense', priority: 7 },
+      { keywords: ['食費', 'ランチ', 'ディナー', 'コーヒー'], category: '食費', type: 'expense', priority: 6 },
+      { keywords: ['消耗品', '文具', 'コピー'], category: '消耗品費', type: 'expense', priority: 5 },
+      { keywords: ['接待', '会食'], category: '接待交際費', type: 'expense', priority: 5 },
+      { keywords: ['通信費', '電話料金'], category: '通信費', type: 'expense', priority: 4 },
+      { keywords: ['光熱費', '電気', 'ガス', '水道'], category: '水道光熱費', type: 'expense', priority: 4 },
+      
+      // 低優先度（デフォルト）
+      { keywords: ['費用', '費'], category: '雑費', type: 'expense', priority: 1 }
+    ];
+    
+    let detectedCategory = '未分類';
+    let detectedType: 'income' | 'expense' = 'expense';
+    let maxPriority = 0;
+    
+    // カテゴリを検出
+    for (const mapping of categoryMapping) {
+      for (const keyword of mapping.keywords) {
+        if (text.includes(keyword) && mapping.priority > maxPriority) {
+          detectedCategory = mapping.category;
+          detectedType = mapping.type;
+          maxPriority = mapping.priority;
+        }
       }
-
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'ai',
-        content: result.response,
-        timestamp: new Date(),
-        transactions: result.transactions.length > 0 ? result.transactions : undefined
-      }
-
-      setMessages(prev => [...prev, aiMessage])
-      setIsProcessing(false)
-    }, 1500)
-  }
-
-  const handleApproveTransaction = (transactionId: string) => {
-    setPendingTransactions(prev => 
-      prev.map(t => t.id === transactionId ? { ...t, status: 'approved' as const } : t)
-    )
-  }
-
-  const handleRejectTransaction = (transactionId: string) => {
-    setPendingTransactions(prev => 
-      prev.map(t => t.id === transactionId ? { ...t, status: 'rejected' as const } : t)
-    )
-  }
-
-  const toggleRecording = () => {
-    setIsRecording(!isRecording)
-    // 実際の音声認識実装はここに
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
     }
-  }
+    
+    // 金額を数値に変換
+    let amount = 0;
+    if (amounts && amounts.length > 0) {
+      const amountText = amounts[0];
+      // 「万円」や「千円」の処理
+      if (amountText.includes('万')) {
+        const number = parseFloat(amountText.replace('万', ''));
+        amount = isNaN(number) ? 0 : number * 10000;
+      } else if (amountText.includes('千')) {
+        const number = parseFloat(amountText.replace('千', ''));
+        amount = isNaN(number) ? 0 : number * 1000;
+      } else {
+        amount = parseFloat(amountText.replace(/[^\d]/g, '')) || 0;
+      }
+    }
+    
+    // 日付の処理（今日の日付をデフォルトとする）
+    const today = new Date().toISOString().split('T')[0];
+    
+    return {
+      date: today,
+      description: text,
+      amount,
+      category: detectedCategory,
+      type: detectedType
+    };
+  };
+
+  const processTranscript = () => {
+    if (!transcript.trim()) return;
+    
+    setIsProcessing(true);
+    
+    // 実際のアプリケーションでは、AIやルールベースの処理で取引情報を抽出
+    // ここでは簡略化のためにクライアント側で処理
+    setTimeout(() => {
+      const transactionData = extractTransactionData(transcript);
+      
+      const newTransaction: Transaction = {
+        id: Date.now().toString(),
+        ...transactionData
+      };
+      
+      setTransactions(prev => [newTransaction, ...prev]);
+      setTranscript('');
+      setIsProcessing(false);
+    }, 1000);
+  };
+
+  const handleEdit = (transaction: Transaction) => {
+    setEditingId(transaction.id);
+    setEditData(transaction);
+  };
+
+  const handleSave = () => {
+    if (editingId && editData) {
+      setTransactions(prev => 
+        prev.map(t => t.id === editingId ? { ...t, ...editData } as Transaction : t)
+      );
+      setEditingId(null);
+      setEditData({});
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    setTransactions(prev => prev.filter(t => t.id !== id));
+    // 選択済みリストからも削除
+    setSelectedTransactions(prev => prev.filter(tid => tid !== id));
+  };
+
+  // 取引をデータベースに保存
+  const saveTransactionToDB = async (transaction: Transaction) => {
+    try {
+      const response = await fetch('http://localhost:3001/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transaction),
+      });
+      
+      if (!response.ok) {
+        throw new Error('取引の保存に失敗しました');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('取引の保存中にエラーが発生しました:', error);
+      throw error;
+    }
+  };
+
+  // 単一の取引を記録
+  const recordTransaction = async (transaction: Transaction) => {
+    try {
+      await saveTransactionToDB(transaction);
+      // 成功したらローカルリストから削除
+      setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+      alert('取引が正常に記録されました');
+    } catch (error) {
+      alert('取引の記録に失敗しました: ' + (error as Error).message);
+    }
+  };
+
+  // 複数の取引を一括記録
+  const bulkRecordTransactions = async () => {
+    const selectedItems = transactions.filter(t => selectedTransactions.includes(t.id));
+    
+    if (selectedItems.length === 0) {
+      alert('記録する取引を選択してください');
+      return;
+    }
+    
+    try {
+      const results = await Promise.allSettled(
+        selectedItems.map(transaction => saveTransactionToDB(transaction))
+      );
+      
+      const successful = results.filter(result => result.status === 'fulfilled').length;
+      const failed = results.filter(result => result.status === 'rejected').length;
+      
+      if (failed > 0) {
+        alert(`${successful}件の取引が正常に記録されましたが、${failed}件の取引の記録に失敗しました`);
+      } else {
+        alert(`${successful}件の取引が正常に記録されました`);
+      }
+      
+      // 成功した取引をローカルリストから削除
+      const successfulIds = selectedItems.slice(0, successful).map(t => t.id);
+      setTransactions(prev => prev.filter(t => !successfulIds.includes(t.id)));
+      setSelectedTransactions([]);
+    } catch (error) {
+      alert('取引の一括記録に失敗しました: ' + (error as Error).message);
+    }
+  };
+
+  // 取引の選択状態を切り替え
+  const toggleTransactionSelection = (id: string) => {
+    setSelectedTransactions(prev => 
+      prev.includes(id) 
+        ? prev.filter(tid => tid !== id) 
+        : [...prev, id]
+    );
+  };
+
+  // 全取引の選択状態を切り替え
+  const toggleAllTransactionsSelection = () => {
+    if (selectedTransactions.length === transactions.length) {
+      setSelectedTransactions([]);
+    } else {
+      setSelectedTransactions(transactions.map(t => t.id));
+    }
+  };
+
+  const exportTransactions = () => {
+    // 取引データをCSV形式でエクスポート
+    const csvContent = [
+      ['日付', '説明', '金額', 'カテゴリ', 'タイプ'],
+      ...transactions.map(t => [
+        t.date,
+        `"${t.description}"`,
+        t.amount.toString(),
+        t.category,
+        t.type
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `取引データ_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* ヘッダー */}
         <div className="flex items-center mb-6">
           <Link to="/dashboard" className="mr-4">
             <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">CHAT-TO-BOOK</h1>
-            <p className="text-gray-600">自然な言葉で会計処理ができます</p>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">CHAT-TO-BOOK</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* メインチャットエリア */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[600px]">
-              {/* チャットヘッダー */}
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-white text-sm font-medium">AI</span>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">会計AIアシスタント</h3>
-                      <p className="text-sm text-green-600">オンライン</p>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    {quickActions.map((action, index) => (
-                      <button
-                        key={index}
-                        onClick={action.action}
-                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title={action.label}
-                      >
-                        <action.icon className="w-5 h-5" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">音声入力</h2>
+            
+            <div className="mb-4">
+              <div className="flex items-center justify-center mb-4">
+                <button
+                  onClick={isListening ? stopListening : startListening}
+                  className={`flex items-center justify-center w-16 h-16 rounded-full ${
+                    isListening 
+                      ? 'bg-red-500 hover:bg-red-600' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white transition-colors`}
+                >
+                  {isListening ? (
+                    <Square className="w-8 h-8" />
+                  ) : (
+                    <Mic className="w-8 h-8" />
+                  )}
+                </button>
               </div>
-
-              {/* チャットメッセージ */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      message.type === 'user' 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-100 text-gray-900'
-                    }`}>
-                      <p className="text-sm whitespace-pre-line">{message.content}</p>
-                      {message.suggestions && (
-                        <div className="mt-3 space-y-2">
-                          {message.suggestions.map((suggestion, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleQuickInput(suggestion)}
-                              className="block w-full text-left text-xs bg-white bg-opacity-20 hover:bg-opacity-30 px-2 py-1 rounded transition-colors"
-                            >
-                              {suggestion}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {message.transactions && (
-                        <div className="mt-3 space-y-2">
-                          {message.transactions.map((transaction) => (
-                            <div key={transaction.id} className="bg-white bg-opacity-20 p-2 rounded text-xs">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="font-medium">{transaction.description}</span>
-                                <span>¥{transaction.amount.toLocaleString()}</span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-gray-300">{transaction.category}</span>
-                                <div className="flex space-x-1">
-                                  <button
-                                    onClick={() => handleApproveTransaction(transaction.id)}
-                                    className="p-1 bg-green-500 hover:bg-green-600 rounded"
-                                  >
-                                    <Check className="w-3 h-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleRejectTransaction(transaction.id)}
-                                    className="p-1 bg-red-500 hover:bg-red-600 rounded"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-xs opacity-70 mt-1">
-                        {message.timestamp.toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {isProcessing && (
-                  <div className="flex justify-start">
-                    <div className="bg-gray-100 px-4 py-2 rounded-lg">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      </div>
-                    </div>
-                  </div>
+              
+              <div className="text-center mb-4">
+                <p className="text-sm text-gray-600">
+                  {isListening ? '音声認識中...' : 'マイクボタンをクリックして開始'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">認識テキスト</label>
+              <textarea
+                value={transcript}
+                onChange={(e) => setTranscript(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="音声認識されたテキストがここに表示されます..."
+              />
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={processTranscript}
+                disabled={!transcript.trim() || isProcessing}
+                className={`flex items-center px-4 py-2 rounded-md transition-colors ${
+                  !transcript.trim() || isProcessing
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    処理中...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    取引に変換
+                  </>
                 )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* 入力エリア */}
-              <div className="p-4 border-t border-gray-200">
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={toggleRecording}
-                    className={`p-2 rounded-lg transition-colors ${
-                      isRecording 
-                        ? 'bg-red-500 text-white' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                  </button>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="取引内容を入力してください..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isProcessing}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={!inputText.trim() || isProcessing}
-                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Send className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+              </button>
             </div>
           </div>
-
-          {/* サイドバー */}
-          <div className="space-y-6">
-            {/* 保留中の取引 */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold mb-4">保留中の取引</h2>
-              <div className="space-y-3">
-                {pendingTransactions.filter(t => t.status === 'pending').map((transaction) => (
-                  <div key={transaction.id} className="border border-gray-200 rounded-lg p-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-sm font-medium text-gray-900 truncate">
-                        {transaction.description}
-                      </span>
-                      <span className={`text-sm font-medium ${
-                        transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 mb-2">{transaction.category}</p>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleApproveTransaction(transaction.id)}
-                        className="flex-1 bg-green-600 text-white text-xs py-1 px-2 rounded hover:bg-green-700"
-                      >
-                        承認
-                      </button>
-                      <button
-                        onClick={() => handleRejectTransaction(transaction.id)}
-                        className="flex-1 bg-red-600 text-white text-xs py-1 px-2 rounded hover:bg-red-700"
-                      >
-                        却下
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {pendingTransactions.filter(t => t.status === 'pending').length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-4">保留中の取引はありません</p>
+          
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">取引一覧</h2>
+            
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center space-x-2">
+                <p className="text-sm text-gray-600">
+                  {transactions.length}件の取引
+                </p>
+                {selectedTransactions.length > 0 && (
+                  <span className="text-sm text-blue-600">
+                    {selectedTransactions.length}件選択中
+                  </span>
                 )}
               </div>
-            </div>
-
-            {/* 最近の取引 */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold mb-4">最近の取引</h2>
-              <div className="space-y-3">
-                {recentTransactions.map((transaction) => (
-                  <div key={transaction.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 truncate">{transaction.description}</p>
-                      <p className="text-xs text-gray-600">{transaction.category}</p>
-                    </div>
-                    <span className={`text-sm font-medium ${
-                      transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
+              <div className="flex space-x-2">
+                {selectedTransactions.length > 0 && (
+                  <button
+                    onClick={bulkRecordTransactions}
+                    className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    一括記録
+                  </button>
+                )}
+                <button
+                  onClick={exportTransactions}
+                  disabled={transactions.length === 0}
+                  className={`flex items-center px-3 py-1 rounded-md text-sm transition-colors ${
+                    transactions.length === 0
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  CSVエクスポート
+                </button>
               </div>
             </div>
-
-            {/* ヘルプ */}
-            <div className="bg-blue-50 rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-blue-900 mb-4">使い方のヒント</h2>
-              <div className="space-y-2 text-sm text-blue-800">
-                <p>• 「コンビニで1200円使いました」</p>
-                <p>• 「50万円の売上がありました」</p>
-                <p>• 「交通費で500円かかりました」</p>
-                <p>• 「現在の残高を教えて」</p>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <button 
+                        onClick={toggleAllTransactionsSelection}
+                        className="flex items-center"
+                      >
+                        {selectedTransactions.length === transactions.length && transactions.length > 0 ? (
+                          <CheckCircle className="w-4 h-4 text-blue-600" />
+                        ) : (
+                          <Circle className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日付</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">説明</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">金額</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">カテゴリ</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {transactions.map((transaction) => (
+                    <tr key={transaction.id}>
+                      <td className="px-4 py-3 text-sm">
+                        <button 
+                          onClick={() => toggleTransactionSelection(transaction.id)}
+                          className="flex items-center"
+                        >
+                          {selectedTransactions.includes(transaction.id) ? (
+                            <CheckCircle className="w-5 h-5 text-blue-600" />
+                          ) : (
+                            <Circle className="w-5 h-5 text-gray-400" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {editingId === transaction.id ? (
+                          <input
+                            type="date"
+                            value={editData.date || transaction.date}
+                            onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
+                        ) : (
+                          transaction.date
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs">
+                        {editingId === transaction.id ? (
+                          <input
+                            type="text"
+                            value={editData.description || transaction.description}
+                            onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
+                        ) : (
+                          transaction.description
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {editingId === transaction.id ? (
+                          <input
+                            type="number"
+                            value={editData.amount || transaction.amount}
+                            onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
+                        ) : (
+                          <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
+                            {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {editingId === transaction.id ? (
+                          <select
+                            value={editData.category || transaction.category}
+                            onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                          >
+                            <option value="売上">売上</option>
+                            <option value="給与">給与</option>
+                            <option value="交通費">交通費</option>
+                            <option value="食費">食費</option>
+                            <option value="消耗品費">消耗品費</option>
+                            <option value="接待交際費">接待交際費</option>
+                            <option value="通信費">通信費</option>
+                            <option value="水道光熱費">水道光熱費</option>
+                            <option value="雑費">雑費</option>
+                            <option value="未分類">未分類</option>
+                          </select>
+                        ) : (
+                          transaction.category
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {editingId === transaction.id ? (
+                          <button
+                            onClick={handleSave}
+                            className="text-green-600 hover:text-green-900 mr-2"
+                          >
+                            <Save className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => recordTransaction(transaction)}
+                              className="text-green-600 hover:text-green-900 mr-2"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(transaction)}
+                              className="text-blue-600 hover:text-blue-900 mr-2"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(transaction.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {transactions.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>まだ取引がありません</p>
+                  <p className="text-sm mt-2">音声入力で取引を追加してください</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">使い方</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                <span className="text-blue-600 font-bold">1</span>
               </div>
+              <h3 className="font-medium text-gray-900 mb-2">音声入力開始</h3>
+              <p className="text-sm text-gray-600">マイクボタンをクリックして、取引内容を話してください。</p>
+            </div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                <span className="text-blue-600 font-bold">2</span>
+              </div>
+              <h3 className="font-medium text-gray-900 mb-2">テキスト確認</h3>
+              <p className="text-sm text-gray-600">認識されたテキストを確認・編集してください。</p>
+            </div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                <span className="text-blue-600 font-bold">3</span>
+              </div>
+              <h3 className="font-medium text-gray-900 mb-2">取引に変換</h3>
+              <p className="text-sm text-gray-600">「取引に変換」ボタンをクリックして、取引を登録してください。</p>
             </div>
           </div>
         </div>
       </main>
     </div>
-  )
-}
+  );
+};
 
-export default ChatToBook
+export default ChatToBook;

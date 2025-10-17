@@ -1,335 +1,259 @@
-
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import {ArrowLeft, TrendingUp, TrendingDown, AlertCircle, CheckCircle, BarChart3, PieChart, Calendar, Download} from 'lucide-react'
-import Header from '../components/Header'
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, BarChart3, TrendingUp, TrendingDown, DollarSign, Users, Calendar, Filter, Download } from 'lucide-react';
+// HeaderコンポーネントはApp.tsxでレンダリングされるため、ここでは削除
 
 const BusinessAnalysis: React.FC = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState('3months')
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [period, setPeriod] = useState('monthly');
+  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [month, setMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
 
-  const periods = [
-    { value: '1month', label: '1ヶ月' },
-    { value: '3months', label: '3ヶ月' },
-    { value: '6months', label: '6ヶ月' },
-    { value: '1year', label: '1年' }
-  ]
+  // ダミーデータ
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [expenseData, setExpenseData] = useState<any[]>([]);
+  const [profitData, setProfitData] = useState<any[]>([]);
 
-  const categories = [
-    { value: 'all', label: '全体分析' },
-    { value: 'revenue', label: '売上分析' },
-    { value: 'expense', label: '支出分析' },
-    { value: 'cashflow', label: 'キャッシュフロー' },
-    { value: 'profitability', label: '収益性' }
-  ]
+  useEffect(() => {
+    // ダミーデータの生成
+    const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+    const revenue = [1200000, 1500000, 1800000, 2200000, 2500000, 2800000, 3200000, 3500000, 3800000, 4200000, 4500000, 4800000];
+    const expense = [800000, 900000, 1100000, 1300000, 1500000, 1700000, 1900000, 2100000, 2300000, 2500000, 2700000, 2900000];
+    
+    setRevenueData(months.map((month, index) => ({
+      month,
+      amount: revenue[index]
+    })));
+    
+    setExpenseData(months.map((month, index) => ({
+      month,
+      amount: expense[index]
+    })));
+    
+    setProfitData(months.map((month, index) => ({
+      month,
+      amount: revenue[index] - expense[index]
+    })));
+  }, []);
 
-  const kpis = [
-    {
-      title: '売上成長率',
-      value: '+12.5%',
-      change: '+2.1%',
-      trend: 'up',
-      color: 'text-green-600',
-      bgColor: 'bg-green-100'
-    },
-    {
-      title: '営業利益率',
-      value: '18.2%',
-      change: '+0.8%',
-      trend: 'up',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100'
-    },
-    {
-      title: 'キャッシュフロー',
-      value: '¥2,450,000',
-      change: '-5.2%',
-      trend: 'down',
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100'
-    },
-    {
-      title: '顧客獲得コスト',
-      value: '¥15,200',
-      change: '-8.1%',
-      trend: 'up',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100'
-    }
-  ]
-
-  const aiInsights = [
-    {
-      type: 'warning',
-      title: '支出増加の警告',
-      description: '先月と比較して広告費が35%増加しています。ROIの確認をお勧めします。',
-      impact: 'high',
-      action: '広告効果を分析する'
-    },
-    {
-      type: 'success',
-      title: '売上好調',
-      description: '新規顧客からの売上が前年同期比で28%増加しています。',
-      impact: 'positive',
-      action: 'マーケティング戦略を継続'
-    },
-    {
-      type: 'info',
-      title: '季節性の傾向',
-      description: '過去3年のデータから、来月は売上が15%程度減少する傾向があります。',
-      impact: 'medium',
-      action: 'キャッシュフロー計画を調整'
-    },
-    {
-      type: 'opportunity',
-      title: '節税機会',
-      description: '設備投資による節税効果が期待できます。年内実施で約¥180,000の節税が可能です。',
-      impact: 'positive',
-      action: '税理士に相談'
-    }
-  ]
-
-  const forecasts = [
-    {
-      period: '来月',
-      revenue: 2800000,
-      expense: 2100000,
-      profit: 700000,
-      confidence: 92
-    },
-    {
-      period: '3ヶ月後',
-      revenue: 8500000,
-      expense: 6300000,
-      profit: 2200000,
-      confidence: 85
-    },
-    {
-      period: '6ヶ月後',
-      revenue: 17200000,
-      expense: 12800000,
-      profit: 4400000,
-      confidence: 78
-    }
-  ]
-
-  const recommendations = [
-    {
-      category: 'コスト削減',
-      items: [
-        '通信費の見直しで月額¥8,000削減可能',
-        '在庫管理の最適化で¥150,000削減可能',
-        'サブスクリプションサービスの整理で月額¥12,000削減可能'
-      ]
-    },
-    {
-      category: '売上向上',
-      items: [
-        '既存顧客のアップセルで月額¥200,000増収可能',
-        '新サービスの導入で月額¥350,000増収見込み',
-        'マーケティング強化で月額¥180,000増収可能'
-      ]
-    },
-    {
-      category: '税務最適化',
-      items: [
-        '設備投資による節税効果¥180,000',
-        '経費計上の見直しで¥45,000節税可能',
-        '法人成りによる節税効果¥320,000/年'
-      ]
-    }
-  ]
+  const exportReport = () => {
+    // レポートエクスポートロジック
+    console.log('レポートをエクスポートしました');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      {/* HeaderコンポーネントはApp.tsxでレンダリングされるため、ここでは削除 */}
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* ヘッダー */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
-            <Link to="/dashboard" className="mr-4">
-              <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">経営分析</h1>
-              <p className="text-gray-600">AIが事業データを分析してレポートを作成します</p>
-            </div>
-          </div>
-          <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            <Download className="w-4 h-4 mr-2" />
-            レポート出力
-          </button>
+        <div className="flex items-center mb-6">
+          <Link to="/dashboard" className="mr-4">
+            <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">経営分析</h1>
         </div>
 
-        {/* フィルター */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">分析期間</label>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 md:mb-0">財務状況</h2>
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center">
+                <Calendar className="w-4 h-4 text-gray-500 mr-2" />
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="monthly">月次</option>
+                  <option value="quarterly">四半期</option>
+                  <option value="yearly">年次</option>
+                </select>
+              </div>
+              <div className="flex items-center">
+                <Filter className="w-4 h-4 text-gray-500 mr-2" />
+                <select
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="2023">2023年</option>
+                  <option value="2024">2024年</option>
+                  <option value="2025">2025年</option>
+                </select>
+              </div>
+              {period === 'monthly' && (
+                <div className="flex items-center">
+                  <select
+                    value={month}
+                    onChange={(e) => setMonth(e.target.value)}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="01">1月</option>
+                    <option value="02">2月</option>
+                    <option value="03">3月</option>
+                    <option value="04">4月</option>
+                    <option value="05">5月</option>
+                    <option value="06">6月</option>
+                    <option value="07">7月</option>
+                    <option value="08">8月</option>
+                    <option value="09">9月</option>
+                    <option value="10">10月</option>
+                    <option value="11">11月</option>
+                    <option value="12">12月</option>
+                  </select>
+                </div>
+              )}
+              <button
+                onClick={exportReport}
+                className="flex items-center px-3 py-1 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-sm"
               >
-                {periods.map((period) => (
-                  <option key={period.value} value={period.value}>
-                    {period.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">分析カテゴリ</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {categories.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
+                <Download className="w-4 h-4 mr-1" />
+                エクスポート
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* KPI指標 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          {kpis.map((kpi, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-600">{kpi.title}</h3>
-                <div className={`w-8 h-8 ${kpi.bgColor} rounded-lg flex items-center justify-center`}>
-                  {kpi.trend === 'up' ? (
-                    <TrendingUp className={`w-4 h-4 ${kpi.color}`} />
-                  ) : (
-                    <TrendingDown className={`w-4 h-4 ${kpi.color}`} />
-                  )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-blue-50 rounded-lg p-5">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">売上高</p>
+                  <p className="text-2xl font-bold text-gray-900">¥4,800,000</p>
+                  <p className="text-sm text-green-600 flex items-center mt-1">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    <span>前月比 12.5%</span>
+                  </p>
                 </div>
               </div>
-              <div className="flex items-end justify-between">
-                <span className="text-2xl font-bold text-gray-900">{kpi.value}</span>
-                <span className={`text-sm font-medium ${
-                  kpi.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {kpi.change}
-                </span>
+            </div>
+            
+            <div className="bg-red-50 rounded-lg p-5">
+              <div className="flex items-center">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <TrendingDown className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">経費</p>
+                  <p className="text-2xl font-bold text-gray-900">¥2,900,000</p>
+                  <p className="text-sm text-green-600 flex items-center mt-1">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    <span>前月比 8.2%</span>
+                  </p>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* AI分析結果 */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* AIインサイト */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
-                AIインサイト
-              </h2>
-              <div className="space-y-4">
-                {aiInsights.map((insight, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <div className="mr-3 mt-1">
-                        {insight.type === 'warning' && <AlertCircle className="w-5 h-5 text-yellow-500" />}
-                        {insight.type === 'success' && <CheckCircle className="w-5 h-5 text-green-500" />}
-                        {insight.type === 'info' && <AlertCircle className="w-5 h-5 text-blue-500" />}
-                        {insight.type === 'opportunity' && <TrendingUp className="w-5 h-5 text-purple-500" />}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 mb-1">{insight.title}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{insight.description}</p>
-                        <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                          {insight.action} →
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 予測グラフ */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <Calendar className="w-5 h-5 mr-2 text-green-600" />
-                将来予測
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 text-sm font-medium text-gray-700">期間</th>
-                      <th className="text-left py-2 text-sm font-medium text-gray-700">予想売上</th>
-                      <th className="text-left py-2 text-sm font-medium text-gray-700">予想支出</th>
-                      <th className="text-left py-2 text-sm font-medium text-gray-700">予想利益</th>
-                      <th className="text-left py-2 text-sm font-medium text-gray-700">信頼度</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {forecasts.map((forecast, index) => (
-                      <tr key={index} className="border-b border-gray-100">
-                        <td className="py-3 text-sm font-medium text-gray-900">{forecast.period}</td>
-                        <td className="py-3 text-sm text-gray-900">¥{forecast.revenue.toLocaleString()}</td>
-                        <td className="py-3 text-sm text-gray-900">¥{forecast.expense.toLocaleString()}</td>
-                        <td className="py-3 text-sm font-medium text-green-600">¥{forecast.profit.toLocaleString()}</td>
-                        <td className="py-3">
-                          <div className="flex items-center">
-                            <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                              <div
-                                className="h-2 bg-blue-500 rounded-full"
-                                style={{ width: `${forecast.confidence}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-xs text-gray-600">{forecast.confidence}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            
+            <div className="bg-green-50 rounded-lg p-5">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">利益</p>
+                  <p className="text-2xl font-bold text-gray-900">¥1,900,000</p>
+                  <p className="text-sm text-green-600 flex items-center mt-1">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    <span>前月比 18.3%</span>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* 改善提案 */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center">
-              <PieChart className="w-5 h-5 mr-2 text-purple-600" />
-              改善提案
-            </h2>
-            <div className="space-y-6">
-              {recommendations.map((rec, index) => (
-                <div key={index}>
-                  <h3 className="font-medium text-gray-900 mb-3">{rec.category}</h3>
-                  <div className="space-y-2">
-                    {rec.items.map((item, itemIndex) => (
-                      <div key={itemIndex} className="flex items-start">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-600">{item}</p>
-                      </div>
-                    ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-5">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">売上推移</h3>
+              <div className="h-64 flex items-end justify-between space-x-2">
+                {revenueData.map((data, index) => (
+                  <div key={index} className="flex flex-col items-center flex-1">
+                    <div 
+                      className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors"
+                      style={{ height: `${(data.amount / 5000000) * 200}px` }}
+                    ></div>
+                    <p className="text-xs text-gray-600 mt-2">{data.month}</p>
                   </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="bg-white border border-gray-200 rounded-lg p-5">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">経費推移</h3>
+              <div className="h-64 flex items-end justify-between space-x-2">
+                {expenseData.map((data, index) => (
+                  <div key={index} className="flex flex-col items-center flex-1">
+                    <div 
+                      className="w-full bg-red-500 rounded-t hover:bg-red-600 transition-colors"
+                      style={{ height: `${(data.amount / 5000000) * 200}px` }}
+                    ></div>
+                    <p className="text-xs text-gray-600 mt-2">{data.month}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 bg-white border border-gray-200 rounded-lg p-5">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">利益推移</h3>
+            <div className="h-64 flex items-end justify-between space-x-2">
+              {profitData.map((data, index) => (
+                <div key={index} className="flex flex-col items-center flex-1">
+                  <div 
+                    className={`w-full rounded-t hover:opacity-75 transition-opacity ${
+                      data.amount >= 0 ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                    style={{ height: `${Math.abs(data.amount) / 5000000 * 200}px` }}
+                  ></div>
+                  <p className="text-xs text-gray-600 mt-2">{data.month}</p>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
 
-            {/* アクションボタン */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                詳細レポートを確認
-              </button>
-            </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">部門別業績</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">部門</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">売上高</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">目標比</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">前年比</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">利益</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900">製品A</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">¥2,400,000</td>
+                  <td className="px-4 py-3 text-sm text-green-600">120%</td>
+                  <td className="px-4 py-3 text-sm text-green-600">+15%</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">¥800,000</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900">製品B</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">¥1,800,000</td>
+                  <td className="px-4 py-3 text-sm text-green-600">90%</td>
+                  <td className="px-4 py-3 text-sm text-red-600">-5%</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">¥600,000</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900">サービス</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">¥600,000</td>
+                  <td className="px-4 py-3 text-sm text-green-600">150%</td>
+                  <td className="px-4 py-3 text-sm text-green-600">+25%</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">¥300,000</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </main>
     </div>
-  )
-}
+  );
+};
 
-export default BusinessAnalysis
+export default BusinessAnalysis;

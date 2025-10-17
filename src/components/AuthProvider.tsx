@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, ReactNode } from 'react'
-import { useAuth } from '../hooks/useAuth'
+import { useMockAuth } from '../hooks/useMockAuth'
 
 interface AuthContextType {
   user: any
@@ -18,7 +17,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const auth = useAuth()
+  const auth = useMockAuth()
 
   return (
     <AuthContext.Provider value={auth}>

@@ -3,9 +3,22 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import {Calculator, FileText, BarChart3, MessageSquare, Zap, Shield, Clock, Users, CheckCircle, ArrowRight, Star, TrendingUp, Smartphone, Globe, ChevronRight} from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { lumi } from '../lib/lumi'
 
 const LandingPage: React.FC = () => {
-  const { isAuthenticated, signIn } = useAuth()
+  const { isAuthenticated, signIn, user } = useAuth()
+
+  console.log('認証状態:', { isAuthenticated, user })
+
+  const handleSignIn = async () => {
+    console.log('ログインボタンがクリックされました')
+    try {
+      await signIn()
+      console.log('ログイン処理が呼び出されました')
+    } catch (error) {
+      console.error('ログイン処理中にエラーが発生しました:', error)
+    }
+  }
 
   const features = [
     {
@@ -130,43 +143,6 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ヘッダー */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600">Ainance</h1>
-              <span className="ml-2 text-sm text-gray-500">AI経理プラットフォーム</span>
-            </div>
-            
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">機能</a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">料金</a>
-              <a href="#testimonials" className="text-gray-600 hover:text-gray-900 transition-colors">お客様の声</a>
-              <a href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">お問い合わせ</a>
-            </nav>
-            
-            <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <Link 
-                  to="/dashboard"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  ダッシュボードへ
-                </Link>
-              ) : (
-                <button
-                  onClick={signIn}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  ログイン
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* ヒーローセクション */}
       <section className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 py-20 overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>

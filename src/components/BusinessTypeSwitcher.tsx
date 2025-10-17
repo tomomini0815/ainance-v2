@@ -1,28 +1,18 @@
-
 import React, { useState } from 'react'
 import { useBusinessType } from '../hooks/useBusinessType'
-import {ChevronDown, Building, User, Settings, Plus, Edit, Trash2} from 'lucide-react'
+import { useLocalStorage } from '../hooks/useLocalStorage'
+import {ChevronDown, Building, User, Settings, Plus, Edit, Trash2, Check} from 'lucide-react'
 
 interface BusinessTypeSwitcherProps {
   userId?: string
   onBusinessTypeChange?: (businessType: any) => void
 }
 
-const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ 
-  userId,
-  onBusinessTypeChange 
-}) => {
-  const { 
-    currentBusinessType, 
-    businessTypes, 
-    loading, 
-    createBusinessType,
-    switchBusinessType,
-    updateBusinessType,
-    deleteBusinessType 
-  } = useBusinessType(userId)
-  
+const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onBusinessTypeChange }) => {
   const [showDropdown, setShowDropdown] = useState(false)
+  // ローカルストレージを使用して選択されたビジネスタイプを永続化
+  const [currentBusinessType, setCurrentBusinessType] = useLocalStorage<any>(`businessType_${userId}`, null)
+  const { businessTypes, loading, createBusinessType, switchBusinessType, updateBusinessType, deleteBusinessType } = useBusinessType(userId)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingBusinessType, setEditingBusinessType] = useState<any>(null)
@@ -106,7 +96,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
       {/* 現在の業態形態表示 */}
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+        className="flex items-center space-x-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
       >
         {currentBusinessType ? (
           <>
@@ -115,10 +105,10 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
             ) : (
               <Building className="w-4 h-4 text-green-600" />
             )}
-            <span className="text-sm text-gray-700">
+            <span className="text-sm font-medium text-blue-800">
               {currentBusinessType.business_type === 'individual' ? '個人事業主' : '法人'}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-blue-600">
               - {currentBusinessType.company_name}
             </span>
           </>
@@ -128,7 +118,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
             <span className="text-sm text-gray-500">業態形態を選択</span>
           </>
         )}
-        <ChevronDown className="w-4 h-4 text-gray-500" />
+        <ChevronDown className="w-4 h-4 text-blue-600" />
       </button>
 
       {/* ドロップダウンメニュー */}
@@ -173,6 +163,10 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
                       <div className="text-xs text-gray-500">{businessType.company_name}</div>
                     </div>
                   </button>
+                  
+                  {currentBusinessType?._id === businessType._id && (
+                    <Check className="w-4 h-4 text-blue-600 mr-2" />
+                  )}
                   
                   <div className="flex items-center space-x-1">
                     <button
