@@ -346,7 +346,7 @@ const AITransactionList: React.FC = () => {
             </div>
 
             {/* パフォーマンス指標 */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border border-blue-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Cpu className="w-5 h-5 mr-2 text-blue-600" />
@@ -771,7 +771,7 @@ const AITransactionList: React.FC = () => {
 
         {/* AI学習進捗とインサイト */}
         <div className="mt-8 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 p-8 rounded-xl border border-blue-100">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Lightbulb className="w-5 h-5 mr-2 text-yellow-500" />

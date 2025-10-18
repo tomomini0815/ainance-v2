@@ -175,13 +175,13 @@ const Dashboard: React.FC = () => {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* ヘッダーとエクスポートボタン */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <button
               onClick={downloadCSV}
               disabled={transactions.length === 0}
-              className={`px-4 py-2 rounded-md transition-colors flex items-center border ${
+              className={`px-4 py-2 rounded-md transition-colors flex items-center justify-center border ${
                 transactions.length === 0
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-white text-green-600 border-green-600 hover:bg-green-50'
@@ -194,7 +194,7 @@ const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => setShowCreateForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -208,13 +208,13 @@ const Dashboard: React.FC = () => {
         <QuickActions />
         
         {/* チャートセクション */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <RevenueChart transactions={transactions} />
           <ExpenseChart transactions={transactions} />
         </div>
         
         {/* テーブルセクション */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TransactionTable 
             transactions={transactions} 
             onOpenCreateModal={() => setShowCreateForm(true)} 

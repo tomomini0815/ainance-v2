@@ -131,7 +131,7 @@ const LandingPage: React.FC = () => {
       <section className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 sm:py-20 overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-center">
             {/* 左側: テキストコンテンツ */}
             <div className="space-y-6 sm:space-y-8">
               <div className="space-y-4">
@@ -154,7 +154,7 @@ const LandingPage: React.FC = () => {
               </div>
               
               {/* 統計情報 */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-lg sm:text-2xl font-bold text-blue-600">10,000+</div>
                   <div className="text-xs sm:text-sm text-gray-600">利用者数</div>

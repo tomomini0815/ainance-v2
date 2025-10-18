@@ -209,7 +209,7 @@ const TransactionHistory: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* ヘッダー */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <div className="flex items-center mb-2">
               <Link to="/dashboard" className="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -221,7 +221,7 @@ const TransactionHistory: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex space-x-2 mt-4 lg:mt-0">
+          <div className="flex space-x-2">
             <button
               onClick={() => setShowCreateForm(true)}
               className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center shadow-sm font-medium"
@@ -233,7 +233,7 @@ const TransactionHistory: React.FC = () => {
         </div>
 
         {/* 統計カード */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -287,7 +287,7 @@ const TransactionHistory: React.FC = () => {
         {/* フィルターと検索 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
           <div className="p-4">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex-1 max-w-md">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -335,7 +335,7 @@ const TransactionHistory: React.FC = () => {
           {showFilters && (
             <div className="px-4 pb-4 border-t border-gray-100">
               <div className="pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">カテゴリ</label>
                     <select
@@ -398,7 +398,7 @@ const TransactionHistory: React.FC = () => {
         {/* ソートと一括操作 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
           <div className="p-4">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center">
                   <label className="text-sm text-gray-700 mr-2">ソート:</label>
@@ -452,7 +452,7 @@ const TransactionHistory: React.FC = () => {
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">項目</th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">金額</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">日付</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">日付</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">カテゴリ</th>
                   <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                 </tr>
@@ -471,7 +471,7 @@ const TransactionHistory: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{transaction.item}</div>
-                        <div className="text-sm text-gray-500 md:hidden">
+                        <div className="text-sm text-gray-500 sm:hidden">
                           {new Date(transaction.date).toLocaleDateString('ja-JP', {
                             year: 'numeric',
                             month: 'short',
@@ -490,7 +490,7 @@ const TransactionHistory: React.FC = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
                         {new Date(transaction.date).toLocaleDateString('ja-JP', {
                           year: 'numeric',
                           month: 'short',
@@ -544,7 +544,7 @@ const TransactionHistory: React.FC = () => {
           
           {/* ページネーション */}
           {paginatedTransactions.length > 0 && (
-            <div className="bg-white px-6 py-4 flex items-center justify-between border-t border-gray-100">
+            <div className="bg-white px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}

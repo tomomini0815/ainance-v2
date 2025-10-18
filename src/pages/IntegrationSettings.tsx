@@ -249,7 +249,7 @@ const IntegrationSettings: React.FC = () => {
             {/* 接続済みサービス */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold mb-4">接続済みサービス</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {integrations.map((integration) => (
                   <div key={integration.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -313,7 +313,7 @@ const IntegrationSettings: React.FC = () => {
             {/* 利用可能なサービス */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold mb-4">利用可能なサービス</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {availableIntegrations.map((service, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
                     <div className="flex items-center justify-between">
@@ -420,7 +420,7 @@ const IntegrationSettings: React.FC = () => {
             {/* API使用状況 */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold mb-4">API使用状況</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h3 className="font-medium text-blue-900">今月のリクエスト数</h3>
                   <p className="text-2xl font-bold text-blue-600 mt-2">12,547</p>

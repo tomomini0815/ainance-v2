@@ -53,7 +53,7 @@ const BusinessAnalysis: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 md:mb-0">財務状況</h2>
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center">
@@ -112,7 +112,7 @@ const BusinessAnalysis: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
             <div className="bg-blue-50 rounded-lg p-5">
               <div className="flex items-center">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -162,7 +162,7 @@ const BusinessAnalysis: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white border border-gray-200 rounded-lg p-5">
               <h3 className="text-lg font-medium text-gray-900 mb-4">売上推移</h3>
               <div className="h-64 flex items-end justify-between space-x-2">

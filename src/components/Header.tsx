@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import {ChevronDown, User, Settings, LogOut, Search, Bell, Menu, X, Home, Receipt, FileText, BarChart3, MessageSquare, Users, Zap, ChevronLeft, ChevronRight} from 'lucide-react'
+import {ChevronDown, User, Settings, LogOut, Search, Bell, Menu, X, Home, Receipt, FileText, BarChart3, MessageSquare, Users, Zap, ChevronLeft, ChevronRight, Building, User as UserIcon}from 'lucide-react'
 import BusinessTypeSwitcher from './BusinessTypeSwitcher'
 import { useAuth } from '../hooks/useAuth'
 
@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
   const [searchTerm, setSearchTerm] = useState('')
   
   // 仮のユーザーID（実際の実装では認証システムから取得）
-  const userId = user?.userId || "user_001"
+  const userId = user?.id || "user_001"
   
   const isActive = (path: string) => {
     return location.pathname === path
@@ -31,6 +31,17 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
   const handleBusinessTypeChange = (businessType: any) => {
     setCurrentBusinessType(businessType)
     console.log('業態形態が変更されました:', businessType)
+  }
+
+  // 選択された業態形態の表示名を取得する関数
+  const getBusinessTypeDisplay = () => {
+    if (!currentBusinessType) return '業態形態を選択'
+    
+    if (currentBusinessType.business_type === 'individual') {
+      return `個人事業主 - ${currentBusinessType.company_name}`
+    } else {
+      return `法人 - ${currentBusinessType.company_name}`
+    }
   }
 
   const handleSignOut = async () => {
@@ -68,6 +79,14 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
             </Link>
           </div>
           
+          {/* 中央の要素 - 業態選択プルダウン */}
+          <div className="hidden md:flex items-center">
+            <BusinessTypeSwitcher 
+              userId={userId}
+              onBusinessTypeChange={handleBusinessTypeChange}
+            />
+          </div>
+          
           {/* 右側の要素 */}
           <div className="flex items-center space-x-3">
             {/* 検索バー（デスクトップ） */}
@@ -88,34 +107,24 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
               </div>
             )}
             
-            {/* 業態形態切り替え */}
-            {showSideMenus && (
-              <div className="hidden md:block">
-                <BusinessTypeSwitcher 
-                  userId={userId}
-                  onBusinessTypeChange={handleBusinessTypeChange}
-                />
-              </div>
-            )}
-            
             {/* 通知アイコン */}
             {showSideMenus && (
-              <button className="relative p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
+              <button className="relative p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors hidden md:block">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2 ring-white bg-red-400"></span>
               </button>
             )}
             
-            {/* ユーザードロップダウン */}
+            {/* ユーザードロップダウン（デスクトップ） */}
             {showSideMenus && (
-              <div className="relative">
+              <div className="relative hidden md:block">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-full hover:bg-gray-100"
                 >
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">
-                      {user?.userName ? user.userName.charAt(0) : 'U'}
+                      {user?.name ? user.name.charAt(0) : 'U'}
                     </span>
                   </div>
                 </button>
@@ -123,7 +132,7 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1">
                     <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
-                      <div className="font-medium">{user?.userName}</div>
+                      <div className="font-medium">{user?.name}</div>
                       <div className="text-gray-500 truncate">{user?.email}</div>
                     </div>
                     <Link
@@ -149,6 +158,20 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
               </div>
             )}
             
+            {/* ユーザーアイコン（モバイル） */}
+            {showSideMenus && (
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="md:hidden flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-full hover:bg-gray-100"
+              >
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {user?.name ? user.name.charAt(0) : 'U'}
+                  </span>
+                </div>
+              </button>
+            )}
+            
             {/* ハンバーガーメニュー（モバイル） */}
             {showSideMenus && (
               <button
@@ -163,6 +186,34 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
               >
                 {showSideMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
+            )}
+            
+            {/* ユーザードロップダウン（モバイル） */}
+            {showUserMenu && (
+              <div className="md:hidden absolute right-0 top-16 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1">
+                <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
+                  <div className="font-medium">{user?.name}</div>
+                  <div className="text-gray-500 truncate">{user?.email}</div>
+                </div>
+                <Link
+                  to="/integration-settings"
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  <Settings className="w-4 h-4 mr-3" />
+                  設定
+                </Link>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false)
+                    handleSignOut()
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-3" />
+                  ログアウト
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -283,11 +334,11 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
                         <div className="mt-4 flex items-center">
                           <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
                             <span className="text-blue-600 text-sm font-medium">
-                              {user?.userName ? user.userName.charAt(0) : 'U'}
+                              {user?.name ? user.name.charAt(0) : 'U'}
                             </span>
                           </div>
                           <div className="ml-3">
-                            <p className="text-sm font-medium text-white">{user?.userName || 'ユーザー'}</p>
+                            <p className="text-sm font-medium text-white">{user?.name || 'ユーザー'}</p>
                             <p className="text-sm text-blue-200">{user?.email}</p>
                           </div>
                         </div>
@@ -296,10 +347,26 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
                     
                     {/* メニュー内容 */}
                     <div className="px-4 py-6 sm:px-6">
-                      {/* 業態形態切り替え */}
+                      {/* 業態形態表示と切り替え（モバイル） */}
                       {isSideMenuExpanded && (
                         <div className="mb-6">
                           <h3 className="text-sm font-medium text-gray-900 mb-2">業態形態</h3>
+                          <div className="flex items-center bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg mb-2">
+                            {currentBusinessType ? (
+                              <>
+                                {currentBusinessType.business_type === 'individual' ? (
+                                  <UserIcon className="w-4 h-4 text-blue-600 mr-2" />
+                                ) : (
+                                  <Building className="w-4 h-4 text-green-600 mr-2" />
+                                )}
+                                <span className="text-sm font-medium text-blue-800">
+                                  {getBusinessTypeDisplay()}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-sm text-gray-500">業態形態を選択</span>
+                            )}
+                          </div>
                           <BusinessTypeSwitcher 
                             userId={userId}
                             onBusinessTypeChange={handleBusinessTypeChange}

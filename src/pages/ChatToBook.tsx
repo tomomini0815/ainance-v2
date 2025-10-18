@@ -337,7 +337,7 @@ const ChatToBook: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">CHAT-TO-BOOK</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">音声入力</h2>
             
@@ -587,7 +587,7 @@ const ChatToBook: React.FC = () => {
         
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">使い方</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="border border-gray-200 rounded-lg p-4">
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-3">
                 <span className="text-blue-600 font-bold">1</span>

@@ -738,13 +738,15 @@ const ReceiptProcessing: React.FC = () => {
         )}
         
         {/* ヘッダー */}
-        <div className="flex items-center mb-6">
-          <Link to="/dashboard" className="mr-4">
-            <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">レシート処理</h1>
-            <p className="text-gray-600">画像から自動で仕訳を作成します</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
+          <div className="flex items-center">
+            <Link to="/dashboard" className="mr-4">
+              <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">レシート処理</h1>
+              <p className="text-gray-600">画像から自動で仕訳を作成します</p>
+            </div>
           </div>
         </div>
 
@@ -1003,19 +1005,19 @@ const ReceiptProcessing: React.FC = () => {
           <div className="mb-4 flex flex-wrap gap-2">
             <button
               onClick={addSampleReceipts}
-              className="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
+              className="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm w-full sm:w-auto"
             >
               サンプルレシートを追加（テスト用）
             </button>
             <button
               onClick={testOCROnSampleImage}
-              className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm"
+              className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm w-full sm:w-auto"
             >
               OCRテストを実行（サンプル画像）
             </button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* ファイルアップロード */}
             <label className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors">
               <input
@@ -1051,7 +1053,7 @@ const ReceiptProcessing: React.FC = () => {
 
         {/* フィルターと検索 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -1066,7 +1068,7 @@ const ReceiptProcessing: React.FC = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -1076,7 +1078,7 @@ const ReceiptProcessing: React.FC = () => {
                 <option value="rejected">却下</option>
               </select>
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >

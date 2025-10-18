@@ -16,6 +16,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingBusinessType, setEditingBusinessType] = useState<any>(null)
+  const [selectedBusinessType, setSelectedBusinessType] = useState<'individual' | 'corporation'>('individual')
 
   const handleCreateSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -71,6 +72,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
 
   const handleEdit = (businessType: any) => {
     setEditingBusinessType(businessType)
+    setSelectedBusinessType(businessType.business_type)
     setShowEditModal(true)
     setShowDropdown(false)
   }
@@ -125,6 +127,24 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
       {showDropdown && (
         <div className="absolute top-full left-0 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
           <div className="p-2">
+            {/* 選択中の業態形態をプルダウンの上部に表示 */}
+            {currentBusinessType && (
+              <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded flex items-center">
+                {currentBusinessType.business_type === 'individual' ? (
+                  <User className="w-4 h-4 text-blue-600 mr-2" />
+                ) : (
+                  <Building className="w-4 h-4 text-green-600 mr-2" />
+                )}
+                <div>
+                  <div className="text-sm font-medium text-blue-800">
+                    {currentBusinessType.business_type === 'individual' ? '個人事業主' : '法人'}
+                  </div>
+                  <div className="text-xs text-blue-600">{currentBusinessType.company_name}</div>
+                </div>
+                <Check className="w-4 h-4 text-blue-600 ml-auto" />
+              </div>
+            )}
+            
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-medium text-gray-900">業態形態</h3>
               <button
@@ -144,7 +164,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
                 <div
                   key={businessType._id}
                   className={`flex items-center justify-between p-2 rounded hover:bg-gray-50 ${
-                    currentBusinessType?._id === businessType._id ? 'bg-blue-50 border border-blue-200' : ''
+                    currentBusinessType?._id === businessType._id ? 'bg-gray-50' : ''
                   }`}
                 >
                   <button
@@ -163,10 +183,6 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
                       <div className="text-xs text-gray-500">{businessType.company_name}</div>
                     </div>
                   </button>
-                  
-                  {currentBusinessType?._id === businessType._id && (
-                    <Check className="w-4 h-4 text-blue-600 mr-2" />
-                  )}
                   
                   <div className="flex items-center space-x-1">
                     <button
@@ -209,6 +225,8 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
                 <label className="block text-sm font-medium text-gray-700 mb-1">業態形態</label>
                 <select
                   name="business_type"
+                  value={selectedBusinessType}
+                  onChange={(e) => setSelectedBusinessType(e.target.value as 'individual' | 'corporation')}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -218,25 +236,41 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">会社名・屋号</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {selectedBusinessType === 'individual' ? '屋号' : '会社名'}
+                </label>
                 <input
                   type="text"
                   name="company_name"
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="株式会社サンプル"
+                  placeholder={selectedBusinessType === 'individual' ? '個人商店' : '株式会社サンプル'}
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">法人番号・事業者登録番号</label>
-                <input
-                  type="text"
-                  name="tax_number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="T1234567890123"
-                />
-              </div>
+              {selectedBusinessType === 'corporation' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">法人番号</label>
+                  <input
+                    type="text"
+                    name="tax_number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="1234567890123"
+                  />
+                </div>
+              )}
+              
+              {selectedBusinessType === 'individual' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">事業者登録番号</label>
+                  <input
+                    type="text"
+                    name="tax_number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="T1234567890123"
+                  />
+                </div>
+              )}
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">住所</label>
@@ -270,13 +304,15 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">代表者名</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {selectedBusinessType === 'individual' ? '事業主名' : '代表者名'}
+                </label>
                 <input
                   type="text"
                   name="representative_name"
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="田中太郎"
+                  placeholder={selectedBusinessType === 'individual' ? '山田太郎' : '田中太郎'}
                 />
               </div>
               
@@ -314,7 +350,9 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">会社名・屋号</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {editingBusinessType.business_type === 'individual' ? '屋号' : '会社名'}
+                </label>
                 <input
                   type="text"
                   name="company_name"
@@ -324,15 +362,29 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">法人番号・事業者登録番号</label>
-                <input
-                  type="text"
-                  name="tax_number"
-                  defaultValue={editingBusinessType.tax_number}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              {editingBusinessType.business_type === 'corporation' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">法人番号</label>
+                  <input
+                    type="text"
+                    name="tax_number"
+                    defaultValue={editingBusinessType.tax_number}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+              
+              {editingBusinessType.business_type === 'individual' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">事業者登録番号</label>
+                  <input
+                    type="text"
+                    name="tax_number"
+                    defaultValue={editingBusinessType.tax_number}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">住所</label>
@@ -366,7 +418,9 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">代表者名</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {editingBusinessType.business_type === 'individual' ? '事業主名' : '代表者名'}
+                </label>
                 <input
                   type="text"
                   name="representative_name"

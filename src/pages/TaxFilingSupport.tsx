@@ -157,7 +157,7 @@ const TaxFilingSupport: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">申告手順</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="border border-gray-200 rounded-lg p-4">
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-3">
                 <span className="text-blue-600 font-bold">1</span>
