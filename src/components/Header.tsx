@@ -79,7 +79,7 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
             </Link>
           </div>
           
-          {/* 中央の要素 - 業態選択プルダウン */}
+          {/* 中央の要素 - 業態選択プルダウン（デスクトップのみ） */}
           <div className="hidden md:flex items-center">
             <BusinessTypeSwitcher 
               userId={userId}
@@ -158,35 +158,46 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
               </div>
             )}
             
-            {/* ユーザーアイコン（モバイル） */}
-            {showSideMenus && (
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="md:hidden flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-full hover:bg-gray-100"
-              >
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {user?.name ? user.name.charAt(0) : 'U'}
-                  </span>
-                </div>
-              </button>
-            )}
-            
-            {/* ハンバーガーメニュー（モバイル） */}
-            {showSideMenus && (
-              <button
-                onClick={() => {
-                  setShowSideMenu(!showSideMenu)
-                  // サイドメニューを開くときに展開状態にする
-                  if (!showSideMenu) {
-                    setIsSideMenuExpanded(true)
-                  }
-                }}
-                className="md:hidden text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
-              >
-                {showSideMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            )}
+            {/* モバイル用の要素 */}
+            <div className="md:hidden flex items-center space-x-2">
+              {/* 業態選択プルダウン（モバイル） */}
+              <div className="flex items-center">
+                <BusinessTypeSwitcher 
+                  userId={userId}
+                  onBusinessTypeChange={handleBusinessTypeChange}
+                />
+              </div>
+              
+              {/* ユーザーアイコン（モバイル） */}
+              {showSideMenus && (
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-full hover:bg-gray-100"
+                >
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.name ? user.name.charAt(0) : 'U'}
+                    </span>
+                  </div>
+                </button>
+              )}
+              
+              {/* ハンバーガーメニュー（モバイル） */}
+              {showSideMenus && (
+                <button
+                  onClick={() => {
+                    setShowSideMenu(!showSideMenu)
+                    // サイドメニューを開くときに展開状態にする
+                    if (!showSideMenu) {
+                      setIsSideMenuExpanded(true)
+                    }
+                  }}
+                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+                >
+                  {showSideMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+              )}
+            </div>
             
             {/* ユーザードロップダウン（モバイル） */}
             {showUserMenu && (
