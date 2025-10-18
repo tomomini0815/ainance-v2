@@ -2,16 +2,17 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Ainance</title>
+    <title>AInance Dashboard</title>
     <script>
-      // GitHub PagesでSPAを正しく動作させるためのリダイレクトスクリプト
-      (function() {
-        var redirect = sessionStorage.redirect;
-        sessionStorage.redirect = location.href;
-        location.replace('/ainance-v2/' + (redirect || ''));
-      })();
+      // GitHub PagesでのSPAルーティング対応
+      // 404ページが表示された場合、index.htmlにリダイレクト
+      sessionStorage.redirect = location.href;
     </script>
+    <meta http-equiv="refresh" content="0; URL=/ainance-v2/">
   </head>
   <body>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   </body>
 </html>
