@@ -117,7 +117,7 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
             
             {/* ユーザードロップダウン（デスクトップ） */}
             {showSideMenus && (
-              <div className="relative hidden md:block">
+              <div className="relative md:block">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-full hover:bg-gray-100"
@@ -160,14 +160,6 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
             
             {/* モバイル用の要素 */}
             <div className="md:hidden flex items-center space-x-2">
-              {/* 業態選択プルダウン（モバイル） */}
-              <div className="flex items-center">
-                <BusinessTypeSwitcher 
-                  userId={userId}
-                  onBusinessTypeChange={handleBusinessTypeChange}
-                />
-              </div>
-              
               {/* ユーザーアイコン（モバイル） */}
               {showSideMenus && (
                 <button
@@ -202,10 +194,41 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
             {/* ユーザードロップダウン（モバイル） */}
             {showUserMenu && (
               <div className="md:hidden absolute right-0 top-16 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1">
+                {/* ユーザー情報 */}
                 <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
                   <div className="font-medium">{user?.name}</div>
                   <div className="text-gray-500 truncate">{user?.email}</div>
                 </div>
+                
+                {/* 業態形態表示と切り替え（モバイル） */}
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">業態形態</h3>
+                  <div className="flex items-center bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg mb-2">
+                    {currentBusinessType ? (
+                      <>
+                        {currentBusinessType.business_type === 'individual' ? (
+                          <UserIcon className="w-4 h-4 text-blue-600 mr-2" />
+                        ) : (
+                          <Building className="w-4 h-4 text-green-600 mr-2" />
+                        )}
+                        <span className="text-sm font-medium text-blue-800">
+                          {currentBusinessType.business_type === 'individual' ? '個人事業主' : '法人'}
+                        </span>
+                        <span className="text-sm text-blue-600 ml-1">
+                          - {currentBusinessType.company_name}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-sm text-gray-500">業態形態を選択</span>
+                    )}
+                  </div>
+                  <BusinessTypeSwitcher 
+                    userId={userId}
+                    onBusinessTypeChange={handleBusinessTypeChange}
+                  />
+                </div>
+                
+                {/* 設定とログアウト */}
                 <Link
                   to="/integration-settings"
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
