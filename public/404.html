@@ -8,7 +8,8 @@
       (function() {
         var redirect = sessionStorage.redirect;
         sessionStorage.redirect = location.href;
-        location.replace('/ainance-v2/' + (redirect || ''));
+        // ダッシュボードページにリダイレクト
+        location.replace('/ainance-v2/#/');
       })();
     </script>
   </head>
