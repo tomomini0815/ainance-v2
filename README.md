@@ -95,3 +95,5 @@ pnpm build
 ## ライセンス
 
 MIT
+# Ainance v2
+Updated: Sat Oct 18 17:31:15 JST 2025
