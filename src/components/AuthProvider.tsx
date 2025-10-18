@@ -1,12 +1,12 @@
-import React, { createContext, useContext, ReactNode } from 'react'
+import React, { createContext, useContext, ReactNode, useMemo } from 'react'
 import { useMockAuth } from '../hooks/useMockAuth'
 
 interface AuthContextType {
   user: any
   isAuthenticated: boolean
-  userRole: string | undefined
   loading: boolean
-  signIn: () => Promise<void>
+  signIn: (email: string, password: string) => Promise<any>
+  signUp: (name: string, email: string, password: string) => Promise<any>
   signOut: () => Promise<void>
 }
 
@@ -19,8 +19,14 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const auth = useMockAuth()
 
+  console.log('AuthProviderの状態:', auth)
+
+  const contextValue = useMemo(() => ({
+    ...auth
+  }), [auth])
+
   return (
-    <AuthContext.Provider value={auth}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )

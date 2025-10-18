@@ -22,6 +22,19 @@ interface ReceiptData {
     amount?: number
   }
   taxRate?: number
+  // AI分析結果を追加
+  aiAnalysis?: {
+    category?: string
+    expenseType?: string
+    confidence?: number
+    insights?: string[]
+    items?: Array<{
+      name: string
+      price: number
+      quantity: number
+      category?: string
+    }>
+  }
 }
 
 // レシートスキャンの状態管理用インターフェース
@@ -30,6 +43,9 @@ interface ScanState {
   errorMessage?: string
   retryCount: number
   imageData?: string
+  // 処理進捗を追加
+  progress?: number
+  currentStep?: string
 }
 
 const ReceiptProcessing: React.FC = () => {
@@ -595,12 +611,20 @@ const ReceiptProcessing: React.FC = () => {
       date: scannedData.date,
       merchant: scannedData.store_name,
       amount: scannedData.total_amount,
-      category: '未分類',
+      category: scannedData.category || '未分類',
       description: 'スキャンされたレシート',
       confidence: Math.round((scannedData.confidence.store_name + scannedData.confidence.date + 
                              scannedData.confidence.total_amount + scannedData.confidence.tax_rate) / 4 * 100),
       status: 'pending',
-      taxRate: scannedData.tax_rate
+      taxRate: scannedData.tax_rate,
+      // AI分析結果を追加
+      aiAnalysis: {
+        category: scannedData.category,
+        expenseType: scannedData.expenseType,
+        confidence: scannedData.aiConfidence,
+        insights: scannedData.insights,
+        items: scannedData.items
+      }
     };
     
     // 新しいレシートをリストに追加
@@ -838,6 +862,68 @@ const ReceiptProcessing: React.FC = () => {
                       </div>
                     </div>
                   )}
+                  {/* AI分析結果の表示 */}
+                  {selectedReceipt.aiAnalysis && (
+                    <div className="border-t border-gray-200 pt-3">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">AI分析結果</h4>
+                      {selectedReceipt.aiAnalysis.category && (
+                        <div className="mb-2">
+                          <label className="text-xs font-medium text-gray-500">推定カテゴリ</label>
+                          <p className="text-sm text-gray-900">{selectedReceipt.aiAnalysis.category}</p>
+                        </div>
+                      )}
+                      {selectedReceipt.aiAnalysis.expenseType && (
+                        <div className="mb-2">
+                          <label className="text-xs font-medium text-gray-500">支出種別</label>
+                          <p className="text-sm text-gray-900">{selectedReceipt.aiAnalysis.expenseType}</p>
+                        </div>
+                      )}
+                      {selectedReceipt.aiAnalysis.confidence !== undefined && (
+                        <div className="mb-2">
+                          <label className="text-xs font-medium text-gray-500">AI信頼度</label>
+                          <div className="flex items-center">
+                            <div className="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                              <div
+                                className={`h-1.5 rounded-full ${
+                                  selectedReceipt.aiAnalysis.confidence >= 0.9 ? 'bg-green-500' :
+                                  selectedReceipt.aiAnalysis.confidence >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`}
+                                style={{ width: `${selectedReceipt.aiAnalysis.confidence * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs text-gray-600">
+                              {Math.round(selectedReceipt.aiAnalysis.confidence * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {selectedReceipt.aiAnalysis.insights && selectedReceipt.aiAnalysis.insights.length > 0 && (
+                        <div className="mb-2">
+                          <label className="text-xs font-medium text-gray-500">分析インサイト</label>
+                          <ul className="list-disc pl-4 space-y-1 mt-1">
+                            {selectedReceipt.aiAnalysis.insights.map((insight, index) => (
+                              <li key={index} className="text-xs text-gray-600">
+                                {insight}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {selectedReceipt.aiAnalysis.items && selectedReceipt.aiAnalysis.items.length > 0 && (
+                        <div>
+                          <label className="text-xs font-medium text-gray-500">商品アイテム</label>
+                          <div className="mt-1 space-y-1">
+                            {selectedReceipt.aiAnalysis.items.map((item, index) => (
+                              <div key={index} className="flex justify-between text-xs">
+                                <span className="text-gray-600">{item.name}</span>
+                                <span className="text-gray-900">¥{item.price.toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
@@ -861,14 +947,39 @@ const ReceiptProcessing: React.FC = () => {
           
           {/* レシートスキャナー */}
           <div className="mb-6">
-            <ReceiptScanner onScanComplete={handleScanComplete} />
+            <ReceiptScanner 
+              onScanComplete={handleScanComplete} 
+              onProcessingStateChange={(state) => {
+                setScanState(prev => ({
+                  ...prev,
+                  isProcessing: state.isProcessing,
+                  progress: state.progress,
+                  currentStep: state.currentStep
+                }));
+              }}
+            />
           </div>
           
           {/* 処理状態の表示 */}
           {scanState.isProcessing && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center">
-              <RefreshCw className="w-5 h-5 text-blue-500 animate-spin mr-2" />
-              <span className="text-blue-700">レシートを処理中です...</span>
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-center mb-2">
+                <RefreshCw className="w-5 h-5 text-blue-500 animate-spin mr-2" />
+                <span className="text-blue-700 font-medium">レシートを処理中です...</span>
+              </div>
+              {scanState.currentStep && (
+                <div className="text-sm text-blue-600 mb-2">
+                  処理ステップ: {scanState.currentStep}
+                </div>
+              )}
+              {scanState.progress !== undefined && (
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${scanState.progress}%` }}
+                  ></div>
+                </div>
+              )}
             </div>
           )}
           
@@ -1166,6 +1277,12 @@ const ReceiptProcessing: React.FC = () => {
                           <div>店舗: {receipt.confidenceScores.merchant || 0}%</div>
                           <div>日付: {receipt.confidenceScores.date || 0}%</div>
                           <div>金額: {receipt.confidenceScores.amount || 0}%</div>
+                        </div>
+                      )}
+                      {/* AI分析の信頼度を表示 */}
+                      {receipt.aiAnalysis && receipt.aiAnalysis.confidence !== undefined && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          <div>AI信頼度: {Math.round(receipt.aiAnalysis.confidence * 100)}%</div>
                         </div>
                       )}
                     </td>

@@ -1,11 +1,32 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import {ChevronRight, Brain, CheckCircle, AlertCircle} from 'lucide-react'
-import { useMySQLTransactions } from '../hooks/useMySQLTransactions' // MySQL用のフックを使用
 
-const AITransactionTable: React.FC = () => {
-  const { aiTransactions, loading } = useMySQLTransactions() // MySQL用のフックを使用して最新データを取得
+interface AITransaction {
+  id: string | number
+  item: string
+  amount: number
+  category: string
+  confidence: number
+  ai_category: string
+  manual_verified: boolean
+  original_text?: string
+  receipt_url?: string
+  location?: string
+  creator: string
+  created_at?: string
+  updated_at?: string
+  ai_suggestions?: string[]
+  learning_feedback?: string
+  processing_time?: number
+}
 
+interface AITransactionTableProps {
+  aiTransactions: AITransaction[];
+  loading: boolean;
+}
+
+const AITransactionTable: React.FC<AITransactionTableProps> = ({ aiTransactions, loading }) => {
   if (loading) {
     return (
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -28,7 +49,11 @@ const AITransactionTable: React.FC = () => {
 
   // 最初の5件のみ表示（日付降順）
   const displayedTransactions = [...aiTransactions]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    })
     .slice(0, 5)
 
   // 信頼度に基づく色の取得

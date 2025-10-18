@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Search, Filter, Plus, ChevronDown, Calendar, DollarSign, Tag, FileText, Download, Trash2, Edit, TrendingUp, TrendingDown, X } from 'lucide-react'
+import { ArrowLeft, Search, Filter, Plus, ChevronDown, Calendar, DollarSign, Tag, FileText, Download, Trash2, Edit, TrendingUp, TrendingDown, X, Upload } from 'lucide-react'
 import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
 import TransactionTable from '../components/TransactionTable'
 import TransactionForm from '../components/TransactionForm'
@@ -10,7 +10,7 @@ const TransactionHistory: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<any>(null)
-  const [selectedTransactions, setSelectedTransactions] = useState<number[]>([])
+  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState('')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
@@ -122,7 +122,7 @@ const TransactionHistory: React.FC = () => {
     }
   }
 
-  const toggleSelectTransaction = (id: number) => {
+  const toggleSelectTransaction = (id: string) => {
     if (selectedTransactions.includes(id)) {
       setSelectedTransactions(selectedTransactions.filter(transactionId => transactionId !== id))
     } else {
@@ -147,10 +147,22 @@ const TransactionHistory: React.FC = () => {
   // 新規取引の作成
   const handleCreateTransaction = async (transactionData: any) => {
     try {
+      // creatorフィールドをローカルストレージから取得したユーザー情報で設定
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser)
+          transactionData.creator = userData.id
+        } catch (error) {
+          console.error('ユーザー情報の解析に失敗しました:', error)
+        }
+      }
+      
       await createTransaction(transactionData)
       setShowCreateForm(false)
     } catch (error) {
       console.error('取引の作成に失敗:', error)
+      // エラーはuseMySQLTransactionsフック内で処理されるため、ここでは追加の処理は不要
     }
   }
 
@@ -209,13 +221,15 @@ const TransactionHistory: React.FC = () => {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center mt-4 lg:mt-0 shadow-sm font-medium"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            新規取引
-          </button>
+          <div className="flex space-x-2 mt-4 lg:mt-0">
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center shadow-sm font-medium"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              新規取引
+            </button>
+          </div>
         </div>
 
         {/* 統計カード */}

@@ -21,38 +21,94 @@ ChartJS.register(
   Legend
 )
 
-const RevenueChart: React.FC = () => {
+interface RevenueChartProps {
+  transactions: any[]; // 取引データをpropsとして受け取る
+}
+
+const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
+  // 月ごとの収益、支出、利益を計算
+  const calculateMonthlyData = () => {
+    // 月ごとのデータを初期化
+    const monthlyData: { [key: string]: { revenue: number; expense: number } } = {};
+    
+    // 過去6ヶ月の月を生成
+    const months = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+      months.push(monthKey);
+      monthlyData[monthKey] = { revenue: 0, expense: 0 };
+    }
+    
+    // 取引データを集計
+    transactions.forEach(transaction => {
+      // 金額を数値に変換
+      const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
+      
+      const date = new Date(transaction.date);
+      const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+      
+      if (monthlyData[monthKey]) {
+        if (transaction.type === 'income') {
+          monthlyData[monthKey].revenue += amount;
+        } else if (transaction.type === 'expense') {
+          monthlyData[monthKey].expense += amount;
+        }
+      }
+    });
+    
+    // 利益を計算
+    const profitData = months.map(month => 
+      monthlyData[month].revenue - monthlyData[month].expense
+    );
+    
+    return {
+      labels: months,
+      revenue: months.map(month => monthlyData[month].revenue),
+      expense: months.map(month => monthlyData[month].expense),
+      profit: profitData
+    };
+  };
+
+  const { labels, revenue, expense, profit } = calculateMonthlyData();
+
+  // 総収益、総支出、純利益を計算
+  const totalRevenue = revenue.reduce((sum, amount) => sum + amount, 0);
+  const totalExpense = expense.reduce((sum, amount) => sum + amount, 0);
+  const totalProfit = totalRevenue - totalExpense;
+
   const data = {
-    labels: ['4月', '5月', '6月', '7月', '8月', '9月'],
+    labels: labels,
     datasets: [
       {
         label: '収益',
-        data: [4000, 3000, 2000, 2800, 1900, 2400],
-        borderColor: 'rgb(99, 102, 241)',
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        data: revenue,
+        borderColor: 'rgb(59, 130, 246)', // 青色 (blue-500)
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.4,
-        pointBackgroundColor: 'rgb(99, 102, 241)',
-        pointBorderColor: 'rgb(99, 102, 241)',
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointBorderColor: 'rgb(59, 130, 246)',
         pointRadius: 4,
       },
       {
         label: '支出',
-        data: [1600, 1500, 200, 800, 400, 600],
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        data: expense,
+        borderColor: 'rgb(239, 68, 68)', // 赤色 (red-500)
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
         tension: 0.4,
-        pointBackgroundColor: 'rgb(34, 197, 94)',
-        pointBorderColor: 'rgb(34, 197, 94)',
+        pointBackgroundColor: 'rgb(239, 68, 68)',
+        pointBorderColor: 'rgb(239, 68, 68)',
         pointRadius: 4,
       },
       {
         label: '利益',
-        data: [2400, 1500, 1800, 2000, 1500, 1800],
-        borderColor: 'rgb(168, 162, 158)',
-        backgroundColor: 'rgba(168, 162, 158, 0.1)',
+        data: profit,
+        borderColor: 'rgb(34, 197, 94)', // 緑色 (green-500)
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
         tension: 0.4,
-        pointBackgroundColor: 'rgb(168, 162, 158)',
-        pointBorderColor: 'rgb(168, 162, 158)',
+        pointBackgroundColor: 'rgb(34, 197, 94)',
+        pointBorderColor: 'rgb(34, 197, 94)',
         pointRadius: 4,
       },
     ],
@@ -80,6 +136,18 @@ const RevenueChart: React.FC = () => {
         bodyColor: 'white',
         borderColor: 'rgba(255, 255, 255, 0.2)',
         borderWidth: 1,
+        callbacks: {
+          label: function(context: any) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              label += context.parsed.y.toLocaleString() + '円';
+            }
+            return label;
+          }
+        }
       },
     },
     scales: {
@@ -104,7 +172,7 @@ const RevenueChart: React.FC = () => {
             size: 11,
           },
           callback: function(value: any) {
-            return value.toLocaleString()
+            return value.toLocaleString() + '円';
           },
         },
       },
@@ -132,17 +200,17 @@ const RevenueChart: React.FC = () => {
       <div className="mt-4 grid grid-cols-3 gap-4">
         <div className="bg-blue-50 p-3 rounded-lg">
           <p className="text-sm text-gray-600">総収益</p>
-          <p className="text-lg font-bold text-blue-600">¥1.43M</p>
+          <p className="text-lg font-bold text-blue-600">¥{totalRevenue.toLocaleString()}</p>
           <p className="text-xs text-green-600">↑ 12.5%</p>
         </div>
-        <div className="bg-green-50 p-3 rounded-lg">
+        <div className="bg-red-50 p-3 rounded-lg">
           <p className="text-sm text-gray-600">総支出</p>
-          <p className="text-lg font-bold text-green-600">¥510K</p>
+          <p className="text-lg font-bold text-red-600">¥{totalExpense.toLocaleString()}</p>
           <p className="text-xs text-red-600">↓ 3.2%</p>
         </div>
-        <div className="bg-purple-50 p-3 rounded-lg">
+        <div className="bg-green-50 p-3 rounded-lg">
           <p className="text-sm text-gray-600">純利益</p>
-          <p className="text-lg font-bold text-purple-600">¥920K</p>
+          <p className="text-lg font-bold text-green-600">¥{totalProfit.toLocaleString()}</p>
           <p className="text-xs text-green-600">↑ 8.7%</p>
         </div>
       </div>

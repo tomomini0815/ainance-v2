@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import React, { useState } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 
 // Components
@@ -18,6 +18,7 @@ import BusinessConversion from './pages/BusinessConversion'
 import IntegrationSettings from './pages/IntegrationSettings'
 import TransactionHistory from './pages/TransactionHistory'
 import AITransactionList from './pages/AITransactionList'
+import TaxFilingSupport from './pages/TaxFilingSupport'
 
 function App() {
   const [isPcSideMenuExpanded, setIsPcSideMenuExpanded] = useState(true);
@@ -27,8 +28,8 @@ function App() {
   };
 
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <div className="App">
           <Header 
             showPcSideMenu={false}
@@ -115,12 +116,23 @@ function App() {
                     </ProtectedRoute>
                   } 
                 />
+                <Route 
+                  path="/tax-filing-support" 
+                  element={
+                    <ProtectedRoute>
+                      <TaxFilingSupport />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* デフォルトルート */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
           </div>
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   )
 }
 

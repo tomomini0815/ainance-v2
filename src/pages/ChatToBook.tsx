@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mic, Square, Send, Trash2, Download, Plus, Edit3, Save, CheckCircle, Circle } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 interface Transaction {
   id: string;
@@ -192,21 +193,48 @@ const ChatToBook: React.FC = () => {
   // 取引をデータベースに保存
   const saveTransactionToDB = async (transaction: Transaction) => {
     try {
-      const response = await fetch('http://localhost:3001/api/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(transaction),
-      });
+      // ログインユーザーの取得
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (!response.ok) {
-        throw new Error('取引の保存に失敗しました');
+      // 認証エラーのチェック
+      if (authError) {
+        throw new Error(`認証エラー: ${authError.message}`);
       }
       
-      return await response.json();
-    } catch (error) {
+      // ユーザーがログインしていない場合
+      if (!user) {
+        throw new Error('ユーザーがログインしていません。ログインしてください。');
+      }
+      
+      // Supabaseに保存するデータの準備
+      const transactionData = {
+        item: transaction.description,
+        amount: transaction.amount,
+        date: transaction.date,
+        category: transaction.category,
+        type: transaction.type,
+        description: transaction.description,
+        creator: user.id
+      };
+
+      // Supabaseに取引データを挿入
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert(transactionData)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`取引の保存に失敗しました: ${error.message}`);
+      }
+
+      return data;
+    } catch (error: any) {
       console.error('取引の保存中にエラーが発生しました:', error);
+      // ネットワークエラーの場合、より具体的なメッセージを表示
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('ネットワークエラーが発生しました。インターネット接続を確認してください。');
+      }
       throw error;
     }
   };
@@ -233,9 +261,9 @@ const ChatToBook: React.FC = () => {
     }
     
     try {
-      const results = await Promise.allSettled(
-        selectedItems.map(transaction => saveTransactionToDB(transaction))
-      );
+      // 選択された取引を一括で保存
+      const savePromises = selectedItems.map(transaction => saveTransactionToDB(transaction));
+      const results = await Promise.allSettled(savePromises);
       
       const successful = results.filter(result => result.status === 'fulfilled').length;
       const failed = results.filter(result => result.status === 'rejected').length;
@@ -247,9 +275,11 @@ const ChatToBook: React.FC = () => {
       }
       
       // 成功した取引をローカルリストから削除
-      const successfulIds = selectedItems.slice(0, successful).map(t => t.id);
+      const successfulTransactions = selectedItems.slice(0, successful);
+      const successfulIds = successfulTransactions.map(t => t.id);
+      
       setTransactions(prev => prev.filter(t => !successfulIds.includes(t.id)));
-      setSelectedTransactions([]);
+      setSelectedTransactions(prev => prev.filter(id => !successfulIds.includes(id)));
     } catch (error) {
       alert('取引の一括記録に失敗しました: ' + (error as Error).message);
     }
@@ -266,7 +296,7 @@ const ChatToBook: React.FC = () => {
 
   // 全取引の選択状態を切り替え
   const toggleAllTransactionsSelection = () => {
-    if (selectedTransactions.length === transactions.length) {
+    if (selectedTransactions.length === transactions.length && transactions.length > 0) {
       setSelectedTransactions([]);
     } else {
       setSelectedTransactions(transactions.map(t => t.id));
@@ -393,7 +423,7 @@ const ChatToBook: React.FC = () => {
                     className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    一括記録
+                    一括記録 ({selectedTransactions.length})
                   </button>
                 )}
                 <button

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "/ainance-v2",
+  "homepage": "https://tomomini0815.github.io/ainance-v2",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -29,6 +29,7 @@
     "framer-motion": "^10.16.16",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.540.0",
     "mysql2": "^3.15.1",
@@ -49,6 +50,7 @@
     "react-window": "^1.8.8",
     "recharts": "^2.8.0",
     "tesseract.js": "^6.0.1",
+    "uuid": "^13.0.0",
     "xlsx": "^0.18.5",
     "zustand": "^4.4.7"
   },

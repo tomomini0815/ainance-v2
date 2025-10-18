@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
+import { useSupabaseTransactions } from '../hooks/useSupabaseTransactions'
 import Header from '../components/Header'
 import {Search, Filter, Check, X, Brain, Eye, AlertCircle, TrendingUp, SquareCheck as CheckSquare, Square, BarChart3, Zap, Target, Award, Clock, RefreshCw, Download, Settings, ArrowRight, Lightbulb, Activity, Cpu, Database, LineChart, PieChart, Users, Globe, Star, Trophy, Gauge, Rocket, Sparkles} from 'lucide-react'
 
@@ -8,7 +8,7 @@ const AITransactionList: React.FC = () => {
     aiTransactions, 
     loading, 
     verifyAITransaction // Supabase用のフックを使用
-  } = useMySQLTransactions()
+  } = useSupabaseTransactions()
   
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')

@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS transactions (
   creator VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  tags JSON,
+  tags TEXT,
   location VARCHAR(255),
   recurring BOOLEAN DEFAULT FALSE,
-  recurring_frequency ENUM('daily', 'weekly', 'monthly', 'yearly')
+  recurring_frequency VARCHAR(20) CHECK (recurring_frequency IN ('daily', 'weekly', 'monthly', 'yearly'))
 );
 
 -- ai_transactionsテーブルの作成
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS ai_transactions (
   creator VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  ai_suggestions JSON,
+  ai_suggestions TEXT,
   learning_feedback TEXT,
   processing_time DECIMAL(5, 2)
 );

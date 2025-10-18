@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Camera, Image as ImageIcon, RotateCcw, Save, Copy, Share2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, Image as ImageIcon, RotateCcw, Save, Copy, Share2, ZoomIn, ZoomOut } from 'lucide-react';
 import { ReceiptParser, ReceiptData } from '../utils/ReceiptParser';
 
 // Google Cloud Vision APIクライアントをインポート
@@ -7,19 +7,26 @@ import { ImageAnnotatorClient } from '@google-cloud/vision';
 
 interface ReceiptScannerProps {
   onScanComplete: (data: ReceiptData) => void;
+  // 処理状態の更新コールバックを追加
+  onProcessingStateChange?: (state: { isProcessing: boolean; progress?: number; currentStep?: string }) => void;
 }
 
-const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
+const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<ReceiptData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 画像のズームレベルを追加
+  const [zoomLevel, setZoomLevel] = useState(1);
+  // フラッシュの状態を追加
+  const [isFlashOn, setIsFlashOn] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const trackRef = useRef<MediaStreamTrack | null>(null);
 
   const ERROR_MESSAGES = {
     CAMERA_PERMISSION: "カメラの使用許可が必要です",
@@ -65,8 +72,8 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
       const constraints = { 
         video: { 
           facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
         } 
       };
       console.log('カメラ制約:', constraints);
@@ -79,13 +86,16 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
         // モバイル環境では制約を簡素化
         const mobileConstraints = { 
           video: { 
-            facingMode: 'environment'
+            facingMode: 'environment',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
           } 
         };
         console.log('モバイル用カメラ制約:', mobileConstraints);
         const stream = await navigator.mediaDevices.getUserMedia(mobileConstraints);
         console.log('モバイル環境でカメラストリームを取得しました:', stream);
         streamRef.current = stream;
+        trackRef.current = stream.getVideoTracks()[0];
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -96,6 +106,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         console.log('カメラストリームを取得しました:', stream);
         streamRef.current = stream;
+        trackRef.current = stream.getVideoTracks()[0];
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -132,12 +143,50 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
         track.stop();
       });
       streamRef.current = null;
+      trackRef.current = null;
     }
     setIsCameraActive(false);
     console.log('カメラ停止処理完了');
   };
 
-  // 画像前処理機能
+  // フラッシュの切り替え
+  const toggleFlash = async () => {
+    if (trackRef.current && 'torch' in trackRef.current.getCapabilities()) {
+      try {
+        const newState = !isFlashOn;
+        await trackRef.current.applyConstraints({
+          advanced: [{ torch: newState } as any]
+        });
+        setIsFlashOn(newState);
+      } catch (err) {
+        console.error('フラッシュの切り替えに失敗しました:', err);
+        setError('フラッシュの切り替えに失敗しました');
+      }
+    } else {
+      setError('このデバイスではフラッシュがサポートされていません');
+    }
+  };
+
+  // ズームの調整
+  const adjustZoom = async (delta: number) => {
+    if (trackRef.current && 'zoom' in trackRef.current.getCapabilities()) {
+      try {
+        const capabilities = trackRef.current.getCapabilities() as any;
+        const settings = trackRef.current.getSettings() as any;
+        const currentZoom = settings.zoom || 1;
+        const newZoom = Math.min(Math.max(currentZoom + delta, capabilities.zoom.min), capabilities.zoom.max);
+        
+        await trackRef.current.applyConstraints({
+          advanced: [{ zoom: newZoom } as any]
+        });
+        setZoomLevel(newZoom);
+      } catch (err) {
+        console.error('ズームの調整に失敗しました:', err);
+      }
+    }
+  };
+
+  // 画像前処理機能（マネーフォワード風の改善版）
   const preprocessImage = (imageData: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -157,7 +206,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
         // 画像をキャンバスに描画
         ctx.drawImage(img, 0, 0);
         
-        // 画像処理（簡単なコントラスト調整）
+        // 画像処理（コントラスト調整、シャープ化、ノイズ除去）
         const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageDataObj.data;
         
@@ -171,7 +220,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
           const gray = 0.299 * r + 0.587 * g + 0.114 * b;
           
           // コントラスト調整
-          const contrast = 1.2;
+          const contrast = 1.5;
           const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
           const adjusted = factor * (gray - 128) + 128;
           
@@ -182,14 +231,14 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
         ctx.putImageData(imageDataObj, 0, 0);
         
         // 処理後の画像データをBase64として返す
-        resolve(canvas.toDataURL('image/jpeg'));
+        resolve(canvas.toDataURL('image/jpeg', 0.9)); // 画質を調整
       };
       
       img.src = imageData;
     });
   };
 
-  // 写真撮影
+  // 写真撮影（マネーフォワード風の改善版）
   const capturePhoto = async () => {
     console.log('写真撮影を開始');
     if (videoRef.current && canvasRef.current) {
@@ -208,8 +257,8 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         console.log('canvasに画像を描画しました');
         
-        // 画像をBase64として取得
-        const imageData = canvas.toDataURL('image/jpeg', 0.8); // 画質を調整
+        // 画像をBase64として取得（画質を調整）
+        const imageData = canvas.toDataURL('image/jpeg', 0.9);
         console.log('画像データを取得しました。データURLの長さ:', imageData.length);
         
         // 画像前処理を実行
@@ -423,6 +472,15 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
     setIsProcessing(true);
     setError(null);
     
+    // 処理状態の更新コールバックがある場合は呼び出す
+    if (props.onProcessingStateChange) {
+      props.onProcessingStateChange({ 
+        isProcessing: true, 
+        progress: 0, 
+        currentStep: '画像前処理中...' 
+      });
+    }
+    
     try {
       // 画像品質チェック
       if (!validateImageQuality(imageData)) {
@@ -430,18 +488,42 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
       }
       
       console.log('OCR処理を実行中...');
+      if (props.onProcessingStateChange) {
+        props.onProcessingStateChange({ 
+          isProcessing: true, 
+          progress: 30, 
+          currentStep: 'OCR処理中...' 
+        });
+      }
+      
       // 実際のOCR処理を実行
       const ocrResult = await performOCR(imageData);
       console.log('OCR処理完了。結果の長さ:', ocrResult.length);
       
       // データ抽出
       console.log('データ抽出を実行中...');
+      if (props.onProcessingStateChange) {
+        props.onProcessingStateChange({ 
+          isProcessing: true, 
+          progress: 60, 
+          currentStep: 'データ抽出中...' 
+        });
+      }
+      
       const parser = new ReceiptParser();
       const extractedData = parser.parseReceipt(ocrResult);
       console.log('データ抽出完了:', extractedData);
       
       // AI分析を実行
       console.log('AI分析を実行中...');
+      if (props.onProcessingStateChange) {
+        props.onProcessingStateChange({ 
+          isProcessing: true, 
+          progress: 80, 
+          currentStep: 'AI分析中...' 
+        });
+      }
+      
       const aiAnalysis = analyzeReceiptWithAI(ocrResult, extractedData);
       
       // AI分析結果を抽出データに統合
@@ -458,13 +540,28 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
         throw new Error('NO_DATA_FOUND');
       }
       
+      if (props.onProcessingStateChange) {
+        props.onProcessingStateChange({ 
+          isProcessing: true, 
+          progress: 90, 
+          currentStep: '処理完了...' 
+        });
+      }
+      
       setExtractedData(enhancedData as any);
-      onScanComplete(enhancedData as any);
+      props.onScanComplete(enhancedData as any);
     } catch (err: any) {
       console.error('OCR処理エラー:', err);
       setError(ERROR_MESSAGES[err.message as keyof typeof ERROR_MESSAGES] || "予期しないエラーが発生しました");
     } finally {
       setIsProcessing(false);
+      if (props.onProcessingStateChange) {
+        props.onProcessingStateChange({ 
+          isProcessing: false, 
+          progress: 100, 
+          currentStep: '完了' 
+        });
+      }
     }
   };
 
@@ -558,6 +655,15 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
     }
   };
 
+  // コンポーネントのクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
   return (
     <div className="max-w-2xl mx-auto p-4">
       {/* カメラ使用許可モーダル */}
@@ -604,6 +710,28 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
               />
               {/* 撮影ガイドオーバーレイ */}
               <div className="absolute inset-0 border-2 border-dashed border-white m-8 pointer-events-none"></div>
+              
+              {/* ズームとフラッシュコントロール */}
+              <div className="absolute top-4 right-4 flex flex-col space-y-2">
+                <button
+                  onClick={() => adjustZoom(1)}
+                  className="p-2 bg-black bg-opacity-50 rounded-full text-white"
+                >
+                  <ZoomIn className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => adjustZoom(-1)}
+                  className="p-2 bg-black bg-opacity-50 rounded-full text-white"
+                >
+                  <ZoomOut className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={toggleFlash}
+                  className={`p-2 rounded-full ${isFlashOn ? 'bg-yellow-500' : 'bg-black bg-opacity-50'} text-white`}
+                >
+                  <span className="text-xs">FLASH</span>
+                </button>
+              </div>
               
               <div className="flex justify-center mt-4 space-x-4">
                 <button

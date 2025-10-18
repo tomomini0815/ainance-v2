@@ -9,24 +9,73 @@ import {
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
-const ExpenseChart: React.FC = () => {
+interface ExpenseChartProps {
+  transactions: any[]; // 取引データをpropsとして受け取る
+}
+
+const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
+  // 取引データから支出カテゴリ別の合計を計算
+  const calculateExpenseByCategory = () => {
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    const categoryTotals: { [key: string]: number } = {};
+    
+    expenseTransactions.forEach(transaction => {
+      // 金額を数値に変換
+      const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
+      
+      if (categoryTotals[transaction.category]) {
+        categoryTotals[transaction.category] += amount;
+      } else {
+        categoryTotals[transaction.category] = amount;
+      }
+    });
+    
+    // 合計金額を計算
+    const totalAmount = Object.values(categoryTotals).reduce((sum, amount) => sum + amount, 0);
+    
+    // パーセンテージを計算
+    const percentages: { [key: string]: number } = {};
+    Object.keys(categoryTotals).forEach(category => {
+      percentages[category] = Math.round((categoryTotals[category] / totalAmount) * 100);
+    });
+    
+    return { categoryTotals, percentages, totalAmount };
+  };
+
+  const { percentages, categoryTotals, totalAmount } = calculateExpenseByCategory();
+  
+  // チャートデータの準備
+  const labels = Object.keys(percentages);
+  const percentageData = Object.values(percentages);
+  const amountData = Object.values(categoryTotals);
+
+  // カラーパレットの定義
+  const colorPalette = [
+    'rgb(99, 102, 241)',
+    'rgb(139, 92, 246)',
+    'rgb(168, 85, 247)',
+    'rgb(192, 132, 252)',
+    'rgb(221, 214, 254)',
+    'rgb(124, 58, 237)',
+    'rgb(109, 40, 217)',
+    'rgb(79, 70, 229)',
+    'rgb(67, 56, 202)',
+    'rgb(55, 48, 163)',
+  ];
+
+  const backgroundColors = labels.map((_, index) => colorPalette[index % colorPalette.length]);
+
   const data = {
-    labels: ['交通費', '食費', '消耗品費', '広告費', 'その他'],
+    labels: labels,
     datasets: [
       {
-        data: [31, 23, 23, 15, 8],
-        backgroundColor: [
-          'rgb(99, 102, 241)',
-          'rgb(139, 92, 246)',
-          'rgb(168, 85, 247)',
-          'rgb(192, 132, 252)',
-          'rgb(221, 214, 254)',
-        ],
+        data: percentageData,
+        backgroundColor: backgroundColors,
         borderWidth: 0,
         cutout: '60%',
       },
     ],
-  }
+  };
 
   const options = {
     responsive: true,
@@ -63,7 +112,9 @@ const ExpenseChart: React.FC = () => {
       tooltip: {
         callbacks: {
           label: function(context: any) {
-            return `${context.label}: ${context.parsed}%`
+            const label = context.label || '';
+            const amount = amountData[context.dataIndex];
+            return `${label}: ${context.parsed}% (${amount.toLocaleString()}円)`;
           },
         },
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -87,41 +138,18 @@ const ExpenseChart: React.FC = () => {
       <div className="mt-4">
         <h4 className="font-medium text-gray-900 mb-2">カテゴリ別支出内訳</h4>
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600">交通費</span>
+          {labels.map((label, index) => (
+            <div key={label} className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div 
+                  className="w-3 h-3 rounded-full mr-2" 
+                  style={{ backgroundColor: backgroundColors[index] }}
+                ></div>
+                <span className="text-sm text-gray-600">{label}</span>
+              </div>
+              <span className="text-sm font-medium">¥{amountData[index].toLocaleString()}</span>
             </div>
-            <span className="text-sm font-medium">¥15,500</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600">食費</span>
-            </div>
-            <span className="text-sm font-medium">¥11,500</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-purple-600 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600">消耗品費</span>
-            </div>
-            <span className="text-sm font-medium">¥11,500</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-purple-300 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600">広告費</span>
-            </div>
-            <span className="text-sm font-medium">¥7,500</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-purple-100 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600">その他</span>
-            </div>
-            <span className="text-sm font-medium">¥4,000</span>
-          </div>
+          ))}
         </div>
       </div>
     </div>

@@ -1,194 +1,153 @@
-import { useState, useEffect, useCallback } from 'react'
-import toast from 'react-hot-toast'
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 interface Transaction {
-  id: number
-  item: string
-  amount: number
-  date: string
-  category: string
-  type: string
-  description?: string
-  receipt_url?: string
-  creator: string
-  created_at: string
-  updated_at: string
-  tags?: string[]
-  location?: string
-  recurring?: boolean
-  recurring_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly'
+  id: string;
+  item: string;
+  amount: number;
+  date: string;
+  category: string;
+  type: 'income' | 'expense';
+  description?: string;
+  receipt_url?: string;
+  creator: string;
+  created_at?: string;
+  updated_at?: string;
+  tags?: string[];
+  location?: string;
+  recurring?: boolean;
+  recurring_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
 }
 
-interface AITransaction {
-  id: number
-  item: string
-  amount: number
-  category: string
-  confidence: number
-  ai_category: string
-  manual_verified: boolean
-  original_text?: string
-  receipt_url?: string
-  location?: string
-  creator: string
-  created_at: string
-  updated_at: string
-  ai_suggestions?: string[]
-  learning_feedback?: string
-  processing_time?: number
-}
-
-const API_BASE_URL = 'http://localhost:3001/api'
+// UUIDのバリデーション関数
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
 
 export const useMySQLTransactions = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [aiTransactions, setAiTransactions] = useState<AITransaction[]>([])
-  const [loading, setLoading] = useState(false)
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // トランザクションデータの取得
-  const fetchTransactions = useCallback(async () => {
-    setLoading(true)
+  // 取引データをSupabaseから取得
+  const fetchTransactions = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions`)
-      if (!response.ok) {
-        throw new Error('取引履歴の取得に失敗しました')
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false });
+      
+      if (error) {
+        throw new Error(`取引データの取得に失敗しました: ${error.message}`);
       }
-      const data = await response.json()
-      setTransactions(data)
-    } catch (error: any) {
-      console.error('取引履歴の取得に失敗:', error)
-      toast.error('取引履歴の取得に失敗しました')
+      
+      setTransactions(data || []);
+    } catch (error) {
+      console.error('取引データの取得に失敗しました:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  };
 
-  // AIトランザクションデータの取得
-  const fetchAITransactions = useCallback(async () => {
-    setLoading(true)
+  // 新しい取引をSupabaseに保存
+  const createTransaction = async (transaction: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/ai-transactions`)
-      if (!response.ok) {
-        throw new Error('AI取引履歴の取得に失敗しました')
+      // creatorが有効なUUIDであることを確認
+      if (!isValidUUID(transaction.creator)) {
+        console.warn('無効なcreator IDが検出されました。匿名ユーザーとして処理します。');
+        transaction.creator = '00000000-0000-0000-0000-000000000000'; // ダミーのUUID
       }
-      const data = await response.json()
-      setAiTransactions(data)
-    } catch (error: any) {
-      console.error('AI取引履歴の取得に失敗:', error)
-      toast.error('AI取引履歴の取得に失敗しました')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
 
-  // 新しいトランザクションの作成
-  const createTransaction = async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/transactions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(transactionData),
-      })
+      // creatorが空の場合、デフォルト値を設定
+      const transactionWithCreator = {
+        ...transaction,
+        creator: transaction.creator || '00000000-0000-0000-0000-000000000000',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert([transactionWithCreator])
+        .select()
+        .single();
       
-      if (!response.ok) {
-        throw new Error('取引の作成に失敗しました')
+      if (error) {
+        throw new Error(`取引の作成に失敗しました: ${error.message}`);
       }
       
-      const data = await response.json()
-      await fetchTransactions()
-      toast.success('取引が正常に作成されました')
-      return data.id
+      if (data) {
+        setTransactions(prev => [data, ...prev]);
+        return data.id;
+      }
     } catch (error: any) {
-      console.error('取引の作成に失敗:', error)
-      toast.error('取引の作成に失敗しました')
-      throw error
+      console.error('取引の作成に失敗しました:', error);
+      // ネットワークエラーの場合、より具体的なメッセージを表示
+      if (error.message && error.message.includes('Failed to fetch')) {
+        throw new Error('ネットワークエラーが発生しました。インターネット接続を確認してください。');
+      }
+      throw error;
     }
-  }
+  };
 
-  // トランザクションの更新
-  const updateTransaction = async (transactionId: number, updates: Partial<Transaction>) => {
+  // 取引を更新
+  const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      })
+      const { data, error } = await supabase
+        .from('transactions')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
       
-      if (!response.ok) {
-        throw new Error('取引の更新に失敗しました')
+      if (error) {
+        throw new Error(`取引の更新に失敗しました: ${error.message}`);
       }
       
-      await fetchTransactions()
-      toast.success('取引が正常に更新されました')
-    } catch (error: any) {
-      console.error('取引の更新に失敗:', error)
-      toast.error('取引の更新に失敗しました')
-      throw error
+      if (data) {
+        setTransactions(prev => 
+          prev.map(transaction => 
+            transaction.id === id ? { ...transaction, ...data } : transaction
+          )
+        );
+      }
+    } catch (error) {
+      console.error('取引の更新に失敗しました:', error);
+      throw error;
     }
-  }
+  };
 
-  // トランザクションの削除
-  const deleteTransaction = async (transactionId: number) => {
+  // 取引を削除
+  const deleteTransaction = async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}`, {
-        method: 'DELETE',
-      })
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id);
       
-      if (!response.ok) {
-        throw new Error('取引の削除に失敗しました')
+      if (error) {
+        throw new Error(`取引の削除に失敗しました: ${error.message}`);
       }
       
-      await fetchTransactions()
-      toast.success('取引が正常に削除されました')
-    } catch (error: any) {
-      console.error('取引の削除に失敗:', error)
-      toast.error('取引の削除に失敗しました')
-      throw error
+      setTransactions(prev => prev.filter(transaction => transaction.id !== id));
+    } catch (error) {
+      console.error('取引の削除に失敗しました:', error);
+      throw error;
     }
-  }
+  };
 
-  // AIトランザクションの確認
-  const verifyAITransaction = async (aiTransactionId: number, verified: boolean, feedback?: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ai-transactions/${aiTransactionId}/verify`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ verified, feedback }),
-      })
-      
-      if (!response.ok) {
-        throw new Error('AI取引の確認に失敗しました')
-      }
-      
-      await fetchAITransactions()
-      toast.success(verified ? 'AI分類を承認しました' : 'AI分類を却下しました')
-    } catch (error: any) {
-      console.error('AI取引の確認に失敗:', error)
-      toast.error('AI取引の確認に失敗しました')
-      throw error
-    }
-  }
-
+  // 初期読み込み
   useEffect(() => {
-    fetchTransactions()
-    fetchAITransactions()
-  }, [fetchTransactions, fetchAITransactions])
+    fetchTransactions();
+  }, []);
 
   return {
     transactions,
-    aiTransactions,
     loading,
     fetchTransactions,
-    fetchAITransactions,
     createTransaction,
     updateTransaction,
-    deleteTransaction,
-    verifyAITransaction
-  }
-}
+    deleteTransaction
+  };
+};

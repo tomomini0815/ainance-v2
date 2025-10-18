@@ -1,10 +1,9 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, TrendingUp, TrendingDown, Plus, Calendar, Tag, FileText } from 'lucide-react'
-import { useMySQLTransactions } from '../hooks/useMySQLTransactions' // MySQL用のフックをインポート
 
 interface Transaction {
-  id: number
+  id: string | number
   item: string
   amount: number
   date: string
@@ -13,8 +12,8 @@ interface Transaction {
   description?: string
   receipt_url?: string
   creator: string
-  created_at: string
-  updated_at: string
+  created_at?: string
+  updated_at?: string
   tags?: string[]
   location?: string
   recurring?: boolean
@@ -22,16 +21,27 @@ interface Transaction {
 }
 
 interface TransactionTableProps {
+  transactions: Transaction[];
   onOpenCreateModal?: () => void;
+  showCreateButton?: boolean; // 新規作成ボタンを表示するかどうかのフラグ
 }
 
-const TransactionTable: React.FC<TransactionTableProps> = ({ onOpenCreateModal }) => {
-  const { transactions } = useMySQLTransactions() // MySQL用のフックを使用して最新データを取得
-
+const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpenCreateModal, showCreateButton = true }) => {
   // カテゴリアイコンの取得
-  const getCategoryIcon = (category: string, type: string) => {
-    if (type === 'income') {
+  const getCategoryIcon = (category: string, amount: number) => {
+    // 金額を安全に数値に変換
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    const isValidAmount = !isNaN(numericAmount) && isFinite(numericAmount);
+    const isIncome = isValidAmount && numericAmount > 0;
+    const isExpense = isValidAmount && numericAmount < 0;
+    
+    if (isIncome) {
       return <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
+    }
+    
+    // 支出の場合もアイコンを返す
+    if (isExpense) {
+      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />
     }
     
     switch (category) {
@@ -67,13 +77,15 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ onOpenCreateModal }
             詳細一覧
             <ChevronRight className="w-4 h-4 ml-1" />
           </Link>
-          <button 
-            onClick={onOpenCreateModal}
-            className="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            新規作成
-          </button>
+          {showCreateButton && onOpenCreateModal && (
+            <button 
+              onClick={onOpenCreateModal}
+              className="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              新規作成
+            </button>
+          )}
         </div>
       </div>
       
@@ -89,52 +101,76 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ onOpenCreateModal }
           </thead>
           <tbody>
             {latestTransactions.length > 0 ? (
-              latestTransactions.map((transaction) => (
-                <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center">
-                      {getCategoryIcon(transaction.category, transaction.type)}
-                      <div>
-                        <div className="font-medium text-gray-900 text-sm">{transaction.item}</div>
-                        <div className="text-xs text-gray-500 sm:hidden">
-                          {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+              latestTransactions.map((transaction) => {
+                // 金額を数値に安全に変換
+                const amount = typeof transaction.amount === 'string' 
+                  ? parseFloat(transaction.amount) 
+                  : typeof transaction.amount === 'number' 
+                    ? transaction.amount 
+                    : 0;
+                
+                // 金額が有効な数値かチェック
+                const isValidAmount = !isNaN(amount) && isFinite(amount);
+                const isIncome = isValidAmount && amount > 0;
+                const isExpense = isValidAmount && amount < 0;
+                
+                // typeプロパティが存在する場合、そちらも考慮する
+                const isExplicitIncome = transaction.type === 'income';
+                const isExplicitExpense = transaction.type === 'expense';
+                
+                // typeプロパティと金額の符号が一致しない場合、金額の符号を優先
+                const isFinalIncome = isExplicitIncome || (isValidAmount && amount > 0);
+                const isFinalExpense = isExplicitExpense || (isValidAmount && amount < 0);
+                
+                return (
+                  <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4">
+                      <div className="flex items-center">
+                        {getCategoryIcon(transaction.category, amount)}
+                        <div>
+                          <div className="font-medium text-gray-900 text-sm">{transaction.item}</div>
+                          <div className="text-xs text-gray-500 sm:hidden">
+                            {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-right font-medium">
-                    <div className="flex items-center justify-end">
-                      {parseFloat(transaction.amount as any) > 0 ? 
-                        <TrendingUp className="w-4 h-4 text-green-500 mr-1" /> : 
-                        <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                      }
-                      <span className={parseFloat(transaction.amount as any) > 0 ? 'text-green-600' : 'text-red-600'}>
-                        {parseFloat(transaction.amount as any) < 0 ? '-' : ''}{Math.abs(parseFloat(transaction.amount as any)).toLocaleString()}
+                    </td>
+                    <td className="py-4 px-4 text-right font-medium">
+                      <div className="flex items-center justify-end">
+                        {isFinalIncome ? 
+                          <TrendingUp className="w-4 h-4 text-green-500 mr-1" /> : 
+                          isFinalExpense ? 
+                            <TrendingDown className="w-4 h-4 text-red-500 mr-1" /> : 
+                            null
+                        }
+                        <span className={isFinalIncome ? 'text-green-600' : isFinalExpense ? 'text-red-600' : 'text-gray-600'}>
+                          {isFinalIncome ? '' : isFinalExpense ? '-' : ''}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell">
+                      {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
+                        isFinalIncome ? 'bg-green-100 text-green-800' : 
+                        isFinalExpense ? 'bg-red-100 text-red-800' : 
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {transaction.category}
                       </span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell">
-                    {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </td>
-                  <td className="py-4 px-4 text-center">
-                    <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
-                      parseFloat(transaction.amount as any) > 0
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {transaction.category}
-                    </span>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan={4} className="py-8 text-center">
