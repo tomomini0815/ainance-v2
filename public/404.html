@@ -5,8 +5,11 @@
     <title>Ainance</title>
     <script>
       // GitHub PagesでSPAを正しく動作させるためのリダイレクトスクリプト
-      sessionStorage.redirect = location.href;
-      location.replace('/ainance-v2/');
+      (function() {
+        var redirect = sessionStorage.redirect;
+        sessionStorage.redirect = location.href;
+        location.replace('/ainance-v2/' + (redirect || ''));
+      })();
     </script>
   </head>
   <body>
