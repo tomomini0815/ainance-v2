@@ -775,7 +775,7 @@ const InvoiceCreation: React.FC = () => {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:ml-16 transition-all duration-300">
         {/* ヘッダー */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center">
             <Link to="/dashboard" className="mr-4">
               <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
@@ -785,33 +785,33 @@ const InvoiceCreation: React.FC = () => {
               <p className="text-gray-600">プロフェッショナルな請求書を簡単に作成・送信</p>
             </div>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap gap-2">
             <button 
               onClick={downloadPDF}
-              className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+              className="flex items-center px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm"
             >
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 mr-1" />
               PDF
             </button>
             <button 
               onClick={handlePreview}
-              className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              className="flex items-center px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm"
             >
-              <Eye className="w-4 h-4 mr-2" />
+              <Eye className="w-4 h-4 mr-1" />
               プレビュー
             </button>
             <button 
               onClick={handleSave}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
             >
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-4 h-4 mr-1" />
               保存
             </button>
             <button 
               onClick={handleSend}
-              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
             >
-              <Send className="w-4 h-4 mr-2" />
+              <Send className="w-4 h-4 mr-1" />
               送信
             </button>
           </div>
@@ -820,10 +820,10 @@ const InvoiceCreation: React.FC = () => {
         {/* タブナビゲーション */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+            <nav className="flex flex-wrap gap-4 px-4 py-2">
               <button
                 onClick={() => setActiveTab('create')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                   activeTab === 'create'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -833,7 +833,7 @@ const InvoiceCreation: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('bank')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                   activeTab === 'bank'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -843,7 +843,7 @@ const InvoiceCreation: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('templates')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                   activeTab === 'templates'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -853,7 +853,7 @@ const InvoiceCreation: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('history')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                   activeTab === 'history'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -867,8 +867,8 @@ const InvoiceCreation: React.FC = () => {
 
         {/* 請求書作成タブ */}
         {activeTab === 'create' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 space-y-6">
               {/* 基本情報 */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-lg font-semibold mb-4">基本情報</h2>
@@ -961,7 +961,7 @@ const InvoiceCreation: React.FC = () => {
                 </div>
                 
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full md:hidden">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">項目</th>
@@ -1029,6 +1029,72 @@ const InvoiceCreation: React.FC = () => {
                       ))}
                     </tbody>
                   </table>
+                  {/* モバイル用の縦型レイアウト */}
+                  <div className="md:hidden space-y-4">
+                    {invoiceItems.map((item) => (
+                      <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="mb-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">項目</label>
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => updateInvoiceItem(item.id, 'description', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="項目名"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">数量</label>
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updateInvoiceItem(item.id, 'quantity', Number(e.target.value))}
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              min="1"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">単価</label>
+                            <input
+                              type="number"
+                              value={item.unitPrice}
+                              onChange={(e) => updateInvoiceItem(item.id, 'unitPrice', Number(e.target.value))}
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              min="0"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">税率</label>
+                            <select
+                              value={item.taxRate}
+                              onChange={(e) => updateInvoiceItem(item.id, 'taxRate', Number(e.target.value))}
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                              <option value={0}>0%</option>
+                              <option value={8}>8%</option>
+                              <option value={10}>10%</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">金額</label>
+                            <span className="text-sm font-medium">¥{item.amount.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-end">
+                          <button
+                            onClick={() => removeInvoiceItem(item.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                            disabled={invoiceItems.length === 1}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
