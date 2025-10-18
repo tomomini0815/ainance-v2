@@ -176,8 +176,37 @@ const Dashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* ヘッダーとエクスポートボタン */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="flex items-center justify-between w-full">
+            <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
+            <div className="flex sm:hidden gap-2">
+              <button
+                onClick={downloadCSV}
+                disabled={transactions.length === 0}
+                className={`px-3 py-2 rounded-md transition-colors flex items-center justify-center border ${
+                  transactions.length === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-white text-green-600 border-green-600 hover:bg-green-50'
+                }`}
+                title="CSVエクスポート"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span className="text-sm">CSV</span>
+              </button>
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
+                title="新規取引"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                <span className="text-sm">新規</span>
+              </button>
+            </div>
+          </div>
+          <div className="hidden sm:flex gap-2 whitespace-nowrap">
             <button
               onClick={downloadCSV}
               disabled={transactions.length === 0}

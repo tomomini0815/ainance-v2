@@ -79,13 +79,8 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
             </Link>
           </div>
           
-          {/* 中央の要素 - 業態選択プルダウン（デスクトップのみ） */}
-          <div className="hidden md:flex items-center">
-            <BusinessTypeSwitcher 
-              userId={userId}
-              onBusinessTypeChange={handleBusinessTypeChange}
-            />
-          </div>
+          {/* 中央の要素 - 空白（デスクトップ） */}
+          <div className="hidden md:block flex-1"></div>
           
           {/* 右側の要素 */}
           <div className="flex items-center space-x-3">
@@ -116,139 +111,73 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
             )}
             
             {/* ユーザードロップダウン（デスクトップ） */}
-            {showSideMenus && (
-              <div className="relative md:block">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-full hover:bg-gray-100"
-                >
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {user?.name ? user.name.charAt(0) : 'U'}
-                    </span>
-                  </div>
-                </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-full hover:bg-gray-100"
+              >
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {user?.name ? user.name.charAt(0) : 'U'}
+                  </span>
+                </div>
+              </button>
 
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1">
-                    <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
-                      <div className="font-medium">{user?.name}</div>
-                      <div className="text-gray-500 truncate">{user?.email}</div>
-                    </div>
-                    <Link
-                      to="/integration-settings"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <Settings className="w-4 h-4 mr-3" />
-                      設定
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false)
-                        handleSignOut()
-                      }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4 mr-3" />
-                      ログアウト
-                    </button>
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1">
+                  {/* ユーザー情報 */}
+                  <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
+                    <div className="font-medium">{user?.name}</div>
+                    <div className="text-gray-500 truncate">{user?.email}</div>
                   </div>
-                )}
-              </div>
-            )}
-            
-            {/* モバイル用の要素 */}
-            <div className="md:hidden flex items-center space-x-2">
-              {/* ユーザーアイコン（モバイル） */}
-              {showSideMenus && (
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-full hover:bg-gray-100"
-                >
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {user?.name ? user.name.charAt(0) : 'U'}
-                    </span>
+                  
+                  {/* 業態形態選択（デスクトップ） */}
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">業態形態</h3>
+                    <BusinessTypeSwitcher 
+                      userId={userId}
+                      onBusinessTypeChange={handleBusinessTypeChange}
+                    />
                   </div>
-                </button>
-              )}
-              
-              {/* ハンバーガーメニュー（モバイル） */}
-              {showSideMenus && (
-                <button
-                  onClick={() => {
-                    setShowSideMenu(!showSideMenu)
-                    // サイドメニューを開くときに展開状態にする
-                    if (!showSideMenu) {
-                      setIsSideMenuExpanded(true)
-                    }
-                  }}
-                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
-                >
-                  {showSideMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
+                  
+                  {/* 設定とログアウト */}
+                  <Link
+                    to="/integration-settings"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <Settings className="w-4 h-4 mr-3" />
+                    設定
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false)
+                      handleSignOut()
+                    }}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4 mr-3" />
+                    ログアウト
+                  </button>
+                </div>
               )}
             </div>
             
-            {/* ユーザードロップダウン（モバイル） */}
-            {showUserMenu && (
-              <div className="md:hidden absolute right-0 top-16 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1">
-                {/* ユーザー情報 */}
-                <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
-                  <div className="font-medium">{user?.name}</div>
-                  <div className="text-gray-500 truncate">{user?.email}</div>
-                </div>
-                
-                {/* 業態形態表示と切り替え（モバイル） */}
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <h3 className="text-sm font-medium text-gray-900 mb-2">業態形態</h3>
-                  <div className="flex items-center bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg mb-2">
-                    {currentBusinessType ? (
-                      <>
-                        {currentBusinessType.business_type === 'individual' ? (
-                          <UserIcon className="w-4 h-4 text-blue-600 mr-2" />
-                        ) : (
-                          <Building className="w-4 h-4 text-green-600 mr-2" />
-                        )}
-                        <span className="text-sm font-medium text-blue-800">
-                          {currentBusinessType.business_type === 'individual' ? '個人事業主' : '法人'}
-                        </span>
-                        <span className="text-sm text-blue-600 ml-1">
-                          - {currentBusinessType.company_name}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-sm text-gray-500">業態形態を選択</span>
-                    )}
-                  </div>
-                  <BusinessTypeSwitcher 
-                    userId={userId}
-                    onBusinessTypeChange={handleBusinessTypeChange}
-                  />
-                </div>
-                
-                {/* 設定とログアウト */}
-                <Link
-                  to="/integration-settings"
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  onClick={() => setShowUserMenu(false)}
-                >
-                  <Settings className="w-4 h-4 mr-3" />
-                  設定
-                </Link>
-                <button
-                  onClick={() => {
-                    setShowUserMenu(false)
-                    handleSignOut()
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <LogOut className="w-4 h-4 mr-3" />
-                  ログアウト
-                </button>
-              </div>
-            )}
+            {/* ハンバーガーメニュー（モバイル） */}
+            <div className="md:hidden">
+              <button
+                onClick={() => {
+                  setShowSideMenu(!showSideMenu)
+                  // サイドメニューを開くときに展開状態にする
+                  if (!showSideMenu) {
+                    setIsSideMenuExpanded(true)
+                  }
+                }}
+                className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+              >
+                {showSideMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
         
@@ -364,43 +293,15 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
                           </div>
                         )}
                       </div>
-                      {isSideMenuExpanded && (
-                        <div className="mt-4 flex items-center">
-                          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 text-sm font-medium">
-                              {user?.name ? user.name.charAt(0) : 'U'}
-                            </span>
-                          </div>
-                          <div className="ml-3">
-                            <p className="text-sm font-medium text-white">{user?.name || 'ユーザー'}</p>
-                            <p className="text-sm text-blue-200">{user?.email}</p>
-                          </div>
-                        </div>
-                      )}
+
                     </div>
                     
                     {/* メニュー内容 */}
                     <div className="px-4 py-6 sm:px-6">
-                      {/* 業態形態表示と切り替え（モバイル） */}
+                      {/* 業態形態選択（モバイル） */}
                       {isSideMenuExpanded && (
                         <div className="mb-6">
                           <h3 className="text-sm font-medium text-gray-900 mb-2">業態形態</h3>
-                          <div className="flex items-center bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg mb-2">
-                            {currentBusinessType ? (
-                              <>
-                                {currentBusinessType.business_type === 'individual' ? (
-                                  <UserIcon className="w-4 h-4 text-blue-600 mr-2" />
-                                ) : (
-                                  <Building className="w-4 h-4 text-green-600 mr-2" />
-                                )}
-                                <span className="text-sm font-medium text-blue-800">
-                                  {getBusinessTypeDisplay()}
-                                </span>
-                              </>
-                            ) : (
-                              <span className="text-sm text-gray-500">業態形態を選択</span>
-                            )}
-                          </div>
                           <BusinessTypeSwitcher 
                             userId={userId}
                             onBusinessTypeChange={handleBusinessTypeChange}

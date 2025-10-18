@@ -31,11 +31,16 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
     // 月ごとのデータを初期化
     const monthlyData: { [key: string]: { revenue: number; expense: number } } = {};
     
-    // 過去6ヶ月の月を生成
+    // 3月から1年分の月を生成
     const months = [];
     const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const startYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
+    const startMonth = now.getMonth() >= 2 ? 2 : 2; // 3月 (0-basedなので2)
+    
+    for (let i = 0; i < 12; i++) {
+      const year = startMonth + i <= 11 ? startYear : startYear + 1;
+      const month = (startMonth + i) % 12;
+      const date = new Date(year, month, 1);
       const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
       months.push(monthKey);
       monthlyData[monthKey] = { revenue: 0, expense: 0 };
@@ -197,20 +202,20 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
       <div className="chart-container h-80">
         <Line data={data} options={options} />
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-4">
-        <div className="bg-blue-50 p-3 rounded-lg">
-          <p className="text-sm text-gray-600">総収益</p>
-          <p className="text-lg font-bold text-blue-600">¥{totalRevenue.toLocaleString()}</p>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="bg-blue-50 p-2 rounded-lg flex flex-col items-center">
+          <p className="text-xs text-gray-600">総収益</p>
+          <p className="text-sm font-bold text-blue-600">¥{totalRevenue.toLocaleString()}</p>
           <p className="text-xs text-green-600">↑ 12.5%</p>
         </div>
-        <div className="bg-red-50 p-3 rounded-lg">
-          <p className="text-sm text-gray-600">総支出</p>
-          <p className="text-lg font-bold text-red-600">¥{totalExpense.toLocaleString()}</p>
+        <div className="bg-red-50 p-2 rounded-lg flex flex-col items-center">
+          <p className="text-xs text-gray-600">総支出</p>
+          <p className="text-sm font-bold text-red-600">¥{totalExpense.toLocaleString()}</p>
           <p className="text-xs text-red-600">↓ 3.2%</p>
         </div>
-        <div className="bg-green-50 p-3 rounded-lg">
-          <p className="text-sm text-gray-600">純利益</p>
-          <p className="text-lg font-bold text-green-600">¥{totalProfit.toLocaleString()}</p>
+        <div className="bg-green-50 p-2 rounded-lg flex flex-col items-center">
+          <p className="text-xs text-gray-600">純利益</p>
+          <p className="text-sm font-bold text-green-600">¥{totalProfit.toLocaleString()}</p>
           <p className="text-xs text-green-600">↑ 8.7%</p>
         </div>
       </div>
