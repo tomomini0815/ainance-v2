@@ -2,7 +2,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {ArrowLeft, Plus, Check, X, RefreshCw, AlertCircle, Settings, Eye, EyeOff, Copy} from 'lucide-react'
-import Header from '../components/Header'
 
 interface Integration {
   id: string
@@ -191,8 +190,6 @@ const IntegrationSettings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* ヘッダー */}
         <div className="flex items-center mb-6">

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mic, Square, Send, Trash2, Download, Plus, Edit3, Save, CheckCircle, Circle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useMySQLTransactions } from '../hooks/useMySQLTransactions';
 
 interface Transaction {
   id: string;
@@ -21,6 +22,7 @@ const ChatToBook: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
   const recognitionRef = useRef<any>(null);
+  const { createTransaction } = useMySQLTransactions();
 
   // 音声認識の初期化
   useEffect(() => {
@@ -217,11 +219,14 @@ const ChatToBook: React.FC = () => {
         creator: user.id
       };
 
-      // Supabaseに取引データを挿入
+      // useMySQLTransactionsフックのcreateTransaction関数を使用して取引を保存
+      const transactionId = await createTransaction(transactionData);
+      
+      // 保存された取引データを取得
       const { data, error } = await supabase
         .from('transactions')
-        .insert(transactionData)
-        .select()
+        .select('*')
+        .eq('id', transactionId)
         .single();
 
       if (error) {
