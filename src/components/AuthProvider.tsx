@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react'
-import { useMockAuth } from '../hooks/useMockAuth'
+import { useSession } from '../hooks/useSession'
 
 interface AuthContextType {
   user: any
@@ -17,7 +17,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const auth = useMockAuth()
+  const auth = useSession()
 
   console.log('AuthProviderの状態:', auth)
 
