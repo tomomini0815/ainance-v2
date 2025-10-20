@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { Navigate } from 'react-router-dom'
 
@@ -13,6 +13,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const auth = useAuth()
   const { isAuthenticated, loading, user } = auth || {}
+  const [authChecked, setAuthChecked] = useState(false)
 
   console.log('ProtectedRouteの認証状態:', { isAuthenticated, loading, user, auth })
 
@@ -29,7 +30,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     )
   }
 
-  if (loading) {
+  // 認証状態が変化したときにコンソールに出力
+  useEffect(() => {
+    console.log('ProtectedRoute: 認証状態が変化しました', { isAuthenticated, loading, user })
+    if (!loading) {
+      setAuthChecked(true)
+    }
+  }, [isAuthenticated, loading, user])
+
+  if (loading || !authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
