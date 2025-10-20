@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { lumi } from '../lib/lumi'
-import { useMockAuth } from './useMockAuth'
+import { useSession } from './useSession'
 
-// Lumi SDKに依存しないモック認証フック
-export const useAuth = useMockAuth
+// Supabaseセッションを使用する認証フック
+export const useAuth = useSession
