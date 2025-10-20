@@ -262,8 +262,15 @@ const ChatToBook: React.FC = () => {
       const successful = results.filter(result => result.status === 'fulfilled').length;
       const failed = results.filter(result => result.status === 'rejected').length;
       
+      // 失敗した取引のエラー情報をコンソールに出力
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`取引記録失敗 (${index + 1}):`, result.reason);
+        }
+      });
+      
       if (failed > 0) {
-        alert(`${successful}件の取引が正常に記録されましたが、${failed}件の取引の記録に失敗しました`);
+        alert(`${successful}件の取引が正常に記録されましたが、${failed}件の取引の記録に失敗しました。詳細はコンソールを確認してください。`);
       } else {
         alert(`${successful}件の取引が正常に記録されました`);
       }
@@ -278,6 +285,7 @@ const ChatToBook: React.FC = () => {
       setTransactions(prev => prev.filter(t => !successfulIds.includes(t.id)));
       setSelectedTransactions(prev => prev.filter(id => !successfulIds.includes(id)));
     } catch (error) {
+      console.error('取引の一括記録中にエラーが発生しました:', error);
       alert('取引の一括記録に失敗しました: ' + (error as Error).message);
     }
   };
