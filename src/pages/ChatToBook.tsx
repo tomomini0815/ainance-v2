@@ -222,18 +222,7 @@ const ChatToBook: React.FC = () => {
       // useMySQLTransactionsフックのcreateTransaction関数を使用して取引を保存
       const transactionId = await createTransaction(transactionData);
       
-      // 保存された取引データを取得
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('id', transactionId)
-        .single();
-
-      if (error) {
-        throw new Error(`取引の保存に失敗しました: ${error.message}`);
-      }
-
-      return data;
+      return transactionId;
     } catch (error: any) {
       console.error('取引の保存中にエラーが発生しました:', error);
       // ネットワークエラーの場合、より具体的なメッセージを表示
@@ -279,10 +268,13 @@ const ChatToBook: React.FC = () => {
         alert(`${successful}件の取引が正常に記録されました`);
       }
       
-      // 成功した取引をローカルリストから削除
-      const successfulTransactions = selectedItems.slice(0, successful);
-      const successfulIds = successfulTransactions.map(t => t.id);
+      // 成功した取引のIDを取得
+      const successfulIds = results
+        .map((result, index) => ({ result, index }))
+        .filter(({ result }) => result.status === 'fulfilled')
+        .map(({ index }) => selectedItems[index].id);
       
+      // 成功した取引をローカルリストから削除
       setTransactions(prev => prev.filter(t => !successfulIds.includes(t.id)));
       setSelectedTransactions(prev => prev.filter(id => !successfulIds.includes(id)));
     } catch (error) {
