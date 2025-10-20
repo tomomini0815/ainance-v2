@@ -86,8 +86,23 @@ export const useSession = () => {
               created_at: session.user.created_at
             }
             
-            console.log('ユーザー情報を更新しました:', userData)
-            setUser(userData)
+            // 現在のユーザー情報と比較して、実際に変更があった場合にのみ更新
+            setUser(prevUser => {
+              if (!prevUser) {
+                console.log('ユーザー情報を更新しました:', userData)
+                return userData
+              }
+              
+              if (prevUser.id !== userData.id || 
+                  prevUser.email !== userData.email || 
+                  prevUser.name !== userData.name) {
+                console.log('ユーザー情報を更新しました:', userData)
+                return userData
+              }
+              
+              // 変更がない場合は現在の状態を維持
+              return prevUser
+            })
           })
       } else {
         console.log('セッションがクリアされました')

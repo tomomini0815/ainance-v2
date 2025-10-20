@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {ChevronDown, User, Settings, LogOut, Search, Bell, Menu, X, Home, Receipt, FileText, BarChart3, MessageSquare, Users, Zap, ChevronLeft, ChevronRight, Building, User as UserIcon}from 'lucide-react'
 import BusinessTypeSwitcher from './BusinessTypeSwitcher'
@@ -21,9 +21,11 @@ const Header: React.FC<HeaderProps> = ({ showPcSideMenu = false, onPcSideMenuTog
   const [currentBusinessType, setCurrentBusinessType] = useState<any>(null)
   const [searchTerm, setSearchTerm] = useState('')
   
-  // 仮のユーザーID（実際の実装では認証システムから取得）
-  const userId = user?.id || "user_001"
-  
+  // useMemoを使用してuserIdをメモ化し、userオブジェクトが変更された場合にのみ再計算する
+  const userId = useMemo(() => {
+    return user?.id || "user_001"
+  }, [user?.id])
+
   const isActive = (path: string) => {
     return location.pathname === path
   }
