@@ -38,6 +38,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }, [isAuthenticated, loading, user])
 
+  // 認証状態が変化したときにコンソールに出力
+  useEffect(() => {
+    if (authChecked && isAuthenticated) {
+      console.log('ProtectedRoute: 認証が確認されました。ダッシュボードにアクセスできます。')
+    }
+  }, [authChecked, isAuthenticated])
+
   if (loading || !authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
