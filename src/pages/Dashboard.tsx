@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Header from '../components/Header'
 import QuickActions from '../components/QuickActions'
 import RevenueChart from '../components/RevenueChart'
 import ExpenseChart from '../components/ExpenseChart'
@@ -31,21 +30,16 @@ const Dashboard: React.FC = () => {
       return;
     }
     
-    // 認証されていない場合はログインページにリダイレクト
-    if (!isAuthenticated) {
-      console.log('Dashboard: ユーザーが認証されていません。ログインページにリダイレクトします。');
-      navigate('/', { replace: true });
-      return;
-    }
-    
     // 認証されている場合はユーザー情報を設定
     if (isAuthenticated && authUser) {
       console.log('Dashboard: useAuthフックからユーザー情報を取得しました:', authUser);
       setUser(authUser);
       // ローカルストレージにもユーザー情報を保存
       localStorage.setItem('user', JSON.stringify(authUser));
-      setLoading(false);
     }
+    
+    // 認証されていなくてもダッシュボードを表示
+    setLoading(false);
   }, [isAuthenticated, authUser, authLoading, navigate]);
 
   // 新規取引モーダル表示のイベントリスナー
@@ -65,25 +59,6 @@ const Dashboard: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">データを読み込んでいます...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ユーザー情報がない場合の表示
-  if (!user) {
-    console.log('Dashboard: ユーザー情報がありません');
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">認証が必要です</h2>
-          <p className="text-gray-600 mb-6">ダッシュボードにアクセスするにはログインが必要です。</p>
-          <button
-            onClick={() => navigate('/', { replace: true })}
-            className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            ログインページへ
-          </button>
         </div>
       </div>
     );
@@ -158,8 +133,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* HeaderコンポーネントはApp.tsxでレンダリングされるため、ここでは削除 */}
-      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* ヘッダーとエクスポートボタン */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
