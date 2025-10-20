@@ -61,7 +61,8 @@ const LandingPage: React.FC = () => {
         
         // Supabaseの認証処理
         if (signIn) {
-          await signIn(email, password)
+          const result = await signIn(email, password)
+          console.log('ログイン結果:', result)
         } else {
           throw new Error('ログイン機能が利用できません')
         }
@@ -82,7 +83,8 @@ const LandingPage: React.FC = () => {
         
         // Supabaseのユーザー登録処理
         if (signUp) {
-          await signUp(name, email, password)
+          const result = await signUp(name, email, password)
+          console.log('サインアップ結果:', result)
         } else {
           throw new Error('サインアップ機能が利用できません')
         }
