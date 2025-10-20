@@ -38,10 +38,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }, [isAuthenticated, loading, user])
 
-  // 認証状態が変化したときにコンソールに出力
+  // 認証が確認されたときにコンソールに出力
   useEffect(() => {
     if (authChecked && isAuthenticated) {
       console.log('ProtectedRoute: 認証が確認されました。ダッシュボードにアクセスできます。')
+    }
+  }, [authChecked, isAuthenticated])
+
+  // 認証状態が変化したときにコンソールに出力
+  useEffect(() => {
+    if (authChecked && !isAuthenticated) {
+      console.log('ProtectedRoute: 認証が確認されませんでした。ログインページにリダイレクトします。')
     }
   }, [authChecked, isAuthenticated])
 
