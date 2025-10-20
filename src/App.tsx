@@ -35,7 +35,7 @@ function App() {
             showPcSideMenu={false}
             onPcSideMenuToggle={handlePcSideMenuToggle}
             isPcSideMenuExpanded={isPcSideMenuExpanded}
-            showSideMenus={false}
+            showSideMenus={true}
           />
           <div className="flex">
             <div className="flex-1">
