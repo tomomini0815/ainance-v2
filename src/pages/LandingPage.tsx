@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useAuthContext } from '../components/AuthProvider'
 import { Calculator, FileText, BarChart3, MessageSquare, Zap, Shield, Clock, Users, CheckCircle, ArrowRight, Star, TrendingUp, Smartphone, Globe, ChevronRight, Mail, Lock, User } from 'lucide-react'
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate()
+  const { signIn, signUp, signOut, user } = useAuthContext()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -54,17 +56,8 @@ const LandingPage: React.FC = () => {
         // ログイン処理
         console.log('ログイン処理開始:', { email, password })
         
-        // モックの認証処理
-        // 実際のアプリではここでAPIを呼び出して認証を行う
-        const mockUser = {
-          id: 'user_' + Date.now(),
-          email,
-          name: email.split('@')[0],
-          createdAt: new Date().toISOString()
-        }
-        
-        // ローカルストレージに保存
-        localStorage.setItem('user', JSON.stringify(mockUser))
+        // Supabaseの認証処理
+        await signIn(email, password)
         
         // 「ログイン情報を記憶」がチェックされている場合、メールアドレスを保存
         if (rememberMe) {
@@ -75,22 +68,13 @@ const LandingPage: React.FC = () => {
           localStorage.removeItem('rememberMe')
         }
         
-        console.log('ログイン成功:', mockUser)
+        console.log('ログイン成功')
       } else {
         // サインアップ処理
         console.log('サインアップ処理開始:', { name, email, password })
         
-        // モックのユーザー登録処理
-        // 実際のアプリではここでAPIを呼び出してユーザー登録を行う
-        const mockUser = {
-          id: 'user_' + Date.now(),
-          email,
-          name,
-          createdAt: new Date().toISOString()
-        }
-        
-        // ローカルストレージに保存
-        localStorage.setItem('user', JSON.stringify(mockUser))
+        // Supabaseのユーザー登録処理
+        await signUp(name, email, password)
         
         // 「ログイン情報を記憶」がチェックされている場合、メールアドレスを保存
         if (rememberMe) {
@@ -98,7 +82,7 @@ const LandingPage: React.FC = () => {
           localStorage.setItem('rememberMe', 'true')
         }
         
-        console.log('サインアップ成功:', mockUser)
+        console.log('サインアップ成功')
       }
       
       // ダッシュボードにリダイレクト
@@ -112,12 +96,15 @@ const LandingPage: React.FC = () => {
     }
   }
 
-  const handleSignOut = () => {
-    // ローカルストレージからユーザー情報を削除
-    localStorage.removeItem('user')
-    localStorage.removeItem('rememberMe')
-    // ホームページにリダイレクト
-    navigate('/')
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      // ホームページにリダイレクト
+      navigate('/')
+    } catch (error: any) {
+      console.error('ログアウトエラー:', error)
+      setError(error.message || 'ログアウトに失敗しました。')
+    }
   }
 
   const handleDashboardRedirect = () => {
@@ -178,16 +165,16 @@ const LandingPage: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {localStorage.getItem('user') ? 'ダッシュボードへ' : (isLogin ? 'ログイン' : 'アカウント作成')}
+                  {user ? 'ダッシュボードへ' : (isLogin ? 'ログイン' : 'アカウント作成')}
                 </h2>
                 <p className="text-gray-600">
-                  {localStorage.getItem('user') 
+                  {user 
                     ? 'ダッシュボードにアクセスする' 
                     : (isLogin ? 'アカウントをお持ちの場合' : '新しいアカウントを作成')}
                 </p>
               </div>
               
-              {localStorage.getItem('user') ? (
+              {user ? (
                 // ログイン済みの場合
                 <div className="space-y-4">
                   <button
@@ -322,7 +309,7 @@ const LandingPage: React.FC = () => {
                 </form>
               )}
               
-              {!localStorage.getItem('user') && (
+              {!user && (
                 <div className="mt-6 text-center">
                   <p className="text-gray-600">
                     {isLogin ? 'アカウントをお持ちでない場合 ' : '既にアカウントをお持ちの場合 '}
