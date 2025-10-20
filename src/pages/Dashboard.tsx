@@ -18,40 +18,35 @@ const Dashboard: React.FC = () => {
   const { transactions, loading: transactionsLoading, createTransaction } = useMySQLTransactions();
   const { aiTransactions, loading: aiTransactionsLoading } = useMySQLAITransactions();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const { isAuthenticated, user: authUser } = useAuth();
+  const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     console.log('Dashboard: ページが読み込まれました');
-    console.log('Dashboard: 認証状態', { isAuthenticated, authUser });
+    console.log('Dashboard: 認証状態', { isAuthenticated, authUser, authLoading });
     
-    // ローカルストレージからユーザー情報を読み込む
-    const storedUser = localStorage.getItem('user');
-    console.log('Dashboard: ローカルストレージから取得したユーザー情報:', storedUser);
+    // 認証状態の確認
+    if (authLoading) {
+      console.log('Dashboard: 認証状態を確認中...');
+      return;
+    }
     
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        console.log('Dashboard: ユーザー情報を解析しました:', userData);
-        setUser(userData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Dashboard: ユーザー情報の解析に失敗しました:', error);
-        setLoading(false);
-      }
-    } else if (isAuthenticated && authUser) {
-      // useAuthフックからユーザー情報を取得
+    // 認証されていない場合はログインページにリダイレクト
+    if (!isAuthenticated) {
+      console.log('Dashboard: ユーザーが認証されていません。ログインページにリダイレクトします。');
+      navigate('/', { replace: true });
+      return;
+    }
+    
+    // 認証されている場合はユーザー情報を設定
+    if (isAuthenticated && authUser) {
       console.log('Dashboard: useAuthフックからユーザー情報を取得しました:', authUser);
       setUser(authUser);
+      // ローカルストレージにもユーザー情報を保存
+      localStorage.setItem('user', JSON.stringify(authUser));
       setLoading(false);
-    } else {
-      console.log('Dashboard: ユーザー情報が見つからないか認証されていません');
-      setLoading(false);
-      // ユーザー情報がない場合はログインページにリダイレクト
-      console.log('Dashboard: ログインページにリダイレクト');
-      navigate('/', { replace: true });
     }
-  }, [isAuthenticated, authUser, navigate]);
+  }, [isAuthenticated, authUser, authLoading, navigate]);
 
   // 新規取引モーダル表示のイベントリスナー
   useEffect(() => {
@@ -64,7 +59,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // ローディング中の表示
-  if (loading || transactionsLoading) {
+  if (loading || transactionsLoading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -135,34 +130,26 @@ const Dashboard: React.FC = () => {
   // 新規取引の作成
   const handleCreateTransaction = async (transactionData: any) => {
     try {
-      // creatorフィールドをローカルストレージから取得したユーザー情報で設定
-      const storedUser = localStorage.getItem('user')
-      if (storedUser && user) {
-        try {
-          const userData = JSON.parse(storedUser)
-          // UUID形式のチェック
-          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (uuidRegex.test(userData.id)) {
-            transactionData.creator = userData.id
-          } else {
-            console.warn('無効なユーザーID形式です。匿名ユーザーとして処理します。');
-            transactionData.creator = '00000000-0000-0000-0000-000000000000'; // ダミーのUUID
-          }
-        } catch (error) {
-          console.error('ユーザー情報の解析に失敗しました:', error)
-          // ユーザー情報の解析に失敗した場合でも、取引は作成できるようにする
-          transactionData.creator = '00000000-0000-0000-0000-000000000000' // ダミーのUUID
+      // creatorフィールドを認証されたユーザー情報で設定
+      if (user && user.id) {
+        // UUID形式のチェック
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(user.id)) {
+          transactionData.creator = user.id;
+        } else {
+          console.warn('無効なユーザーID形式です。匿名ユーザーとして処理します。');
+          transactionData.creator = '00000000-0000-0000-0000-000000000000'; // ダミーのUUID
         }
       } else {
         // ユーザー情報がない場合も、取引は作成できるようにする
-        transactionData.creator = '00000000-0000-0000-0000-000000000000' // ダミーのUUID
+        transactionData.creator = '00000000-0000-0000-0000-000000000000'; // ダミーのUUID
       }
       
-      await createTransaction(transactionData)
-      setShowCreateForm(false)
+      await createTransaction(transactionData);
+      setShowCreateForm(false);
     } catch (error) {
-      console.error('取引の作成に失敗:', error)
-      alert('取引の作成に失敗しました。もう一度お試しください。')
+      console.error('取引の作成に失敗:', error);
+      alert('取引の作成に失敗しました。もう一度お試しください。');
     }
   };
 

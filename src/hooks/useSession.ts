@@ -21,6 +21,8 @@ export const useSession = () => {
         throw error
       }
       
+      console.log('セッション情報:', session)
+      
       if (session) {
         // ユーザープロファイルの取得
         const { data: profile, error: profileError } = await supabase
@@ -33,13 +35,17 @@ export const useSession = () => {
           console.warn('プロファイルの取得に失敗しました:', profileError)
         }
         
-        setUser({
+        const userData = {
           id: session.user.id,
           email: session.user.email || '',
           name: profile?.name || session.user.email?.split('@')[0] || '',
           created_at: session.user.created_at
-        })
+        }
+        
+        console.log('ユーザー情報:', userData)
+        setUser(userData)
       } else {
+        console.log('セッションが存在しません')
         setUser(null)
       }
     } catch (error) {
@@ -52,11 +58,15 @@ export const useSession = () => {
 
   // セッション状態の監視
   useEffect(() => {
+    console.log('セッション監視を開始します')
+    
     // 初期セッションの取得
     updateSession()
     
     // セッション状態の変化を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('認証状態が変化しました:', _event, session)
+      
       if (session) {
         // ユーザープロファイルの取得
         supabase
@@ -69,20 +79,25 @@ export const useSession = () => {
               console.warn('プロファイルの取得に失敗しました:', error)
             }
             
-            setUser({
+            const userData = {
               id: session.user.id,
               email: session.user.email || '',
               name: profile?.name || session.user.email?.split('@')[0] || '',
               created_at: session.user.created_at
-            })
+            }
+            
+            console.log('ユーザー情報を更新しました:', userData)
+            setUser(userData)
           })
       } else {
+        console.log('セッションがクリアされました')
         setUser(null)
       }
       setLoading(false)
     })
     
     return () => {
+      console.log('セッション監視を解除します')
       subscription.unsubscribe()
     }
   }, [updateSession])
@@ -100,6 +115,8 @@ export const useSession = () => {
         throw error
       }
       
+      console.log('ログイン成功:', data)
+      
       if (data.session) {
         // ユーザープロファイルの取得
         const { data: profile, error: profileError } = await supabase
@@ -112,12 +129,15 @@ export const useSession = () => {
           console.warn('プロファイルの取得に失敗しました:', profileError)
         }
         
-        setUser({
+        const userData = {
           id: data.session.user.id,
           email: data.session.user.email || '',
           name: profile?.name || data.session.user.email?.split('@')[0] || '',
           created_at: data.session.user.created_at
-        })
+        }
+        
+        console.log('ログイン後のユーザー情報:', userData)
+        setUser(userData)
       }
       
       return data
@@ -147,6 +167,8 @@ export const useSession = () => {
         throw error
       }
       
+      console.log('サインアップ成功:', data)
+      
       if (data.user) {
         // プロファイルテーブルにユーザー情報を挿入
         const { error: profileError } = await supabase
@@ -164,12 +186,15 @@ export const useSession = () => {
           console.warn('プロファイルの作成に失敗しました:', profileError)
         }
         
-        setUser({
+        const userData = {
           id: data.user.id,
           email: data.user.email || '',
           name,
           created_at: data.user.created_at,
-        })
+        }
+        
+        console.log('サインアップ後のユーザー情報:', userData)
+        setUser(userData)
       }
       
       return data
@@ -186,6 +211,7 @@ export const useSession = () => {
     
     try {
       await supabase.auth.signOut()
+      console.log('ログアウトしました')
       setUser(null)
     } catch (error: any) {
       console.error('ログアウトエラー:', error)
