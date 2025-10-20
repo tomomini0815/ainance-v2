@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuthContext } from '../components/AuthProvider'
+import { useAuth } from '../hooks/useAuth'
 import { Calculator, FileText, BarChart3, MessageSquare, Zap, Shield, Clock, Users, CheckCircle, ArrowRight, Star, TrendingUp, Smartphone, Globe, ChevronRight, Mail, Lock, User } from 'lucide-react'
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate()
-  const authContext = useAuthContext()
+  const authContext = useAuth()
   const { user, signIn, signUp, signOut, isAuthenticated, loading } = authContext || {}
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')

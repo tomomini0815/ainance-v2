@@ -52,6 +52,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }, [authChecked, isAuthenticated])
 
+  // ローディング中または認証チェックが完了していない場合
   if (loading || !authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -60,12 +61,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     )
   }
 
+  // 認証されていない場合
   if (!isAuthenticated) {
-    // 認証されていない場合はログインページにリダイレクト
     console.log('ProtectedRoute: ユーザーが認証されていません。ログインページにリダイレクトします。')
     return fallback || <Navigate to="/" replace />
   }
 
+  // 認証されている場合
   console.log('ProtectedRoute: ユーザーが認証されています。子コンポーネントを表示します。')
   return <>{children}</>
 }
