@@ -11,7 +11,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   fallback 
 }) => {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, user } = useAuth()
+
+  console.log('ProtectedRouteの認証状態:', { isAuthenticated, loading, user })
 
   if (loading) {
     return (
