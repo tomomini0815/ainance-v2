@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mic, Square, Send, Trash2, Download, Plus, Edit3, Save, CheckCircle, Circle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useMySQLTransactions } from '../hooks/useMySQLTransactions';
@@ -23,6 +23,7 @@ const ChatToBook: React.FC = () => {
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
   const recognitionRef = useRef<any>(null);
   const { createTransaction } = useMySQLTransactions();
+  const navigate = useNavigate();
 
   // 音声認識の初期化
   useEffect(() => {
@@ -245,6 +246,13 @@ const ChatToBook: React.FC = () => {
       setTransactions(prev => prev.filter(t => t.id !== transaction.id));
       alert('取引が正常に記録されました');
     } catch (error) {
+      console.error('取引の記録に失敗しました:', error);
+      // 認証エラーの場合、ログインページにリダイレクト
+      if ((error as Error).message.includes('認証セッションが切れました')) {
+        alert('認証セッションが切れました。ログインページにリダイレクトします。');
+        navigate('/login');
+        return;
+      }
       alert('取引の記録に失敗しました: ' + (error as Error).message);
     }
   };
@@ -270,6 +278,12 @@ const ChatToBook: React.FC = () => {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
           console.error(`取引記録失敗 (${index + 1}):`, result.reason);
+          // 認証エラーの場合、ログインページにリダイレクト
+          if (result.reason.message.includes('認証セッションが切れました')) {
+            alert('認証セッションが切れました。ログインページにリダイレクトします。');
+            navigate('/login');
+            return;
+          }
         }
       });
       
