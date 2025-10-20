@@ -11,9 +11,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   fallback 
 }) => {
-  const { isAuthenticated, loading, user } = useAuth()
+  const auth = useAuth()
+  const { isAuthenticated, loading, user } = auth || {}
 
-  console.log('ProtectedRouteの認証状態:', { isAuthenticated, loading, user })
+  console.log('ProtectedRouteの認証状態:', { isAuthenticated, loading, user, auth })
+
+  // authオブジェクトがundefinedの場合の処理
+  if (!auth) {
+    console.log('ProtectedRoute: authオブジェクトが利用できません。')
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">認証情報を確認中...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
