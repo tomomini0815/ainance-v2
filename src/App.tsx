@@ -41,7 +41,7 @@ function App() {
             <div className="flex-1">
               <Routes>
                 {/* パブリックルート */}
-                <Route path="/" element={<LandingPage />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 
                 {/* 保護されたルート */}
                 <Route 
@@ -126,7 +126,7 @@ function App() {
                 />
                 
                 {/* デフォルトルート */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </div>
           </div>

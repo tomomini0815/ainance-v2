@@ -12,48 +12,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   fallback 
 }) => {
   const auth = useAuth()
-  const { isAuthenticated, loading, user } = auth || {}
-  const [authChecked, setAuthChecked] = useState(false)
+  const { isAuthenticated, loading } = auth || {}
 
-  console.log('ProtectedRouteの認証状態:', { isAuthenticated, loading, user, auth })
+  console.log('ProtectedRouteの認証状態:', { isAuthenticated, loading, auth })
 
-  // authオブジェクトがundefinedの場合の処理
-  if (!auth) {
-    console.log('ProtectedRoute: authオブジェクトが利用できません。')
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">認証情報を確認中...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // 認証状態が変化したときにコンソールに出力
-  useEffect(() => {
-    console.log('ProtectedRoute: 認証状態が変化しました', { isAuthenticated, loading, user })
-    if (!loading) {
-      setAuthChecked(true)
-    }
-  }, [isAuthenticated, loading, user])
-
-  // 認証が確認されたときにコンソールに出力
-  useEffect(() => {
-    if (authChecked && isAuthenticated) {
-      console.log('ProtectedRoute: 認証が確認されました。ダッシュボードにアクセスできます。')
-    }
-  }, [authChecked, isAuthenticated])
-
-  // 認証が確認されなかったときにコンソールに出力
-  useEffect(() => {
-    if (authChecked && !isAuthenticated) {
-      console.log('ProtectedRoute: 認証が確認されませんでした。ログインページにリダイレクトします。')
-    }
-  }, [authChecked, isAuthenticated])
-
-  // ローディング中または認証チェックが完了していない場合
-  if (loading || !authChecked) {
+  // 認証状態を確認中
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -61,10 +25,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     )
   }
 
-  // 認証されていない場合
+  // 認証されていない場合はログインページにリダイレクト
   if (!isAuthenticated) {
-    console.log('ProtectedRoute: ユーザーが認証されていません。ログインページにリダイレクトします。')
-    return fallback || <Navigate to="/" replace />
+    console.log('ProtectedRoute: ユーザーが認証されていません。ダッシュボードにリダイレクトします。')
+    return fallback || <Navigate to="/dashboard" replace />
   }
 
   // 認証されている場合
