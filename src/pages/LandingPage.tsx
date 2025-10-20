@@ -103,7 +103,12 @@ const LandingPage: React.FC = () => {
       console.error('認証エラー:', error)
       // エラーメッセージの表示を改善
       if (error.message) {
-        setError(error.message)
+        // メールアドレス未確認のエラーを特別扱い
+        if (error.message.includes('Email not confirmed')) {
+          setError('メールアドレスが確認されていません。登録したメールアドレスに送られた確認メールを開いて、メールアドレスを確認してください。')
+        } else {
+          setError(error.message)
+        }
       } else if (error.error_description) {
         setError(error.error_description)
       } else {
