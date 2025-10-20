@@ -11,6 +11,7 @@ interface User {
 export const useSession = () => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
 
   // セッション状態の更新
   const updateSession = useCallback(async () => {
@@ -52,9 +53,12 @@ export const useSession = () => {
       console.error('セッションの更新に失敗しました:', error)
       setUser(null)
     } finally {
-      setLoading(false)
+      if (initialLoad) {
+        setLoading(false)
+        setInitialLoad(false)
+      }
     }
-  }, [])
+  }, [initialLoad])
 
   // セッション状態の監視
   useEffect(() => {
@@ -108,14 +112,18 @@ export const useSession = () => {
         console.log('セッションがクリアされました')
         setUser(null)
       }
-      setLoading(false)
+      // 初回ロード時のみloading状態を解除
+      if (initialLoad) {
+        setLoading(false)
+        setInitialLoad(false)
+      }
     })
     
     return () => {
       console.log('セッション監視を解除します')
       subscription.unsubscribe()
     }
-  }, [updateSession])
+  }, [updateSession, initialLoad])
 
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true)

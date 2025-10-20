@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Calculator, FileText, BarChart3, MessageSquare, Zap, Shield, Clock, Users, CheckCircle, ArrowRight, Star, TrendingUp, Smartphone, Globe, ChevronRight, Mail, Lock, User } from 'lucide-react'
@@ -14,6 +14,7 @@ const LandingPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const hasRedirected = useRef(false)
 
   console.log('認証コンテキスト:', authContext)
 
@@ -31,8 +32,14 @@ const LandingPage: React.FC = () => {
   // 認証状態を監視して、認証済みの場合はダッシュボードにリダイレクト
   useEffect(() => {
     console.log('認証状態の監視:', { isAuthenticated, loading, user })
+    // 既にリダイレクト済みの場合は処理をスキップ
+    if (hasRedirected.current) {
+      return;
+    }
+    
     if (!loading && isAuthenticated && user) {
       console.log('既に認証済みです。ダッシュボードにリダイレクトします。')
+      hasRedirected.current = true;
       navigate('/dashboard')
     }
   }, [isAuthenticated, loading, user, navigate])
@@ -109,6 +116,7 @@ const LandingPage: React.FC = () => {
       
       // ダッシュボードにリダイレクト
       console.log('ダッシュボードにリダイレクト')
+      hasRedirected.current = true;
       navigate('/dashboard')
     } catch (error: any) {
       console.error('認証エラー:', error)
@@ -138,6 +146,7 @@ const LandingPage: React.FC = () => {
         throw new Error('ログアウト機能が利用できません')
       }
       // ホームページにリダイレクト
+      hasRedirected.current = false;
       navigate('/')
     } catch (error: any) {
       console.error('ログアウトエラー:', error)
@@ -151,6 +160,7 @@ const LandingPage: React.FC = () => {
 
   const handleDashboardRedirect = () => {
     console.log('ダッシュボードボタンがクリックされました')
+    hasRedirected.current = true;
     navigate('/dashboard')
   }
 
