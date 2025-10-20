@@ -6,7 +6,7 @@ import { Calculator, FileText, BarChart3, MessageSquare, Zap, Shield, Clock, Use
 const LandingPage: React.FC = () => {
   const navigate = useNavigate()
   const authContext = useAuthContext()
-  const { user, signIn, signUp, signOut } = authContext || {}
+  const { user, signIn, signUp, signOut, isAuthenticated, loading } = authContext || {}
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -27,6 +27,15 @@ const LandingPage: React.FC = () => {
       setRememberMe(true)
     }
   }, [])
+
+  // 認証状態を監視して、認証済みの場合はダッシュボードにリダイレクト
+  useEffect(() => {
+    console.log('認証状態の監視:', { isAuthenticated, loading, user })
+    if (!loading && isAuthenticated && user) {
+      console.log('既に認証済みです。ダッシュボードにリダイレクトします。')
+      navigate('/dashboard')
+    }
+  }, [isAuthenticated, loading, user, navigate])
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
