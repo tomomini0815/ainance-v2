@@ -229,6 +229,10 @@ const ChatToBook: React.FC = () => {
       if (error.message.includes('Failed to fetch')) {
         throw new Error('ネットワークエラーが発生しました。インターネット接続を確認してください。');
       }
+      // 認証エラーの場合、ユーザーに再ログインを促す
+      if (error.message.includes('Auth session missing')) {
+        throw new Error('認証セッションが切れました。再度ログインしてください。');
+      }
       throw error;
     }
   };
