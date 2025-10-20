@@ -6,20 +6,29 @@
     <script>
       // GitHub PagesでSPAを正しく動作させるためのリダイレクトスクリプト
       (function() {
-        // 現在のパスを取得
+        // 現在のホストとパスを取得
+        var host = location.host;
         var path = location.pathname;
+        var hash = location.hash;
+        var search = location.search;
         
-        // ユーザーが誤ったURLにアクセスしている場合の処理
-        if (path === '/dashboard' || path.startsWith('/dashboard/')) {
-          // 正しいベースパスを含むURLにリダイレクト
-          var redirectUrl = '/ainance-v2/#/dashboard';
-          location.replace(redirectUrl);
+        // カスタムドメインを使用している場合
+        if (host === 'tomomini0815.github.io') {
+          // /dashboard にアクセスしている場合、ハッシュルーティングを使用してリダイレクト
+          if (path === '/dashboard' || path.startsWith('/dashboard/')) {
+            var redirectUrl = '/#/dashboard' + search + hash;
+            location.replace(redirectUrl);
+          } else {
+            // その他のパスもハッシュルーティングを使用してリダイレクト
+            var redirectUrl = '/#' + path + search + hash;
+            location.replace(redirectUrl);
+          }
         } else {
-          // 通常のSPAルーティング処理
+          // デフォルトのGitHub Pages URLを使用している場合
           var basePath = '/ainance-v2';
           var redirectPath = path.replace(new RegExp('^' + basePath), '') || '/';
           // セッションストレージに現在のパスを保存
-          sessionStorage.setItem('redirect', redirectPath + location.search + location.hash);
+          sessionStorage.setItem('redirect', redirectPath + search + hash);
           // ルートパスにリダイレクト
           location.replace(basePath + '/');
         }

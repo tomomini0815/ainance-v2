@@ -14,15 +14,23 @@
     <script>
       // GitHub PagesでのSPAルーティング対応
       (function() {
-        // 現在のパスを取得
+        // 現在のホストとパスを取得
+        var host = location.host;
         var path = location.pathname;
+        var hash = location.hash;
+        var search = location.search;
         
-        // ユーザーが誤ったURLにアクセスしている場合の処理
-        if (path === '/dashboard' || path.startsWith('/dashboard/')) {
-          // 正しいベースパスを含むURLにリダイレクト
-          var redirectUrl = '/ainance-v2/#/dashboard';
-          history.replaceState(null, null, redirectUrl);
+        // カスタムドメインを使用している場合
+        if (host === 'tomomini0815.github.io') {
+          // /dashboard にアクセスしている場合、ハッシュルーティングを使用して処理
+          if (path === '/dashboard' && !hash) {
+            // ハッシュが指定されていない場合はダッシュボードにリダイレクト
+            var redirectUrl = '/#/dashboard';
+            history.replaceState(null, null, redirectUrl);
+          }
+          // その他の場合は何もしない（既にハッシュルーティングが適切に処理される）
         } else {
+          // デフォルトのGitHub Pages URLを使用している場合
           // 404.htmlからのリダイレクトを処理
           var redirect = sessionStorage.redirect;
           delete sessionStorage.redirect;
