@@ -5,7 +5,8 @@ import { Calculator, FileText, BarChart3, MessageSquare, Zap, Shield, Clock, Use
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate()
-  const { signIn, signUp, signOut, user } = useAuthContext()
+  const authContext = useAuthContext()
+  const { user, signIn, signUp, signOut } = authContext || {}
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -13,6 +14,8 @@ const LandingPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  console.log('認証コンテキスト:', authContext)
 
   // ローカルストレージから保存された認証情報を読み込む
   useEffect(() => {
@@ -57,7 +60,11 @@ const LandingPage: React.FC = () => {
         console.log('ログイン処理開始:', { email, password })
         
         // Supabaseの認証処理
-        await signIn(email, password)
+        if (signIn) {
+          await signIn(email, password)
+        } else {
+          throw new Error('ログイン機能が利用できません')
+        }
         
         // 「ログイン情報を記憶」がチェックされている場合、メールアドレスを保存
         if (rememberMe) {
@@ -74,7 +81,11 @@ const LandingPage: React.FC = () => {
         console.log('サインアップ処理開始:', { name, email, password })
         
         // Supabaseのユーザー登録処理
-        await signUp(name, email, password)
+        if (signUp) {
+          await signUp(name, email, password)
+        } else {
+          throw new Error('サインアップ機能が利用できません')
+        }
         
         // 「ログイン情報を記憶」がチェックされている場合、メールアドレスを保存
         if (rememberMe) {
@@ -90,7 +101,14 @@ const LandingPage: React.FC = () => {
       navigate('/dashboard')
     } catch (error: any) {
       console.error('認証エラー:', error)
-      setError(error.message || '認証に失敗しました。もう一度お試しください。')
+      // エラーメッセージの表示を改善
+      if (error.message) {
+        setError(error.message)
+      } else if (error.error_description) {
+        setError(error.error_description)
+      } else {
+        setError('認証に失敗しました。もう一度お試しください。')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -98,12 +116,20 @@ const LandingPage: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut()
+      if (signOut) {
+        await signOut()
+      } else {
+        throw new Error('ログアウト機能が利用できません')
+      }
       // ホームページにリダイレクト
       navigate('/')
     } catch (error: any) {
       console.error('ログアウトエラー:', error)
-      setError(error.message || 'ログアウトに失敗しました。')
+      if (error.message) {
+        setError(error.message)
+      } else {
+        setError('ログアウトに失敗しました。')
+      }
     }
   }
 
