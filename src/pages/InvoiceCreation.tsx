@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {ArrowLeft, Plus, Save, Send, Eye, Download, Search, Calendar, Calculator, User, Building, FileText, Mail, Phone, X, Check, Copy, Trash2, CreditCard, Banknote, Edit} from 'lucide-react'
 import { jsPDF } from 'jspdf'
@@ -67,6 +67,8 @@ const InvoiceCreation: React.FC = () => {
   const [showSendModal, setShowSendModal] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [showItemSelectionModal, setShowItemSelectionModal] = useState(false)
+  const [showBankSelectionModal, setShowBankSelectionModal] = useState(false)
   const [newTemplateName, setNewTemplateName] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null)
@@ -84,6 +86,16 @@ const InvoiceCreation: React.FC = () => {
       amount: 300000
     }
   ])
+
+  // 請求項目の変更を監視するためのエフェクト
+  useEffect(() => {
+    console.log('請求項目が更新されました:', invoiceItems);
+  }, [invoiceItems]);
+
+  // コンポーネントのマウント時に請求項目の金額を再計算
+  useEffect(() => {
+    recalculateInvoiceItems();
+  }, []);
 
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([
     {
@@ -313,7 +325,7 @@ const InvoiceCreation: React.FC = () => {
       }
       showNotification('success', '振込先情報を追加しました')
     }
-
+    
     setShowBankFormModal(false)
     setBankForm({
       bankName: '',
@@ -391,7 +403,7 @@ const InvoiceCreation: React.FC = () => {
       setCustomers(prev => [...prev, newCustomer])
       showNotification('success', '顧客情報を追加しました')
     }
-
+    
     setShowCustomerFormModal(false)
     setCustomerForm({
       name: '',
@@ -420,7 +432,9 @@ const InvoiceCreation: React.FC = () => {
     }
 
     try {
+      console.log("PDF生成開始");
       const doc = new jsPDF()
+      console.log("jsPDFインスタンス作成完了");
       
       // 日本語フォント設定（Helveticaで代用し、日本語部分は英数字で表現）
       doc.setFont('helvetica')
@@ -455,6 +469,7 @@ const InvoiceCreation: React.FC = () => {
       doc.text(`Total Amount: ¥${calculateTotal().toLocaleString()}`, 120, 130)
       
       // 請求項目テーブル
+      console.log("請求項目テーブルデータ準備開始");
       const tableData = invoiceItems.map(item => [
         item.description,
         item.quantity.toString(),
@@ -462,30 +477,40 @@ const InvoiceCreation: React.FC = () => {
         `${item.taxRate}%`,
         `¥${item.amount.toLocaleString()}`
       ])
-
+      console.log("テーブルデータ:", tableData);
+      
       // autoTableの型定義を修正
-      ;(doc as any).autoTable({
-        head: [['Description', 'Qty', 'Unit Price', 'Tax Rate', 'Amount']],
-        body: tableData,
-        startY: 160,
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          font: 'helvetica'
-        },
-        headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          1: { halign: 'center' },
-          2: { halign: 'right' },
-          3: { halign: 'center' },
-          4: { halign: 'right' }
-        }
-      })
-
+      console.log("autoTable関数の存在確認");
+      if (typeof (doc as any).autoTable === 'function') {
+        console.log("autoTable関数が利用可能");
+        (doc as any).autoTable({
+          head: [['Description', 'Qty', 'Unit Price', 'Tax Rate', 'Amount']],
+          body: tableData,
+          startY: 160,
+          styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            font: 'helvetica'
+          },
+          headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: [0, 0, 0],
+            fontStyle: 'bold'
+          },
+          columnStyles: {
+            1: { halign: 'center' },
+            2: { halign: 'right' },
+            3: { halign: 'center' },
+            4: { halign: 'right' }
+          }
+        });
+        console.log("テーブル描画完了");
+      } else {
+        console.error("autoTable関数が利用できません");
+        showNotification('error', 'PDFテーブル生成機能が利用できません');
+        return;
+      }
+      
       // 合計計算部分
       const finalY = (doc as any).lastAutoTable.finalY + 20
       
@@ -523,12 +548,14 @@ const InvoiceCreation: React.FC = () => {
       }
       
       // PDFを保存
+      console.log("PDF保存開始");
       doc.save(`${invoiceForm.number}.pdf`)
       showNotification('success', 'PDFをダウンロードしました')
-      
-    } catch (error) {
-      console.error('PDF生成エラー:', error)
-      showNotification('error', 'PDF生成中にエラーが発生しました')
+      console.log("PDF生成完了");
+    } catch (error: unknown) {
+      console.error('PDF生成エラーの詳細:', error)
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      showNotification('error', `PDF生成中にエラーが発生しました: ${errorMessage}`)
     }
   }
 
@@ -558,6 +585,16 @@ const InvoiceCreation: React.FC = () => {
     }))
   }
 
+  // 請求項目の金額を再計算する関数
+  const recalculateInvoiceItems = () => {
+    setInvoiceItems(prevItems => 
+      prevItems.map(item => ({
+        ...item,
+        amount: item.quantity * item.unitPrice
+      }))
+    );
+  }
+
   const removeInvoiceItem = (id: string) => {
     if (invoiceItems.length > 1) {
       setInvoiceItems(items => items.filter(item => item.id !== id))
@@ -572,10 +609,12 @@ const InvoiceCreation: React.FC = () => {
       showNotification('error', '請求先を選択してください')
       return
     }
+    
     if (invoiceItems.some(item => !item.description || item.quantity <= 0 || item.unitPrice < 0)) {
       showNotification('error', '請求項目を正しく入力してください')
       return
     }
+    
     setShowPreviewModal(true)
   }
 
@@ -584,6 +623,7 @@ const InvoiceCreation: React.FC = () => {
       showNotification('error', '請求先を選択してください')
       return
     }
+    
     setShowSaveModal(true)
   }
 
@@ -613,10 +653,12 @@ const InvoiceCreation: React.FC = () => {
       showNotification('error', '請求先を選択してください')
       return
     }
+    
     if (!selectedCustomer.email) {
       showNotification('error', '顧客のメールアドレスが設定されていません')
       return
     }
+    
     setShowSendModal(true)
   }
 
@@ -952,7 +994,7 @@ const InvoiceCreation: React.FC = () => {
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold">請求項目</h2>
                   <button
-                    onClick={addInvoiceItem}
+                    onClick={() => setShowItemSelectionModal(true)}
                     className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -961,7 +1003,7 @@ const InvoiceCreation: React.FC = () => {
                 </div>
                 
                 <div className="overflow-x-auto">
-                  <table className="w-full md:hidden">
+                  <table className="w-full hidden md:table">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">項目</th>
@@ -973,9 +1015,74 @@ const InvoiceCreation: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {invoiceItems.map((item) => (
-                        <tr key={item.id}>
-                          <td className="px-4 py-3">
+                      {invoiceItems.map((item) => {
+                        console.log('請求項目表示:', item);
+                        return (
+                          <tr key={item.id}>
+                            <td className="px-4 py-3">
+                              <input
+                                type="text"
+                                value={item.description}
+                                onChange={(e) => updateInvoiceItem(item.id, 'description', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                placeholder="項目名"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => updateInvoiceItem(item.id, 'quantity', Number(e.target.value))}
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                min="1"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="number"
+                                value={item.unitPrice}
+                                onChange={(e) => updateInvoiceItem(item.id, 'unitPrice', Number(e.target.value))}
+                                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                min="0"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <select
+                                value={item.taxRate}
+                                onChange={(e) => updateInvoiceItem(item.id, 'taxRate', Number(e.target.value))}
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              >
+                                <option value={0}>0%</option>
+                                <option value={8}>8%</option>
+                                <option value={10}>10%</option>
+                              </select>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-sm font-medium">¥{item.amount.toLocaleString()}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => removeInvoiceItem(item.id)}
+                                className="text-red-600 hover:text-red-800 transition-colors"
+                                disabled={invoiceItems.length === 1}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  
+                  {/* モバイル用の縦型レイアウト */}
+                  <div className="md:hidden space-y-4">
+                    {invoiceItems.map((item) => {
+                      console.log('モバイル用請求項目表示:', item);
+                      return (
+                        <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+                          <div className="mb-3">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">項目</label>
                             <input
                               type="text"
                               value={item.description}
@@ -983,40 +1090,48 @@ const InvoiceCreation: React.FC = () => {
                               className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                               placeholder="項目名"
                             />
-                          </td>
-                          <td className="px-4 py-3">
-                            <input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) => updateInvoiceItem(item.id, 'quantity', Number(e.target.value))}
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              min="1"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
-                            <input
-                              type="number"
-                              value={item.unitPrice}
-                              onChange={(e) => updateInvoiceItem(item.id, 'unitPrice', Number(e.target.value))}
-                              className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              min="0"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={item.taxRate}
-                              onChange={(e) => updateInvoiceItem(item.id, 'taxRate', Number(e.target.value))}
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            >
-                              <option value={0}>0%</option>
-                              <option value={8}>8%</option>
-                              <option value={10}>10%</option>
-                            </select>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="text-sm font-medium">¥{item.amount.toLocaleString()}</span>
-                          </td>
-                          <td className="px-4 py-3">
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">数量</label>
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => updateInvoiceItem(item.id, 'quantity', Number(e.target.value))}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                min="1"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">単価</label>
+                              <input
+                                type="number"
+                                value={item.unitPrice}
+                                onChange={(e) => updateInvoiceItem(item.id, 'unitPrice', Number(e.target.value))}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                min="0"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">税率</label>
+                              <select
+                                value={item.taxRate}
+                                onChange={(e) => updateInvoiceItem(item.id, 'taxRate', Number(e.target.value))}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              >
+                                <option value={0}>0%</option>
+                                <option value={8}>8%</option>
+                                <option value={10}>10%</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">金額</label>
+                              <span className="text-sm font-medium">¥{item.amount.toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
                             <button
                               onClick={() => removeInvoiceItem(item.id)}
                               className="text-red-600 hover:text-red-800 transition-colors"
@@ -1024,76 +1139,10 @@ const InvoiceCreation: React.FC = () => {
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {/* モバイル用の縦型レイアウト */}
-                  <div className="md:hidden space-y-4">
-                    {invoiceItems.map((item) => (
-                      <div key={item.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="mb-3">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">項目</label>
-                          <input
-                            type="text"
-                            value={item.description}
-                            onChange={(e) => updateInvoiceItem(item.id, 'description', e.target.value)}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            placeholder="項目名"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">数量</label>
-                            <input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) => updateInvoiceItem(item.id, 'quantity', Number(e.target.value))}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              min="1"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">単価</label>
-                            <input
-                              type="number"
-                              value={item.unitPrice}
-                              onChange={(e) => updateInvoiceItem(item.id, 'unitPrice', Number(e.target.value))}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              min="0"
-                            />
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">税率</label>
-                            <select
-                              value={item.taxRate}
-                              onChange={(e) => updateInvoiceItem(item.id, 'taxRate', Number(e.target.value))}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            >
-                              <option value={0}>0%</option>
-                              <option value={8}>8%</option>
-                              <option value={10}>10%</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">金額</label>
-                            <span className="text-sm font-medium">¥{item.amount.toLocaleString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-end">
-                          <button
-                            onClick={() => removeInvoiceItem(item.id)}
-                            className="text-red-600 hover:text-red-800 transition-colors"
-                            disabled={invoiceItems.length === 1}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1103,10 +1152,7 @@ const InvoiceCreation: React.FC = () => {
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold">振込先</h2>
                   <button
-                    onClick={() => {
-                      // 振込先管理タブに移動
-                      setActiveTab('bank');
-                    }}
+                    onClick={() => setShowBankSelectionModal(true)}
                     className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                   >
                     <Banknote className="w-4 h-4 mr-2" />
@@ -1335,1199 +1381,365 @@ const InvoiceCreation: React.FC = () => {
                 前回の請求書をコピー
               </button>
             </div>
-            <div className="space-y-4">
-              {filteredInvoices.map((invoice) => (
-                <div key={invoice.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{invoice.number}</h3>
-                      <p className="text-sm text-gray-600">{invoice.customer?.company}</p>
-                      <p className="text-sm text-gray-600">{invoice.date}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => downloadInvoice(invoice)}
-                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => resendInvoice(invoice)}
-                        className="text-green-600 hover:text-green-800 transition-colors"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => duplicateInvoice(invoice)}
-                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-
-
-        {/* 顧客追加・編集モーダル */}
-        {showCustomerFormModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">
-                  {editingCustomer ? '顧客編集' : '顧客追加'}
-                </h2>
-                <button
-                  onClick={() => setShowCustomerFormModal(false)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">会社名 *</label>
-                  <input
-                    type="text"
-                    value={customerForm.company}
-                    onChange={(e) => setCustomerForm(prev => ({ ...prev, company: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">氏名 *</label>
-                  <input
-                    type="text"
-                    value={customerForm.name}
-                    onChange={(e) => setCustomerForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">メールアドレス *</label>
-                  <input
-                    type="email"
-                    value={customerForm.email}
-                    onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">電話番号</label>
-                  <input
-                    type="tel"
-                    value={customerForm.phone}
-                    onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">住所</label>
-                  <input
-                    type="text"
-                    value={customerForm.address}
-                    onChange={(e) => setCustomerForm(prev => ({ ...prev, address: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">法人番号</label>
-                  <input
-                    type="text"
-                    value={customerForm.taxNumber}
-                    onChange={(e) => setCustomerForm(prev => ({ ...prev, taxNumber: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <button
-                  onClick={saveCustomer}
-                  className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  保存
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 振込先管理タブ */}
-        {activeTab === 'bank' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-semibold">振込先管理</h2>
-              <button
-                onClick={() => openBankForm()}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                新規追加
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {bankAccounts.map((bank) => (
-                <div key={bank.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center">
-                      <Banknote className="w-5 h-5 text-blue-600 mr-2" />
-                      <h3 className="font-medium">{bank.bankName}</h3>
-                      {bank.isDefault && (
-                        <span className="ml-2 inline-flex px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                          デフォルト
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => openBankForm(bank)}
-                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                        title="編集"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteBankAccount(bank.id)}
-                        className="text-red-600 hover:text-red-800 transition-colors"
-                        title="削除"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <p>{bank.branchName}</p>
-                    <p>{bank.accountType === 'checking' ? '当座' : '普通'} {bank.accountNumber}</p>
-                    <p className="font-medium text-gray-900">{bank.accountHolder}</p>
-                  </div>
-                  {!bank.isDefault && (
-                    <button
-                      onClick={() => setDefaultBank(bank.id)}
-                      className="mt-3 text-xs text-blue-600 hover:text-blue-800 transition-colors"
-                    >
-                      デフォルトに設定
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              {bankAccounts.length === 0 && (
-                <div className="col-span-2 text-center py-8 text-gray-500">
-                  振込先情報が登録されていません
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 振込先選択モーダル */}
-        {showBankModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">振込先選択</h2>
-                <button
-                  onClick={() => setShowBankModal(false)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="銀行名、支店名、口座番号で検索"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="space-y-4">
-                {bankAccounts.map((bank) => (
-                  <div key={bank.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-medium text-gray-900">{bank.bankName}</h3>
-                        <p className="text-sm text-gray-600">{bank.branchName}</p>
-                        <p className="text-sm text-gray-600">
-                          {bank.accountType === 'checking' ? '当座' : '普通'} {bank.accountNumber}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">口座名義</p>
-                        <p className="font-medium">{bank.accountHolder}</p>
-                        {bank.isDefault && (
-                          <span className="inline-flex px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full mt-1">
-                            デフォルト
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedBankAccount(bank)
-                        setShowBankModal(false)
-                      }}
-                      className="mt-4 flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      選択
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 振込先追加・編集モーダル */}
-        {showBankFormModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">
-                  {editingBank ? '振込先編集' : '振込先追加'}
-                </h2>
-                <button
-                  onClick={() => setShowBankFormModal(false)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">銀行名</label>
-                  <input
-                    type="text"
-                    value={bankForm.bankName}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, bankName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">支店名</label>
-                  <input
-                    type="text"
-                    value={bankForm.branchName}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, branchName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">口座種類</label>
-                  <select
-                    value={bankForm.accountType}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, accountType: e.target.value as 'savings' | 'checking' }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="checking">当座</option>
-                    <option value="savings">普通</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">口座番号</label>
-                  <input
-                    type="text"
-                    value={bankForm.accountNumber}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, accountNumber: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">口座名義</label>
-                  <input
-                    type="text"
-                    value={bankForm.accountHolder}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, accountHolder: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      className="mr-2" 
-                      checked={bankForm.isDefault}
-                      onChange={(e) => setBankForm(prev => ({ ...prev, isDefault: e.target.checked }))}
-                    />
-                    <span className="text-sm">デフォルト振込先に設定</span>
-                  </label>
-                </div>
-                <button
-                  onClick={saveBankAccount}
-                  className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  保存
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* プレビューモーダル */}
-        {showPreviewModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">請求書プレビュー</h2>
-                <button
-                  onClick={() => setShowPreviewModal(false)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900">プレビュー内容</h3>
-                <p className="text-sm text-gray-600">ここにプレビューが表示されます</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 送信モーダル */}
-        {showSendModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">請求書送信</h2>
-                <button
-                  onClick={() => setShowSendModal(false)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900">送信内容</h3>
-                <p className="text-sm text-gray-600">ここに送信内容が表示されます</p>
-              </div>
-              <button
-                onClick={confirmSend}
-                className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                送信
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* 保存モーダル */}
-        {showSaveModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">請求書保存</h2>
-                <button
-                  onClick={() => setShowSaveModal(false)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900">保存内容</h3>
-                <p className="text-sm text-gray-600">ここに保存内容が表示されます</p>
-              </div>
-              <button
-                onClick={confirmSave}
-                className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                保存
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* テンプレート保存モーダル */}
-        {showTemplateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">テンプレート保存</h2>
-                <button
-                  onClick={() => setShowTemplateModal(false)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={newTemplateName}
-                  onChange={(e) => setNewTemplateName(e.target.value)}
-                  placeholder="テンプレート名を入力してください"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <button
-                onClick={confirmSaveTemplate}
-                className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                保存
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* 振込先管理タブ */}
-        {activeTab === 'bank' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-semibold">振込先管理</h2>
-              <button
-                onClick={() => openBankForm()}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                新規追加
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {bankAccounts.map((bank) => (
-                <div key={bank.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center">
-                      <Banknote className="w-5 h-5 text-blue-600 mr-2" />
-                      <h3 className="font-medium">{bank.bankName}</h3>
-                      {bank.isDefault && (
-                        <span className="ml-2 inline-flex px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                          デフォルト
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => openBankForm(bank)}
-                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                        title="編集"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteBankAccount(bank.id)}
-                        className="text-red-600 hover:text-red-800 transition-colors"
-                        title="削除"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <p>{bank.branchName}</p>
-                    <p>{bank.accountType === 'checking' ? '当座' : '普通'} {bank.accountNumber}</p>
-                    <p className="font-medium text-gray-900">{bank.accountHolder}</p>
-                  </div>
-                  {!bank.isDefault && (
-                    <button
-                      onClick={() => setDefaultBank(bank.id)}
-                      className="mt-3 text-xs text-blue-600 hover:text-blue-800 transition-colors"
-                    >
-                      デフォルトに設定
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              {bankAccounts.length === 0 && (
-                <div className="col-span-2 text-center py-8 text-gray-500">
-                  振込先情報が登録されていません
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* テンプレートタブ */}
-        {activeTab === 'templates' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">請求書テンプレート</h2>
-              <button
-                onClick={handleSaveAsTemplate}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                新規テンプレート
-              </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {templates.map((template) => (
-                <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                  <div className="bg-gray-100 h-32 rounded mb-3 flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="font-medium mb-2">{template.name}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{template.description}</p>
-                  <p className="text-xs text-gray-500 mb-3">{template.items.length}項目</p>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => loadTemplate(template)}
-                      className="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-                    >
-                      使用
-                    </button>
-                    <button
-                      onClick={() => deleteTemplate(template.id)}
-                      className="px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 履歴タブ */}
-        {activeTab === 'history' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">請求書履歴</h2>
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  placeholder="請求書番号または顧客名で検索"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button 
-                  onClick={() => setSearchTerm('')}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  クリア
-                </button>
-              </div>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            {/* PC用テーブル表示 */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">請求書番号</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">顧客</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">発行日</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">支払期限</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">金額</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ステータス</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">請求書番号</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">顧客</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">発行日</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">支払期限</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">金額</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ステータス</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-200">
                   {filteredInvoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                        {invoice.number}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {invoice.customer?.company}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {invoice.date}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {invoice.dueDate}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        ¥{invoice.total.toLocaleString()}
-                      </td>
+                    <tr key={invoice.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{invoice.number}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{invoice.customer?.company}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{invoice.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{invoice.dueDate}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">¥{invoice.total.toLocaleString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(invoice.status)}`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(invoice.status)}`}>
                           {getStatusText(invoice.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button 
-                            onClick={() => {
-                              setSelectedCustomer(invoice.customer)
-                              setSelectedBankAccount(invoice.bankAccount)
-                              setInvoiceItems(invoice.items)
-                              setInvoiceForm(prev => ({ 
-                                ...prev, 
-                                number: invoice.number,
-                                date: invoice.date,
-                                dueDate: invoice.dueDate,
-                                notes: invoice.notes
-                              }))
-                              setActiveTab('create')
-                              showNotification('success', '請求書を編集モードで開きました')
-                            }}
-                            className="text-blue-600 hover:text-blue-900 transition-colors"
-                            title="編集"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => downloadInvoice(invoice)}
-                            className="text-green-600 hover:text-green-900 transition-colors"
-                            title="ダウンロード"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => resendInvoice(invoice)}
-                            className="text-purple-600 hover:text-purple-900 transition-colors"
-                            title="再送信"
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => duplicateInvoice(invoice)}
-                            className="text-orange-600 hover:text-orange-900 transition-colors"
-                            title="複製"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => downloadInvoice(invoice)}
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => resendInvoice(invoice)}
+                          className="text-green-600 hover:text-green-900 mr-3"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => duplicateInvoice(invoice)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {filteredInvoices.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  {searchTerm ? '検索結果が見つかりません' : '請求書履歴がありません'}
-                </div>
-              )}
             </div>
-          </div>
-        )}
-
-
-
-        {/* 振込先選択モーダル */}
-        {showBankModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">振込先選択</h3>
-                <button
-                  onClick={() => setShowBankModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="space-y-3">
-                {bankAccounts.map((bank) => (
-                  <div
-                    key={bank.id}
-                    onClick={() => {
-                      setSelectedBankAccount(bank)
-                      setShowBankModal(false)
-                      showNotification('success', `${bank.bankName} を選択しました`)
-                    }}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition-colors"
-                  >
-                    <div className="flex justify-between">
-                      <div>
-                        <div className="flex items-center">
-                          <h4 className="font-medium">{bank.bankName}</h4>
-                          {bank.isDefault && (
-                            <span className="ml-2 inline-flex px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                              デフォルト
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600">{bank.branchName}</p>
-                        <p className="text-sm text-gray-600">
-                          {bank.accountType === 'checking' ? '当座' : '普通'} {bank.accountNumber}
-                        </p>
-                        <p className="text-sm text-gray-600">{bank.accountHolder}</p>
-                      </div>
-                      <div className="text-right">
-                        <Banknote className="w-5 h-5 text-gray-400" />
-                      </div>
+            
+            {/* モバイル用カード表示 */}
+            <div className="md:hidden space-y-4">
+              {filteredInvoices.map((invoice) => (
+                <div key={invoice.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-medium text-gray-900">{invoice.number}</h3>
+                      <p className="text-sm text-gray-600">{invoice.customer?.company}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}>
+                      {getStatusText(invoice.status)}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                    <div>
+                      <p className="text-gray-500">発行日</p>
+                      <p>{invoice.date}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">支払期限</p>
+                      <p>{invoice.dueDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">金額</p>
+                      <p className="font-medium">¥{invoice.total.toLocaleString()}</p>
                     </div>
                   </div>
-                ))}
-                {bankAccounts.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    振込先情報が登録されていません
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setShowBankModal(false)
-                    openBankForm()
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  新規追加
-                </button>
-                <button
-                  onClick={() => setShowBankModal(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  キャンセル
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 顧客選択モーダル */}
-        {showCustomerModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">顧客選択</h3>
-                <button
-                  onClick={() => setShowCustomerModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder="顧客名、会社名、メールアドレスで検索"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="space-y-3">
-                {filteredCustomers.map((customer) => (
-                  <div
-                    key={customer.id}
-                    onClick={() => {
-                      setSelectedCustomer(customer)
-                      setShowCustomerModal(false)
-                      setSearchTerm('')
-                      showNotification('success', `${customer.company} を選択しました`)
-                    }}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition-colors"
-                  >
-                    <div className="flex justify-between">
-                      <div>
-                        <h4 className="font-medium">{customer.company}</h4>
-                        <p className="text-sm text-gray-600">{customer.name}</p>
-                        <p className="text-sm text-gray-600">{customer.email}</p>
-                        <p className="text-sm text-gray-600">{customer.phone}</p>
-                      </div>
-                      <div className="text-right">
-                        <Building className="w-5 h-5 text-gray-400" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {filteredCustomers.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    検索結果が見つかりません
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setShowCustomerModal(false)
-                    openCustomerForm()
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  新規追加
-                </button>
-                <button
-                  onClick={() => setShowCustomerModal(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  キャンセル
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 振込先登録・編集モーダル */}
-        {showBankFormModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">
-                  {editingBank ? '振込先編集' : '振込先登録'}
-                </h3>
-                <button
-                  onClick={() => setShowBankFormModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">銀行名</label>
-                  <input
-                    type="text"
-                    value={bankForm.bankName}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, bankName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 三菱UFJ銀行"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">支店名</label>
-                  <input
-                    type="text"
-                    value={bankForm.branchName}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, branchName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 渋谷支店"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">口座種別</label>
-                  <select
-                    value={bankForm.accountType}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, accountType: e.target.value as 'savings' | 'checking' }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="checking">当座</option>
-                    <option value="savings">普通</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">口座番号</label>
-                  <input
-                    type="text"
-                    value={bankForm.accountNumber}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, accountNumber: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 1234567"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">口座名義</label>
-                  <input
-                    type="text"
-                    value={bankForm.accountHolder}
-                    onChange={(e) => setBankForm(prev => ({ ...prev, accountHolder: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 株式会社サンプル"
-                  />
-                </div>
-                <div>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={bankForm.isDefault}
-                      onChange={(e) => setBankForm(prev => ({ ...prev, isDefault: e.target.checked }))}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">デフォルト振込先に設定</span>
-                  </label>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowBankFormModal(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={saveBankAccount}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  {editingBank ? '更新' : '登録'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* プレビューモーダル */}
-        {showPreviewModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold">請求書プレビュー</h3>
-                <button
-                  onClick={() => setShowPreviewModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              
-              {/* 請求書プレビュー内容 */}
-              <div className="border border-gray-300 p-8 bg-white">
-                <div className="text-center mb-8">
-                  <h1 className="text-2xl font-bold">請求書</h1>
-                  <p className="text-sm text-gray-600 mt-2">Invoice</p>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
-                  <div>
-                    <h3 className="font-semibold mb-2">請求元</h3>
-                    <p className="text-sm">あなたの会社名</p>
-                    <p className="text-sm">〒000-0000</p>
-                    <p className="text-sm">東京都渋谷区1-1-1</p>
-                    <p className="text-sm">TEL: 03-0000-0000</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">請求先</h3>
-                    <p className="text-sm">{selectedCustomer?.company}</p>
-                    <p className="text-sm">{selectedCustomer?.name} 様</p>
-                    <p className="text-sm">{selectedCustomer?.address}</p>
-                    <p className="text-sm">TEL: {selectedCustomer?.phone}</p>
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => downloadInvoice(invoice)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => resendInvoice(invoice)}
+                      className="text-green-600 hover:text-green-800"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => duplicateInvoice(invoice)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
-                  <div>
-                    <p className="text-sm"><span className="font-medium">請求書番号:</span> {invoiceForm.number}</p>
-                    <p className="text-sm"><span className="font-medium">発行日:</span> {invoiceForm.date}</p>
-                    <p className="text-sm"><span className="font-medium">支払期限:</span> {invoiceForm.dueDate}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-600">¥{calculateTotal().toLocaleString()}</p>
-                    <p className="text-sm text-gray-600">請求金額（税込）</p>
-                  </div>
-                </div>
-                
-                <table className="w-full mb-8 border-collapse border border-gray-300">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="border border-gray-300 px-4 py-2 text-left">項目</th>
-                      <th className="border border-gray-300 px-4 py-2 text-center">数量</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">単価</th>
-                      <th className="border border-gray-300 px-4 py-2 text-center">税率</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">金額</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoiceItems.map((item) => (
-                      <tr key={item.id}>
-                        <td className="border border-gray-300 px-4 py-2">{item.description}</td>
-                        <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">¥{item.unitPrice.toLocaleString()}</td>
-                        <td className="border border-gray-300 px-4 py-2 text-center">{item.taxRate}%</td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">¥{item.amount.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                
-                <div className="flex justify-end mb-8">
-                  <div className="w-64">
-                    <div className="flex justify-between py-1">
-                      <span>小計:</span>
-                      <span>¥{calculateSubtotal().toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span>消費税:</span>
-                      <span>¥{calculateTax().toLocaleString()}</span>
-                    </div>
-                    <div className="border-t border-gray-300 pt-2 mt-2">
-                      <div className="flex justify-between font-bold text-lg">
-                        <span>合計:</span>
-                        <span>¥{calculateTotal().toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {selectedBankAccount && (
-                  <div className="mb-8">
-                    <h3 className="font-semibold mb-2">振込先</h3>
-                    <div className="text-sm space-y-1">
-                      <p><span className="font-medium">銀行名:</span> {selectedBankAccount.bankName}</p>
-                      <p><span className="font-medium">支店名:</span> {selectedBankAccount.branchName}</p>
-                      <p><span className="font-medium">口座種別:</span> {selectedBankAccount.accountType === 'checking' ? '当座' : '普通'}</p>
-                      <p><span className="font-medium">口座番号:</span> {selectedBankAccount.accountNumber}</p>
-                      <p><span className="font-medium">口座名義:</span> {selectedBankAccount.accountHolder}</p>
-                    </div>
-                  </div>
-                )}
-                
-                {invoiceForm.notes && (
-                  <div>
-                    <h3 className="font-semibold mb-2">備考</h3>
-                    <p className="text-sm whitespace-pre-wrap">{invoiceForm.notes}</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowPreviewModal(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  閉じる
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPreviewModal(false)
-                    downloadPDF()
-                  }}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-                >
-                  PDFダウンロード
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPreviewModal(false)
-                    handleSend()
-                  }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                >
-                  送信
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 送信確認モーダル */}
-        {showSendModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">請求書送信</h3>
-                <button
-                  onClick={() => setShowSendModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="mb-4">
-                <p className="text-sm text-gray-600">以下の宛先に請求書を送信します：</p>
-                <p className="font-medium mt-2">{selectedCustomer?.company}</p>
-                <p className="text-sm text-gray-600">{selectedCustomer?.email}</p>
-                <p className="font-medium mt-2">金額: ¥{calculateTotal().toLocaleString()}</p>
-              </div>
-              <div className="mb-4">
-                <h4 className="font-medium mb-2">送信オプション</h4>
-                <div className="space-y-2 text-sm">
-                  {sendOptions.sendPdf && <p>• PDFファイルで送信</p>}
-                  {sendOptions.sendMail && <p>• 郵送も併用</p>}
-                  {sendOptions.confirmationEmail && <p>• 送信確認メールを受信</p>}
-                  {sendOptions.reminderEmail && <p>• 支払期限リマインダーを設定</p>}
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowSendModal(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={confirmSend}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                >
-                  送信実行
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 保存確認モーダル */}
-        {showSaveModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">請求書保存</h3>
-                <button
-                  onClick={() => setShowSaveModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="mb-4">
-                <p className="text-sm text-gray-600">請求書を下書きとして保存します。</p>
-                <p className="font-medium mt-2">請求書番号: {invoiceForm.number}</p>
-                <p className="text-sm text-gray-600">顧客: {selectedCustomer?.company}</p>
-                <p className="font-medium">金額: ¥{calculateTotal().toLocaleString()}</p>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowSaveModal(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={confirmSave}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  保存
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* テンプレート保存モーダル */}
-        {showTemplateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">テンプレート保存</h3>
-                <button
-                  onClick={() => setShowTemplateModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">テンプレート名</label>
-                <input
-                  type="text"
-                  value={newTemplateName}
-                  onChange={(e) => setNewTemplateName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例: ウェブ制作標準テンプレート"
-                />
-              </div>
-              <div className="mb-4">
-                <p className="text-sm text-gray-600">現在の請求項目（{invoiceItems.length}件）をテンプレートとして保存します。</p>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setShowTemplateModal(false)
-                    setNewTemplateName('')
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={confirmSaveTemplate}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  保存
-                </button>
-              </div>
+              ))}
             </div>
           </div>
         )}
       </main>
-    </div>
-  )
-}
 
-export default InvoiceCreation
+      {/* 顧客選択モーダル */}
+      {showCustomerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">顧客選択</h3>
+              <button
+                onClick={() => setShowCustomerModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="顧客名、会社名、メールアドレスで検索"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-3">
+              {filteredCustomers.map((customer) => (
+                <div
+                  key={customer.id}
+                  onClick={() => {
+                    setSelectedCustomer(customer)
+                    setShowCustomerModal(false)
+                    setSearchTerm('')
+                    showNotification('success', `${customer.company} を選択しました`)
+                  }}
+                  className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition-colors"
+                >
+                  <div className="flex justify-between">
+                    <div>
+                      <h4 className="font-medium">{customer.company}</h4>
+                      <p className="text-sm text-gray-600">{customer.name}</p>
+                      <p className="text-sm text-gray-600">{customer.email}</p>
+                      <p className="text-sm text-gray-600">{customer.phone}</p>
+                    </div>
+                    <div className="text-right">
+                      <Building className="w-5 h-5 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {filteredCustomers.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  検索結果が見つかりません
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowCustomerModal(false)
+                  openCustomerForm()
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                新規追加
+              </button>
+              <button
+                onClick={() => setShowCustomerFormModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 請求項目選択モーダル */}
+      {showItemSelectionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">請求項目選択</h3>
+              <button
+                onClick={() => setShowItemSelectionModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="テンプレート名で検索"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-3">
+              {templates
+                .filter(template => 
+                  template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  template.description.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((template) => (
+                <div
+                  key={template.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // テンプレートの項目を請求書に追加
+                    console.log('テンプレート選択:', template);
+                    const newItems = template.items.map(item => {
+                      const newItem = {
+                        ...item,
+                        id: Date.now().toString() + Math.random().toString(),
+                        amount: item.quantity * item.unitPrice
+                      };
+                      console.log('新しい請求項目:', newItem);
+                      return newItem;
+                    });
+                    console.log('追加する項目:', newItems);
+                    setInvoiceItems(prevItems => {
+                      const updatedItems = [...prevItems, ...newItems].map(item => ({
+                        ...item,
+                        amount: item.quantity * item.unitPrice
+                      }));
+                      console.log('更新後の請求項目:', updatedItems);
+                      return updatedItems;
+                    });
+                    console.log('請求項目が更新されました');
+                    setShowItemSelectionModal(false);
+                    setSearchTerm('');
+                    showNotification('success', `テンプレート「${template.name}」を追加しました`);
+                  }}
+                  className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition-colors"
+                >
+                  <div className="flex justify-between">
+                    <div>
+                      <h4 className="font-medium">{template.name}</h4>
+                      <p className="text-sm text-gray-600">{template.description}</p>
+                      <div className="mt-2">
+                        {template.items.map((item, index) => (
+                          <p key={index} className="text-sm text-gray-500">
+                            {item.description} - ¥{item.amount.toLocaleString()}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {templates.filter(template => 
+                template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                template.description.toLowerCase().includes(searchTerm.toLowerCase())
+              ).length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  テンプレートがありません
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowItemSelectionModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 振込先選択モーダル */}
+      {showBankSelectionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">振込先選択</h3>
+              <button
+                onClick={() => setShowBankSelectionModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="銀行名、支店名で検索"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-3">
+              {bankAccounts.map((bank) => (
+                <div
+                  key={bank.id}
+                  onClick={() => {
+                    setSelectedBankAccount(bank);
+                    setShowBankSelectionModal(false);
+                    setSearchTerm('');
+                    showNotification('success', `${bank.bankName} を選択しました`);
+                  }}
+                  className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition-colors"
+                >
+                  <div className="flex justify-between">
+                    <div>
+                      <h4 className="font-medium">{bank.bankName}</h4>
+                      <p className="text-sm text-gray-600">{bank.branchName}</p>
+                      <p className="text-sm text-gray-600">
+                        {bank.accountType === 'checking' ? '当座' : '普通'} {bank.accountNumber}
+                      </p>
+                      <p className="text-sm text-gray-600">{bank.accountHolder}</p>
+                    </div>
+                    <div className="text-right">
+                      {bank.isDefault && (
+                        <span className="inline-flex px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                          デフォルト
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {bankAccounts.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  振込先がありません
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowBankSelectionModal(false);
+                  openBankForm();
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                新規追加
+              </button>
+              <button
+                onClick={() => setShowBankSelectionModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default InvoiceCreation;
+
