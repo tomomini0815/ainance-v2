@@ -64,6 +64,11 @@ const InvoiceCreation: React.FC = () => {
   const [showBankModal, setShowBankModal] = useState(false)
   const [showBankFormModal, setShowBankFormModal] = useState(false)
   const [showCreateBankModal, setShowCreateBankModal] = useState(false)
+  
+  // モーダル表示状態の変更を監視
+  useEffect(() => {
+    console.log('showCreateBankModal state changed:', showCreateBankModal);
+  }, [showCreateBankModal]);
   const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [showSendModal, setShowSendModal] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
@@ -1753,7 +1758,6 @@ const InvoiceCreation: React.FC = () => {
               <button
                 onClick={() => {
                   setShowBankSelectionModal(false);
-                  setShowCreateBankModal(true);
                   // 振込先フォームをリセット
                   setBankForm({
                     bankName: '',
@@ -1764,6 +1768,9 @@ const InvoiceCreation: React.FC = () => {
                     isDefault: false
                   });
                   setEditingBank(null);
+                  setTimeout(() => {
+                    setShowCreateBankModal(true);
+                  }, 100);
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
