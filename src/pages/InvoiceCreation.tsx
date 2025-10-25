@@ -63,12 +63,24 @@ const InvoiceCreation: React.FC = () => {
   const [showCustomerModal, setShowCustomerModal] = useState(false)
   const [showBankModal, setShowBankModal] = useState(false)
   const [showBankFormModal, setShowBankFormModal] = useState(false)
+  const [showCreateBankModal, setShowCreateBankModal] = useState(false)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [showSendModal, setShowSendModal] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false)
+  const [newTemplateForm, setNewTemplateForm] = useState({
+    name: '',
+    description: '',
+    items: [] as InvoiceItem[]
+  })
   const [showItemSelectionModal, setShowItemSelectionModal] = useState(false)
   const [showBankSelectionModal, setShowBankSelectionModal] = useState(false)
+  
+  // モーダル表示状態の変更を監視
+  useEffect(() => {
+    console.log('showBankSelectionModal state changed:', showBankSelectionModal);
+  }, [showBankSelectionModal]);
   const [newTemplateName, setNewTemplateName] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null)
@@ -1152,7 +1164,10 @@ const InvoiceCreation: React.FC = () => {
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold">振込先</h2>
                   <button
-                    onClick={() => setShowBankSelectionModal(true)}
+                    onClick={() => {
+                      console.log('振込先選択モーダル表示');
+                      setShowBankSelectionModal(true);
+                    }}
                     className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                   >
                     <Banknote className="w-4 h-4 mr-2" />
@@ -1646,13 +1661,30 @@ const InvoiceCreation: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="mt-4 flex justify-end space-x-3">
+            <div className="mt-4 flex justify-between">
               <button
-                onClick={() => setShowItemSelectionModal(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                onClick={() => {
+                  setShowItemSelectionModal(false);
+                  // 現在の請求項目をテンプレートフォームに設定
+                  setNewTemplateForm({
+                    name: '',
+                    description: '',
+                    items: invoiceItems.map(item => ({ ...item }))
+                  });
+                  setShowCreateTemplateModal(true);
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
               >
-                キャンセル
+                新規テンプレート作成
               </button>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowItemSelectionModal(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  キャンセル
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1721,7 +1753,17 @@ const InvoiceCreation: React.FC = () => {
               <button
                 onClick={() => {
                   setShowBankSelectionModal(false);
-                  openBankForm();
+                  setShowCreateBankModal(true);
+                  // 振込先フォームをリセット
+                  setBankForm({
+                    bankName: '',
+                    branchName: '',
+                    accountType: 'checking',
+                    accountNumber: '',
+                    accountHolder: '',
+                    isDefault: false
+                  });
+                  setEditingBank(null);
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
@@ -1732,6 +1774,297 @@ const InvoiceCreation: React.FC = () => {
                 className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
               >
                 キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 振込先作成モーダル */}
+      {showCreateBankModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">振込先作成</h3>
+              <button
+                onClick={() => setShowCreateBankModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">銀行名</label>
+                <input
+                  type="text"
+                  value={bankForm.bankName}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, bankName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 三菱UFJ銀行"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">支店名</label>
+                <input
+                  type="text"
+                  value={bankForm.branchName}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, branchName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 渋谷支店"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">口座種別</label>
+                <select
+                  value={bankForm.accountType}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, accountType: e.target.value as 'savings' | 'checking' }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="checking">当座</option>
+                  <option value="savings">普通</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">口座番号</label>
+                <input
+                  type="text"
+                  value={bankForm.accountNumber}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, accountNumber: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 1234567"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">口座名義</label>
+                <input
+                  type="text"
+                  value={bankForm.accountHolder}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, accountHolder: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 株式会社サンプル"
+                />
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={bankForm.isDefault}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, isDefault: e.target.checked }))}
+                  className="mr-2"
+                />
+                <label className="text-sm text-gray-700">デフォルトの振込先に設定</label>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCreateBankModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={() => {
+                  if (!bankForm.bankName || !bankForm.branchName || !bankForm.accountNumber || !bankForm.accountHolder) {
+                    showNotification('error', 'すべての項目を入力してください');
+                    return;
+                  }
+
+                  const newBank: BankAccount = {
+                    id: Date.now().toString(),
+                    ...bankForm
+                  };
+
+                  if (bankForm.isDefault) {
+                    setBankAccounts(accounts => [
+                      newBank,
+                      ...accounts.map(account => ({ ...account, isDefault: false }))
+                    ]);
+                  } else {
+                    setBankAccounts(accounts => [...accounts, newBank]);
+                  }
+
+                  setShowCreateBankModal(false);
+                  showNotification('success', '振込先を追加しました');
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                作成
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 顧客フォームモーダル */}
+      {showCustomerFormModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">
+                {editingCustomer ? '顧客編集' : '顧客登録'}
+              </h3>
+              <button
+                onClick={() => setShowCustomerFormModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">氏名</label>
+                <input
+                  type="text"
+                  value={customerForm.name}
+                  onChange={(e) => setCustomerForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 山田太郎"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">会社名</label>
+                <input
+                  type="text"
+                  value={customerForm.company}
+                  onChange={(e) => setCustomerForm(prev => ({ ...prev, company: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 株式会社サンプル"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">メールアドレス</label>
+                <input
+                  type="email"
+                  value={customerForm.email}
+                  onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: example@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">電話番号</label>
+                <input
+                  type="tel"
+                  value={customerForm.phone}
+                  onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 03-0000-0000"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">住所</label>
+                <input
+                  type="text"
+                  value={customerForm.address}
+                  onChange={(e) => setCustomerForm(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 東京都渋谷区1-1-1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">法人番号</label>
+                <input
+                  type="text"
+                  value={customerForm.taxNumber}
+                  onChange={(e) => setCustomerForm(prev => ({ ...prev, taxNumber: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: T1234567890123"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCustomerFormModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={saveCustomer}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                {editingCustomer ? '更新' : '登録'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* テンプレート作成モーダル */}
+      {showCreateTemplateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">テンプレート作成</h3>
+              <button
+                onClick={() => setShowCreateTemplateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">テンプレート名</label>
+                <input
+                  type="text"
+                  value={newTemplateForm.name}
+                  onChange={(e) => setNewTemplateForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="テンプレート名を入力"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">説明</label>
+                <textarea
+                  value={newTemplateForm.description}
+                  onChange={(e) => setNewTemplateForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="テンプレートの説明を入力"
+                />
+              </div>
+              <div>
+                <h4 className="text-md font-medium text-gray-700 mb-2">請求項目</h4>
+                <div className="space-y-2">
+                  {newTemplateForm.items.map((item, index) => (
+                    <div key={index} className="flex items-center space-x-2 p-2 border border-gray-200 rounded-md">
+                      <span className="text-sm flex-1">{item.description} - ¥{item.amount.toLocaleString()}</span>
+                      <span className="text-sm text-gray-500">数量: {item.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCreateTemplateModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={() => {
+                  if (!newTemplateForm.name.trim()) {
+                    showNotification('error', 'テンプレート名を入力してください');
+                    return;
+                  }
+                  
+                  const newTemplate: Template = {
+                    id: Date.now().toString(),
+                    name: newTemplateForm.name,
+                    description: newTemplateForm.description,
+                    items: newTemplateForm.items,
+                    notes: ''
+                  };
+                  
+                  setTemplates(prev => [...prev, newTemplate]);
+                  setShowCreateTemplateModal(false);
+                  showNotification('success', 'テンプレートを作成しました');
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                作成
               </button>
             </div>
           </div>
