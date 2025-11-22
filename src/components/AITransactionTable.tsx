@@ -29,7 +29,7 @@ interface AITransactionTableProps {
 const AITransactionTable: React.FC<AITransactionTableProps> = ({ aiTransactions, loading }) => {
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+      <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-text-main">AI自動仕訳</h3>
           <Link
@@ -68,7 +68,7 @@ const AITransactionTable: React.FC<AITransactionTableProps> = ({ aiTransactions,
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+    <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-text-main">AI自動仕訳</h3>
         <Link

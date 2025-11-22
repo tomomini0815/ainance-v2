@@ -64,7 +64,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
     .slice(0, 5)
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+    <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-text-main">最近の履歴</h3>
         <div className="flex items-center space-x-3">

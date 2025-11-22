@@ -199,7 +199,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+    <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-text-main">収益・支出・利益推移</h3>
         <div className="flex space-x-1 bg-surface-highlight/50 rounded-lg p-1">
