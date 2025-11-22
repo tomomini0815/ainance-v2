@@ -96,7 +96,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value = useMemo(() => ({
     user: session?.user || null,
     isAuthenticated: !!session?.user,
-    loading: !session,
+    // loadingステートを常にfalseに設定し、即時表示を実現
+    loading: false,
     signIn,
     signUp,
     signOut,
