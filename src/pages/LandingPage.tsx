@@ -174,8 +174,7 @@ const LandingPage: React.FC = () => {
                   transition={{ delay: 3.0 }}
                   className="text-xl text-gray-400 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light"
                 >
-                  Experience the next generation of financial management.
-                  Automated, intelligent, and beautifully designed.
+                  AIが経理業務を自動化し、個人事業主から法人まで、あらゆる事業者の成長をサポート。時間と手間を大幅に削減し、経営に集中できます。
                 </motion.p>
 
                 <motion.div
@@ -303,8 +302,8 @@ const LandingPage: React.FC = () => {
                     <div className="w-14 h-14 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-6">
                       <Zap className="w-7 h-7 text-blue-400" />
                     </div>
-                    <h3 className="text-3xl font-bold mb-4">AI-Powered Automation</h3>
-                    <p className="text-gray-400 text-lg max-w-md">Instantly process receipts with 99% accuracy. Our AI learns from your data to provide smarter suggestions over time.</p>
+                    <h3 className="text-3xl font-bold mb-4">AIによる自動経理処理</h3>
+                    <p className="text-gray-400 text-lg max-w-md">レシートや請求書をAIが自動で処理。99%の高精度で仕分けを行い、入力作業の時間を80%以上削減します。経理の専門知識がなくても簡単に利用可能。</p>
                   </div>
                   <div className="mt-8 rounded-xl bg-black/30 border border-white/5 p-4 backdrop-blur-sm transform translate-y-10 group-hover:translate-y-0 transition-transform duration-500">
                     <div className="flex items-center space-x-4">
@@ -326,8 +325,8 @@ const LandingPage: React.FC = () => {
               >
                 <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl group-hover:bg-purple-500/30 transition-colors"></div>
                 <Sparkles className="w-10 h-10 text-purple-400 mb-6" />
-                <h3 className="text-xl font-bold mb-2">Smart Categorization</h3>
-                <p className="text-gray-400 text-sm">Automatic expense sorting into 99+ categories.</p>
+                <h3 className="text-xl font-bold mb-2">スマートなカテゴリ分類</h3>
+                <p className="text-gray-400 text-sm">AIが自動で99以上のカテゴリに支出を分類。税務申告や経営分析に必要な情報をすぐに整理できます。</p>
               </motion.div>
 
               {/* Small Feature 2 */}
@@ -340,8 +339,8 @@ const LandingPage: React.FC = () => {
               >
                 <div className="absolute -right-10 -top-10 w-32 h-32 bg-green-500/20 rounded-full blur-2xl group-hover:bg-green-500/30 transition-colors"></div>
                 <Shield className="w-10 h-10 text-green-400 mb-6" />
-                <h3 className="text-xl font-bold mb-2">Bank-Grade Security</h3>
-                <p className="text-gray-400 text-sm">256-bit encryption keeps your financial data safe.</p>
+                <h3 className="text-xl font-bold mb-2">銀行レベルのセキュリティ</h3>
+                <p className="text-gray-400 text-sm">256ビット暗号化と多重認証により、財務データを徹底的に保護。安心してご利用いただけます。</p>
               </motion.div>
 
               {/* Medium Feature */}
@@ -354,8 +353,8 @@ const LandingPage: React.FC = () => {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
                 <div className="max-w-xl relative z-10">
-                  <h3 className="text-3xl font-bold mb-4">Real-time Analytics</h3>
-                  <p className="text-gray-400 text-lg">Visualize your cash flow, expenses, and profits in real-time. Make data-driven decisions with confidence.</p>
+                  <h3 className="text-3xl font-bold mb-4">リアルタイム経営分析</h3>
+                  <p className="text-gray-400 text-lg">現金流量、支出、利益をリアルタイムで可視化。経営判断に必要な情報を常に最新の状態で提供します。</p>
                 </div>
                 <div className="hidden md:block relative z-10">
                   <TrendingUp className="w-32 h-32 text-white/5 group-hover:text-white/10 transition-colors" />
@@ -405,11 +404,11 @@ const LandingPage: React.FC = () => {
                 className="space-y-8 text-center lg:text-left order-1 lg:order-2"
               >
                 <h2 className="text-4xl sm:text-5xl font-bold leading-tight tracking-tighter">
-                  Manage your finances <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">on the go.</span>
+                  いつでもどこでも経理業務 <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">シームレスに。</span>
                 </h2>
                 <p className="text-xl text-gray-400 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light">
-                  Our intuitive mobile app brings the power of Ainance to your fingertips. Track expenses, approve transactions, and get real-time insights from anywhere.
+                  直感的なモバイルアプリで、Ainanceのパワーを指先に。出張中でも会議中でも、リアルタイムで経費追跡、取引承認、経営洞察を手に入れることができます。
                 </p>
                 <div className="flex justify-center lg:justify-start space-x-4">
                   <MagneticButton>
@@ -435,11 +434,11 @@ const LandingPage: React.FC = () => {
               className="relative"
             >
               <h2 className="text-5xl sm:text-7xl font-bold mb-8 tracking-tighter">
-                Ready to transform <br />
-                your workflow?
+                あなたのビジネスを <br />
+                次のレベルへ。
               </h2>
               <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
-                Join thousands of businesses using Ainance to streamline their accounting.
+                Ainanceで経理業務の自動化を体験し、手間のかかるルーティンワークから解放され、本当に重要な仕事に集中しましょう。
               </p>
 
               <div className="flex justify-center">
