@@ -12,17 +12,21 @@
     <title>Ainance - AI経理プラットフォーム</title>
     <!-- GitHub PagesでのSPAルーティング対応 -->
     <script>
-      // 404.htmlからのリダイレクトを処理
+      // GitHub PagesでのSPAルーティング対応
       (function() {
+        // 404.htmlからのリダイレクトを処理
         var redirect = sessionStorage.redirect;
-        delete sessionStorage.redirect;
         if (redirect && redirect != location.href) {
-          history.replaceState(null, null, redirect);
+          // リダイレクト先をハッシュベースのルーティングに変換
+          var hashRedirect = '#' + redirect;
+          history.replaceState(null, null, hashRedirect);
+          // セッションストレージからリダイレクト情報を削除
+          delete sessionStorage.redirect;
         }
       })();
     </script>
-    <script type="module" crossorigin src="/ainance-v2/assets/index-CwjlKc14.js"></script>
-    <link rel="stylesheet" crossorigin href="/ainance-v2/assets/index-2OBXXYi9.css">
+    <script type="module" crossorigin src="/ainance-v2/assets/index-CocRHi0U.js"></script>
+    <link rel="stylesheet" crossorigin href="/ainance-v2/assets/index-CukejVEX.css">
   </head>
   <body>
     <div id="root"></div>
