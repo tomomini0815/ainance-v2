@@ -219,21 +219,29 @@ const LandingPage: React.FC = () => {
                   className="relative z-10 transform-style-3d group"
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/30 to-purple-500/30 rounded-3xl blur-3xl transform translate-y-10 group-hover:blur-2xl transition-all duration-700"></div>
-                  <div className="w-full rounded-3xl shadow-2xl border-[8px] border-[#1e293b] relative z-10 bg-gradient-to-br from-blue-900/20 to-purple-900/20 flex items-center justify-center min-h-[400px]">
-                    <img
-                      src="/assets/real_dashboard_desktop.png"
-                      alt="Dashboard Interface"
-                      className="w-full h-full object-cover rounded-3xl"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.parentElement!.innerHTML = '<div class="text-center p-8"><div class="text-4xl mb-4">📊</div><p class="text-gray-400">Dashboard Preview</p></div>';
-                      }}
-                      onLoad={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        console.log('Desktop image loaded successfully:', target.src);
-                      }}
-                    />
+                  {/* Macbook Pro Mockup */}
+                  <div className="w-full rounded-2xl shadow-2xl border border-[#1e293b] relative z-10 bg-gradient-to-br from-blue-900/20 to-purple-900/20 flex items-center justify-center min-h-[400px] overflow-hidden">
+                    {/* Macbook Pro Screen */}
+                    <div className="w-full h-full bg-black rounded-b-2xl rounded-t-sm overflow-hidden relative">
+                      <img
+                        src="/assets/real_dashboard_desktop.png"
+                        alt="Ainance Dashboard on Macbook Pro"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.parentElement!.innerHTML = '<div class="text-center p-8"><div class="text-4xl mb-4">📊</div><p class="text-gray-400">Dashboard Preview</p></div>';
+                        }}
+                        onLoad={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          console.log('Macbook dashboard image loaded successfully:', target.src);
+                        }}
+                      />
+                      {/* Macbook Pro Notch */}
+                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/3 h-6 bg-black rounded-b-2xl"></div>
+                    </div>
+                    {/* Macbook Pro Bottom */}
+                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-4/5 h-4 bg-gradient-to-r from-gray-800 to-gray-900 rounded-full"></div>
                   </div>
 
                   {/* Mobile Mockup Overlay */}
@@ -241,22 +249,26 @@ const LandingPage: React.FC = () => {
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.6 }}
-                    className="absolute -bottom-12 -right-4 w-[28%] rounded-[2.5rem] shadow-2xl border-[8px] border-[#1e293b] z-20 transform group-hover:translate-y-[-10px] transition-transform duration-700 bg-gradient-to-br from-purple-900/20 to-blue-900/20 flex items-center justify-center aspect-[9/16]"
+                    className="absolute -bottom-16 -right-8 w-[35%] rounded-[2.5rem] shadow-2xl border-[8px] border-[#1e293b] z-20 transform group-hover:translate-y-[-10px] transition-transform duration-700 bg-gradient-to-br from-purple-900/20 to-blue-900/20 flex items-center justify-center aspect-[9/16]"
                   >
-                    <img
-                      src="/assets/real_dashboard_mobile.png"
-                      alt="Mobile Interface"
-                      className="w-full h-full object-cover rounded-[2.5rem]"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.parentElement!.innerHTML = '<div class="text-center p-4"><div class="text-2xl mb-2">📱</div><p class="text-gray-400 text-xs">Mobile Preview</p></div>';
-                      }}
-                      onLoad={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        console.log('Mobile image loaded successfully:', target.src);
-                      }}
-                    />
+                    <div className="w-full h-full bg-black rounded-[2rem] overflow-hidden relative">
+                      <img
+                        src="/assets/real_dashboard_mobile.png"
+                        alt="Ainance Mobile Dashboard"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.parentElement!.innerHTML = '<div class="text-center p-4"><div class="text-2xl mb-2">📱</div><p class="text-gray-400 text-xs">Mobile Preview</p></div>';
+                        }}
+                        onLoad={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          console.log('Mobile dashboard image loaded successfully:', target.src);
+                        }}
+                      />
+                      {/* Mobile Notch */}
+                      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-1/3 h-1 bg-black rounded-full"></div>
+                    </div>
                   </motion.div>
 
                   {/* Floating Cards */}
