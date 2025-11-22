@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import {ArrowLeft, Plus, Check, X, RefreshCw, AlertCircle, Settings, Eye, EyeOff, Copy} from 'lucide-react'
+import { ArrowLeft, Plus, Check, X, RefreshCw, AlertCircle, Settings, Eye, EyeOff, Copy } from 'lucide-react'
 
 interface Integration {
   id: string
@@ -26,7 +26,7 @@ interface APIKey {
 
 const IntegrationSettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'integrations' | 'api' | 'sync'>('integrations')
-  const [showApiKey, setShowApiKey] = useState<{[key: string]: boolean}>({})
+  const [showApiKey, setShowApiKey] = useState<{ [key: string]: boolean }>({})
 
   const [integrations] = useState<Integration[]>([
     {
@@ -143,11 +143,11 @@ const IntegrationSettings: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'connected': return 'text-green-600 bg-green-100'
-      case 'disconnected': return 'text-gray-600 bg-gray-100'
-      case 'error': return 'text-red-600 bg-red-100'
-      case 'pending': return 'text-yellow-600 bg-yellow-100'
-      default: return 'text-gray-600 bg-gray-100'
+      case 'connected': return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30'
+      case 'disconnected': return 'text-text-muted bg-surface-highlight'
+      case 'error': return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+      case 'pending': return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30'
+      default: return 'text-text-muted bg-surface-highlight'
     }
   }
 
@@ -189,50 +189,47 @@ const IntegrationSettings: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* ヘッダー */}
         <div className="flex items-center mb-6">
           <Link to="/dashboard" className="mr-4">
-            <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
+            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">連携設定</h1>
-            <p className="text-gray-600">外部サービスとの連携を管理します</p>
+            <h1 className="text-2xl font-bold text-text-main">連携設定</h1>
+            <p className="text-text-muted">外部サービスとの連携を管理します</p>
           </div>
         </div>
 
         {/* タブナビゲーション */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-          <div className="border-b border-gray-200">
+        <div className="bg-surface rounded-xl shadow-sm border border-border mb-6">
+          <div className="border-b border-border">
             <nav className="flex space-x-8 px-6">
               <button
                 onClick={() => setActiveTab('integrations')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'integrations'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'integrations'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-main'
+                  }`}
               >
                 サービス連携
               </button>
               <button
                 onClick={() => setActiveTab('api')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'api'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'api'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-main'
+                  }`}
               >
                 API管理
               </button>
               <button
                 onClick={() => setActiveTab('sync')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'sync'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'sync'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-main'
+                  }`}
               >
                 同期履歴
               </button>
@@ -244,29 +241,29 @@ const IntegrationSettings: React.FC = () => {
         {activeTab === 'integrations' && (
           <div className="space-y-6">
             {/* 接続済みサービス */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold mb-4">接続済みサービス</h2>
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold mb-4 text-text-main">接続済みサービス</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {integrations.map((integration) => (
-                  <div key={integration.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={integration.id} className="border border-border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center">
                         <span className="text-2xl mr-3">{integration.logo}</span>
                         <div>
-                          <h3 className="font-medium text-gray-900">{integration.name}</h3>
-                          <p className="text-sm text-gray-600">{integration.description}</p>
+                          <h3 className="font-medium text-text-main">{integration.name}</h3>
+                          <p className="text-sm text-text-muted">{integration.description}</p>
                         </div>
                       </div>
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(integration.status)}`}>
                         {getStatusText(integration.status)}
                       </span>
                     </div>
-                    
+
                     <div className="mb-3">
-                      <p className="text-xs text-gray-500">最終同期: {integration.lastSync}</p>
+                      <p className="text-xs text-text-muted">最終同期: {integration.lastSync}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {integration.features.map((feature, index) => (
-                          <span key={index} className="inline-flex px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                          <span key={index} className="inline-flex px-2 py-1 text-xs bg-primary/10 text-primary rounded">
                             {feature}
                           </span>
                         ))}
@@ -278,14 +275,14 @@ const IntegrationSettings: React.FC = () => {
                         <>
                           <button
                             onClick={() => handleSync(integration.id)}
-                            className="flex-1 bg-blue-600 text-white text-xs py-2 px-3 rounded hover:bg-blue-700"
+                            className="flex-1 bg-primary text-white text-xs py-2 px-3 rounded hover:bg-primary/90"
                           >
                             <RefreshCw className="w-3 h-3 inline mr-1" />
                             同期
                           </button>
                           <button
                             onClick={() => handleDisconnect(integration.id)}
-                            className="flex-1 bg-gray-600 text-white text-xs py-2 px-3 rounded hover:bg-gray-700"
+                            className="flex-1 bg-surface-highlight text-text-main text-xs py-2 px-3 rounded hover:bg-border"
                           >
                             切断
                           </button>
@@ -298,7 +295,7 @@ const IntegrationSettings: React.FC = () => {
                           接続
                         </button>
                       )}
-                      <button className="p-2 text-gray-600 hover:text-gray-800">
+                      <button className="p-2 text-text-muted hover:text-text-main">
                         <Settings className="w-4 h-4" />
                       </button>
                     </div>
@@ -308,20 +305,20 @@ const IntegrationSettings: React.FC = () => {
             </div>
 
             {/* 利用可能なサービス */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold mb-4">利用可能なサービス</h2>
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold mb-4 text-text-main">利用可能なサービス</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {availableIntegrations.map((service, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                  <div key={index} className="border border-border rounded-lg p-4 hover:border-primary transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <span className="text-2xl mr-3">{service.logo}</span>
                         <div>
-                          <h3 className="font-medium text-gray-900">{service.name}</h3>
-                          <p className="text-sm text-gray-600 capitalize">{service.type}</p>
+                          <h3 className="font-medium text-text-main">{service.name}</h3>
+                          <p className="text-sm text-text-muted capitalize">{service.type}</p>
                         </div>
                       </div>
-                      <button className="bg-blue-600 text-white text-xs py-2 px-3 rounded hover:bg-blue-700">
+                      <button className="bg-primary text-white text-xs py-2 px-3 rounded hover:bg-primary/90">
                         <Plus className="w-3 h-3 inline mr-1" />
                         追加
                       </button>
@@ -336,75 +333,74 @@ const IntegrationSettings: React.FC = () => {
         {/* API管理タブ */}
         {activeTab === 'api' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">APIキー管理</h2>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                <h2 className="text-lg font-semibold text-text-main">APIキー管理</h2>
+                <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90">
                   <Plus className="w-4 h-4 inline mr-2" />
                   新しいAPIキー
                 </button>
               </div>
-              
+
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-surface-highlight">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名前</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">APIキー</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">権限</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最終使用</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ステータス</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">名前</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">APIキー</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">権限</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">最終使用</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">ステータス</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-surface divide-y divide-border">
                     {apiKeys.map((apiKey) => (
                       <tr key={apiKey.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-main">
                           {apiKey.name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main">
                           <div className="flex items-center space-x-2">
-                            <code className="bg-gray-100 px-2 py-1 rounded text-xs">
+                            <code className="bg-surface-highlight px-2 py-1 rounded text-xs">
                               {showApiKey[apiKey.id] ? apiKey.key : '••••••••••••••••'}
                             </code>
                             <button
                               onClick={() => toggleApiKeyVisibility(apiKey.id)}
-                              className="text-gray-600 hover:text-gray-800"
+                              className="text-text-muted hover:text-text-main"
                             >
                               {showApiKey[apiKey.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                             <button
                               onClick={() => copyApiKey(apiKey.key)}
-                              className="text-gray-600 hover:text-gray-800"
+                              className="text-text-muted hover:text-text-main"
                             >
                               <Copy className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main">
                           <div className="flex flex-wrap gap-1">
                             {apiKey.permissions.map((permission, index) => (
-                              <span key={index} className="inline-flex px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                              <span key={index} className="inline-flex px-2 py-1 text-xs bg-primary/10 text-primary rounded">
                                 {permission}
                               </span>
                             ))}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main">
                           {apiKey.lastUsed}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            apiKey.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${apiKey.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-surface-highlight text-text-muted'
+                            }`}>
                             {apiKey.status === 'active' ? 'アクティブ' : '無効'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
-                            <button className="text-blue-600 hover:text-blue-900">編集</button>
-                            <button className="text-red-600 hover:text-red-900">削除</button>
+                            <button className="text-primary hover:text-primary/80">編集</button>
+                            <button className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">削除</button>
                           </div>
                         </td>
                       </tr>
@@ -415,23 +411,23 @@ const IntegrationSettings: React.FC = () => {
             </div>
 
             {/* API使用状況 */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold mb-4">API使用状況</h2>
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold mb-4 text-text-main">API使用状況</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-blue-900">今月のリクエスト数</h3>
-                  <p className="text-2xl font-bold text-blue-600 mt-2">12,547</p>
-                  <p className="text-sm text-blue-700">上限: 50,000</p>
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <h3 className="font-medium text-blue-900 dark:text-blue-300">今月のリクエスト数</h3>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">12,547</p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">上限: 50,000</p>
                 </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-green-900">成功率</h3>
-                  <p className="text-2xl font-bold text-green-600 mt-2">99.2%</p>
-                  <p className="text-sm text-green-700">12,447 / 12,547</p>
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <h3 className="font-medium text-green-900 dark:text-green-300">成功率</h3>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">99.2%</p>
+                  <p className="text-sm text-green-700 dark:text-green-300">12,447 / 12,547</p>
                 </div>
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-yellow-900">平均レスポンス時間</h3>
-                  <p className="text-2xl font-bold text-yellow-600 mt-2">245ms</p>
-                  <p className="text-sm text-yellow-700">過去24時間</p>
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+                  <h3 className="font-medium text-yellow-900 dark:text-yellow-300">平均レスポンス時間</h3>
+                  <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-2">245ms</p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">過去24時間</p>
                 </div>
               </div>
             </div>
@@ -440,39 +436,39 @@ const IntegrationSettings: React.FC = () => {
 
         {/* 同期履歴タブ */}
         {activeTab === 'sync' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">同期履歴</h2>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+              <h2 className="text-lg font-semibold text-text-main">同期履歴</h2>
+              <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90">
                 <RefreshCw className="w-4 h-4 inline mr-2" />
                 全て同期
               </button>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-surface-highlight">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">時刻</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">サービス</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">データ種別</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">件数</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ステータス</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">時刻</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">サービス</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">データ種別</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">件数</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">ステータス</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-surface divide-y divide-border">
                   {syncHistory.map((sync, index) => (
                     <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main">
                         {sync.time}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-main">
                         {sync.source}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main">
                         {sync.type}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main">
                         {sync.count}件
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -482,9 +478,8 @@ const IntegrationSettings: React.FC = () => {
                           ) : (
                             <AlertCircle className="w-4 h-4 text-red-500 mr-2" />
                           )}
-                          <span className={`text-sm ${
-                            sync.status === 'success' ? 'text-green-600' : 'text-red-600'
-                          }`}>
+                          <span className={`text-sm ${sync.status === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                            }`}>
                             {sync.status === 'success' ? '成功' : 'エラー'}
                           </span>
                         </div>

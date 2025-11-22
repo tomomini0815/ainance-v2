@@ -1,94 +1,90 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useEffect, useState, Suspense, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import QuickActions from '../components/QuickActions'
-import RevenueChart from '../components/RevenueChart'
-import ExpenseChart from '../components/ExpenseChart'
-import TransactionTable from '../components/TransactionTable'
-import AITransactionTable from '../components/AITransactionTable'
-import TransactionForm from '../components/TransactionForm'
-import { ChevronRight, Plus } from 'lucide-react'
 import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
 import { useMySQLAITransactions } from '../hooks/useMySQLAITransactions'
 import { useAuth } from '../hooks/useAuth'
+import { Download, Plus } from 'lucide-react'
+
+// Lazy load heavy components
+const RevenueChart = React.lazy(() => import('../components/RevenueChart'));
+const ExpenseChart = React.lazy(() => import('../components/ExpenseChart'));
+const TransactionTable = React.lazy(() => import('../components/TransactionTable'));
+const AITransactionTable = React.lazy(() => import('../components/AITransactionTable'));
+const TransactionForm = React.lazy(() => import('../components/TransactionForm'));
+
+// Preload components
+// これらのコンポーネントはReact.lazyで遅延読み込みされるため、明示的なプリロードは不要です
 
 const Dashboard: React.FC = () => {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { transactions, loading: transactionsLoading, createTransaction } = useMySQLTransactions();
+  const { transactions, createTransaction } = useMySQLTransactions();
   const { aiTransactions, loading: aiTransactionsLoading } = useMySQLAITransactions();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    console.log('Dashboard: ページが読み込まれました');
-    console.log('Dashboard: 認証状態', { isAuthenticated, authUser, authLoading });
-    
-    // 認証状態の確認
-    if (authLoading) {
-      console.log('Dashboard: 認証状態を確認中...');
-      return;
-    }
-    
-    // 認証されている場合はユーザー情報を設定
-    if (isAuthenticated && authUser) {
-      console.log('Dashboard: useAuthフックからユーザー情報を取得しました:', authUser);
-      setUser(authUser);
-      // ローカルストレージにもユーザー情報を保存
-      localStorage.setItem('user', JSON.stringify(authUser));
-    }
-    
-    // 認証されていなくてもダッシュボードを表示
-    setLoading(false);
-  }, [isAuthenticated, authUser, authLoading, navigate]);
-
-  // 新規取引モーダル表示のイベントリスナー
   useEffect(() => {
     const handleOpenModal = () => setShowCreateForm(true);
     window.addEventListener('openCreateTransactionModal', handleOpenModal);
-    
+
     return () => {
       window.removeEventListener('openCreateTransactionModal', handleOpenModal);
     };
   }, []);
 
-  // ローディング中の表示
-  if (loading || transactionsLoading || authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">データを読み込んでいます...</p>
+  // Skeleton Loader Component
+  const DashboardSkeleton = () => (
+    <div className="min-h-screen animate-pulse">
+      <div className="p-4 bg-red-500 text-white text-center mb-4">
+        <p>ダッシュボードのローディング中...</p>
+        <p>authLoading: {authLoading ? 'true' : 'false'}</p>
+        <p>isAuthenticated: {isAuthenticated ? 'true' : 'false'}</p>
+      </div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+          <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        </div>
+        <div className="flex gap-3">
+          <div className="h-10 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-10 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
       </div>
-    );
+      <div className="h-24 w-full bg-gray-200 dark:bg-gray-700 rounded-xl mb-8"></div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="h-80 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+        <div className="h-80 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+        <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+      </div>
+    </div>
+  );
+
+  if (authLoading) {
+    console.log('ダッシュボードをスケルトンローディングで表示中 - authLoading:', authLoading);
+    return <DashboardSkeleton />;
   }
 
-  // CSV形式にデータを変換する関数
   const convertToCSV = (data: any[]): string => {
-    // ヘッダー行
     const headers = ['日付', '説明', '金額', 'カテゴリ', 'タイプ', 'ステータス'];
-    
-    // データ行
     const rows = data.map(transaction => [
       transaction.date,
-      `"${transaction.description}"`, // 説明にカンマが含まれる場合に備えてクォートで囲む
+      `"${transaction.description}"`,
       transaction.amount.toString(),
-      `"${transaction.category}"`, // カテゴリにカンマが含まれる場合に備えてクォートで囲む
+      `"${transaction.category}"`,
       transaction.type,
       transaction.status
     ]);
-    
-    // CSV文字列を作成
+
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.join(','))
     ].join('\n');
-    
+
     return csvContent;
   };
 
-  // CSVファイルをダウンロードする関数
   const downloadCSV = () => {
     const csvContent = convertToCSV(transactions);
     const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -102,129 +98,96 @@ const Dashboard: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  // 新規取引の作成
   const handleCreateTransaction = async (transactionData: any) => {
     try {
-      // creatorフィールドを認証されたユーザー情報で設定
-      if (user && user.id) {
-        // UUID形式のチェック
+      console.log('取引作成を開始:', transactionData);
+
+      if (authUser && authUser.id) {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(user.id)) {
-          transactionData.creator = user.id;
+        if (uuidRegex.test(authUser.id)) {
+          transactionData.creator = authUser.id;
         } else {
-          console.warn('無効なユーザーID形式です。匿名ユーザーとして処理します。');
-          transactionData.creator = '00000000-0000-0000-0000-000000000000'; // ダミーのUUID
+          transactionData.creator = '00000000-0000-0000-0000-000000000000';
         }
       } else {
-        // ユーザー情報がない場合も、取引は作成できるようにする
-        transactionData.creator = '00000000-0000-0000-0000-000000000000'; // ダミーのUUID
+        transactionData.creator = '00000000-0000-0000-0000-000000000000';
       }
-      
-      await createTransaction(transactionData);
+
+      console.log('creator IDを設定:', transactionData.creator);
+
+      const result = await createTransaction(transactionData);
+      console.log('取引作成成功:', result);
       setShowCreateForm(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('取引の作成に失敗:', error);
-      alert('取引の作成に失敗しました。もう一度お試しください。');
+      alert(`取引の作成に失敗しました: ${error.message || 'もう一度お試しください。'}`);
     }
   };
 
-  console.log('Dashboard: ダッシュボードを表示します');
-  console.log('Dashboard: 取引データ', transactions);
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* ヘッダーとエクスポートボタン */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div className="flex items-center justify-between w-full">
-            <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
-            <div className="flex sm:hidden gap-2">
-              <button
-                onClick={downloadCSV}
-                disabled={transactions.length === 0}
-                className={`px-3 py-2 rounded-md transition-colors flex items-center justify-center border ${
-                  transactions.length === 0
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-white text-green-600 border-green-600 hover:bg-green-50'
-                }`}
-                title="CSVエクスポート"
-              >
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                </svg>
-                <span className="text-sm">CSV</span>
-              </button>
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
-                title="新規取引"
-              >
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                <span className="text-sm">新規</span>
-              </button>
-            </div>
-          </div>
-          <div className="hidden sm:flex gap-2 whitespace-nowrap">
-            <button
-              onClick={downloadCSV}
-              disabled={transactions.length === 0}
-              className={`px-4 py-2 rounded-md transition-colors flex items-center justify-center border ${
-                transactions.length === 0
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-white text-green-600 border-green-600 hover:bg-green-50'
-              }`}
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-              </svg>
-              CSVエクスポート
-            </button>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              新規取引
-            </button>
-          </div>
+    <div className="min-h-screen">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-text-main tracking-tight">ダッシュボード</h1>
+          <p className="text-text-muted mt-1">財務状況の概要と最近の活動</p>
         </div>
-        
-        {/* クイックアクション */}
-        <QuickActions />
-        
-        {/* チャートセクション */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <RevenueChart transactions={transactions} />
-          <ExpenseChart transactions={transactions} />
-        </div>
-        
-        {/* テーブルセクション */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TransactionTable 
-            transactions={transactions} 
-            onOpenCreateModal={() => setShowCreateForm(true)} 
-            showCreateButton={false} // 新規作成ボタンを非表示
-          />
-          <AITransactionTable 
-            aiTransactions={aiTransactions} 
-            loading={transactionsLoading} 
-          />
-        </div>
-      </main>
 
-      {/* 新規取引作成モーダル */}
+        <div className="flex gap-3 w-full sm:w-auto">
+          <button
+            onClick={downloadCSV}
+            disabled={transactions.length === 0}
+            className={`btn-secondary flex-1 sm:flex-none flex items-center justify-center ${transactions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            CSV出力
+          </button>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="btn-primary flex-1 sm:flex-none flex items-center justify-center"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            新規取引
+          </button>
+        </div>
+      </div>
+
+      <QuickActions />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Suspense fallback={<div className="h-80 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <RevenueChart transactions={transactions} />
+        </Suspense>
+        <Suspense fallback={<div className="h-80 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <ExpenseChart transactions={transactions} />
+        </Suspense>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <TransactionTable
+            transactions={transactions}
+            onOpenCreateModal={() => setShowCreateForm(true)}
+            showCreateButton={false}
+          />
+        </Suspense>
+        <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <AITransactionTable
+            aiTransactions={aiTransactions}
+            loading={aiTransactionsLoading}
+          />
+        </Suspense>
+      </div>
+
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="p-6">
-              <TransactionForm
-                onSubmit={handleCreateTransaction}
-                onCancel={() => setShowCreateForm(false)}
-              />
+              <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+                <TransactionForm
+                  onSubmit={handleCreateTransaction}
+                  onCancel={() => setShowCreateForm(false)}
+                />
+              </Suspense>
             </div>
           </div>
         </div>

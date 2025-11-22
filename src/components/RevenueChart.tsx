@@ -9,6 +9,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler
 } from 'chart.js'
 
 ChartJS.register(
@@ -18,25 +19,23 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 )
 
 interface RevenueChartProps {
-  transactions: any[]; // 取引データをpropsとして受け取る
+  transactions: any[];
 }
 
 const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
-  // 月ごとの収益、支出、利益を計算
   const calculateMonthlyData = () => {
-    // 月ごとのデータを初期化
     const monthlyData: { [key: string]: { revenue: number; expense: number } } = {};
-    
-    // 3月から1年分の月を生成
+
     const months = [];
     const now = new Date();
     const startYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
-    const startMonth = now.getMonth() >= 2 ? 2 : 2; // 3月 (0-basedなので2)
-    
+    const startMonth = now.getMonth() >= 2 ? 2 : 2;
+
     for (let i = 0; i < 12; i++) {
       const year = startMonth + i <= 11 ? startYear : startYear + 1;
       const month = (startMonth + i) % 12;
@@ -45,15 +44,12 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
       months.push(monthKey);
       monthlyData[monthKey] = { revenue: 0, expense: 0 };
     }
-    
-    // 取引データを集計
+
     transactions.forEach(transaction => {
-      // 金額を数値に変換
       const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
-      
       const date = new Date(transaction.date);
       const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
-      
+
       if (monthlyData[monthKey]) {
         if (transaction.type === 'income') {
           monthlyData[monthKey].revenue += amount;
@@ -62,12 +58,11 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         }
       }
     });
-    
-    // 利益を計算
-    const profitData = months.map(month => 
+
+    const profitData = months.map(month =>
       monthlyData[month].revenue - monthlyData[month].expense
     );
-    
+
     return {
       labels: months,
       revenue: months.map(month => monthlyData[month].revenue),
@@ -78,7 +73,6 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
 
   const { labels, revenue, expense, profit } = calculateMonthlyData();
 
-  // 総収益、総支出、純利益を計算
   const totalRevenue = revenue.reduce((sum, amount) => sum + amount, 0);
   const totalExpense = expense.reduce((sum, amount) => sum + amount, 0);
   const totalProfit = totalRevenue - totalExpense;
@@ -89,32 +83,39 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
       {
         label: '収益',
         data: revenue,
-        borderColor: 'rgb(59, 130, 246)', // 青色 (blue-500)
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: '#06b6d4', // Cyan 500
+        backgroundColor: 'rgba(6, 182, 212, 0.1)',
         tension: 0.4,
-        pointBackgroundColor: 'rgb(59, 130, 246)',
-        pointBorderColor: 'rgb(59, 130, 246)',
-        pointRadius: 4,
+        pointBackgroundColor: '#06b6d4',
+        pointBorderColor: '#06b6d4',
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        fill: true,
       },
       {
         label: '支出',
         data: expense,
-        borderColor: 'rgb(239, 68, 68)', // 赤色 (red-500)
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderColor: '#f472b6', // Pink 400
+        backgroundColor: 'rgba(244, 114, 182, 0.1)',
         tension: 0.4,
-        pointBackgroundColor: 'rgb(239, 68, 68)',
-        pointBorderColor: 'rgb(239, 68, 68)',
-        pointRadius: 4,
+        pointBackgroundColor: '#f472b6',
+        pointBorderColor: '#f472b6',
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        fill: true,
       },
       {
         label: '利益',
         data: profit,
-        borderColor: 'rgb(34, 197, 94)', // 緑色 (green-500)
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderColor: '#10b981', // Emerald 500
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
         tension: 0.4,
-        pointBackgroundColor: 'rgb(34, 197, 94)',
-        pointBorderColor: 'rgb(34, 197, 94)',
-        pointRadius: 4,
+        pointBackgroundColor: '#10b981',
+        pointBorderColor: '#10b981',
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        fill: true,
+        borderDash: [5, 5],
       },
     ],
   }
@@ -128,21 +129,24 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         labels: {
           usePointStyle: true,
           padding: 20,
+          color: '#94a3b8', // Slate 400
           font: {
             size: 12,
+            family: 'Inter',
           },
         },
       },
       tooltip: {
         mode: 'index' as const,
         intersect: false,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        titleColor: '#f8fafc',
+        bodyColor: '#e2e8f0',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
         borderWidth: 1,
+        padding: 10,
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             let label = context.dataset.label || '';
             if (label) {
               label += ': ';
@@ -160,8 +164,10 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         display: true,
         grid: {
           display: false,
+          color: 'rgba(255, 255, 255, 0.05)',
         },
         ticks: {
+          color: '#64748b',
           font: {
             size: 11,
           },
@@ -170,14 +176,17 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
       y: {
         display: true,
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: 'rgba(255, 255, 255, 0.05)',
         },
         ticks: {
+          color: '#64748b',
           font: {
             size: 11,
           },
-          callback: function(value: any) {
-            return value.toLocaleString() + '円';
+          callback: function (value: any) {
+            if (value >= 1000000) return value / 1000000 + 'M';
+            if (value >= 1000) return value / 1000 + 'k';
+            return value;
           },
         },
       },
@@ -190,33 +199,56 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
   }
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">収益・支出・利益推移</h3>
-        <div className="flex space-x-2">
-          <button className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">月次</button>
-          <button className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">四半期</button>
-          <button className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">年次</button>
+    <div className="glass-card rounded-2xl p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-semibold text-text-main">収益・支出・利益推移</h3>
+        <div className="flex space-x-1 bg-surface-highlight/50 rounded-lg p-1">
+          <button className="text-xs bg-primary/20 text-primary px-3 py-1.5 rounded-md font-medium transition-colors">月次</button>
+          <button className="text-xs text-text-muted hover:text-text-main px-3 py-1.5 rounded-md transition-colors">四半期</button>
+          <button className="text-xs text-text-muted hover:text-text-main px-3 py-1.5 rounded-md transition-colors">年次</button>
         </div>
       </div>
-      <div className="chart-container h-80">
+
+      <div className="chart-container h-72 w-full">
         <Line data={data} options={options} />
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <div className="bg-blue-50 p-2 rounded-lg flex flex-col items-center">
-          <p className="text-xs text-gray-600">総収益</p>
-          <p className="text-sm font-bold text-blue-600">¥{totalRevenue.toLocaleString()}</p>
-          <p className="text-xs text-green-600">↑ 12.5%</p>
+
+      <div className="mt-6 grid grid-cols-3 gap-4">
+        <div className="card-metric border-l-secondary bg-surface p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            <p className="text-xs text-text-muted font-medium">総収益</p>
+          </div>
+          <p className="text-xl font-bold text-text-main mb-1">¥{totalRevenue.toLocaleString()}</p>
+          <p className="text-xs text-success flex items-center gap-1">
+            <span>↑</span> 12.5% vs 先月
+          </p>
         </div>
-        <div className="bg-red-50 p-2 rounded-lg flex flex-col items-center">
-          <p className="text-xs text-gray-600">総支出</p>
-          <p className="text-sm font-bold text-red-600">¥{totalExpense.toLocaleString()}</p>
-          <p className="text-xs text-red-600">↓ 3.2%</p>
+        <div className="card-metric border-l-accent bg-surface p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+            </svg>
+            <p className="text-xs text-text-muted font-medium">総支出</p>
+          </div>
+          <p className="text-xl font-bold text-text-main mb-1">¥{totalExpense.toLocaleString()}</p>
+          <p className="text-xs text-success flex items-center gap-1">
+            <span>↓</span> 3.2% vs 先月
+          </p>
         </div>
-        <div className="bg-green-50 p-2 rounded-lg flex flex-col items-center">
-          <p className="text-xs text-gray-600">純利益</p>
-          <p className="text-sm font-bold text-green-600">¥{totalProfit.toLocaleString()}</p>
-          <p className="text-xs text-green-600">↑ 8.7%</p>
+        <div className="card-metric border-l-success bg-surface p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-xs text-text-muted font-medium">純利益</p>
+          </div>
+          <p className="text-xl font-bold text-text-main mb-1">¥{totalProfit.toLocaleString()}</p>
+          <p className="text-xs text-success flex items-center gap-1">
+            <span>↑</span> 8.7% vs 先月
+          </p>
         </div>
       </div>
     </div>

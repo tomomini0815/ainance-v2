@@ -140,7 +140,7 @@ const BusinessConversion: React.FC = () => {
   // 業態形態の変更を処理する関数（ダミー）
   const handleBusinessTypeChange = (businessType: BusinessType) => {
     setCurrentBusinessType(businessType);
-    
+
     // 業態に応じてテンプレートを更新
     if (businessType.business_type === 'individual') {
       setTaxDocuments(INDIVIDUAL_TEMPLATES.map(template => ({
@@ -159,7 +159,7 @@ const BusinessConversion: React.FC = () => {
 
   // 申告書類のステータスを更新する関数
   const updateDocumentStatus = (id: string, status: TaxDocument['status']) => {
-    setTaxDocuments(prev => prev.map(doc => 
+    setTaxDocuments(prev => prev.map(doc =>
       doc.id === id ? { ...doc, status } : doc
     ));
   };
@@ -206,7 +206,7 @@ const BusinessConversion: React.FC = () => {
 
   const saveEdit = () => {
     if (editingId && editData) {
-      setTaxDocuments(prev => prev.map(doc => 
+      setTaxDocuments(prev => prev.map(doc =>
         doc.id === editingId ? { ...doc, ...editData } as TaxDocument : doc
       ));
       setEditingId(null);
@@ -289,7 +289,7 @@ const BusinessConversion: React.FC = () => {
     document.body.appendChild(linkElement);
     linkElement.click();
     document.body.removeChild(linkElement);
-    
+
     // ダウンロード状態を更新
     updateDocumentStatus(taxDocument.id, 'in_progress');
   };
@@ -298,10 +298,10 @@ const BusinessConversion: React.FC = () => {
   const importData = (documentId: string) => {
     // 実際のアプリケーションでは、取引データを書類にインポートする処理を実装します
     // ここではダミーの処理を実装
-    setTaxDocuments(prev => prev.map(doc => 
+    setTaxDocuments(prev => prev.map(doc =>
       doc.id === documentId ? { ...doc, data_imported: true } : doc
     ));
-    
+
     // インポート後、ステータスを更新
     updateDocumentStatus(documentId, 'in_progress');
   };
@@ -331,7 +331,7 @@ const BusinessConversion: React.FC = () => {
           createdAt: new Date().toISOString(),
           createdBy: 'ユーザー1'
         };
-        
+
         return {
           ...doc,
           content,
@@ -352,7 +352,7 @@ const BusinessConversion: React.FC = () => {
           createdAt: new Date().toISOString(),
           createdBy: 'ユーザー1'
         };
-        
+
         return {
           ...doc,
           comments: [...(doc.comments || []), newComment]
@@ -393,17 +393,17 @@ const BusinessConversion: React.FC = () => {
   // フィルターされた書類を取得
   const filteredDocuments = taxDocuments.filter(document => {
     // 検索ワードフィルター
-    const matchesSearch = 
+    const matchesSearch =
       document.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       document.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (document.content && document.content.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     // ステータスフィルター
     const matchesStatus = filterStatus === 'all' || document.status === filterStatus;
-    
+
     // タグフィルター
     const matchesTag = filterTag === 'all' || (document.tags && document.tags.includes(filterTag));
-    
+
     return matchesSearch && matchesStatus && matchesTag;
   });
 
@@ -455,42 +455,42 @@ const BusinessConversion: React.FC = () => {
   const downloadTemplateFromGovernment = async () => {
     try {
       alert('政府の公式ウェブサイトからテンプレートをダウンロードします。しばらくお待ちください...');
-      
+
       // 実際の政府ウェブサイトURL（例：国税庁の確定申告書ダウンロードページ）
       // 注意: 直接フェッチするとCORSエラーになる可能性があるため、実際のアプリケーションではサーバーサイドで処理する必要があります
       const governmentUrl = 'https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1150.htm';
-      
+
       // CORS対策として、プロキシサーバーを使用するか、サーバーサイドで処理することを推奨
       // ここでは簡易的なエラーハンドリングを実装
       try {
         // フェッチAPIを使用して政府ウェブサイトからデータを取得
         const response = await fetch(governmentUrl);
-        
+
         if (!response.ok) {
           throw new Error(`政府ウェブサイトからのダウンロードに失敗しました: ${response.status} ${response.statusText}`);
         }
-        
+
         // レスポンスからテキストを取得
         const htmlContent = await response.text();
-        
+
         // HTMLコンテンツからPDFリンクを抽出（簡易的な実装）
         const pdfLinks = extractPDFFromHTML(htmlContent);
-        
+
         if (pdfLinks.length > 0) {
           // 最初のPDFリンクをダウンロード
           const pdfUrl = pdfLinks[0];
           const pdfResponse = await fetch(pdfUrl);
-          
+
           if (!pdfResponse.ok) {
             throw new Error(`PDFのダウンロードに失敗しました: ${pdfResponse.status} ${pdfResponse.statusText}`);
           }
-          
+
           // PDFデータをBlobとして取得
           const pdfBlob = await pdfResponse.blob();
-          
+
           // ファイル名を生成
           const fileName = `政府テンプレート_${new Date().toISOString().split('T')[0]}.pdf`;
-          
+
           // ダウンロードリンクを作成してクリック
           const url = URL.createObjectURL(pdfBlob);
           const link = document.createElement('a');
@@ -500,7 +500,7 @@ const BusinessConversion: React.FC = () => {
           link.click();
           document.body.removeChild(link);
           URL.revokeObjectURL(url);
-          
+
           // ダウンロードしたテンプレートを書類リストに追加
           const newTemplate: TaxDocument = {
             id: Date.now().toString(),
@@ -524,14 +524,14 @@ const BusinessConversion: React.FC = () => {
             tags: ['政府', 'テンプレート'],
             comments: []
           };
-          
+
           setTaxDocuments(prev => [newTemplate, ...prev]);
-          
+
           alert('政府の公式ウェブサイトからテンプレートをダウンロードしました');
         } else {
           // PDFリンクが見つからない場合の代替処理
           alert('政府ウェブサイトからPDFリンクが見つかりませんでした。代替処理としてサンプルテンプレートを作成します。');
-          
+
           // サンプルテンプレートを作成
           const sampleTemplate: TaxDocument = {
             id: Date.now().toString(),
@@ -555,14 +555,14 @@ const BusinessConversion: React.FC = () => {
             tags: ['政府', 'テンプレート', 'サンプル'],
             comments: []
           };
-          
+
           setTaxDocuments(prev => [sampleTemplate, ...prev]);
         }
       } catch (fetchError) {
         // CORSエラーなどネットワークエラーの場合の代替処理
         console.error('政府ウェブサイトからのテンプレートダウンロードエラー:', fetchError);
         alert(`政府ウェブサイトからの直接ダウンロードに失敗しました。代替処理としてサンプルテンプレートを作成します。エラー: ${fetchError instanceof Error ? fetchError.message : '不明なエラー'}`);
-        
+
         // サンプルテンプレートを作成
         const sampleTemplate: TaxDocument = {
           id: Date.now().toString(),
@@ -586,7 +586,7 @@ const BusinessConversion: React.FC = () => {
           tags: ['政府', 'テンプレート', 'サンプル'],
           comments: []
         };
-        
+
         setTaxDocuments(prev => [sampleTemplate, ...prev]);
       }
     } catch (error) {
@@ -600,7 +600,7 @@ const BusinessConversion: React.FC = () => {
     const pdfLinks: string[] = [];
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
-    
+
     // PDFリンクを抽出
     const links = doc.querySelectorAll('a[href$=".pdf"]');
     links.forEach(link => {
@@ -616,7 +616,7 @@ const BusinessConversion: React.FC = () => {
         }
       }
     });
-    
+
     return pdfLinks;
   };
 
@@ -625,26 +625,26 @@ const BusinessConversion: React.FC = () => {
     try {
       // 実際のアプリケーションでは、Google DriveやDropboxのAPIを使用します
       // ここではファイル選択ダイアログを使用した簡易実装
-      
+
       // ファイル選択ダイアログを作成
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png';
       input.multiple = true;
-      
+
       // ファイル選択時の処理
       input.onchange = async (event) => {
         const files = (event.target as HTMLInputElement).files;
         if (files && files.length > 0) {
           const importedDocuments: TaxDocument[] = [];
-          
+
           // 各ファイルを処理
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
+
             // ファイルを読み込んでBase64に変換
             const base64Content = await fileToBase64(file);
-            
+
             // 書類オブジェクトを作成
             const newDocument: TaxDocument = {
               id: `${Date.now()}_${i}`,
@@ -667,17 +667,17 @@ const BusinessConversion: React.FC = () => {
               tags: ['クラウド', 'インポート'],
               comments: []
             };
-            
+
             importedDocuments.push(newDocument);
           }
-          
+
           // 書類リストに追加
           setTaxDocuments(prev => [...importedDocuments, ...prev]);
-          
+
           alert(`${files.length}件の書類をクラウドストレージからインポートしました`);
         }
       };
-      
+
       // ファイル選択ダイアログを開く
       input.click();
     } catch (error) {
@@ -701,26 +701,26 @@ const BusinessConversion: React.FC = () => {
     try {
       // 実際のアプリケーションでは、メールAPI（Gmail API、Outlook APIなど）を使用します
       // ここではファイル選択ダイアログを使用した簡易実装
-      
+
       // ファイル選択ダイアログを作成
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.eml,.msg';
       input.multiple = true;
-      
+
       // ファイル選択時の処理
       input.onchange = async (event) => {
         const files = (event.target as HTMLInputElement).files;
         if (files && files.length > 0) {
           const importedDocuments: TaxDocument[] = [];
-          
+
           // 各ファイルを処理
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
+
             // ファイルを読み込んでBase64に変換
             const base64Content = await fileToBase64(file);
-            
+
             // 書類オブジェクトを作成
             const newDocument: TaxDocument = {
               id: `${Date.now()}_${i}`,
@@ -743,17 +743,17 @@ const BusinessConversion: React.FC = () => {
               tags: ['メール', 'インポート'],
               comments: []
             };
-            
+
             importedDocuments.push(newDocument);
           }
-          
+
           // 書類リストに追加
           setTaxDocuments(prev => [...importedDocuments, ...prev]);
-          
+
           alert(`${files.length}件の書類をメールから取り込みました`);
         }
       };
-      
+
       // ファイル選択ダイアログを開く
       input.click();
     } catch (error) {
@@ -767,27 +767,27 @@ const BusinessConversion: React.FC = () => {
     try {
       // 実際のアプリケーションでは、スキャナーAPIまたはカメラAPIを使用します
       // ここではファイル選択ダイアログを使用した簡易実装
-      
+
       // ファイル選択ダイアログを作成
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*,.pdf';
       input.multiple = true;
       input.capture = 'environment'; // モバイルデバイスの場合は背面カメラを使用
-      
+
       // ファイル選択時の処理
       input.onchange = async (event) => {
         const files = (event.target as HTMLInputElement).files;
         if (files && files.length > 0) {
           const importedDocuments: TaxDocument[] = [];
-          
+
           // 各ファイルを処理
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
+
             // ファイルを読み込んでBase64に変換
             const base64Content = await fileToBase64(file);
-            
+
             // 書類オブジェクトを作成
             const newDocument: TaxDocument = {
               id: `${Date.now()}_${i}`,
@@ -810,17 +810,17 @@ const BusinessConversion: React.FC = () => {
               tags: ['スキャナー', 'インポート'],
               comments: []
             };
-            
+
             importedDocuments.push(newDocument);
           }
-          
+
           // 書類リストに追加
           setTaxDocuments(prev => [...importedDocuments, ...prev]);
-          
+
           alert(`${files.length}件の書類をスキャナーから取り込みました`);
         }
       };
-      
+
       // ファイル選択ダイアログを開く
       input.click();
     } catch (error) {
@@ -830,31 +830,31 @@ const BusinessConversion: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* HeaderコンポーネントはApp.tsxでレンダリングされるため、ここでは削除 */}
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <Link to="/dashboard" className="flex items-center text-blue-600 hover:text-blue-800 mb-4">
+          <Link to="/dashboard" className="flex items-center text-primary hover:text-primary/80 mb-4">
             <ArrowLeft className="h-5 w-5 mr-2" />
             ダッシュボードに戻る
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">業態変換</h1>
-          <p className="text-gray-600">個人事業主から法人（2社目）への変換手順をシミュレーションします</p>
+          <h1 className="text-3xl font-bold text-text-main mb-2">業態変換</h1>
+          <p className="text-text-muted">個人事業主から法人（2社目）への変換手順をシミュレーションします</p>
         </div>
 
         {/* 業態変換ガイド */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">変換手順</h2>
+        <div className="bg-surface rounded-lg shadow-md p-6 mb-8 border border-border">
+          <h2 className="text-xl font-semibold text-text-main mb-4">変換手順</h2>
           <div className="space-y-4">
             {currentSteps.map((step) => (
               <div key={step.id} className="flex items-start">
-                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <step.icon className="h-5 w-5 text-blue-600" />
+                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <step.icon className="h-5 w-5 text-primary" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">{step.title}</h3>
-                  <p className="text-gray-600">{step.description}</p>
+                  <h3 className="text-lg font-medium text-text-main">{step.title}</h3>
+                  <p className="text-text-muted">{step.description}</p>
                 </div>
               </div>
             ))}
@@ -862,13 +862,13 @@ const BusinessConversion: React.FC = () => {
         </div>
 
         {/* 必要な書類テンプレート */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-surface rounded-lg shadow-md p-6 border border-border">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">必要な書類テンプレート</h2>
+            <h2 className="text-xl font-semibold text-text-main">必要な書類テンプレート</h2>
             <div className="flex space-x-2">
               <button
                 onClick={addDocument}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="flex items-center btn-primary"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 新しい書類
@@ -889,14 +889,14 @@ const BusinessConversion: React.FC = () => {
               <input
                 type="text"
                 placeholder="書類を検索..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 bg-background border border-border rounded-md text-text-main focus:ring-2 focus:ring-primary focus:border-primary"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex gap-2">
               <select
-                className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-4 py-2 bg-background border border-border rounded-md text-text-main focus:ring-2 focus:ring-primary focus:border-primary"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as 'all' | TaxDocument['status'])}
               >
@@ -906,7 +906,7 @@ const BusinessConversion: React.FC = () => {
                 <option value="completed">完了</option>
               </select>
               <select
-                className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-4 py-2 bg-background border border-border rounded-md text-text-main focus:ring-2 focus:ring-primary focus:border-primary"
                 value={filterTag}
                 onChange={(e) => setFilterTag(e.target.value)}
               >
@@ -921,21 +921,21 @@ const BusinessConversion: React.FC = () => {
           {/* 書類リスト */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {filteredDocuments.map((document) => (
-              <div key={document.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div key={document.id} className="bg-surface border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
                 {editingId === document.id ? (
                   // 編集モード
                   <div className="space-y-3">
                     <input
                       type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-background border border-border rounded-md text-text-main focus:ring-2 focus:ring-primary focus:border-primary"
                       value={editData.title || ''}
-                      onChange={(e) => setEditData({...editData, title: e.target.value})}
+                      onChange={(e) => setEditData({ ...editData, title: e.target.value })}
                       placeholder="タイトル"
                     />
                     <textarea
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-background border border-border rounded-md text-text-main focus:ring-2 focus:ring-primary focus:border-primary"
                       value={editData.description || ''}
-                      onChange={(e) => setEditData({...editData, description: e.target.value})}
+                      onChange={(e) => setEditData({ ...editData, description: e.target.value })}
                       placeholder="説明"
                       rows={2}
                     />
@@ -945,13 +945,13 @@ const BusinessConversion: React.FC = () => {
                           setEditingId(null);
                           setEditData({});
                         }}
-                        className="px-3 py-1 text-gray-600 hover:text-gray-800"
+                        className="px-3 py-1 text-text-muted hover:text-text-main"
                       >
                         キャンセル
                       </button>
                       <button
                         onClick={saveEdit}
-                        className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        className="px-3 py-1 bg-primary text-white rounded-md hover:bg-primary/90"
                       >
                         保存
                       </button>
@@ -961,30 +961,30 @@ const BusinessConversion: React.FC = () => {
                   // 表示モード
                   <>
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-medium text-gray-900">{document.title}</h3>
+                      <h3 className="text-lg font-medium text-text-main">{document.title}</h3>
                       <div className="flex space-x-1">
                         <button
                           onClick={() => startEditing(document)}
-                          className="p-1 text-gray-500 hover:text-blue-600"
+                          className="p-1 text-text-muted hover:text-primary"
                           title="編集"
                         >
                           <Edit3 className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => deleteDocument(document.id)}
-                          className="p-1 text-gray-500 hover:text-red-600"
+                          className="p-1 text-text-muted hover:text-red-600"
                           title="削除"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
-                    <p className="text-gray-600 text-sm mb-3">{document.description}</p>
-                    
+                    <p className="text-text-muted text-sm mb-3">{document.description}</p>
+
                     {/* タグ */}
                     <div className="flex flex-wrap gap-1 mb-3">
                       {document.tags?.map(tag => (
-                        <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                        <span key={tag} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
                           {tag}
                         </span>
                       ))}
@@ -995,30 +995,29 @@ const BusinessConversion: React.FC = () => {
                             addTag(document.id, newTag);
                           }
                         }}
-                        className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full hover:bg-gray-200"
+                        className="px-2 py-1 bg-surface-highlight text-text-main text-xs rounded-full hover:bg-border"
                       >
                         +
                       </button>
                     </div>
-                    
-                    <div className="flex items-center text-sm text-gray-500 mb-3">
+
+                    <div className="flex items-center text-sm text-text-muted mb-3">
                       <Calendar className="h-4 w-4 mr-1" />
                       <span>期限: {document.deadline}</span>
                     </div>
-                    
+
                     {/* ステータスとアクションボタン */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          document.status === 'not_started' ? 'bg-gray-100 text-gray-800' :
-                          document.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs ${document.status === 'not_started' ? 'bg-surface-highlight text-text-muted' :
+                            document.status === 'in_progress' ? 'bg-yellow-500/10 text-yellow-600' :
+                              'bg-green-500/10 text-green-600'
+                          }`}>
                           {document.status === 'not_started' ? '未開始' :
-                           document.status === 'in_progress' ? '進行中' : '完了'}
+                            document.status === 'in_progress' ? '進行中' : '完了'}
                         </span>
                         {document.data_imported && (
-                          <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                          <span className="ml-2 px-2 py-1 bg-purple-500/10 text-purple-600 text-xs rounded-full">
                             データインポート済み
                           </span>
                         )}
@@ -1027,7 +1026,7 @@ const BusinessConversion: React.FC = () => {
                         {document.template_url && (
                           <button
                             onClick={() => downloadTemplate(document)}
-                            className="p-2 text-gray-500 hover:text-blue-600"
+                            className="p-2 text-text-muted hover:text-primary"
                             title="テンプレートダウンロード"
                           >
                             <Download className="h-4 w-4" />
@@ -1035,7 +1034,7 @@ const BusinessConversion: React.FC = () => {
                         )}
                         <button
                           onClick={() => importData(document.id)}
-                          className="p-2 text-gray-500 hover:text-green-600"
+                          className="p-2 text-text-muted hover:text-green-600"
                           title="データインポート"
                           disabled={document.data_imported}
                         >
@@ -1043,7 +1042,7 @@ const BusinessConversion: React.FC = () => {
                         </button>
                         <button
                           onClick={() => previewDocumentContent(document)}
-                          className="p-2 text-gray-500 hover:text-purple-600"
+                          className="p-2 text-text-muted hover:text-purple-600"
                           title="プレビュー"
                         >
                           <Eye className="h-4 w-4" />
@@ -1056,7 +1055,7 @@ const BusinessConversion: React.FC = () => {
                               submitDocument(document.id);
                             }
                           }}
-                          className="p-2 text-gray-500 hover:text-green-600"
+                          className="p-2 text-text-muted hover:text-green-600"
                           title="提出"
                         >
                           <Send className="h-4 w-4" />
@@ -1073,28 +1072,28 @@ const BusinessConversion: React.FC = () => {
 
       {/* ドキュメントプレビューモーダル */}
       {isPreviewOpen && previewDocument && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-lg font-semibold">{previewDocument.title}</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-surface rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-border">
+            <div className="flex justify-between items-center p-4 border-b border-border">
+              <h3 className="text-lg font-semibold text-text-main">{previewDocument.title}</h3>
               <div className="flex space-x-2">
                 <button
                   onClick={() => printDocument(previewDocument)}
-                  className="p-2 text-gray-500 hover:text-gray-700"
+                  className="p-2 text-text-muted hover:text-text-main"
                   title="印刷"
                 >
                   <Printer className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => shareDocument(previewDocument)}
-                  className="p-2 text-gray-500 hover:text-gray-700"
+                  className="p-2 text-text-muted hover:text-text-main"
                   title="共有"
                 >
                   <Share2 className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => setIsPreviewOpen(false)}
-                  className="p-2 text-gray-500 hover:text-gray-700"
+                  className="p-2 text-text-muted hover:text-text-main"
                   title="閉じる"
                 >
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1103,64 +1102,64 @@ const BusinessConversion: React.FC = () => {
                 </button>
               </div>
             </div>
-            <div className="p-4 overflow-y-auto max-h-[calc(90vh-100px)]">
+            <div className="p-4 overflow-y-auto max-h-[calc(90vh-100px)] bg-surface">
               {previewDocument.content ? (
-                <div className="prose max-w-none">
+                <div className="prose max-w-none text-text-main">
                   <p>{previewDocument.content}</p>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">プレビューするコンテンツがありません</p>
-                  <p className="text-gray-400 text-sm mt-2">データをインポートするか、コンテンツを追加してください</p>
+                  <FileText className="h-12 w-12 text-text-muted mx-auto mb-4" />
+                  <p className="text-text-muted">プレビューするコンテンツがありません</p>
+                  <p className="text-text-muted text-sm mt-2">データをインポートするか、コンテンツを追加してください</p>
                 </div>
               )}
-              
+
               {/* バージョン履歴 */}
               {previewDocument.versions && previewDocument.versions.length > 0 && (
                 <div className="mt-8">
-                  <h4 className="text-md font-semibold mb-3">バージョン履歴</h4>
+                  <h4 className="text-md font-semibold text-text-main mb-3">バージョン履歴</h4>
                   <div className="space-y-2">
                     {previewDocument.versions.map(version => (
-                      <div key={version.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div key={version.id} className="flex items-center justify-between p-2 bg-surface-highlight rounded">
                         <div>
-                          <span className="font-medium">バージョン {version.version}</span>
-                          <span className="text-gray-500 text-sm ml-2">
+                          <span className="font-medium text-text-main">バージョン {version.version}</span>
+                          <span className="text-text-muted text-sm ml-2">
                             {new Date(version.createdAt).toLocaleString()}
                           </span>
                         </div>
-                        <span className="text-gray-500 text-sm">{version.createdBy}</span>
+                        <span className="text-text-muted text-sm">{version.createdBy}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              
+
               {/* コメントセクション */}
               <div className="mt-8">
-                <h4 className="text-md font-semibold mb-3">コメント</h4>
+                <h4 className="text-md font-semibold text-text-main mb-3">コメント</h4>
                 {previewDocument.comments && previewDocument.comments.length > 0 ? (
                   <div className="space-y-3">
                     {previewDocument.comments.map(comment => (
-                      <div key={comment.id} className="p-3 bg-gray-50 rounded">
+                      <div key={comment.id} className="p-3 bg-surface-highlight rounded">
                         <div className="flex justify-between">
-                          <span className="font-medium">{comment.createdBy}</span>
-                          <span className="text-gray-500 text-sm">
+                          <span className="font-medium text-text-main">{comment.createdBy}</span>
+                          <span className="text-text-muted text-sm">
                             {new Date(comment.createdAt).toLocaleString()}
                           </span>
                         </div>
-                        <p className="mt-1 text-gray-700">{comment.content}</p>
+                        <p className="mt-1 text-text-main">{comment.content}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">コメントはありません</p>
+                  <p className="text-text-muted text-center py-4">コメントはありません</p>
                 )}
-                
+
                 {/* コメント追加フォーム */}
                 <div className="mt-4">
                   <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-md text-text-main focus:ring-2 focus:ring-primary focus:border-primary"
                     placeholder="コメントを追加..."
                     rows={3}
                   />
@@ -1173,7 +1172,7 @@ const BusinessConversion: React.FC = () => {
                           textarea.value = '';
                         }
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="btn-primary"
                     >
                       コメントを追加
                     </button>
@@ -1181,10 +1180,10 @@ const BusinessConversion: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end p-4 border-t">
+            <div className="flex justify-end p-4 border-t border-border">
               <button
                 onClick={() => setIsPreviewOpen(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                className="px-4 py-2 bg-surface-highlight text-text-main rounded-md hover:bg-border"
               >
                 閉じる
               </button>

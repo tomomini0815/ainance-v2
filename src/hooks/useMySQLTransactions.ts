@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 interface Transaction {
@@ -30,25 +30,41 @@ export const useMySQLTransactions = () => {
   const [loading, setLoading] = useState(false);
 
   // 取引データをSupabaseから取得
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     setLoading(true);
+    
+    // ログインユーザーの取得
+    const storedUser = localStorage.getItem('user');
+    let userId = '00000000-0000-0000-0000-000000000000'; // デフォルトの匿名ユーザーID
+    
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        if (isValidUUID(userData.id)) {
+          userId = userData.id;
+        }
+      } catch (error) {
+        console.error('ユーザー情報の解析に失敗しました:', error);
+      }
+    }
+    
     try {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
+        .eq('creator', userId)
         .order('date', { ascending: false });
-      
-      if (error) {
-        throw new Error(`取引データの取得に失敗しました: ${error.message}`);
-      }
-      
+
+      if (error) throw error;
+
       setTransactions(data || []);
-    } catch (error) {
-      console.error('取引データの取得に失敗しました:', error);
-    } finally {
+      setLoading(false);
+    } catch (error: any) {
+      console.error(`取引データの取得に失敗しました: ${error.message}`);
+      setTransactions([]);
       setLoading(false);
     }
-  };
+  }, []);
 
   // 新しい取引をSupabaseに保存
   const createTransaction = async (transaction: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>) => {
@@ -63,24 +79,23 @@ export const useMySQLTransactions = () => {
       const transactionWithCreator = {
         ...transaction,
         creator: transaction.creator || '00000000-0000-0000-0000-000000000000',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
       };
 
+      console.log('取引データを保存中:', transactionWithCreator);
       const { data, error } = await supabase
         .from('transactions')
-        .insert([transactionWithCreator])
+        .insert(transactionWithCreator)
         .select()
         .single();
+
+      if (error) throw error;
+
+      console.log('取引データ保存成功:', data.id);
       
-      if (error) {
-        throw new Error(`取引の作成に失敗しました: ${error.message}`);
-      }
+      const newTransaction: Transaction = data;
       
-      if (data) {
-        setTransactions(prev => [data, ...prev]);
-        return data.id;
-      }
+      setTransactions(prev => [newTransaction, ...prev]);
+      return data.id;
     } catch (error: any) {
       console.error('取引の作成に失敗しました:', error);
       // ネットワークエラーの場合、より具体的なメッセージを表示
@@ -100,18 +115,16 @@ export const useMySQLTransactions = () => {
         .eq('id', id)
         .select()
         .single();
+
+      if (error) throw error;
       
-      if (error) {
-        throw new Error(`取引の更新に失敗しました: ${error.message}`);
-      }
+      const updatedTransaction: Transaction = data;
       
-      if (data) {
-        setTransactions(prev => 
-          prev.map(transaction => 
-            transaction.id === id ? { ...transaction, ...data } : transaction
-          )
-        );
-      }
+      setTransactions(prev =>
+        prev.map(transaction =>
+          transaction.id === id ? updatedTransaction : transaction
+        )
+      );
     } catch (error) {
       console.error('取引の更新に失敗しました:', error);
       throw error;
@@ -125,10 +138,8 @@ export const useMySQLTransactions = () => {
         .from('transactions')
         .delete()
         .eq('id', id);
-      
-      if (error) {
-        throw new Error(`取引の削除に失敗しました: ${error.message}`);
-      }
+
+      if (error) throw error;
       
       setTransactions(prev => prev.filter(transaction => transaction.id !== id));
     } catch (error) {
@@ -140,7 +151,7 @@ export const useMySQLTransactions = () => {
   // 初期読み込み
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [fetchTransactions]);
 
   return {
     transactions,

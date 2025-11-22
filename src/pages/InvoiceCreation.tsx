@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Plus, Save, Send, Eye, Download, Search, Calendar, Calculator, User, Building, FileText, Mail, Phone, X, Check, Copy, Trash2, CreditCard, Banknote, Edit, FileSpreadsheet } from 'lucide-react'
+import { ArrowLeft, Plus, Save, Send, Eye, Download, Search, Calendar, User, FileText, X, Trash2, FileSpreadsheet, Banknote } from 'lucide-react'
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 
 // jspdf-autotableを正しくインポート
 import 'jspdf-autotable'
 
-// Base64形式のフォントデータをインポート
-import notoSansJPBase64 from '../assets/fonts/noto-sans-jp-japanese-400-normal.base64?raw'
 
 interface Customer {
   id: string
@@ -58,22 +56,22 @@ const InvoiceCreation: React.FC = () => {
   const [showSendModal, setShowSendModal] = useState(false)
   const [sendEmail, setSendEmail] = useState('')
   const [showDownloadConfirm, setShowDownloadConfirm] = useState(false)
-  
+
   // 新規顧客用の状態
-  const [newCustomer, setNewCustomer] = useState<Omit<Customer, 'id'>>({ 
-    name: '', 
-    email: '', 
-    phone: '', 
-    address: '' 
+  const [newCustomer, setNewCustomer] = useState<Omit<Customer, 'id'>>({
+    name: '',
+    email: '',
+    phone: '',
+    address: ''
   })
-  
+
   // 新規銀行口座用の状態
-  const [newBankAccount, setNewBankAccount] = useState<Omit<BankAccount, 'id'>>({ 
-    bankName: '', 
-    branchName: '', 
-    accountType: '普通', 
-    accountNumber: '', 
-    accountHolder: '' 
+  const [newBankAccount, setNewBankAccount] = useState<Omit<BankAccount, 'id'>>({
+    bankName: '',
+    branchName: '',
+    accountType: '普通',
+    accountNumber: '',
+    accountHolder: ''
   })
 
   // 合計金額計算
@@ -129,7 +127,7 @@ const InvoiceCreation: React.FC = () => {
   const generatePDF = async () => {
     try {
       console.log('PDF生成を開始します')
-      
+
       // 一時的なプレビュー要素を作成
       const tempContainer = document.createElement('div')
       tempContainer.style.position = 'absolute'
@@ -140,7 +138,7 @@ const InvoiceCreation: React.FC = () => {
       tempContainer.style.backgroundColor = 'white'
       tempContainer.style.fontFamily = "'Noto Sans JP', 'Meiryo', 'Hiragino Kaku Gothic ProN', sans-serif"
       tempContainer.style.boxSizing = 'border-box'
-      
+
       // プレビュー内容を構築
       tempContainer.innerHTML = `
         <div style="text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px;">
@@ -208,19 +206,19 @@ const InvoiceCreation: React.FC = () => {
           <div style="font-size: 18px; font-weight: bold;">合計: ¥${totalAmount.toLocaleString()}</div>
         </div>
       `
-      
+
       document.body.appendChild(tempContainer)
-      
+
       // html2canvasでキャプチャ
       const canvas = await html2canvas(tempContainer, {
         scale: 2, // 品質向上のためスケールを上げる
         useCORS: true,
         logging: false
       })
-      
+
       // 一時要素を削除
       document.body.removeChild(tempContainer)
-      
+
       // CanvasをPDFに変換
       const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF('p', 'mm', 'a4')
@@ -229,10 +227,10 @@ const InvoiceCreation: React.FC = () => {
       const imgHeight = (canvas.height * imgWidth) / canvas.width
       let heightLeft = imgHeight
       let position = 0
-      
+
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
       heightLeft -= pageHeight
-      
+
       // 複数ページ対応（ただし最後のページがほぼ空の場合は追加しない）
       while (heightLeft >= 20) { // 20mm未満の場合は空ページとみなす
         position = heightLeft - imgHeight
@@ -240,7 +238,7 @@ const InvoiceCreation: React.FC = () => {
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
         heightLeft -= pageHeight
       }
-      
+
       console.log('PDF生成が完了しました')
       return pdf
     } catch (error) {
@@ -254,11 +252,11 @@ const InvoiceCreation: React.FC = () => {
     try {
       console.log('PDFプレビュー生成を開始します')
       const doc = await generatePDF()
-      
+
       // PDFをBlobとして取得
       const pdfBlob = doc.output('blob')
       const url = URL.createObjectURL(pdfBlob)
-      
+
       // プレビュー用のBlob URLを設定
       setPreviewBlobUrl(url)
       setShowPreviewModal(true)
@@ -388,12 +386,12 @@ const InvoiceCreation: React.FC = () => {
     }
     setBankAccounts([...bankAccounts, bankAccountWithId])
     setBankAccount(bankAccountWithId)
-    setNewBankAccount({ 
-      bankName: '', 
-      branchName: '', 
-      accountType: '普通', 
-      accountNumber: '', 
-      accountHolder: '' 
+    setNewBankAccount({
+      bankName: '',
+      branchName: '',
+      accountType: '普通',
+      accountNumber: '',
+      accountHolder: ''
     })
     closeModal()
   }
@@ -406,16 +404,16 @@ const InvoiceCreation: React.FC = () => {
       { id: '1', name: '株式会社サンプル取引先', email: 'client@example.com', phone: '03-9876-5432', address: '〒100-0002 東京都千代田区皇居外苑1-1' },
       { id: '2', name: '株式会社テスト企業', email: 'test@testcompany.co.jp', phone: '06-1234-5678', address: '〒530-0001 大阪府大阪市北区梅田1-1-1' }
     ]
-    
+
     // サンプル銀行口座データ
     const sampleBankAccounts: BankAccount[] = [
       { id: '1', bankName: '三井住友銀行', branchName: '銀座支店', accountType: '普通', accountNumber: '1234567', accountHolder: '株式会社Ainance' },
       { id: '2', bankName: '三菱UFJ銀行', branchName: '丸の内支店', accountType: '当座', accountNumber: '9876543', accountHolder: '株式会社Ainance' }
     ]
-    
+
     setCustomers(sampleCustomers)
     setBankAccounts(sampleBankAccounts)
-    
+
     // 初期日付設定
     const today = new Date()
     const formattedToday = today.toISOString().split('T')[0]
@@ -426,39 +424,37 @@ const InvoiceCreation: React.FC = () => {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-8">
+    <div className="min-h-screen bg-background p-2 sm:p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* ヘッダー */}
         <div className="flex items-center justify-start mb-4 sm:mb-6">
-          <Link to="/invoices" className="flex items-center text-blue-600 hover:text-blue-800 transition-colors mr-4" title="請求書一覧に戻る">
+          <Link to="/invoices" className="flex items-center text-primary hover:text-primary/90 transition-colors mr-4" title="請求書一覧に戻る">
             <ArrowLeft size={20} />
           </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+          <h1 className="text-xl sm:text-2xl font-bold text-text-main">
             {documentType === 'invoice' ? '請求書作成' : '見積書作成'}
           </h1>
         </div>
 
         {/* 文書タイプ切り替え */}
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex flex-wrap gap-2 sm:gap-4">
             <button
               onClick={() => setDocumentType('invoice')}
-              className={`flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-colors text-sm sm:text-base ${
-                documentType === 'invoice'
-                  ? 'bg-blue-600 text-white'
-                  : 'border border-gray-400 text-gray-600 hover:bg-gray-100'
-              }`}
+              className={`flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-colors text-sm sm:text-base ${documentType === 'invoice'
+                ? 'bg-primary text-white'
+                : 'border border-border text-text-muted hover:bg-surface-highlight'
+                }`}
             >
               <FileText className="mr-1 sm:mr-2" size={16} />
               <span className="whitespace-nowrap">請求書</span>
             </button>
             <button
               onClick={() => setDocumentType('estimate')}
-              className={`flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-colors text-sm sm:text-base ${
-                documentType === 'estimate'
-                  ? 'bg-blue-600 text-white'
-                  : 'border border-gray-400 text-gray-600 hover:bg-gray-100'
-              }`}
+              className={`flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-colors text-sm sm:text-base ${documentType === 'estimate'
+                ? 'bg-primary text-white'
+                : 'border border-border text-text-muted hover:bg-surface-highlight'
+                }`}
             >
               <FileSpreadsheet className="mr-1 sm:mr-2" size={16} />
               <span className="whitespace-nowrap">見積書</span>
@@ -467,39 +463,39 @@ const InvoiceCreation: React.FC = () => {
         </div>
 
         {/* アクションボタン */}
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex flex-wrap gap-2 sm:gap-4 justify-end">
             {/* プレビュー（優先度低） */}
-            <button 
+            <button
               onClick={generatePDFPreview}
-              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-gray-400 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
+              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-border text-text-muted rounded-lg hover:bg-surface-highlight transition-colors text-sm sm:text-base"
             >
               <Eye className="mr-1 sm:mr-2" size={16} />
               <span className="whitespace-nowrap">プレビュー</span>
             </button>
-            
+
             {/* 保存（中） */}
-            <button 
+            <button
               onClick={savePDF}
-              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50 transition-colors text-sm sm:text-base"
+              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors text-sm sm:text-base"
             >
               <Save className="mr-1 sm:mr-2" size={16} />
               <span className="whitespace-nowrap">保存</span>
             </button>
-            
+
             {/* PDFダウンロード（中） */}
-            <button 
+            <button
               onClick={downloadPDF}
-              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50 transition-colors text-sm sm:text-base"
+              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors text-sm sm:text-base"
             >
               <Download className="mr-1 sm:mr-2" size={16} />
               <span className="whitespace-nowrap">PDF</span>
             </button>
-            
+
             {/* 送信（高） */}
-            <button 
+            <button
               onClick={sendInvoice}
-              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base font-semibold"
+              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 btn-primary transition-colors text-sm sm:text-base font-semibold"
             >
               <Send className="mr-1 sm:mr-2" size={16} />
               <span className="whitespace-nowrap">送信</span>
@@ -508,48 +504,48 @@ const InvoiceCreation: React.FC = () => {
         </div>
 
         {/* 請求書フォーム */}
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6">
           {/* 基本情報 */}
           <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-700">基本情報</h2>
+              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-text-muted">基本情報</h2>
               <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">発行日</label>
+                  <label className="block text-xs sm:text-sm font-medium text-text-muted mb-1">発行日</label>
                   <div className="relative">
                     <input
                       type="date"
                       value={invoiceDate}
                       onChange={(e) => setInvoiceDate(e.target.value)}
-                      className="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 text-sm sm:text-base border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                     />
-                    <Calendar className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-gray-400" size={16} />
+                    <Calendar className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-text-muted" size={16} />
                   </div>
                 </div>
                 {documentType === 'invoice' ? (
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">支払期限</label>
+                    <label className="block text-xs sm:text-sm font-medium text-text-muted mb-1">支払期限</label>
                     <div className="relative">
                       <input
                         type="date"
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-2 text-sm sm:text-base border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       />
-                      <Calendar className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-gray-400" size={16} />
+                      <Calendar className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-text-muted" size={16} />
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">有効期限</label>
+                    <label className="block text-xs sm:text-sm font-medium text-text-muted mb-1">有効期限</label>
                     <div className="relative">
                       <input
                         type="date"
                         value={estimateExpiryDate}
                         onChange={(e) => setEstimateExpiryDate(e.target.value)}
-                        className="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-2 text-sm sm:text-base border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       />
-                      <Calendar className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-gray-400" size={16} />
+                      <Calendar className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-text-muted" size={16} />
                     </div>
                   </div>
                 )}
@@ -557,12 +553,12 @@ const InvoiceCreation: React.FC = () => {
             </div>
 
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-700">請求者情報</h2>
-              <div className="bg-gray-50 p-3 sm:p-4 rounded-md">
+              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-text-muted">請求者情報</h2>
+              <div className="bg-background p-3 sm:p-4 rounded-md">
                 <p className="font-medium text-sm sm:text-base">デザイン会社</p>
-                <p className="text-xs sm:text-sm text-gray-600">〒100-0001 東京都千代田区千代田1-1-1</p>
-                <p className="text-xs sm:text-sm text-gray-600">TEL: 03-1234-5678</p>
-                <p className="text-xs sm:text-sm text-gray-600">Email: info@design-company.co.jp</p>
+                <p className="text-xs sm:text-sm text-text-muted">〒100-0001 東京都千代田区千代田1-1-1</p>
+                <p className="text-xs sm:text-sm text-text-muted">TEL: 03-1234-5678</p>
+                <p className="text-xs sm:text-sm text-text-muted">Email: info@design-company.co.jp</p>
               </div>
             </div>
           </div>
@@ -570,8 +566,8 @@ const InvoiceCreation: React.FC = () => {
           {/* 請求先情報 */}
           <div className="mb-6 sm:mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-700">請求先情報</h2>
-              <button 
+              <h2 className="text-lg sm:text-xl font-semibold text-text-muted">請求先情報</h2>
+              <button
                 onClick={openCustomerModal}
                 className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
               >
@@ -580,15 +576,15 @@ const InvoiceCreation: React.FC = () => {
               </button>
             </div>
             {customer.name ? (
-              <div className="bg-gray-50 p-3 sm:p-4 rounded-md">
+              <div className="bg-background p-3 sm:p-4 rounded-md">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <div>
                     <p className="font-medium text-sm sm:text-base">{customer.name}</p>
-                    <p className="text-xs sm:text-sm text-gray-600">{customer.address}</p>
-                    <p className="text-xs sm:text-sm text-gray-600">TEL: {customer.phone}</p>
-                    <p className="text-xs sm:text-sm text-gray-600">Email: {customer.email}</p>
+                    <p className="text-xs sm:text-sm text-text-muted">{customer.address}</p>
+                    <p className="text-xs sm:text-sm text-text-muted">TEL: {customer.phone}</p>
+                    <p className="text-xs sm:text-sm text-text-muted">Email: {customer.email}</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setCustomer({ id: '', name: '', email: '', phone: '', address: '' })}
                     className="text-red-500 hover:text-red-700 mt-2 sm:mt-0"
                   >
@@ -597,12 +593,12 @@ const InvoiceCreation: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-md p-6 sm:p-8 text-center">
-                <User className="mx-auto text-gray-400 mb-2" size={24} />
-                <p className="text-gray-500 text-sm sm:text-base">請求先顧客が選択されていません</p>
-                <button 
+              <div className="border-2 border-dashed border-border rounded-md p-6 sm:p-8 text-center">
+                <User className="mx-auto text-text-muted mb-2" size={24} />
+                <p className="text-text-muted text-sm sm:text-base">請求先顧客が選択されていません</p>
+                <button
                   onClick={openCustomerModal}
-                  className="mt-2 text-blue-600 hover:text-blue-800 font-medium text-sm"
+                  className="mt-2 text-primary hover:text-primary/90 font-medium text-sm"
                 >
                   顧客を選択
                 </button>
@@ -614,8 +610,8 @@ const InvoiceCreation: React.FC = () => {
           {documentType === 'invoice' && (
             <div className="mb-6 sm:mb-8">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-700">振込先情報</h2>
-                <button 
+                <h2 className="text-lg sm:text-xl font-semibold text-text-muted">振込先情報</h2>
+                <button
                   onClick={openBankAccountModal}
                   className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
                 >
@@ -624,28 +620,188 @@ const InvoiceCreation: React.FC = () => {
                 </button>
               </div>
               {bankAccount.bankName ? (
-                <div className="bg-gray-50 p-3 sm:p-4 rounded-md">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div className="p-6 max-w-7xl mx-auto space-y-8">
+                  <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium text-sm sm:text-base">{bankAccount.bankName} {bankAccount.branchName}</p>
-                      <p className="text-xs sm:text-sm text-gray-600">{bankAccount.accountType} {bankAccount.accountNumber}</p>
-                      <p className="text-xs sm:text-sm text-gray-600">口座名義: {bankAccount.accountHolder}</p>
+                      <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                        請求書作成
+                      </h1>
+                      <p className="text-text-muted mt-2">
+                        インボイス制度に対応した適格請求書を簡単に作成できます
+                      </p>
                     </div>
-                    <button 
-                      onClick={() => setBankAccount({ id: '', bankName: '', branchName: '', accountType: '普通', accountNumber: '', accountHolder: '' })}
-                      className="text-red-500 hover:text-red-700 mt-2 sm:mt-0"
-                    >
-                      <X size={20} />
-                    </button>
+                    <div className="flex gap-3">
+                      <button className="px-4 py-2 bg-surface border border-border rounded-lg text-text-main hover:bg-surface-highlight transition-colors flex items-center gap-2">
+                        <Download className="w-4 h-4" />
+                        下書き一覧
+                      </button>
+                      <button className="px-4 py-2 btn-primary transition-colors flex items-center gap-2 shadow-lg shadow-primary/25">
+                        <Plus className="w-4 h-4" />
+                        新規作成
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Form Section */}
+                    <div className="lg:col-span-2 space-y-6">
+                      <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center justify-between mb-6">
+                          <h2 className="text-xl font-semibold text-text-main flex items-center gap-2">
+                            <FileText className="w-5 h-5 text-primary" />
+                            請求書情報
+                          </h2>
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-surface-highlight text-text-muted border border-border">
+                            T1234567890123
+                          </span>
+                        </div>
+
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-2 gap-6">
+                            <div>
+                              <label className="block text-sm font-medium text-text-muted mb-2">取引先</label>
+                              <input
+                                type="text"
+                                className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                placeholder="株式会社〇〇"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-text-muted mb-2">請求日</label>
+                              <input
+                                type="date"
+                                className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-text-muted mb-2">件名</label>
+                            <input
+                              type="text"
+                              className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              placeholder="〇〇開発案件 3月分ご請求"
+                            />
+                          </div>
+
+                          {/* Items Table */}
+                          <div className="border border-border rounded-xl overflow-hidden">
+                            <table className="w-full">
+                              <thead className="bg-surface-highlight">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">品目</th>
+                                  <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-24">数量</th>
+                                  <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">単価</th>
+                                  <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">金額</th>
+                                  <th className="px-4 py-3 w-10"></th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border bg-surface">
+                                {[1, 2].map((i) => (
+                                  <tr key={i}>
+                                    <td className="px-4 py-3">
+                                      <input
+                                        type="text"
+                                        className="w-full bg-transparent border-none focus:ring-0 text-text-main placeholder-text-muted"
+                                        placeholder="品目を入力"
+                                      />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <input
+                                        type="number"
+                                        className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
+                                        placeholder="1"
+                                      />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <input
+                                        type="number"
+                                        className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
+                                        placeholder="0"
+                                      />
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-text-main">¥0</td>
+                                    <td className="px-4 py-3 text-center">
+                                      <button className="text-text-muted hover:text-red-400 transition-colors">
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            <div className="p-3 bg-surface-highlight border-t border-border">
+                              <button className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1">
+                                <Plus className="w-4 h-4" />
+                                行を追加
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end">
+                            <div className="w-64 space-y-3">
+                              <div className="flex justify-between text-text-muted">
+                                <span>小計</span>
+                                <span>¥0</span>
+                              </div>
+                              <div className="flex justify-between text-text-muted">
+                                <span>消費税 (10%)</span>
+                                <span>¥0</span>
+                              </div>
+                              <div className="flex justify-between text-lg font-bold text-text-main pt-3 border-t border-border">
+                                <span>合計</span>
+                                <span>¥0</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sidebar Actions */}
+                    <div className="space-y-6">
+                      <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-lg font-semibold text-text-main mb-4">アクション</h3>
+                        <div className="space-y-3">
+                          <button className="w-full btn-primary transition-colors shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
+                            <Send className="w-4 h-4" />
+                            メールで送信
+                          </button>
+                          <button className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2">
+                            <Download className="w-4 h-4" />
+                            PDFダウンロード
+                          </button>
+                          <button className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2">
+                            <Save className="w-4 h-4" />
+                            下書き保存
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-lg font-semibold text-text-main mb-4">最近の請求書</h3>
+                        <div className="space-y-4">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-highlight transition-colors cursor-pointer group">
+                              <div>
+                                <p className="font-medium text-text-main group-hover:text-primary transition-colors">株式会社〇〇 御中</p>
+                                <p className="text-xs text-text-muted">2024/03/{20 - i}</p>
+                              </div>
+                              <span className="text-sm font-bold text-text-main">¥150,000</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-md p-6 sm:p-8 text-center">
-                  <Banknote className="mx-auto text-gray-400 mb-2" size={24} />
-                  <p className="text-gray-500 text-sm sm:text-base">振込先口座が選択されていません</p>
-                  <button 
+                <div className="border-2 border-dashed border-border rounded-md p-6 sm:p-8 text-center">
+                  <Banknote className="mx-auto text-text-muted mb-2" size={24} />
+                  <p className="text-text-muted text-sm sm:text-base">振込先口座が選択されていません</p>
+                  <button
                     onClick={openBankAccountModal}
-                    className="mt-2 text-blue-600 hover:text-blue-800 font-medium text-sm"
+                    className="mt-2 text-primary hover:text-primary/90 font-medium text-sm"
                   >
                     口座を選択
                   </button>
@@ -657,8 +813,8 @@ const InvoiceCreation: React.FC = () => {
           {/* 明細 */}
           <div className="mb-6 sm:mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-700">明細</h2>
-              <button 
+              <h2 className="text-lg sm:text-xl font-semibold text-text-muted">明細</h2>
+              <button
                 onClick={addItem}
                 className="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm"
               >
@@ -669,7 +825,7 @@ const InvoiceCreation: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-100">
+                  <tr className="bg-surface-highlight">
                     <th className="p-2 text-left text-xs sm:text-sm">商品・サービス</th>
                     <th className="p-2 text-right text-xs sm:text-sm">数量</th>
                     <th className="p-2 text-right text-xs sm:text-sm">単価</th>
@@ -685,7 +841,7 @@ const InvoiceCreation: React.FC = () => {
                           type="text"
                           value={item.description}
                           onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                          className="w-full p-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1 text-sm border border-border rounded focus:ring-2 focus:ring-primary focus:border-primary"
                           placeholder="商品・サービス名"
                         />
                       </td>
@@ -694,7 +850,7 @@ const InvoiceCreation: React.FC = () => {
                           type="number"
                           value={item.quantity}
                           onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
-                          className="w-full p-1 text-sm border border-gray-300 rounded text-right focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1 text-sm border border-border rounded text-right focus:ring-2 focus:ring-primary focus:border-primary"
                           min="0"
                         />
                       </td>
@@ -703,7 +859,7 @@ const InvoiceCreation: React.FC = () => {
                           type="number"
                           value={item.unitPrice}
                           onChange={(e) => updateItem(item.id, 'unitPrice', parseInt(e.target.value) || 0)}
-                          className="w-full p-1 text-sm border border-gray-300 rounded text-right focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1 text-sm border border-border rounded text-right focus:ring-2 focus:ring-primary focus:border-primary"
                           min="0"
                         />
                       </td>
@@ -711,7 +867,7 @@ const InvoiceCreation: React.FC = () => {
                         ¥{item.amount.toLocaleString()}
                       </td>
                       <td className="p-2 text-center">
-                        <button 
+                        <button
                           onClick={() => removeItem(item.id)}
                           className="text-red-500 hover:text-red-700"
                         >
@@ -726,7 +882,7 @@ const InvoiceCreation: React.FC = () => {
           </div>
 
           {/* 合計 */}
-          <div className="bg-gray-50 p-4 sm:p-6 rounded-md">
+          <div className="bg-background p-4 sm:p-6 rounded-md">
             <div className="flex justify-end">
               <div className="w-full sm:w-64">
                 <div className="flex justify-between mb-1 sm:mb-2 text-sm sm:text-base">
@@ -745,16 +901,16 @@ const InvoiceCreation: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         {/* 顧客選択モーダル */}
         {showCustomerModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
               <div className="flex justify-between items-center p-4 border-b">
                 <h3 className="text-lg font-semibold">顧客を選択</h3>
-                <button 
+                <button
                   onClick={closeModal}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-text-muted hover:text-text-muted"
                 >
                   <X size={24} />
                 </button>
@@ -764,27 +920,27 @@ const InvoiceCreation: React.FC = () => {
                   <input
                     type="text"
                     placeholder="顧客を検索..."
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   {customers
-                    .filter(customer => 
+                    .filter(customer =>
                       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       customer.email.toLowerCase().includes(searchTerm.toLowerCase())
                     )
                     .map(customer => (
-                      <div 
-                        key={customer.id} 
-                        className="p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer"
+                      <div
+                        key={customer.id}
+                        className="p-3 border border-border rounded-md hover:bg-background cursor-pointer"
                         onClick={() => selectCustomer(customer)}
                       >
                         <p className="font-medium">{customer.name}</p>
-                        <p className="text-sm text-gray-600">{customer.email}</p>
-                        <p className="text-sm text-gray-600">{customer.phone}</p>
-                        <p className="text-sm text-gray-600">{customer.address}</p>
+                        <p className="text-sm text-text-muted">{customer.email}</p>
+                        <p className="text-sm text-text-muted">{customer.phone}</p>
+                        <p className="text-sm text-text-muted">{customer.address}</p>
                       </div>
                     ))}
                 </div>
@@ -794,7 +950,7 @@ const InvoiceCreation: React.FC = () => {
                       setShowCustomerModal(false)
                       setShowNewCustomerModal(true)
                     }}
-                    className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="w-full py-2 bg-primary text-white rounded-md hover:bg-primary/90"
                   >
                     新規顧客を作成
                   </button>
@@ -803,16 +959,16 @@ const InvoiceCreation: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* 銀行口座選択モーダル */}
         {showBankAccountModal && documentType === 'invoice' && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
               <div className="flex justify-between items-center p-4 border-b">
                 <h3 className="text-lg font-semibold">銀行口座を選択</h3>
-                <button 
+                <button
                   onClick={closeModal}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-text-muted hover:text-text-muted"
                 >
                   <X size={24} />
                 </button>
@@ -820,14 +976,14 @@ const InvoiceCreation: React.FC = () => {
               <div className="p-4 overflow-auto max-h-[70vh]">
                 <div className="space-y-2">
                   {bankAccounts.map(account => (
-                    <div 
-                      key={account.id} 
-                      className="p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer"
+                    <div
+                      key={account.id}
+                      className="p-3 border border-border rounded-md hover:bg-background cursor-pointer"
                       onClick={() => selectBankAccount(account)}
                     >
                       <p className="font-medium">{account.bankName} {account.branchName}</p>
-                      <p className="text-sm text-gray-600">{account.accountType} {account.accountNumber}</p>
-                      <p className="text-sm text-gray-600">口座名義: {account.accountHolder}</p>
+                      <p className="text-sm text-text-muted">{account.accountType} {account.accountNumber}</p>
+                      <p className="text-sm text-text-muted">口座名義: {account.accountHolder}</p>
                     </div>
                   ))}
                 </div>
@@ -837,7 +993,7 @@ const InvoiceCreation: React.FC = () => {
                       setShowBankAccountModal(false)
                       setShowNewBankAccountModal(true)
                     }}
-                    className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="w-full py-2 bg-primary text-white rounded-md hover:bg-primary/90"
                   >
                     新規銀行口座を作成
                   </button>
@@ -846,16 +1002,16 @@ const InvoiceCreation: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* 新規顧客作成モーダル */}
         {showNewCustomerModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="bg-surface rounded-lg max-w-md w-full">
               <div className="flex justify-between items-center p-4 border-b">
                 <h3 className="text-lg font-semibold">新規顧客を作成</h3>
-                <button 
+                <button
                   onClick={closeModal}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-text-muted hover:text-text-muted"
                 >
                   <X size={24} />
                 </button>
@@ -863,52 +1019,52 @@ const InvoiceCreation: React.FC = () => {
               <div className="p-4">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">顧客名</label>
+                    <label className="block text-sm font-medium text-text-muted mb-1">顧客名</label>
                     <input
                       type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       value={newCustomer.name}
-                      onChange={(e) => setNewCustomer({...newCustomer, name: e.target.value})}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス</label>
+                    <label className="block text-sm font-medium text-text-muted mb-1">メールアドレス</label>
                     <input
                       type="email"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       value={newCustomer.email}
-                      onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">電話番号</label>
+                    <label className="block text-sm font-medium text-text-muted mb-1">電話番号</label>
                     <input
                       type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       value={newCustomer.phone}
-                      onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">住所</label>
+                    <label className="block text-sm font-medium text-text-muted mb-1">住所</label>
                     <input
                       type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       value={newCustomer.address}
-                      onChange={(e) => setNewCustomer({...newCustomer, address: e.target.value})}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
                     />
                   </div>
                 </div>
                 <div className="mt-6 flex justify-end gap-3">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                    className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-highlight"
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={createCustomer}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="btn-primary"
                   >
                     作成
                   </button>
@@ -917,16 +1073,16 @@ const InvoiceCreation: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* 新規銀行口座作成モーダル */}
         {showNewBankAccountModal && documentType === 'invoice' && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="bg-surface rounded-lg max-w-md w-full">
               <div className="flex justify-between items-center p-4 border-b">
                 <h3 className="text-lg font-semibold">新規銀行口座を作成</h3>
-                <button 
+                <button
                   onClick={closeModal}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-text-muted hover:text-text-muted"
                 >
                   <X size={24} />
                 </button>
@@ -934,63 +1090,63 @@ const InvoiceCreation: React.FC = () => {
               <div className="p-4">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">銀行名</label>
+                    <label className="block text-sm font-medium text-text-muted mb-1">銀行名</label>
                     <input
                       type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       value={newBankAccount.bankName}
-                      onChange={(e) => setNewBankAccount({...newBankAccount, bankName: e.target.value})}
+                      onChange={(e) => setNewBankAccount({ ...newBankAccount, bankName: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">支店名</label>
+                    <label className="block text-sm font-medium text-text-muted mb-1">支店名</label>
                     <input
                       type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       value={newBankAccount.branchName}
-                      onChange={(e) => setNewBankAccount({...newBankAccount, branchName: e.target.value})}
+                      onChange={(e) => setNewBankAccount({ ...newBankAccount, branchName: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">口座種別</label>
+                    <label className="block text-sm font-medium text-text-muted mb-1">口座種別</label>
                     <select
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       value={newBankAccount.accountType}
-                      onChange={(e) => setNewBankAccount({...newBankAccount, accountType: e.target.value as '普通' | '当座'})}
+                      onChange={(e) => setNewBankAccount({ ...newBankAccount, accountType: e.target.value as '普通' | '当座' })}
                     >
                       <option value="普通">普通</option>
                       <option value="当座">当座</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">口座番号</label>
+                    <label className="block text-sm font-medium text-text-muted mb-1">口座番号</label>
                     <input
                       type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       value={newBankAccount.accountNumber}
-                      onChange={(e) => setNewBankAccount({...newBankAccount, accountNumber: e.target.value})}
+                      onChange={(e) => setNewBankAccount({ ...newBankAccount, accountNumber: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">口座名義</label>
+                    <label className="block text-sm font-medium text-text-muted mb-1">口座名義</label>
                     <input
                       type="text"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                       value={newBankAccount.accountHolder}
-                      onChange={(e) => setNewBankAccount({...newBankAccount, accountHolder: e.target.value})}
+                      onChange={(e) => setNewBankAccount({ ...newBankAccount, accountHolder: e.target.value })}
                     />
                   </div>
                 </div>
                 <div className="mt-6 flex justify-end gap-3">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                    className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-highlight"
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={createBankAccount}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="btn-primary"
                   >
                     作成
                   </button>
@@ -999,23 +1155,23 @@ const InvoiceCreation: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* プレビューモーダル */}
         {showPreviewModal && previewBlobUrl && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-surface rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
               <div className="flex justify-between items-center p-4 border-b">
                 <h3 className="text-lg font-semibold">PDFプレビュー</h3>
-                <button 
+                <button
                   onClick={closePreviewModal}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-text-muted hover:text-text-muted"
                 >
                   <X size={24} />
                 </button>
               </div>
               <div className="p-4 overflow-auto max-h-[70vh]">
-                <iframe 
-                  src={previewBlobUrl} 
+                <iframe
+                  src={previewBlobUrl}
                   className="w-full h-[70vh]"
                   title="PDFプレビュー"
                 />
@@ -1023,23 +1179,23 @@ const InvoiceCreation: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* ダウンロード確認モーダル */}
         {showDownloadConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="bg-surface rounded-lg p-6 max-w-md w-full">
               <h3 className="text-lg font-semibold mb-4">PDFダウンロード</h3>
               <p className="mb-6">{documentType === 'invoice' ? '請求書' : '見積書'}をPDFとしてダウンロードしますか？</p>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={closeDownloadConfirm}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                  className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-highlight"
                 >
                   キャンセル
                 </button>
                 <button
                   onClick={handleDownloadPDF}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="btn-primary"
                 >
                   ダウンロード
                 </button>
@@ -1047,32 +1203,32 @@ const InvoiceCreation: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* 送信モーダル */}
         {showSendModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="bg-surface rounded-lg p-6 max-w-md w-full">
               <h3 className="text-lg font-semibold mb-4">{documentType === 'invoice' ? '請求書送信' : '見積書送信'}</h3>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">送信先メールアドレス</label>
+                <label className="block text-sm font-medium text-text-muted mb-1">送信先メールアドレス</label>
                 <input
                   type="email"
                   value={sendEmail}
                   onChange={(e) => setSendEmail(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
                   placeholder="メールアドレスを入力"
                 />
               </div>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={closeSendModal}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                  className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-highlight"
                 >
                   キャンセル
                 </button>
                 <button
                   onClick={handleSendInvoice}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="btn-primary"
                 >
                   送信
                 </button>

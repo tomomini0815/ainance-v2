@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { lumi } from '../lib/lumi'
-import { useSession } from './useSession'
+import { useAuthContext } from '../components/AuthProvider'
 
-// Supabaseセッションを使用する認証フック
-export const useAuth = useSession
+export const useAuth = () => {
+  // AuthProviderから提供されるコンテキストを使用する
+  return useAuthContext()
+}

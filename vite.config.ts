@@ -1,6 +1,7 @@
 import type { UserConfig } from 'vite'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -37,6 +38,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': '/src',
+        '@fonts': resolve(__dirname, 'node_modules/@fontsource/noto-sans-jp/files')
       }
     },
     optimizeDeps: {
@@ -45,12 +47,17 @@ export default defineConfig(({ mode }) => {
     // HTTP設定（スマホカメラアクセス用）
     server: {
       host: true,
-      strictPort: false
+      strictPort: false,
+      historyApiFallback: {
+        index: '/index.html'
+      },
     },
     // GitHub Pages対応のための設定
     preview: {
       host: true,
       port: 5173
-    }
+    },
+    // Base64ファイルのインポートを許可
+    assetsInclude: ['**/*.base64']
   }
 })

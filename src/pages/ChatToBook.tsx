@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mic, Square, Send, Trash2, Download, Plus, Edit3, Save, CheckCircle, Circle } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
-import { useMySQLTransactions } from '../hooks/useMySQLTransactions';
+import { useTransactions } from '../hooks/useTransactions';
+import { useBusinessType } from '../hooks/useBusinessType';
+import { useAuth } from '../hooks/useAuth';
 
 interface Transaction {
   id: string;
@@ -11,6 +12,8 @@ interface Transaction {
   amount: number;
   category: string;
   type: 'income' | 'expense';
+  created_at?: string;
+  updated_at?: string;
 }
 
 const ChatToBook: React.FC = () => {
@@ -22,7 +25,9 @@ const ChatToBook: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
   const recognitionRef = useRef<any>(null);
-  const { createTransaction } = useMySQLTransactions();
+  const { user } = useAuth();
+  const { currentBusinessType } = useBusinessType(user?.id);
+  const { transactions: dbTransactions, createTransaction, updateTransaction, deleteTransaction, loading, fetchTransactions } = useTransactions(user?.id, currentBusinessType?.business_type);
   const navigate = useNavigate();
 
   // 音声認識の初期化
@@ -70,6 +75,20 @@ const ChatToBook: React.FC = () => {
     };
   }, []);
 
+  // DBから取引データを取得
+  useEffect(() => {
+    setTransactions(dbTransactions.map((t: any) => ({
+      id: t.id,
+      date: t.date,
+      description: t.description || t.item || '',
+      amount: t.amount,
+      category: t.category,
+      type: t.type as 'income' | 'expense',
+      created_at: t.created_at,
+      updated_at: t.updated_at
+    })));
+  }, [dbTransactions]);
+
   const startListening = () => {
     if (recognitionRef.current) {
       recognitionRef.current.start();
@@ -89,13 +108,13 @@ const ChatToBook: React.FC = () => {
     // 金額を抽出（数字に万、千などの単位がつく場合も考慮）
     const amountPattern = /(\d+(?:万)?(?:千)?(?:円)?)/g;
     const amounts = text.match(amountPattern);
-    
+
     // カテゴリマッピング（優先順位付き）
     const categoryMapping: Array<{ keywords: string[]; category: string; type: 'income' | 'expense'; priority: number }> = [
       // 収入系（高優先度）
       { keywords: ['売上'], category: '売上', type: 'income', priority: 10 },
       { keywords: ['給与'], category: '給与', type: 'income', priority: 9 },
-      
+
       // 支出系（中優先度）
       { keywords: ['交通費', '電車', 'バス', 'タクシー'], category: '交通費', type: 'expense', priority: 7 },
       { keywords: ['食費', 'ランチ', 'ディナー', 'コーヒー'], category: '食費', type: 'expense', priority: 6 },
@@ -103,15 +122,15 @@ const ChatToBook: React.FC = () => {
       { keywords: ['接待', '会食'], category: '接待交際費', type: 'expense', priority: 5 },
       { keywords: ['通信費', '電話料金'], category: '通信費', type: 'expense', priority: 4 },
       { keywords: ['光熱費', '電気', 'ガス', '水道'], category: '水道光熱費', type: 'expense', priority: 4 },
-      
+
       // 低優先度（デフォルト）
       { keywords: ['費用', '費'], category: '雑費', type: 'expense', priority: 1 }
     ];
-    
+
     let detectedCategory = '未分類';
     let detectedType: 'income' | 'expense' = 'expense';
     let maxPriority = 0;
-    
+
     // カテゴリを検出
     for (const mapping of categoryMapping) {
       for (const keyword of mapping.keywords) {
@@ -122,7 +141,7 @@ const ChatToBook: React.FC = () => {
         }
       }
     }
-    
+
     // 金額を数値に変換
     let amount = 0;
     if (amounts && amounts.length > 0) {
@@ -138,10 +157,10 @@ const ChatToBook: React.FC = () => {
         amount = parseFloat(amountText.replace(/[^\d]/g, '')) || 0;
       }
     }
-    
+
     // 日付の処理（今日の日付をデフォルトとする）
     const today = new Date().toISOString().split('T')[0];
-    
+
     return {
       date: today,
       description: text,
@@ -153,19 +172,19 @@ const ChatToBook: React.FC = () => {
 
   const processTranscript = () => {
     if (!transcript.trim()) return;
-    
+
     setIsProcessing(true);
-    
+
     // 実際のアプリケーションでは、AIやルールベースの処理で取引情報を抽出
     // ここでは簡略化のためにクライアント側で処理
     setTimeout(() => {
       const transactionData = extractTransactionData(transcript);
-      
+
       const newTransaction: Transaction = {
         id: Date.now().toString(),
         ...transactionData
       };
-      
+
       setTransactions(prev => [newTransaction, ...prev]);
       setTranscript('');
       setIsProcessing(false);
@@ -177,39 +196,63 @@ const ChatToBook: React.FC = () => {
     setEditData(transaction);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingId && editData) {
-      setTransactions(prev => 
-        prev.map(t => t.id === editingId ? { ...t, ...editData } as Transaction : t)
-      );
-      setEditingId(null);
-      setEditData({});
+      try {
+        // DBの取引を更新
+        const result = await updateTransaction(editingId, {
+          date: editData.date || '',
+          item: editData.description || '',
+          amount: editData.amount || 0,
+          category: editData.category || '未分類',
+          type: editData.type || 'expense'
+        });
+
+        if (result.error) {
+          throw result.error;
+        }
+
+        // ローカル状態も更新
+        setTransactions(prev =>
+          prev.map(t => t.id === editingId ? { ...t, ...editData } as Transaction : t)
+        );
+        setEditingId(null);
+        setEditData({});
+      } catch (error) {
+        console.error('取引の更新に失敗しました:', error);
+        alert('取引の更新に失敗しました: ' + (error as Error).message);
+      }
     }
   };
 
-  const handleDelete = (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
-    // 選択済みリストからも削除
-    setSelectedTransactions(prev => prev.filter(tid => tid !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      // DBから取引を削除
+      const result = await deleteTransaction(id);
+      
+      if (result.error) {
+        throw result.error;
+      }
+
+      // ローカル状態も更新
+      setTransactions(prev => prev.filter(t => t.id !== id));
+      // 選択済みリストからも削除
+      setSelectedTransactions(prev => prev.filter(tid => tid !== id));
+    } catch (error) {
+      console.error('取引の削除に失敗しました:', error);
+      alert('取引の削除に失敗しました: ' + (error as Error).message);
+    }
   };
 
   // 取引をデータベースに保存
   const saveTransactionToDB = async (transaction: Transaction) => {
     try {
-      // ログインユーザーの取得
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      // 認証エラーのチェック
-      if (authError) {
-        throw new Error(`認証エラー: ${authError.message}`);
-      }
-      
       // ユーザーがログインしていない場合
       if (!user) {
         throw new Error('ユーザーがログインしていません。ログインしてください。');
       }
-      
-      // Supabaseに保存するデータの準備
+
+      // Firebaseに保存するデータの準備
       const transactionData = {
         item: transaction.description,
         amount: transaction.amount,
@@ -217,22 +260,22 @@ const ChatToBook: React.FC = () => {
         category: transaction.category,
         type: transaction.type,
         description: transaction.description,
-        creator: user.id
+        creator: user.id  // ログインユーザーのIDを設定
       };
 
-      // useMySQLTransactionsフックのcreateTransaction関数を使用して取引を保存
-      const transactionId = await createTransaction(transactionData);
-      
-      return transactionId;
+      // useTransactionsフックのcreateTransaction関数を使用して取引を保存
+      const result = await createTransaction(transactionData);
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      return result.data?.id;
     } catch (error: any) {
       console.error('取引の保存中にエラーが発生しました:', error);
       // ネットワークエラーの場合、より具体的なメッセージを表示
       if (error.message.includes('Failed to fetch')) {
         throw new Error('ネットワークエラーが発生しました。インターネット接続を確認してください。');
-      }
-      // 認証エラーの場合、ユーザーに再ログインを促す
-      if (error.message.includes('Auth session missing')) {
-        throw new Error('認証セッションが切れました。再度ログインしてください。');
       }
       throw error;
     }
@@ -260,20 +303,20 @@ const ChatToBook: React.FC = () => {
   // 複数の取引を一括記録
   const bulkRecordTransactions = async () => {
     const selectedItems = transactions.filter(t => selectedTransactions.includes(t.id));
-    
+
     if (selectedItems.length === 0) {
       alert('記録する取引を選択してください');
       return;
     }
-    
+
     try {
       // 選択された取引を一括で保存
       const savePromises = selectedItems.map(transaction => saveTransactionToDB(transaction));
       const results = await Promise.allSettled(savePromises);
-      
+
       const successful = results.filter(result => result.status === 'fulfilled').length;
       const failed = results.filter(result => result.status === 'rejected').length;
-      
+
       // 失敗した取引のエラー情報をコンソールに出力
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
@@ -286,19 +329,19 @@ const ChatToBook: React.FC = () => {
           }
         }
       });
-      
+
       if (failed > 0) {
         alert(`${successful}件の取引が正常に記録されましたが、${failed}件の取引の記録に失敗しました。詳細はコンソールを確認してください。`);
       } else {
         alert(`${successful}件の取引が正常に記録されました`);
       }
-      
+
       // 成功した取引のIDを取得
       const successfulIds = results
         .map((result, index) => ({ result, index }))
         .filter(({ result }) => result.status === 'fulfilled')
         .map(({ index }) => selectedItems[index].id);
-      
+
       // 成功した取引をローカルリストから削除
       setTransactions(prev => prev.filter(t => !successfulIds.includes(t.id)));
       setSelectedTransactions(prev => prev.filter(id => !successfulIds.includes(id)));
@@ -310,9 +353,9 @@ const ChatToBook: React.FC = () => {
 
   // 取引の選択状態を切り替え
   const toggleTransactionSelection = (id: string) => {
-    setSelectedTransactions(prev => 
-      prev.includes(id) 
-        ? prev.filter(tid => tid !== id) 
+    setSelectedTransactions(prev =>
+      prev.includes(id)
+        ? prev.filter(tid => tid !== id)
         : [...prev, id]
     );
   };
@@ -338,7 +381,7 @@ const ChatToBook: React.FC = () => {
         t.type
       ])
     ].map(row => row.join(',')).join('\n');
-    
+
     const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -351,28 +394,27 @@ const ChatToBook: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-6">
           <Link to="/dashboard" className="mr-4">
-            <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
+            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">CHAT-TO-BOOK</h1>
+          <h1 className="text-2xl font-bold text-text-main">CHAT-TO-BOOK</h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">音声入力</h2>
-            
+          <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+            <h2 className="text-lg font-semibold text-text-main mb-4">音声入力</h2>
+
             <div className="mb-4">
               <div className="flex items-center justify-center mb-4">
                 <button
                   onClick={isListening ? stopListening : startListening}
-                  className={`flex items-center justify-center w-16 h-16 rounded-full ${
-                    isListening 
-                      ? 'bg-red-500 hover:bg-red-600' 
-                      : 'bg-blue-500 hover:bg-blue-600'
-                  } text-white transition-colors`}
+                  className={`flex items-center justify-center w-16 h-16 rounded-full ${isListening
+                      ? 'bg-red-500 hover:bg-red-600'
+                      : 'bg-primary hover:bg-primary/90'
+                    } text-white transition-colors shadow-lg shadow-primary/25`}
                 >
                   {isListening ? (
                     <Square className="w-8 h-8" />
@@ -381,34 +423,33 @@ const ChatToBook: React.FC = () => {
                   )}
                 </button>
               </div>
-              
+
               <div className="text-center mb-4">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-text-muted">
                   {isListening ? '音声認識中...' : 'マイクボタンをクリックして開始'}
                 </p>
               </div>
             </div>
-            
+
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">認識テキスト</label>
+              <label className="block text-sm font-medium text-text-muted mb-2">認識テキスト</label>
               <textarea
                 value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="音声認識されたテキストがここに表示されます..."
               />
             </div>
-            
+
             <div className="flex justify-end">
               <button
                 onClick={processTranscript}
                 disabled={!transcript.trim() || isProcessing}
-                className={`flex items-center px-4 py-2 rounded-md transition-colors ${
-                  !transcript.trim() || isProcessing
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                className={`flex items-center px-4 py-2 rounded-md transition-colors ${!transcript.trim() || isProcessing
+                    ? 'bg-surface-highlight text-text-muted cursor-not-allowed'
                     : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
+                  }`}
               >
                 {isProcessing ? (
                   <>
@@ -424,17 +465,17 @@ const ChatToBook: React.FC = () => {
               </button>
             </div>
           </div>
-          
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">取引一覧</h2>
-            
+
+          <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+            <h2 className="text-lg font-semibold text-text-main mb-4">取引一覧</h2>
+
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center space-x-2">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-text-muted">
                   {transactions.length}件の取引
                 </p>
                 {selectedTransactions.length > 0 && (
-                  <span className="text-sm text-blue-600">
+                  <span className="text-sm text-primary">
                     {selectedTransactions.length}件選択中
                   </span>
                 )}
@@ -452,100 +493,99 @@ const ChatToBook: React.FC = () => {
                 <button
                   onClick={exportTransactions}
                   disabled={transactions.length === 0}
-                  className={`flex items-center px-3 py-1 rounded-md text-sm transition-colors ${
-                    transactions.length === 0
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
+                  className={`flex items-center px-3 py-1 rounded-md text-sm transition-colors ${transactions.length === 0
+                      ? 'bg-surface-highlight text-text-muted cursor-not-allowed'
+                      : 'bg-primary text-white hover:bg-primary/90'
+                    }`}
                 >
                   <Download className="w-4 h-4 mr-1" />
                   CSVエクスポート
                 </button>
               </div>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-surface-highlight">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <button 
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
+                      <button
                         onClick={toggleAllTransactionsSelection}
                         className="flex items-center"
                       >
                         {selectedTransactions.length === transactions.length && transactions.length > 0 ? (
-                          <CheckCircle className="w-4 h-4 text-blue-600" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                         ) : (
-                          <Circle className="w-4 h-4 text-gray-400" />
+                          <Circle className="w-4 h-4 text-text-muted" />
                         )}
                       </button>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日付</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">説明</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">金額</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">カテゴリ</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">日付</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">説明</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-surface divide-y divide-border">
                   {transactions.map((transaction) => (
                     <tr key={transaction.id}>
                       <td className="px-4 py-3 text-sm">
-                        <button 
+                        <button
                           onClick={() => toggleTransactionSelection(transaction.id)}
                           className="flex items-center"
                         >
                           {selectedTransactions.includes(transaction.id) ? (
-                            <CheckCircle className="w-5 h-5 text-blue-600" />
+                            <CheckCircle className="w-5 h-5 text-primary" />
                           ) : (
-                            <Circle className="w-5 h-5 text-gray-400" />
+                            <Circle className="w-5 h-5 text-text-muted" />
                           )}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-text-main">
                         {editingId === transaction.id ? (
                           <input
                             type="date"
                             value={editData.date || transaction.date}
                             onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                           />
                         ) : (
                           transaction.date
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs">
+                      <td className="px-4 py-3 text-sm text-text-main max-w-xs">
                         {editingId === transaction.id ? (
                           <input
                             type="text"
                             value={editData.description || transaction.description}
                             onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                           />
                         ) : (
                           transaction.description
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-text-main">
                         {editingId === transaction.id ? (
                           <input
                             type="number"
                             value={editData.amount || transaction.amount}
                             onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                           />
                         ) : (
-                          <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
+                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
                             {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-text-main">
                         {editingId === transaction.id ? (
                           <select
                             value={editData.category || transaction.category}
                             onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                           >
                             <option value="売上">売上</option>
                             <option value="給与">給与</option>
@@ -566,7 +606,7 @@ const ChatToBook: React.FC = () => {
                         {editingId === transaction.id ? (
                           <button
                             onClick={handleSave}
-                            className="text-green-600 hover:text-green-900 mr-2"
+                            className="text-green-500 hover:text-green-600 mr-2"
                           >
                             <Save className="w-4 h-4" />
                           </button>
@@ -574,19 +614,19 @@ const ChatToBook: React.FC = () => {
                           <>
                             <button
                               onClick={() => recordTransaction(transaction)}
-                              className="text-green-600 hover:text-green-900 mr-2"
+                              className="text-green-500 hover:text-green-600 mr-2"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEdit(transaction)}
-                              className="text-blue-600 hover:text-blue-900 mr-2"
+                              className="text-primary hover:text-primary/80 mr-2"
                             >
                               <Edit3 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(transaction.id)}
-                              className="text-red-600 hover:text-red-900"
+                              className="text-red-500 hover:text-red-600"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -597,9 +637,9 @@ const ChatToBook: React.FC = () => {
                   ))}
                 </tbody>
               </table>
-              
+
               {transactions.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-text-muted">
                   <p>まだ取引がありません</p>
                   <p className="text-sm mt-2">音声入力で取引を追加してください</p>
                 </div>
@@ -607,30 +647,30 @@ const ChatToBook: React.FC = () => {
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">使い方</h2>
+
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+          <h2 className="text-lg font-semibold text-text-main mb-4">使い方</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                <span className="text-blue-600 font-bold">1</span>
+            <div className="border border-border rounded-lg p-4">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                <span className="text-primary font-bold">1</span>
               </div>
-              <h3 className="font-medium text-gray-900 mb-2">音声入力開始</h3>
-              <p className="text-sm text-gray-600">マイクボタンをクリックして、取引内容を話してください。</p>
+              <h3 className="font-medium text-text-main mb-2">音声入力開始</h3>
+              <p className="text-sm text-text-muted">マイクボタンをクリックして、取引内容を話してください。</p>
             </div>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                <span className="text-blue-600 font-bold">2</span>
+            <div className="border border-border rounded-lg p-4">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                <span className="text-primary font-bold">2</span>
               </div>
-              <h3 className="font-medium text-gray-900 mb-2">テキスト確認</h3>
-              <p className="text-sm text-gray-600">認識されたテキストを確認・編集してください。</p>
+              <h3 className="font-medium text-text-main mb-2">テキスト確認</h3>
+              <p className="text-sm text-text-muted">認識されたテキストを確認・編集してください。</p>
             </div>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                <span className="text-blue-600 font-bold">3</span>
+            <div className="border border-border rounded-lg p-4">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                <span className="text-primary font-bold">3</span>
               </div>
-              <h3 className="font-medium text-gray-900 mb-2">取引に変換</h3>
-              <p className="text-sm text-gray-600">「取引に変換」ボタンをクリックして、取引を登録してください。</p>
+              <h3 className="font-medium text-text-main mb-2">取引に変換</h3>
+              <p className="text-sm text-text-muted">「取引に変換」ボタンをクリックして、取引を登録してください。</p>
             </div>
           </div>
         </div>

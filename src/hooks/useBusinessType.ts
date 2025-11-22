@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react'
-import { lumi } from '../lib/lumi'
+import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
 
 interface BusinessType {
-  _id: string
+  id: string
   user_id: string
   business_type: 'individual' | 'corporation'
   company_name: string
@@ -19,55 +18,104 @@ interface BusinessType {
 }
 
 export const useBusinessType = (userId?: string) => {
+  console.log('useBusinessType - userId:', userId);
+
   const [currentBusinessType, setCurrentBusinessType] = useState<BusinessType | null>(null)
   const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([])
   const [loading, setLoading] = useState(true)
 
   // 現在アクティブな業態形態を取得
-  const fetchCurrentBusinessType = useCallback(async () => {
+  const fetchCurrentBusinessType = useCallback(() => {
     if (!userId) {
       setLoading(false)
       return
     }
 
     try {
-      const { list } = await lumi.entities.business_type.list({
-        filter: { 
-          user_id: userId,
-          is_active: true 
-        }
-      })
-      
-      if (list && list.length > 0) {
-        setCurrentBusinessType(list[0])
-      }
+      setLoading(true)
+
+      // Supabaseからユーザーの業態形態を取得
+      supabase
+        .from('business_type')
+        .select('*')
+        .eq('user_id', userId)
+        .order('is_active', { ascending: false })
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('業態形態の取得に失敗しました:', error)
+            toast.error('業態形態の取得に失敗しました')
+            setLoading(false)
+            return
+          }
+
+          if (data && data.length > 0) {
+            // アクティブな業態形態を検索
+            const activeBusinessType = data.find((bt) => bt.is_active)
+            if (activeBusinessType) {
+              setCurrentBusinessType(activeBusinessType)
+            } else {
+              // アクティブな業態がない場合、最初のものをアクティブとして設定
+              const firstBusinessType = data[0]
+              setCurrentBusinessType(firstBusinessType)
+
+              // DBにもアクティブとしてマーク
+              supabase
+                .from('business_type')
+                .update({ is_active: true, updated_at: new Date().toISOString() })
+                .eq('id', firstBusinessType.id)
+            }
+            setBusinessTypes(data)
+          } else {
+            // 業態形態がない場合はnullを設定
+            setCurrentBusinessType(null)
+            setBusinessTypes([])
+          }
+          setLoading(false)
+        })
     } catch (error) {
       console.error('業態形態の取得に失敗しました:', error)
       toast.error('業態形態の取得に失敗しました')
-    } finally {
       setLoading(false)
     }
   }, [userId])
 
   // ユーザーの全業態形態を取得
-  const fetchAllBusinessTypes = useCallback(async () => {
+  const fetchAllBusinessTypes = useCallback(() => {
     if (!userId) return
 
-    try {
-      const { list } = await lumi.entities.business_type.list({
-        filter: { user_id: userId },
-        sort: { created_at: -1 }
+    supabase
+      .from('business_type')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('業態形態リストの取得に失敗しました:', error)
+          return
+        }
+
+        setBusinessTypes(data || [])
+
+        // アクティブな業態形態がリストになければ更新
+        if (data && data.length > 0) {
+          const activeBusinessType = data.find((bt) => bt.is_active)
+          if (activeBusinessType) {
+            setCurrentBusinessType(activeBusinessType)
+          } else if (!currentBusinessType && data.length > 0) {
+            // 現在の業態がなく、リストに業態がある場合は最初のものを設定
+            setCurrentBusinessType(data[0])
+          }
+        }
       })
-      
-      setBusinessTypes(list || [])
-    } catch (error) {
-      console.error('業態形態リストの取得に失敗しました:', error)
-    }
-  }, [userId])
+  }, [userId, currentBusinessType])
 
   // 業態形態を作成
-  const createBusinessType = async (data: Omit<BusinessType, '_id' | 'user_id' | 'is_active' | 'created_at' | 'updated_at'>) => {
+  const createBusinessType = async (data: Omit<BusinessType, 'id' | 'user_id' | 'is_active' | 'created_at' | 'updated_at'>) => {
+    console.log('createBusinessType called with data:', data);
+    
     if (!userId) {
+      console.error('ユーザーIDがありません');
       toast.error('ユーザーIDが必要です')
       return null
     }
@@ -75,28 +123,42 @@ export const useBusinessType = (userId?: string) => {
     try {
       // 既存のアクティブな業態形態を非アクティブにする
       if (currentBusinessType) {
-        await lumi.entities.business_type.update(currentBusinessType._id, {
-          is_active: false,
-          updated_at: new Date().toISOString()
-        })
+        console.log('既存の業態形態を非アクティブにします:', currentBusinessType.id);
+        await supabase
+          .from('business_type')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('id', currentBusinessType.id)
       }
 
-      // 新しい業態形態を作成
-      const newBusinessType = await lumi.entities.business_type.create({
+      const newBusinessTypeData = {
         ...data,
         user_id: userId,
-        is_active: true,
+        is_active: true, // 新規作成時は常にアクティブにする
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      })
+      }
+
+      console.log('Supabaseに保存するデータ:', newBusinessTypeData);
+      const { data: insertedData, error } = await supabase
+        .from('business_type')
+        .insert(newBusinessTypeData)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      console.log('Supabaseに保存成功:', insertedData);
+
+      const newBusinessType: BusinessType = insertedData
 
       setCurrentBusinessType(newBusinessType)
-      await fetchAllBusinessTypes()
+      // fetchAllBusinessTypesはリアルタイムリスナーではないので、手動で更新
+      setBusinessTypes(prev => [newBusinessType, ...prev])
       toast.success('業態形態を作成しました')
       return newBusinessType
-    } catch (error) {
+    } catch (error: any) {
       console.error('業態形態の作成に失敗しました:', error)
-      toast.error('業態形態の作成に失敗しました')
+      toast.error(`業態形態の作成に失敗しました: ${error.message || '不明なエラー'}`)
       return null
     }
   }
@@ -106,42 +168,60 @@ export const useBusinessType = (userId?: string) => {
     try {
       // 現在のアクティブ業態形態を非アクティブにする
       if (currentBusinessType) {
-        await lumi.entities.business_type.update(currentBusinessType._id, {
-          is_active: false,
-          updated_at: new Date().toISOString()
-        })
+        await supabase
+          .from('business_type')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('id', currentBusinessType.id)
       }
 
       // 選択した業態形態をアクティブにする
-      const updatedBusinessType = await lumi.entities.business_type.update(businessTypeId, {
-        is_active: true,
-        updated_at: new Date().toISOString()
-      })
+      const { data, error } = await supabase
+        .from('business_type')
+        .update({ is_active: true, updated_at: new Date().toISOString() })
+        .eq('id', businessTypeId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const updatedBusinessType: BusinessType = data
 
       setCurrentBusinessType(updatedBusinessType)
+      // fetchAllBusinessTypesはリアルタイムリスナーではないので、手動で更新
+      setBusinessTypes(prev => 
+        prev.map(bt => bt.id === businessTypeId ? updatedBusinessType : bt)
+      )
       toast.success('業態形態を切り替えました')
-      
-      // ページをリロードして新しい業態形態を反映
-      window.location.reload()
+      return updatedBusinessType
     } catch (error) {
       console.error('業態形態の切り替えに失敗しました:', error)
       toast.error('業態形態の切り替えに失敗しました')
+      return null
     }
   }
 
   // 業態形態を更新
   const updateBusinessType = async (businessTypeId: string, updates: Partial<BusinessType>) => {
     try {
-      const updatedBusinessType = await lumi.entities.business_type.update(businessTypeId, {
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      const { data, error } = await supabase
+        .from('business_type')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', businessTypeId)
+        .select()
+        .single()
 
-      if (currentBusinessType?._id === businessTypeId) {
+      if (error) throw error
+
+      const updatedBusinessType: BusinessType = data
+
+      if (currentBusinessType?.id === businessTypeId) {
         setCurrentBusinessType(updatedBusinessType)
       }
-      
-      await fetchAllBusinessTypes()
+
+      // fetchAllBusinessTypesはリアルタイムリスナーではないので、手動で更新
+      setBusinessTypes(prev => 
+        prev.map(bt => bt.id === businessTypeId ? updatedBusinessType : bt)
+      )
       toast.success('業態形態を更新しました')
       return updatedBusinessType
     } catch (error) {
@@ -154,13 +234,19 @@ export const useBusinessType = (userId?: string) => {
   // 業態形態を削除
   const deleteBusinessType = async (businessTypeId: string) => {
     try {
-      await lumi.entities.business_type.delete(businessTypeId)
-      
-      if (currentBusinessType?._id === businessTypeId) {
+      const { error } = await supabase
+        .from('business_type')
+        .delete()
+        .eq('id', businessTypeId)
+
+      if (error) throw error
+
+      if (currentBusinessType?.id === businessTypeId) {
         setCurrentBusinessType(null)
       }
-      
-      await fetchAllBusinessTypes()
+
+      // fetchAllBusinessTypesはリアルタイムリスナーではないので、手動で更新
+      setBusinessTypes(prev => prev.filter(bt => bt.id !== businessTypeId))
       toast.success('業態形態を削除しました')
     } catch (error) {
       console.error('業態形態の削除に失敗しました:', error)
@@ -169,11 +255,8 @@ export const useBusinessType = (userId?: string) => {
   }
 
   useEffect(() => {
-    if (userId) {
-      fetchCurrentBusinessType()
-      fetchAllBusinessTypes()
-    }
-  }, [fetchCurrentBusinessType, fetchAllBusinessTypes])
+    fetchCurrentBusinessType()
+  }, [fetchCurrentBusinessType])
 
   return {
     currentBusinessType,

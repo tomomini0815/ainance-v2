@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react'
-import { lumi } from '../lib/lumi'
+import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
 
 interface Invoice {
-  _id: string
+  id: string
   user_id: string
   invoice_number: string
   issue_date: string
@@ -30,8 +29,8 @@ export const useInvoices = (userId?: string, businessType?: 'individual' | 'corp
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
 
-  // 業態形態に応じてエンティティ名を決定
-  const getEntityName = useCallback(() => {
+  // 業態形態に応じてテーブル名を決定
+  const getTableName = useCallback(() => {
     return businessType === 'corporation' ? 'corporation_invoices' : 'individual_invoices'
   }, [businessType])
 
@@ -44,31 +43,34 @@ export const useInvoices = (userId?: string, businessType?: 'individual' | 'corp
 
     try {
       setLoading(true)
-      const entityName = getEntityName()
+      const tableName = getTableName()
       
-      const { list } = await lumi.entities[entityName].list({
-        filter: { user_id: userId },
-        sort: { created_at: -1 }
-      })
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
       
-      setInvoices(list || [])
+      setInvoices(data as Invoice[] || [])
     } catch (error) {
       console.error('請求書の取得に失敗しました:', error)
       toast.error('請求書の取得に失敗しました')
     } finally {
       setLoading(false)
     }
-  }, [userId, businessType, getEntityName])
+  }, [userId, businessType, getTableName])
 
   // 請求書を作成
-  const createInvoice = async (invoiceData: Omit<Invoice, '_id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const createInvoice = async (invoiceData: Omit<Invoice, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!userId || !businessType) {
       toast.error('ユーザーIDと業態形態が必要です')
       return null
     }
 
     try {
-      const entityName = getEntityName()
+      const tableName = getTableName()
       const now = new Date().toISOString()
       
       const newInvoiceData = {
@@ -83,10 +85,17 @@ export const useInvoices = (userId?: string, businessType?: 'individual' | 'corp
         (newInvoiceData as any).approval_status = 'pending'
       }
 
-      const newInvoice = await lumi.entities[entityName].create(newInvoiceData)
-      setInvoices(prev => [newInvoice, ...prev])
+      const { data: newInvoice, error } = await supabase
+        .from(tableName)
+        .insert(newInvoiceData)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setInvoices(prev => [newInvoice as Invoice, ...prev])
       toast.success('請求書を作成しました')
-      return newInvoice
+      return newInvoice as Invoice
     } catch (error) {
       console.error('請求書の作成に失敗しました:', error)
       toast.error('請求書の作成に失敗しました')
@@ -97,19 +106,23 @@ export const useInvoices = (userId?: string, businessType?: 'individual' | 'corp
   // 請求書を更新
   const updateInvoice = async (invoiceId: string, updates: Partial<Invoice>) => {
     try {
-      const entityName = getEntityName()
+      const tableName = getTableName()
       
-      const updatedInvoice = await lumi.entities[entityName].update(invoiceId, {
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      const { data: updatedInvoice, error } = await supabase
+        .from(tableName)
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', invoiceId)
+        .select()
+        .single()
+
+      if (error) throw error
 
       setInvoices(prev => prev.map(invoice => 
-        invoice._id === invoiceId ? updatedInvoice : invoice
+        invoice.id === invoiceId ? updatedInvoice as Invoice : invoice
       ))
       
       toast.success('請求書を更新しました')
-      return updatedInvoice
+      return updatedInvoice as Invoice
     } catch (error) {
       console.error('請求書の更新に失敗しました:', error)
       toast.error('請求書の更新に失敗しました')
@@ -120,10 +133,16 @@ export const useInvoices = (userId?: string, businessType?: 'individual' | 'corp
   // 請求書を削除
   const deleteInvoice = async (invoiceId: string) => {
     try {
-      const entityName = getEntityName()
+      const tableName = getTableName()
       
-      await lumi.entities[entityName].delete(invoiceId)
-      setInvoices(prev => prev.filter(invoice => invoice._id !== invoiceId))
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', invoiceId)
+
+      if (error) throw error
+
+      setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
       toast.success('請求書を削除しました')
     } catch (error) {
       console.error('請求書の削除に失敗しました:', error)
@@ -176,9 +195,9 @@ export const useInvoices = (userId?: string, businessType?: 'individual' | 'corp
 
     // 法人用統計
     if (businessType === 'corporation') {
-      (stats as any).pending = invoices.filter(inv => (inv as any).approval_status === 'pending').length
-      ;(stats as any).approved = invoices.filter(inv => (inv as any).approval_status === 'approved').length
-      ;(stats as any).rejected = invoices.filter(inv => (inv as any).approval_status === 'rejected').length
+      (stats as any).pending = invoices.filter(inv => inv.approval_status === 'pending').length
+      ;(stats as any).approved = invoices.filter(inv => inv.approval_status === 'approved').length
+      ;(stats as any).rejected = invoices.filter(inv => inv.approval_status === 'rejected').length
     }
 
     return stats

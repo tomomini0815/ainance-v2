@@ -1,4 +1,210 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* Light Mode - Original Design */
+  --background: #f8fafc;
+  /* Slate 50 */
+  --surface: #ffffff;
+  /* White */
+  --surface-highlight: #f1f5f9;
+  /* Slate 100 */
+
+  /* Primary Color */
+  --primary: #4f46e5;
+  /* Indigo 600 */
+  --primary-hover: #4338ca;
+  /* Indigo 700 */
+  --primary-light: #eef2ff;
+  /* Indigo 50 */
+
+  /* Secondary Color */
+  --secondary: #0891b2;
+  /* Cyan 600 */
+  --secondary-hover: #0e7490;
+  /* Cyan 700 */
+  --secondary-light: #ecfeff;
+  /* Cyan 50 */
+
+  /* Accent Color */
+  --accent: #db2777;
+  /* Pink 600 */
+  --accent-hover: #be185d;
+  /* Pink 700 */
+  --accent-light: #fdf2f8;
+  /* Pink 50 */
+
+  /* Text */
+  --text-main: #0f172a;
+  /* Slate 950 */
+  --text-secondary: #334155;
+  /* Slate 700 */
+  --text-muted: #64748b;
+  /* Slate 500 */
+  --text-disabled: #cbd5e1;
+  /* Slate 300 */
+
+  /* Border */
+  --border: #e2e8f0;
+  /* Slate 200 */
+  --border-strong: #cbd5e1;
+  /* Slate 300 */
+
+  /* State Colors */
+  --success: #16a34a;
+  /* Green 600 */
+  --success-light: #f0fdf4;
+  /* Green 50 */
+  --warning: #ea580c;
+  /* Orange 600 */
+  --warning-light: #fff7ed;
+  /* Orange 50 */
+  --error: #dc2626;
+  /* Red 600 */
+  --error-light: #fef2f2;
+  /* Red 50 */
+  --info: #2563eb;
+  /* Blue 600 */
+  --info-light: #eff6ff;
+  /* Blue 50 */
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark {
+  /* Dark Mode - Deep & Eye-Friendly */
+  --background: #1a1b1e;
+  /* Very dark gray */
+  --surface: #25262b;
+  /* Dark gray */
+  --surface-highlight: #2c2e33;
+  /* Light dark gray */
+
+  /* Primary Color - Bright Blue for Dark Mode */
+  --primary: #5c7cfa;
+  /* Bright blue */
+  --primary-hover: #748ffc;
+  /* Lighter on hover */
+  --primary-light: #2b3a67;
+  /* Dark primary background */
+
+  /* Secondary Color - Bright Teal */
+  --secondary: #20c997;
+  /* Bright teal */
+  --secondary-hover: #38d9a9;
+  /* Lighter on hover */
+  --secondary-light: #1a4d3c;
+  /* Dark secondary background */
+
+  /* Accent Color - Bright Pink */
+  --accent: #ff6b9d;
+  /* Bright pink */
+  --accent-hover: #ff8db4;
+  /* Lighter on hover */
+  --accent-light: #4a2a3a;
+  /* Dark accent background */
+
+  /* Text - Eye-Friendly Brightness */
+  --text-main: #e9ecef;
+  /* Light gray */
+  --text-secondary: #ced4da;
+  /* Medium light gray */
+  --text-muted: #adb5bd;
+  /* Medium gray */
+  --text-disabled: #495057;
+  /* Dark gray */
+
+  /* Border - Subtle Contrast */
+  --border: #343a40;
+  /* Dark border */
+  --border-strong: #495057;
+  /* Stronger dark border */
+
+  /* State Colors - Adjusted for Dark Mode */
+  --success: #38b000;
+  /* Bright green */
+  --success-light: #1a3c00;
+  /* Dark success background */
+  --warning: #ff9e00;
+  /* Bright orange */
+  --warning-light: #4a3a00;
+  /* Dark warning background */
+  --error: #ff595e;
+  /* Bright red */
+  --error-light: #4a1a1e;
+  /* Dark error background */
+  --info: #4cc9f0;
+  /* Bright blue */
+  --info-light: #1a3c4a;
+  /* Dark info background */
+
+  /* Shadows - Inverted for Dark Mode */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Custom Utility Classes */
+.btn-primary {
+  @apply bg-primary text-white font-medium rounded-lg px-4 py-2 transition-all duration-200 hover:bg-primary-hover hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 active:scale-95;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-white font-medium rounded-lg px-4 py-2 transition-all duration-200 hover:bg-secondary-hover hover:shadow-md focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-opacity-50 active:scale-95;
+}
+
+.btn-tertiary {
+  @apply bg-accent text-white font-medium rounded-lg px-4 py-2 transition-all duration-200 hover:bg-accent-hover hover:shadow-md focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 active:scale-95;
+}
+
+.btn-outline {
+  @apply border border-border text-text-secondary font-medium rounded-lg px-4 py-2 transition-all duration-200 hover:bg-surface-highlight hover:border-border-strong hover:text-text-main focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 active:scale-95;
+}
+
+.input-base {
+  @apply w-full px-3 py-2 border border-border rounded-lg bg-surface text-text-main focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors;
+}
+
+.input-error {
+  @apply border-error focus:ring-error focus:border-error;
+}
+
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary;
+}
+
+.badge-success {
+  @apply bg-success-light text-success;
+}
+
+.badge-warning {
+  @apply bg-warning-light text-warning;
+}
+
+.badge-error {
+  @apply bg-error-light text-error;
+}
+
+.card {
+  @apply bg-surface rounded-xl border border-border shadow-sm p-6 transition-all duration-200 hover:shadow-md;
+}
+
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4;
+}
+
+.modal-content {
+  @apply bg-surface rounded-xl shadow-xl w-full max-w-md;
+}
+
+.divider {
+  @apply border-t border-border my-4;
+}

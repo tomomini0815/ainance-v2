@@ -1,41 +1,163 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useBusinessType } from '../hooks/useBusinessType'
 import { useLocalStorage } from '../hooks/useLocalStorage'
-import {ChevronDown, Building, User, Settings, Plus, Edit, Trash2, Check} from 'lucide-react'
+import { ChevronDown, ChevronUp, Building, User, Plus, Edit, Trash2, Check, X } from 'lucide-react'
 
 interface BusinessTypeSwitcherProps {
   userId?: string
   onBusinessTypeChange?: (businessType: any) => void
+  displayMode?: 'dropdown' | 'inline'
 }
 
-const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onBusinessTypeChange }) => {
+const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
+  userId,
+  onBusinessTypeChange,
+  displayMode = 'dropdown'
+}) => {
+  console.log('BusinessTypeSwitcher rendered with userId:', userId);
+
   const [showDropdown, setShowDropdown] = useState(false)
-  // ローカルストレージを使用して選択されたビジネスタイプを永続化
-  const [currentBusinessType, setCurrentBusinessType] = useLocalStorage<any>(`businessType_${userId}`, null)
-  const { businessTypes, loading, createBusinessType, switchBusinessType, updateBusinessType, deleteBusinessType } = useBusinessType(userId)
+  const { businessTypes, loading, currentBusinessType, createBusinessType, switchBusinessType, updateBusinessType, deleteBusinessType, refetch } = useBusinessType(userId)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingBusinessType, setEditingBusinessType] = useState<any>(null)
   const [selectedBusinessType, setSelectedBusinessType] = useState<'individual' | 'corporation'>('individual')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // ローカルストレージから現在の業態形態を取得（バックアップ用）
+  const [localBusinessType, setLocalBusinessType] = useLocalStorage<any>(`businessType_${userId}`, null)
+
+  // currentBusinessTypeが変更されたときにローカルストレージを更新
+  useEffect(() => {
+    if (currentBusinessType) {
+      setLocalBusinessType(currentBusinessType)
+      onBusinessTypeChange?.(currentBusinessType)
+    }
+  }, [currentBusinessType, setLocalBusinessType, onBusinessTypeChange])
+
+  // 初期ロード時にローカルストレージの値があればそれを使用
+  useEffect(() => {
+    if (!currentBusinessType && localBusinessType) {
+      onBusinessTypeChange?.(localBusinessType)
+    }
+  }, [localBusinessType, onBusinessTypeChange])
+
+  // userIdが変更されたときにデータを再取得
+  useEffect(() => {
+    if (userId) {
+      refetch()
+    }
+  }, [userId, refetch])
+
+  // businessTypesが空の場合、自動的に新規作成モーダルを表示
+  useEffect(() => {
+    if (businessTypes.length === 0 && userId) {
+      // 少し遅延させて自動表示（UIが正しくレンダリングされるのを待つため）
+      const timer = setTimeout(() => {
+        setShowCreateModal(true)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [businessTypes.length, userId])
 
   const handleCreateSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-    
-    const businessTypeData = {
-      business_type: formData.get('business_type') as 'individual' | 'corporation',
-      company_name: formData.get('company_name') as string,
-      tax_number: formData.get('tax_number') as string,
-      address: formData.get('address') as string,
-      phone: formData.get('phone') as string,
-      email: formData.get('email') as string,
-      representative_name: formData.get('representative_name') as string
+    console.log('handleCreateSubmit started')
+
+    if (isSubmitting) return
+    setIsSubmitting(true)
+
+    // タイムアウト処理を追加
+    const timeoutId = setTimeout(() => {
+      console.log('タイムアウト発生');
+      setIsSubmitting(false);
+      alert('処理がタイムアウトしました。もう一度お試しください。');
+    }, 10000); // 10秒でタイムアウト
+
+    if (!userId) {
+      alert('ログインしてください (User ID missing)')
+      console.error('User ID is missing in handleCreateSubmit')
+      setIsSubmitting(false)
+      clearTimeout(timeoutId);
+      return
     }
 
-    const result = await createBusinessType(businessTypeData)
-    if (result) {
-      setShowCreateModal(false)
-      onBusinessTypeChange?.(result)
+    try {
+      const formData = new FormData(event.currentTarget)
+
+      // Manual validation
+      const companyName = formData.get('company_name') as string
+      const address = formData.get('address') as string
+      const representativeName = formData.get('representative_name') as string
+      const businessType = formData.get('business_type') as 'individual' | 'corporation'
+
+      console.log('Form data:', {
+        companyName,
+        address,
+        representativeName,
+        businessType
+      });
+
+      if (!companyName) {
+        alert('会社名/屋号を入力してください')
+        setIsSubmitting(false)
+        clearTimeout(timeoutId);
+        return
+      }
+      
+      if (!address) {
+        alert('住所を入力してください')
+        setIsSubmitting(false)
+        clearTimeout(timeoutId);
+        return
+      }
+      
+      if (!representativeName) {
+        alert('代表者名を入力してください')
+        setIsSubmitting(false)
+        clearTimeout(timeoutId);
+        return
+      }
+      
+      if (!businessType) {
+        alert('業態形態を選択してください')
+        setIsSubmitting(false)
+        clearTimeout(timeoutId);
+        return
+      }
+
+      const businessTypeData = {
+        business_type: businessType,
+        company_name: companyName,
+        tax_number: formData.get('tax_number') as string || '',
+        address: address,
+        phone: formData.get('phone') as string || '',
+        email: formData.get('email') as string || '',
+        representative_name: representativeName
+      }
+
+      console.log('Creating business type with data:', businessTypeData)
+
+      const result = await createBusinessType(businessTypeData)
+      clearTimeout(timeoutId); // 正常に完了した場合はタイムアウトをクリア
+      console.log('createBusinessType result:', result)
+
+      if (result) {
+        setLocalBusinessType(result)
+        setShowCreateModal(false)
+        onBusinessTypeChange?.(result)
+        console.log('Business type created and set successfully')
+      } else {
+        console.error('createBusinessType returned null')
+        alert('業態形態の作成に失敗しました。もう一度お試しください。')
+      }
+    } catch (error: any) {
+      clearTimeout(timeoutId); // エラー発生時はタイムアウトをクリア
+      console.error('Error in handleCreateSubmit:', error)
+      alert(`エラーが発生しました: ${error.message || '不明なエラー'}`)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -44,7 +166,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
     if (!editingBusinessType) return
 
     const formData = new FormData(event.currentTarget)
-    
+
     const updates = {
       company_name: formData.get('company_name') as string,
       tax_number: formData.get('tax_number') as string,
@@ -54,20 +176,28 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
       representative_name: formData.get('representative_name') as string
     }
 
-    const result = await updateBusinessType(editingBusinessType._id, updates)
+    const result = await updateBusinessType(editingBusinessType.id, updates)
     if (result) {
+      // 編集した業態が現在の業態の場合、ローカルストレージも更新
+      if (localBusinessType && localBusinessType.id === editingBusinessType.id) {
+        setLocalBusinessType(result)
+        onBusinessTypeChange?.(result)
+      }
       setShowEditModal(false)
       setEditingBusinessType(null)
-      onBusinessTypeChange?.(result)
     }
   }
 
   const handleSwitch = async (businessTypeId: string) => {
     await switchBusinessType(businessTypeId)
     setShowDropdown(false)
-    
-    const selectedBusinessType = businessTypes.find(bt => bt._id === businessTypeId)
-    onBusinessTypeChange?.(selectedBusinessType)
+
+    // switchBusinessType後に最新の情報を取得
+    const selectedBusinessType = businessTypes.find(bt => bt.id === businessTypeId)
+    if (selectedBusinessType) {
+      setLocalBusinessType(selectedBusinessType)
+      onBusinessTypeChange?.(selectedBusinessType)
+    }
   }
 
   const handleEdit = (businessType: any) => {
@@ -78,10 +208,26 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
   }
 
   const handleDelete = async (businessTypeId: string) => {
-    if (confirm('この業態形態を削除してもよろしいですか？')) {
-      await deleteBusinessType(businessTypeId)
-      setShowDropdown(false)
+    // 最後の業態形態を削除する場合の確認
+    if (businessTypes.length <= 1) {
+      if (!confirm('これは最後の業態形態です。削除すると新しい業態形態を作成するまでアプリが正しく動作しない可能性があります。本当に削除してもよろしいですか？')) {
+        return;
+      }
+    } else {
+      if (!confirm('この業態形態を削除してもよろしいですか？')) {
+        return;
+      }
     }
+    
+    await deleteBusinessType(businessTypeId)
+    // 削除した業態が現在の業態の場合、ローカルストレージをクリア
+    if (localBusinessType && localBusinessType.id === businessTypeId) {
+      setLocalBusinessType(null)
+      onBusinessTypeChange?.(null)
+      // 新しいアクティブな業態を取得
+      refetch()
+    }
+    setShowDropdown(false)
   }
 
   if (loading) {
@@ -93,264 +239,355 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
     )
   }
 
-  return (
-    <div className="relative">
-      {/* 現在の業態形態表示 */}
-      <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center space-x-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
-      >
-        {currentBusinessType ? (
-          <>
-            {currentBusinessType.business_type === 'individual' ? (
-              <User className="w-4 h-4 text-blue-600" />
-            ) : (
-              <Building className="w-4 h-4 text-green-600" />
-            )}
-            <span className="text-sm font-medium text-blue-800">
+  const renderList = () => (
+    <div className="p-3">
+      {/* 選択中の業態形態をプルダウンの上部に表示 */}
+      {currentBusinessType && (
+        <div className="mb-3 p-3 bg-surface-highlight rounded-lg flex items-center border border-border">
+          {currentBusinessType.business_type === 'individual' ? (
+            <User className="w-4 h-4 text-primary mr-2" />
+          ) : (
+            <Building className="w-4 h-4 text-success mr-2" />
+          )}
+          <div>
+            <div className="text-sm font-medium text-text-main">
               {currentBusinessType.business_type === 'individual' ? '個人事業主' : '法人'}
-            </span>
-            <span className="text-sm text-blue-600">
-              - {currentBusinessType.company_name}
-            </span>
-          </>
-        ) : (
-          <>
-            <User className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-500">業態形態を選択</span>
-          </>
-        )}
-        <ChevronDown className="w-4 h-4 text-blue-600" />
-      </button>
-
-      {/* ドロップダウンメニュー */}
-      {showDropdown && (
-        <div className="absolute top-full left-0 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-          <div className="p-2">
-            {/* 選択中の業態形態をプルダウンの上部に表示 */}
-            {currentBusinessType && (
-              <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded flex items-center">
-                {currentBusinessType.business_type === 'individual' ? (
-                  <User className="w-4 h-4 text-blue-600 mr-2" />
-                ) : (
-                  <Building className="w-4 h-4 text-green-600 mr-2" />
-                )}
-                <div>
-                  <div className="text-sm font-medium text-blue-800">
-                    {currentBusinessType.business_type === 'individual' ? '個人事業主' : '法人'}
-                  </div>
-                  <div className="text-xs text-blue-600">{currentBusinessType.company_name}</div>
-                </div>
-                <Check className="w-4 h-4 text-blue-600 ml-auto" />
-              </div>
-            )}
-            
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-medium text-gray-900">業態形態</h3>
-              <button
-                onClick={() => {
-                  setShowCreateModal(true)
-                  setShowDropdown(false)
-                }}
-                className="flex items-center text-xs text-blue-600 hover:text-blue-700"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                新規作成
-              </button>
             </div>
-            
-            <div className="space-y-1">
-              {businessTypes.map((businessType) => (
-                <div
-                  key={businessType._id}
-                  className={`flex items-center justify-between p-2 rounded hover:bg-gray-50 ${
-                    currentBusinessType?._id === businessType._id ? 'bg-gray-50' : ''
-                  }`}
-                >
-                  <button
-                    onClick={() => handleSwitch(businessType._id)}
-                    className="flex items-center space-x-2 flex-1 text-left"
-                  >
-                    {businessType.business_type === 'individual' ? (
-                      <User className="w-4 h-4 text-blue-600" />
-                    ) : (
-                      <Building className="w-4 h-4 text-green-600" />
-                    )}
-                    <div>
-                      <div className="text-sm font-medium">
-                        {businessType.business_type === 'individual' ? '個人事業主' : '法人'}
-                      </div>
-                      <div className="text-xs text-gray-500">{businessType.company_name}</div>
-                    </div>
-                  </button>
-                  
-                  <div className="flex items-center space-x-1">
-                    <button
-                      onClick={() => handleEdit(businessType)}
-                      className="p-1 text-gray-400 hover:text-gray-600"
-                      title="編集"
-                    >
-                      <Edit className="w-3 h-3" />
-                    </button>
-                    {businessTypes.length > 1 && (
-                      <button
-                        onClick={() => handleDelete(businessType._id)}
-                        className="p-1 text-gray-400 hover:text-red-600"
-                        title="削除"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {businessTypes.length === 0 && (
-              <div className="text-center py-4 text-gray-500 text-sm">
-                業態形態が設定されていません
-              </div>
-            )}
+            <div className="text-xs text-text-muted">{currentBusinessType.company_name}</div>
           </div>
+          <Check className="w-4 h-4 text-primary ml-auto" />
         </div>
       )}
 
-      {/* 新規作成モーダル */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">新しい業態形態を作成</h3>
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
+      <div className="flex justify-between items-center mb-2 px-1">
+        <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">業態形態</h3>
+        <button
+          onClick={() => {
+            setShowCreateModal(true)
+            setShowDropdown(false)
+          }}
+          className="flex items-center text-xs text-primary hover:text-primary-hover font-medium transition-colors"
+        >
+          <Plus className="w-3 h-3 mr-1" />
+          新規作成
+        </button>
+      </div>
+
+      <div className="space-y-1">
+        {businessTypes.map((businessType) => (
+          <div
+            key={businessType.id}
+            className={`flex items-center justify-between p-2 rounded-lg transition-colors ${currentBusinessType?.id === businessType.id ? 'bg-surface-highlight' : 'hover:bg-surface-highlight'
+              }`}
+          >
+            <button
+              onClick={() => handleSwitch(businessType.id)}
+              className="flex items-center space-x-3 flex-1 text-left"
+            >
+              {businessType.business_type === 'individual' ? (
+                <User className="w-4 h-4 text-primary" />
+              ) : (
+                <Building className="w-4 h-4 text-success" />
+              )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">業態形態</label>
-                <select
-                  name="business_type"
-                  value={selectedBusinessType}
-                  onChange={(e) => setSelectedBusinessType(e.target.value as 'individual' | 'corporation')}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="individual">個人事業主</option>
-                  <option value="corporation">法人</option>
-                </select>
+                <div className="text-sm font-medium text-text-main">
+                  {businessType.business_type === 'individual' ? '個人事業主' : '法人'}
+                </div>
+                <div className="text-xs text-text-muted">{businessType.company_name}</div>
               </div>
-              
+            </button>
+
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => handleEdit(businessType)}
+                className="p-1.5 text-text-muted hover:text-text-main hover:bg-black/5 rounded-md transition-colors"
+                title="編集"
+              >
+                <Edit className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => handleDelete(businessType.id)}
+                className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded-md transition-colors"
+                title="削除"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {businessTypes.length === 0 && (
+        <div className="text-center py-6">
+          <p className="text-text-muted text-sm mb-3">業態形態が設定されていません</p>
+          <button
+            onClick={() => {
+              setShowCreateModal(true)
+              setShowDropdown(false)
+            }}
+            className="btn-primary text-xs"
+          >
+            新規作成
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
+  return (
+    <div className={`relative ${displayMode === 'inline' ? 'w-full' : ''}`}>
+      {/* 現在の業態形態表示 */}
+      <button
+        onClick={() => setShowDropdown(!showDropdown)}
+        className={`flex items-center justify-between space-x-2 bg-surface border border-border px-3 py-2 rounded-lg hover:bg-surface-highlight transition-colors shadow-sm ${displayMode === 'inline' ? 'w-full' : ''}`}
+      >
+        <div className="flex items-center space-x-2 truncate">
+          {currentBusinessType ? (
+            <>
+              {currentBusinessType.business_type === 'individual' ? (
+                <User className="w-4 h-4 text-primary flex-shrink-0" />
+              ) : (
+                <Building className="w-4 h-4 text-success flex-shrink-0" />
+              )}
+              <span className="text-sm font-medium text-text-main truncate">
+                {currentBusinessType.business_type === 'individual' ? '個人事業主' : '法人'}
+              </span>
+              <span className="text-sm text-text-muted truncate">
+                - {currentBusinessType.company_name}
+              </span>
+            </>
+          ) : (
+            <>
+              <User className="w-4 h-4 text-text-muted flex-shrink-0" />
+              <span className="text-sm text-text-muted">業態形態を選択</span>
+            </>
+          )}
+        </div>
+        {showDropdown ? (
+          <ChevronUp className="w-4 h-4 text-text-muted flex-shrink-0" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-text-muted flex-shrink-0" />
+        )}
+      </button>
+
+      {/* ドロップダウン/インラインメニュー */}
+      {showDropdown && (
+        displayMode === 'inline' ? (
+          <div className="mt-2 w-full bg-surface border border-border rounded-xl shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+            {renderList()}
+          </div>
+        ) : (
+          <div className="absolute top-full left-0 mt-2 w-80 bg-surface border border-border rounded-xl shadow-xl z-50 animate-in fade-in zoom-in-95 duration-200">
+            {renderList()}
+          </div>
+        )
+      )}
+
+      {/* 新規作成モーダル */}
+      {showCreateModal && createPortal(
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="bg-surface rounded-2xl shadow-2xl w-[95%] max-w-md max-h-[85vh] border border-border animate-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b border-border flex-shrink-0 bg-surface">
+              <h3 className="text-lg font-bold text-text-main">新しい業態形態を作成</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-text-muted hover:text-text-main p-1 hover:bg-surface-highlight rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateSubmit} className="p-4 space-y-4 overflow-y-auto flex-1">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">業態形態</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log('個人事業主を選択');
+                      setSelectedBusinessType('individual');
+                    }}
+                    className={`flex items-center justify-center px-4 py-2.5 rounded-xl border transition-all ${selectedBusinessType === 'individual'
+                      ? 'bg-primary/10 border-primary text-primary font-medium'
+                      : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
+                      }`}
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    個人事業主
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log('法人を選択');
+                      setSelectedBusinessType('corporation');
+                    }}
+                    className={`flex items-center justify-center px-4 py-2.5 rounded-xl border transition-all ${selectedBusinessType === 'corporation'
+                      ? 'bg-success/10 border-success text-success font-medium'
+                      : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
+                      }`}
+                  >
+                    <Building className="w-4 h-4 mr-2" />
+                    法人
+                  </button>
+                </div>
+                <input type="hidden" name="business_type" value={selectedBusinessType} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   {selectedBusinessType === 'individual' ? '屋号' : '会社名'}
                 </label>
                 <input
                   type="text"
                   name="company_name"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-base"
                   placeholder={selectedBusinessType === 'individual' ? '個人商店' : '株式会社サンプル'}
                 />
               </div>
-              
+
               {selectedBusinessType === 'corporation' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">法人番号</label>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">法人番号</label>
                   <input
                     type="text"
                     name="tax_number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-base"
                     placeholder="1234567890123"
                   />
                 </div>
               )}
-              
+
               {selectedBusinessType === 'individual' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">事業者登録番号</label>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">事業者登録番号</label>
                   <input
                     type="text"
                     name="tax_number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-base"
                     placeholder="T1234567890123"
                   />
                 </div>
               )}
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">住所</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">住所</label>
                 <input
                   type="text"
                   name="address"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-base"
                   placeholder="東京都渋谷区1-1-1"
                 />
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">電話番号</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="03-1234-5678"
-                />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">電話番号</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    className="input-base"
+                    placeholder="03-1234-5678"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">メールアドレス</label>
+                  <input
+                    type="email"
+                    name="email"
+                    className="input-base"
+                    placeholder="info@example.com"
+                  />
+                </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス</label>
-                <input
-                  type="email"
-                  name="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="info@example.com"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   {selectedBusinessType === 'individual' ? '事業主名' : '代表者名'}
                 </label>
                 <input
                   type="text"
                   name="representative_name"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-base"
                   placeholder={selectedBusinessType === 'individual' ? '山田太郎' : '田中太郎'}
                 />
               </div>
-              
-              <div className="flex justify-end space-x-3 pt-4">
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-border mt-6">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                  className="btn-tertiary"
+                  disabled={isSubmitting}
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  className="btn-primary flex items-center"
+                  disabled={isSubmitting}
+                  onClick={() => console.log('Create button clicked')}
                 >
-                  作成
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      作成中...
+                    </>
+                  ) : (
+                    '作成'
+                  )}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 編集モーダル */}
-      {showEditModal && editingBusinessType && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">業態形態を編集</h3>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
+      {showEditModal && editingBusinessType && createPortal(
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
+          onClick={() => {
+            setShowEditModal(false)
+            setEditingBusinessType(null)
+          }}
+        >
+          <div
+            className="bg-surface rounded-2xl shadow-2xl w-[95%] max-w-md max-h-[85vh] border border-border animate-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b border-border flex-shrink-0 bg-surface">
+              <h3 className="text-lg font-bold text-text-main">業態形態を編集</h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false)
+                  setEditingBusinessType(null)
+                }}
+                className="text-text-muted hover:text-text-main p-1 hover:bg-surface-highlight rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="p-4 space-y-4 overflow-y-auto flex-1">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">業態形態</label>
-                <div className="px-3 py-2 bg-gray-100 rounded-md text-sm">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">業態形態</label>
+                <div className="px-4 py-2.5 bg-surface-highlight rounded-lg text-sm text-text-main border border-border flex items-center">
+                  {editingBusinessType.business_type === 'individual' ? (
+                    <User className="w-4 h-4 text-primary mr-2" />
+                  ) : (
+                    <Building className="w-4 h-4 text-success mr-2" />
+                  )}
                   {editingBusinessType.business_type === 'individual' ? '個人事業主' : '法人'}
                 </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   {editingBusinessType.business_type === 'individual' ? '屋号' : '会社名'}
                 </label>
                 <input
@@ -358,67 +595,68 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
                   name="company_name"
                   defaultValue={editingBusinessType.company_name}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-base"
                 />
               </div>
-              
+
               {editingBusinessType.business_type === 'corporation' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">法人番号</label>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">法人番号</label>
                   <input
                     type="text"
                     name="tax_number"
                     defaultValue={editingBusinessType.tax_number}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-base"
                   />
                 </div>
               )}
-              
+
               {editingBusinessType.business_type === 'individual' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">事業者登録番号</label>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">事業者登録番号</label>
                   <input
                     type="text"
                     name="tax_number"
                     defaultValue={editingBusinessType.tax_number}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-base"
                   />
                 </div>
               )}
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">住所</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">住所</label>
                 <input
                   type="text"
                   name="address"
                   defaultValue={editingBusinessType.address}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-base"
                 />
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">電話番号</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  defaultValue={editingBusinessType.phone}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">電話番号</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    defaultValue={editingBusinessType.phone}
+                    className="input-base"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">メールアドレス</label>
+                  <input
+                    type="email"
+                    name="email"
+                    defaultValue={editingBusinessType.email}
+                    className="input-base"
+                  />
+                </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス</label>
-                <input
-                  type="email"
-                  name="email"
-                  defaultValue={editingBusinessType.email}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   {editingBusinessType.business_type === 'individual' ? '事業主名' : '代表者名'}
                 </label>
                 <input
@@ -426,31 +664,32 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({ userId, onB
                   name="representative_name"
                   defaultValue={editingBusinessType.representative_name}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-base"
                 />
               </div>
-              
-              <div className="flex justify-end space-x-3 pt-4">
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-border mt-6">
                 <button
                   type="button"
                   onClick={() => {
                     setShowEditModal(false)
                     setEditingBusinessType(null)
                   }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                  className="btn-tertiary"
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  className="btn-primary"
                 >
                   更新
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

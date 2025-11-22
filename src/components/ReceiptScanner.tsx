@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Image as ImageIcon, RotateCcw, Save, Copy, Share2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Camera, Image as ImageIcon, RotateCcw, Save, Copy, Share2, ZoomIn, ZoomOut, CheckCircle, AlertCircle } from 'lucide-react';
 import { ReceiptParser, ReceiptData } from '../utils/ReceiptParser';
+import { ImageProcessor } from '../utils/imageProcessor';
+import { QualityChecker, QualityCheckResult } from '../utils/qualityChecker';
 
 // Google Cloud Vision APIクライアントをインポート
 import { ImageAnnotatorClient } from '@google-cloud/vision';
@@ -22,11 +24,24 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
   const [zoomLevel, setZoomLevel] = useState(1);
   // フラッシュの状態を追加
   const [isFlashOn, setIsFlashOn] = useState(false);
-  
+
+  // Phase 2: 品質チェック関連の状態
+  const [qualityScore, setQualityScore] = useState<number>(0);
+  const [qualityWarnings, setQualityWarnings] = useState<string[]>([]);
+  const [receiptDetected, setReceiptDetected] = useState<boolean>(false);
+  const [autoCaptureCountdown, setAutoCaptureCountdown] = useState<number>(0);
+  const [isAutoCapturing, setIsAutoCapturing] = useState<boolean>(false);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const trackRef = useRef<MediaStreamTrack | null>(null);
+  const qualityCheckIntervalRef = useRef<number | null>(null);
+  const autoCaptureTimerRef = useRef<number | null>(null);
+
+  // ImageProcessorとQualityCheckerのインスタンスを作成
+  const imageProcessor = new ImageProcessor();
+  const qualityChecker = new QualityChecker();
 
   const ERROR_MESSAGES = {
     CAMERA_PERMISSION: "カメラの使用許可が必要です",
@@ -40,7 +55,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
     console.log('カメラ起動ボタンがクリックされました');
     console.log('現在のプロトコル:', location.protocol);
     console.log('現在のホスト名:', location.hostname);
-    
+
     // HTTPS環境でのカメラアクセス確認
     if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
       console.log('HTTPS環境での警告を表示します');
@@ -55,7 +70,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
       }
       console.log('ユーザーが警告を確認しました');
     }
-    
+
     // カメラ使用許可モーダルを表示
     setShowPermissionModal(true);
     console.log('カメラ使用許可モーダルを表示しました');
@@ -67,36 +82,36 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
     try {
       setShowPermissionModal(false);
       console.log('カメラアクセスを試行中...');
-      
+
       console.log('カメラ制約を設定中...');
-      const constraints = { 
-        video: { 
+      const constraints = {
+        video: {
           facingMode: 'environment',
           width: { ideal: 1920 },
           height: { ideal: 1080 }
-        } 
+        }
       };
       console.log('カメラ制約:', constraints);
-      
+
       // モバイル環境での特別処理
       const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       console.log('モバイル環境チェック:', isMobile);
-      
+
       if (isMobile) {
         // モバイル環境では制約を簡素化
-        const mobileConstraints = { 
-          video: { 
+        const mobileConstraints = {
+          video: {
             facingMode: 'environment',
             width: { ideal: 1920 },
             height: { ideal: 1080 }
-          } 
+          }
         };
         console.log('モバイル用カメラ制約:', mobileConstraints);
         const stream = await navigator.mediaDevices.getUserMedia(mobileConstraints);
         console.log('モバイル環境でカメラストリームを取得しました:', stream);
         streamRef.current = stream;
         trackRef.current = stream.getVideoTracks()[0];
-        
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           console.log('video要素にストリームを設定しました');
@@ -107,13 +122,13 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
         console.log('カメラストリームを取得しました:', stream);
         streamRef.current = stream;
         trackRef.current = stream.getVideoTracks()[0];
-        
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           console.log('video要素にストリームを設定しました');
         }
       }
-      
+
       setIsCameraActive(true);
       setError(null);
       console.log('カメラが正常に起動しました');
@@ -175,7 +190,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
         const settings = trackRef.current.getSettings() as any;
         const currentZoom = settings.zoom || 1;
         const newZoom = Math.min(Math.max(currentZoom + delta, capabilities.zoom.min), capabilities.zoom.max);
-        
+
         await trackRef.current.applyConstraints({
           advanced: [{ zoom: newZoom } as any]
         });
@@ -186,86 +201,42 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
     }
   };
 
-  // 画像前処理機能（マネーフォワード風の改善版）
-  const preprocessImage = (imageData: string): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-          resolve(imageData);
-          return;
-        }
-        
-        // キャンバスのサイズを画像に合わせる
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        // 画像をキャンバスに描画
-        ctx.drawImage(img, 0, 0);
-        
-        // 画像処理（コントラスト調整、シャープ化、ノイズ除去）
-        const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageDataObj.data;
-        
-        // コントラストを強調
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          
-          // グレースケール変換
-          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-          
-          // コントラスト調整
-          const contrast = 1.5;
-          const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-          const adjusted = factor * (gray - 128) + 128;
-          
-          // 0-255の範囲にクリップ
-          data[i] = data[i + 1] = data[i + 2] = Math.max(0, Math.min(255, adjusted));
-        }
-        
-        ctx.putImageData(imageDataObj, 0, 0);
-        
-        // 処理後の画像データをBase64として返す
-        resolve(canvas.toDataURL('image/jpeg', 0.9)); // 画質を調整
-      };
-      
-      img.src = imageData;
-    });
-  };
-
-  // 写真撮影（マネーフォワード風の改善版）
+  // 写真撮影（高度な画像処理を適用）
   const capturePhoto = async () => {
     console.log('写真撮影を開始');
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-      
+
       console.log('video要素のサイズ:', video.videoWidth, 'x', video.videoHeight);
-      
+
       // canvasのサイズをvideoに合わせる
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      
+
       // videoの現在のフレームをcanvasに描画
       if (context) {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         console.log('canvasに画像を描画しました');
-        
+
         // 画像をBase64として取得（画質を調整）
         const imageData = canvas.toDataURL('image/jpeg', 0.9);
         console.log('画像データを取得しました。データURLの長さ:', imageData.length);
-        
-        // 画像前処理を実行
-        const preprocessedImage = await preprocessImage(imageData);
+
+        // 高度な画像前処理を実行（傾き補正、ノイズ除去、二値化など）
+        console.log('高度な画像処理を開始...');
+        const preprocessedImage = await imageProcessor.processImage(imageData, {
+          deskew: true,
+          binarize: true,
+          enhanceContrast: true,
+          removeNoise: true,
+          sharpen: true
+        });
+        console.log('画像処理完了');
         setCapturedImage(preprocessedImage);
         stopCamera();
-        
+
         // OCR処理を実行
         processImage(preprocessedImage);
       } else {
@@ -284,24 +255,24 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
     // 画像データからBase64プレフィックスを削除
     const base64Image = imageData.split(',')[1];
     console.log('Base64画像データの長さ:', base64Image?.length);
-    
+
     // Google Cloud Vision APIキーを環境変数から取得
     const apiKey = import.meta.env.VITE_GOOGLE_VISION_API_KEY;
     console.log('APIキーの存在確認:', !!apiKey);
-    
+
     if (!apiKey) {
       // APIキーが設定されていない場合は、サンプルデータを返す
       console.warn('Google Cloud Vision APIキーが設定されていません。サンプルデータを返します。');
       // より現実的なサンプルデータを返す
       return "ダイエー\n2024/01/15 14:30:25\nりんご 1個 120円\nバナナ 2本 200円\n合計 320円\n税率 10% 内消費税 29円";
     }
-    
+
     // 画像データの検証
     if (!base64Image) {
       console.error('画像データが無効です');
       throw new Error('INVALID_IMAGE');
     }
-    
+
     try {
       console.log('Google Cloud Vision APIにリクエストを送信中...');
       // Google Cloud Vision APIにリクエストを送信
@@ -333,28 +304,28 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
           })
         }
       );
-      
+
       console.log('APIレスポンスのステータス:', response.status);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('APIエラーレスポンス:', errorText);
         throw new Error(`APIリクエスト失敗: ${response.status} ${response.statusText}`);
       }
-      
+
       const result = await response.json();
       console.log('APIレスポンスの内容:', JSON.stringify(result, null, 2));
-      
+
       // レスポンスからテキストを取得
-      const ocrText = result.responses[0]?.fullTextAnnotation?.text || 
-                     result.responses[0]?.textAnnotations?.[0]?.description || '';
+      const ocrText = result.responses[0]?.fullTextAnnotation?.text ||
+        result.responses[0]?.textAnnotations?.[0]?.description || '';
       console.log('抽出されたテキスト:', ocrText);
-      
+
       if (!ocrText) {
         console.warn('OCRでテキストが抽出できませんでした');
         throw new Error('OCR_FAILED');
       }
-      
+
       return ocrText;
     } catch (error) {
       console.error('Vision API処理エラー:', error);
@@ -365,7 +336,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
   // AI分析機能
   const analyzeReceiptWithAI = (ocrText: string, extractedData: any) => {
     console.log('AI分析を開始');
-    
+
     // AIによる追加情報の抽出
     const aiAnalysis = {
       // カテゴリの推定
@@ -377,7 +348,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
       // その他の分析情報
       insights: generateInsights(ocrText, extractedData)
     };
-    
+
     console.log('AI分析結果:', aiAnalysis);
     return aiAnalysis;
   };
@@ -395,7 +366,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
       '公共': ['水道', '電気', 'ガス', 'NHK'],
       'その他': []
     };
-    
+
     for (const [category, keywords] of Object.entries(categories)) {
       for (const keyword of keywords) {
         if (text.includes(keyword)) {
@@ -403,7 +374,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
         }
       }
     }
-    
+
     return 'その他';
   };
 
@@ -426,14 +397,14 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
   const calculateAIConfidence = (text: string, extractedData: any) => {
     // テキストの品質を評価
     const textQuality = Math.min(text.length / 100, 1); // テキスト長に基づく品質評価
-    
+
     // 抽出されたデータの整合性を評価
     let consistency = 0;
     if (extractedData.store_name && extractedData.store_name.length > 1) consistency += 0.25;
     if (extractedData.date && extractedData.date.length > 0) consistency += 0.25;
     if (extractedData.total_amount && extractedData.total_amount > 0) consistency += 0.25;
     if (extractedData.tax_rate !== undefined) consistency += 0.25;
-    
+
     // 総合信頼度を計算
     const confidence = (textQuality + consistency) / 2;
     return Math.min(Math.max(confidence, 0), 1); // 0-1の範囲に正規化
@@ -442,27 +413,27 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
   // 分析インサイトの生成
   const generateInsights = (text: string, extractedData: any) => {
     const insights = [];
-    
+
     // 金額に関するインサイト
     if (extractedData.total_amount > 10000) {
       insights.push('高額な支出です。経費精算の際には詳細な説明が必要かもしれません。');
     }
-    
+
     // 日付に関するインサイト
     const today = new Date();
     const receiptDate = new Date(extractedData.date);
     const daysDiff = Math.floor((today.getTime() - receiptDate.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (daysDiff > 30) {
       insights.push('このレシートは30日以上前のものです。経費申請の期限に注意してください。');
     }
-    
+
     // 店舗に関するインサイト
-    if (text.includes('コンビニ') || text.includes('セブンイレブン') || 
-        text.includes('ローソン') || text.includes('ファミリーマート')) {
+    if (text.includes('コンビニ') || text.includes('セブンイレブン') ||
+      text.includes('ローソン') || text.includes('ファミリーマート')) {
       insights.push('コンビニでの購入です。領収書がなくても電子レシートで申請可能です。');
     }
-    
+
     return insights;
   };
 
@@ -471,61 +442,61 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
     console.log('画像処理を開始');
     setIsProcessing(true);
     setError(null);
-    
+
     // 処理状態の更新コールバックがある場合は呼び出す
     if (props.onProcessingStateChange) {
-      props.onProcessingStateChange({ 
-        isProcessing: true, 
-        progress: 0, 
-        currentStep: '画像前処理中...' 
+      props.onProcessingStateChange({
+        isProcessing: true,
+        progress: 0,
+        currentStep: '画像前処理中...'
       });
     }
-    
+
     try {
       // 画像品質チェック
       if (!validateImageQuality(imageData)) {
         throw new Error('INVALID_IMAGE');
       }
-      
+
       console.log('OCR処理を実行中...');
       if (props.onProcessingStateChange) {
-        props.onProcessingStateChange({ 
-          isProcessing: true, 
-          progress: 30, 
-          currentStep: 'OCR処理中...' 
+        props.onProcessingStateChange({
+          isProcessing: true,
+          progress: 30,
+          currentStep: 'OCR処理中...'
         });
       }
-      
+
       // 実際のOCR処理を実行
       const ocrResult = await performOCR(imageData);
       console.log('OCR処理完了。結果の長さ:', ocrResult.length);
-      
+
       // データ抽出
       console.log('データ抽出を実行中...');
       if (props.onProcessingStateChange) {
-        props.onProcessingStateChange({ 
-          isProcessing: true, 
-          progress: 60, 
-          currentStep: 'データ抽出中...' 
+        props.onProcessingStateChange({
+          isProcessing: true,
+          progress: 60,
+          currentStep: 'データ抽出中...'
         });
       }
-      
+
       const parser = new ReceiptParser();
       const extractedData = parser.parseReceipt(ocrResult);
       console.log('データ抽出完了:', extractedData);
-      
+
       // AI分析を実行
       console.log('AI分析を実行中...');
       if (props.onProcessingStateChange) {
-        props.onProcessingStateChange({ 
-          isProcessing: true, 
-          progress: 80, 
-          currentStep: 'AI分析中...' 
+        props.onProcessingStateChange({
+          isProcessing: true,
+          progress: 80,
+          currentStep: 'AI分析中...'
         });
       }
-      
+
       const aiAnalysis = analyzeReceiptWithAI(ocrResult, extractedData);
-      
+
       // AI分析結果を抽出データに統合
       const enhancedData = {
         ...extractedData,
@@ -534,20 +505,20 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
         aiConfidence: aiAnalysis.confidence,
         insights: aiAnalysis.insights
       };
-      
+
       // バリデーション
       if (!validateExtractedData(enhancedData)) {
         throw new Error('NO_DATA_FOUND');
       }
-      
+
       if (props.onProcessingStateChange) {
-        props.onProcessingStateChange({ 
-          isProcessing: true, 
-          progress: 90, 
-          currentStep: '処理完了...' 
+        props.onProcessingStateChange({
+          isProcessing: true,
+          progress: 90,
+          currentStep: '処理完了...'
         });
       }
-      
+
       setExtractedData(enhancedData as any);
       props.onScanComplete(enhancedData as any);
     } catch (err: any) {
@@ -556,10 +527,10 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
     } finally {
       setIsProcessing(false);
       if (props.onProcessingStateChange) {
-        props.onProcessingStateChange({ 
-          isProcessing: false, 
-          progress: 100, 
-          currentStep: '完了' 
+        props.onProcessingStateChange({
+          isProcessing: false,
+          progress: 100,
+          currentStep: '完了'
         });
       }
     }
@@ -603,8 +574,14 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
       reader.onload = async (e) => {
         const imageData = e.target?.result as string;
         if (imageData) {
-          // 画像前処理を実行
-          const preprocessedImage = await preprocessImage(imageData);
+          // 高度な画像前処理を実行
+          const preprocessedImage = await imageProcessor.processImage(imageData, {
+            deskew: true,
+            binarize: true,
+            enhanceContrast: true,
+            removeNoise: true,
+            sharpen: true
+          });
           setCapturedImage(preprocessedImage);
           processImage(preprocessedImage);
         }
@@ -694,23 +671,23 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
           </div>
         </div>
       )}
-      
+
       {/* カメラ画面 */}
       {!capturedImage && !extractedData && (
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-bold mb-4">レシートスキャナー</h2>
-          
+
           {isCameraActive ? (
             <div className="relative">
-              <video 
+              <video
                 ref={videoRef}
-                autoPlay 
+                autoPlay
                 playsInline
                 className="w-full h-96 object-cover rounded-lg bg-gray-100"
               />
               {/* 撮影ガイドオーバーレイ */}
               <div className="absolute inset-0 border-2 border-dashed border-white m-8 pointer-events-none"></div>
-              
+
               {/* ズームとフラッシュコントロール */}
               <div className="absolute top-4 right-4 flex flex-col space-y-2">
                 <button
@@ -732,7 +709,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                   <span className="text-xs">FLASH</span>
                 </button>
               </div>
-              
+
               <div className="flex justify-center mt-4 space-x-4">
                 <button
                   onClick={capturePhoto}
@@ -740,7 +717,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 >
                   <div className="w-12 h-12 rounded-full bg-red-500"></div>
                 </button>
-                
+
                 <button
                   onClick={stopCamera}
                   className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
@@ -758,7 +735,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 <Camera className="w-5 h-5 mr-2" />
                 カメラで撮影
               </button>
-              
+
               <div className="relative">
                 <input
                   type="file"
@@ -773,7 +750,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
               </div>
             </div>
           )}
-          
+
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
               {error}
@@ -781,7 +758,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
           )}
         </div>
       )}
-      
+
       {/* 確認・編集画面 */}
       {capturedImage && !extractedData && isProcessing && (
         <div className="bg-white rounded-xl shadow-lg p-6">
@@ -791,19 +768,19 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
           </div>
         </div>
       )}
-      
+
       {capturedImage && extractedData && (
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-bold mb-4">抽出結果</h2>
-          
+
           <div className="mb-6">
-            <img 
-              src={capturedImage} 
-              alt="Captured receipt" 
+            <img
+              src={capturedImage}
+              alt="Captured receipt"
               className="w-full h-48 object-contain rounded-lg border"
             />
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">店舗名</label>
@@ -814,7 +791,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">日付</label>
               <input
@@ -824,7 +801,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">合計金額</label>
               <input
@@ -834,7 +811,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">税率</label>
               <input
@@ -844,7 +821,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             {/* AI分析結果の表示 */}
             {extractedData.category && (
               <div>
@@ -854,7 +831,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 </div>
               </div>
             )}
-            
+
             {extractedData.expenseType && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">支出種別（AI推定）</label>
@@ -863,14 +840,14 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 </div>
               </div>
             )}
-            
+
             {extractedData.aiConfidence !== undefined && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">AI信頼度</label>
                 <div className="flex items-center">
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full" 
+                    <div
+                      className="bg-blue-600 h-2.5 rounded-full"
                       style={{ width: `${extractedData.aiConfidence * 100}%` }}
                     ></div>
                   </div>
@@ -880,7 +857,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 </div>
               </div>
             )}
-            
+
             {extractedData.insights && extractedData.insights.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">分析インサイト</label>
@@ -894,7 +871,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
               </div>
             )}
           </div>
-          
+
           <div className="flex flex-wrap gap-2 mt-6">
             <button
               onClick={retakePhoto}
@@ -903,7 +880,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
               <RotateCcw className="w-4 h-4 mr-2" />
               再撮影
             </button>
-            
+
             <button
               onClick={exportToJson}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -911,7 +888,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
               <Save className="w-4 h-4 mr-2" />
               保存
             </button>
-            
+
             <button
               onClick={copyToClipboard}
               className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -919,7 +896,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
               <Copy className="w-4 h-4 mr-2" />
               コピー
             </button>
-            
+
             {typeof navigator.share !== 'undefined' && (
               <button
                 onClick={shareData}
@@ -930,7 +907,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
               </button>
             )}
           </div>
-          
+
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
               {error}
@@ -938,7 +915,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
           )}
         </div>
       )}
-      
+
       {/* キャンバス（非表示） */}
       <canvas ref={canvasRef} className="hidden" />
     </div>

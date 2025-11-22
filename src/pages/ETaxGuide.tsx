@@ -71,21 +71,21 @@ const ETaxGuide: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-6">
           <Link to="/tax-filing-support" className="mr-4">
-            <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
+            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">電子申告システム(e-Tax)利用ガイド</h1>
+          <h1 className="text-2xl font-bold text-text-main">電子申告システム(e-Tax)利用ガイド</h1>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
           <div className="flex items-center mb-4">
-            <ExternalLink className="h-8 w-8 text-blue-500 mr-3" />
-            <h2 className="text-xl font-bold text-gray-900">e-Taxとは</h2>
+            <ExternalLink className="h-8 w-8 text-primary mr-3" />
+            <h2 className="text-xl font-bold text-text-main">e-Taxとは</h2>
           </div>
-          <p className="text-gray-600 mb-4">
+          <p className="text-text-muted mb-4">
             電子申告(e-Tax)は、国税庁が提供するインターネット申告・納税サービスです。
             このサービスを利用することで、各種申告書をオンラインで提出し、税金を納めることができます。
           </p>
@@ -93,31 +93,31 @@ const ETaxGuide: React.FC = () => {
             href="https://www.e-tax.nta.go.jp/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium"
+            className="inline-flex items-center btn-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 text-sm font-medium"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
             e-Taxポータルサイトへ
           </a>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">利用までの流れ</h2>
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-bold text-text-main mb-6">利用までの流れ</h2>
           <div className="space-y-8">
             {steps.map((step) => (
               <div key={step.id} className="flex">
                 <div className="flex-shrink-0 mr-4">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 text-blue-600 font-bold">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary font-bold">
                     {step.id}
                   </div>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">{step.title}</h3>
-                  <p className="text-gray-600 mb-3">{step.description}</p>
+                  <h3 className="text-lg font-medium text-text-main mb-2">{step.title}</h3>
+                  <p className="text-text-muted mb-3">{step.description}</p>
                   <ul className="space-y-2">
                     {step.details.map((detail, index) => (
                       <li key={index} className="flex items-start">
                         <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-600">{detail}</span>
+                        <span className="text-text-muted">{detail}</span>
                       </li>
                     ))}
                   </ul>
@@ -127,38 +127,38 @@ const ETaxGuide: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">よくある質問</h2>
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-bold text-text-main mb-6">よくある質問</h2>
           <div className="space-y-6">
             {faqs.map((faq, index) => (
               <div key={index}>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">{faq.question}</h3>
-                <p className="text-gray-600">{faq.answer}</p>
+                <h3 className="text-lg font-medium text-text-main mb-2">{faq.question}</h3>
+                <p className="text-text-muted">{faq.answer}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-blue-50 rounded-xl border border-blue-100 p-6">
-          <h2 className="text-lg font-bold text-blue-900 mb-4 flex items-center">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 p-6">
+          <h2 className="text-lg font-bold text-blue-900 dark:text-blue-300 mb-4 flex items-center">
             <Lock className="h-5 w-5 mr-2" />
             セキュリティに関する注意事項
           </h2>
-          <ul className="space-y-3 text-blue-800">
+          <ul className="space-y-3 text-blue-800 dark:text-blue-200">
             <li className="flex items-start">
-              <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+              <CheckCircle className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
               <span>電子証明書やID・パスワードは第三者に知られないように厳重に保管してください</span>
             </li>
             <li className="flex items-start">
-              <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+              <CheckCircle className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
               <span>公共のコンピュータやネットカフェ等の共有コンピュータではe-Taxを利用しないでください</span>
             </li>
             <li className="flex items-start">
-              <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+              <CheckCircle className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
               <span>不審なメールやリンクをクリックしないでください</span>
             </li>
             <li className="flex items-start">
-              <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+              <CheckCircle className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
               <span>当アプリはe-Taxへのデータ送信機能は提供していません。e-Taxへの入力はユーザー自身で行ってください</span>
             </li>
           </ul>

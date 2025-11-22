@@ -10,57 +10,51 @@ import {
 ChartJS.register(ArcElement, Tooltip, Legend)
 
 interface ExpenseChartProps {
-  transactions: any[]; // 取引データをpropsとして受け取る
+  transactions: any[];
 }
 
 const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
-  // 取引データから支出カテゴリ別の合計を計算
   const calculateExpenseByCategory = () => {
     const expenseTransactions = transactions.filter(t => t.type === 'expense');
     const categoryTotals: { [key: string]: number } = {};
-    
+
     expenseTransactions.forEach(transaction => {
-      // 金額を数値に変換
       const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
-      
+
       if (categoryTotals[transaction.category]) {
         categoryTotals[transaction.category] += amount;
       } else {
         categoryTotals[transaction.category] = amount;
       }
     });
-    
-    // 合計金額を計算
+
     const totalAmount = Object.values(categoryTotals).reduce((sum, amount) => sum + amount, 0);
-    
-    // パーセンテージを計算
+
     const percentages: { [key: string]: number } = {};
     Object.keys(categoryTotals).forEach(category => {
       percentages[category] = Math.round((categoryTotals[category] / totalAmount) * 100);
     });
-    
+
     return { categoryTotals, percentages, totalAmount };
   };
 
   const { percentages, categoryTotals, totalAmount } = calculateExpenseByCategory();
-  
-  // チャートデータの準備
+
   const labels = Object.keys(percentages);
   const percentageData = Object.values(percentages);
   const amountData = Object.values(categoryTotals);
 
-  // カラーパレットの定義
   const colorPalette = [
-    'rgb(99, 102, 241)',
-    'rgb(139, 92, 246)',
-    'rgb(168, 85, 247)',
-    'rgb(192, 132, 252)',
-    'rgb(221, 214, 254)',
-    'rgb(124, 58, 237)',
-    'rgb(109, 40, 217)',
-    'rgb(79, 70, 229)',
-    'rgb(67, 56, 202)',
-    'rgb(55, 48, 163)',
+    '#6366f1', // Indigo 500
+    '#8b5cf6', // Violet 500
+    '#a855f7', // Purple 500
+    '#d946ef', // Fuchsia 500
+    '#ec4899', // Pink 500
+    '#f43f5e', // Rose 500
+    '#06b6d4', // Cyan 500
+    '#0ea5e9', // Sky 500
+    '#3b82f6', // Blue 500
+    '#64748b', // Slate 500
   ];
 
   const backgroundColors = labels.map((_, index) => colorPalette[index % colorPalette.length]);
@@ -72,7 +66,7 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
         data: percentageData,
         backgroundColor: backgroundColors,
         borderWidth: 0,
-        cutout: '60%',
+        cutout: '75%',
       },
     ],
   };
@@ -86,10 +80,12 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
         labels: {
           usePointStyle: true,
           padding: 15,
+          color: '#94a3b8',
           font: {
             size: 12,
+            family: 'Inter',
           },
-          generateLabels: function(chart: any) {
+          generateLabels: function (chart: any) {
             const data = chart.data
             if (data.labels.length && data.datasets.length) {
               return data.labels.map((label: string, index: number) => {
@@ -111,43 +107,51 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             const label = context.label || '';
             const amount = amountData[context.dataIndex];
             return `${label}: ${context.parsed}% (${amount.toLocaleString()}円)`;
           },
         },
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        titleColor: '#f8fafc',
+        bodyColor: '#e2e8f0',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
         borderWidth: 1,
+        padding: 10,
       },
     },
   }
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">支出カテゴリ</h3>
-        <button className="text-sm text-blue-600 hover:text-blue-800">詳細を見る</button>
+    <div className="glass-card rounded-2xl p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-semibold text-text-main">支出カテゴリ</h3>
+        <button className="text-sm text-primary hover:text-primary/80 transition-colors">詳細を見る</button>
       </div>
-      <div className="chart-container h-80">
+
+      <div className="chart-container h-72 w-full relative">
         <Doughnut data={data} options={options} />
+        {/* Center Text */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <p className="text-xs text-text-muted">総支出</p>
+          <p className="text-xl font-bold text-text-main">¥{totalAmount.toLocaleString()}</p>
+        </div>
       </div>
-      <div className="mt-4">
-        <h4 className="font-medium text-gray-900 mb-2">カテゴリ別支出内訳</h4>
-        <div className="space-y-2">
+
+      <div className="mt-6">
+        <h4 className="font-medium text-text-secondary mb-3 text-sm">カテゴリ別支出内訳</h4>
+        <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
           {labels.map((label, index) => (
-            <div key={label} className="flex items-center justify-between">
+            <div key={label} className="flex items-center justify-between group">
               <div className="flex items-center">
-                <div 
-                  className="w-3 h-3 rounded-full mr-2" 
+                <div
+                  className="w-2 h-2 rounded-full mr-3 transition-transform group-hover:scale-125"
                   style={{ backgroundColor: backgroundColors[index] }}
                 ></div>
-                <span className="text-sm text-gray-600">{label}</span>
+                <span className="text-sm text-text-muted group-hover:text-text-main transition-colors">{label}</span>
               </div>
-              <span className="text-sm font-medium">¥{amountData[index].toLocaleString()}</span>
+              <span className="text-sm font-medium text-text-secondary">¥{amountData[index].toLocaleString()}</span>
             </div>
           ))}
         </div>

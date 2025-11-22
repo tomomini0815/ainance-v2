@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
 
 interface Transaction {
-  id: number
+  id: string
   item: string
   amount: number
   date: string
@@ -21,7 +21,7 @@ interface Transaction {
 }
 
 interface AITransaction {
-  id: number
+  id: string
   item: string
   amount: number
   category: string
@@ -45,37 +45,37 @@ export const useSupabaseTransactions = () => {
   const [loading, setLoading] = useState(false)
 
   // 両方のデータを同時に取得する関数
-  const fetchAllData = useCallback(async () => {
+  const fetchAllData = useCallback(() => {
     setLoading(true)
-    try {
-      // トランザクションデータの取得
-      const { data: transactionsData, error: transactionsError } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('date', { ascending: false })
+    
+    // トランザクションデータの取得
+    supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(`取引履歴の取得に失敗しました: ${error.message}`)
+          setTransactions([])
+        } else {
+          setTransactions(data || [])
+        }
+      })
 
-      if (transactionsError) {
-        throw new Error(`取引履歴の取得に失敗しました: ${transactionsError.message}`)
-      }
-
-      // AIトランザクションデータの取得
-      const { data: aiTransactionsData, error: aiTransactionsError } = await supabase
-        .from('ai_transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (aiTransactionsError) {
-        throw new Error(`AI取引履歴の取得に失敗しました: ${aiTransactionsError.message}`)
-      }
-
-      setTransactions(transactionsData || [])
-      setAiTransactions(aiTransactionsData || [])
-    } catch (error: any) {
-      console.error('データの取得に失敗:', error)
-      toast.error(`データの取得に失敗しました: ${error.message}`)
-    } finally {
-      setLoading(false)
-    }
+    // AIトランザクションデータの取得
+    supabase
+      .from('ai_transactions')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(`AI取引履歴の取得に失敗しました: ${error.message}`)
+          setAiTransactions([])
+        } else {
+          setAiTransactions(data || [])
+        }
+        setLoading(false)
+      })
   }, [])
 
   // 新しいトランザクションの作成
@@ -95,15 +95,15 @@ export const useSupabaseTransactions = () => {
         .from('transactions')
         .insert(newTransaction)
         .select()
-
-      if (error) {
-        const errorText = JSON.stringify(error)
-        throw new Error(`取引の作成に失敗しました: ${error.message} - ${errorText}`)
-      }
-
-      await fetchAllData()
+        .single()
+      
+      if (error) throw error
+      
+      const createdTransaction: Transaction = data
+      
+      setTransactions(prev => [createdTransaction, ...prev])
       toast.success('取引が正常に作成されました')
-      return data?.[0]?.id
+      return data.id
     } catch (error: any) {
       console.error('取引の作成に失敗:', error)
       toast.error(`取引の作成に失敗しました: ${error.message}`)
@@ -112,7 +112,7 @@ export const useSupabaseTransactions = () => {
   }
 
   // トランザクションの更新
-  const updateTransaction = async (transactionId: number, updates: Partial<Transaction>) => {
+  const updateTransaction = async (transactionId: string, updates: Partial<Transaction>) => {
     try {
       const { data, error } = await supabase
         .from('transactions')
@@ -122,13 +122,18 @@ export const useSupabaseTransactions = () => {
         })
         .eq('id', transactionId)
         .select()
-
-      if (error) {
-        const errorText = JSON.stringify(error)
-        throw new Error(`取引の更新に失敗しました: ${error.message} - ${errorText}`)
-      }
-
-      await fetchAllData()
+        .single()
+      
+      if (error) throw error
+      
+      const updatedTransaction: Transaction = data
+      
+      setTransactions(prev =>
+        prev.map(transaction =>
+          transaction.id === transactionId ? updatedTransaction : transaction
+        )
+      )
+      
       toast.success('取引が正常に更新されました')
     } catch (error: any) {
       console.error('取引の更新に失敗:', error)
@@ -138,19 +143,16 @@ export const useSupabaseTransactions = () => {
   }
 
   // トランザクションの削除
-  const deleteTransaction = async (transactionId: number) => {
+  const deleteTransaction = async (transactionId: string) => {
     try {
       const { error } = await supabase
         .from('transactions')
         .delete()
         .eq('id', transactionId)
-
-      if (error) {
-        const errorText = JSON.stringify(error)
-        throw new Error(`取引の削除に失敗しました: ${error.message} - ${errorText}`)
-      }
-
-      await fetchAllData()
+      
+      if (error) throw error
+      
+      setTransactions(prev => prev.filter(transaction => transaction.id !== transactionId))
       toast.success('取引が正常に削除されました')
     } catch (error: any) {
       console.error('取引の削除に失敗:', error)
@@ -160,7 +162,7 @@ export const useSupabaseTransactions = () => {
   }
 
   // AIトランザクションの確認
-  const verifyAITransaction = async (aiTransactionId: number, verified: boolean, feedback?: string) => {
+  const verifyAITransaction = async (aiTransactionId: string, verified: boolean, feedback?: string) => {
     try {
       const { data, error } = await supabase
         .from('ai_transactions')
@@ -171,13 +173,18 @@ export const useSupabaseTransactions = () => {
         })
         .eq('id', aiTransactionId)
         .select()
-
-      if (error) {
-        const errorText = JSON.stringify(error)
-        throw new Error(`AI取引の確認に失敗しました: ${error.message} - ${errorText}`)
-      }
-
-      await fetchAllData()
+        .single()
+      
+      if (error) throw error
+      
+      const updatedAiTransaction: AITransaction = data
+      
+      setAiTransactions(prev =>
+        prev.map(transaction =>
+          transaction.id === aiTransactionId ? updatedAiTransaction : transaction
+        )
+      )
+      
       toast.success(verified ? 'AI分類を承認しました' : 'AI分類を却下しました')
     } catch (error: any) {
       console.error('AI取引の確認に失敗:', error)
