@@ -142,14 +142,16 @@ const Dashboard: React.FC = () => {
             className={`btn-secondary flex-none flex items-center justify-center ${transactions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Download className="w-4 h-4 mr-2" />
-            <span>CSV</span>
+            <span className="hidden sm:inline">CSV出力</span>
+            <span className="sm:hidden">CSV</span>
           </button>
           <button
             onClick={() => setShowCreateForm(true)}
             className="btn-primary flex-none flex items-center justify-center"
           >
             <Plus className="w-4 h-4 mr-2" />
-            <span>新規</span>
+            <span className="hidden sm:inline">新規取引</span>
+            <span className="sm:hidden">新規</span>
           </button>
         </div>
       </div>
