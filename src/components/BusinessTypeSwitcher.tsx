@@ -165,12 +165,15 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
         console.log('Business type created and set successfully')
       } else {
         console.error('createBusinessType returned null')
-        alert('業態形態の作成に失敗しました。もう一度お試しください。')
+        // より詳細なエラーメッセージを表示
+        alert('業態形態の作成に失敗しました。入力内容を確認して、もう一度お試しください。')
       }
     } catch (error: any) {
       clearTimeout(timeoutId); // エラー発生時はタイムアウトをクリア
       console.error('Error in handleCreateSubmit:', error)
-      alert(`エラーが発生しました: ${error.message || '不明なエラー'}`)
+      // より詳細なエラーメッセージを表示
+      const errorMessage = error.message || error.error_description || '不明なエラー';
+      alert(`エラーが発生しました: ${errorMessage}`)
     } finally {
       setIsSubmitting(false)
     }

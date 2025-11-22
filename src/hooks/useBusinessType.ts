@@ -124,10 +124,15 @@ export const useBusinessType = (userId?: string) => {
       // 既存のアクティブな業態形態を非アクティブにする
       if (currentBusinessType) {
         console.log('既存の業態形態を非アクティブにします:', currentBusinessType.id);
-        await supabase
+        const { error: updateError } = await supabase
           .from('business_type')
           .update({ is_active: false, updated_at: new Date().toISOString() })
           .eq('id', currentBusinessType.id)
+        
+        if (updateError) {
+          console.error('既存の業態形態の更新に失敗しました:', updateError);
+          throw updateError;
+        }
       }
 
       const newBusinessTypeData = {
@@ -145,7 +150,10 @@ export const useBusinessType = (userId?: string) => {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabaseへの挿入に失敗しました:', error);
+        throw error;
+      }
 
       console.log('Supabaseに保存成功:', insertedData);
 
@@ -158,7 +166,9 @@ export const useBusinessType = (userId?: string) => {
       return newBusinessType
     } catch (error: any) {
       console.error('業態形態の作成に失敗しました:', error)
-      toast.error(`業態形態の作成に失敗しました: ${error.message || '不明なエラー'}`)
+      // より詳細なエラーメッセージを表示
+      const errorMessage = error.message || error.error_description || '不明なエラー';
+      toast.error(`業態形態の作成に失敗しました: ${errorMessage}`)
       return null
     }
   }
