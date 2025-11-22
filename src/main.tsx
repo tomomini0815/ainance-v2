@@ -8,7 +8,7 @@ import '@fontsource/noto-sans-jp/700.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <HashRouter>
+    <HashRouter basename="/ainance-v2">
       <App />
     </HashRouter>
   </React.StrictMode>,
