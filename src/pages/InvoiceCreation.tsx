@@ -428,7 +428,7 @@ const InvoiceCreation: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         {/* ヘッダー */}
         <div className="flex items-center justify-start mb-4 sm:mb-6">
-          <Link to="/invoices" className="flex items-center text-primary hover:text-primary/90 transition-colors mr-4" title="請求書一覧に戻る">
+          <Link to="/dashboard" className="flex items-center text-primary hover:text-primary/90 transition-colors mr-4" title="ダッシュボードに戻る">
             <ArrowLeft size={20} />
           </Link>
           <h1 className="text-xl sm:text-2xl font-bold text-text-main">

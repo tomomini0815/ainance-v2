@@ -627,7 +627,7 @@ const AITransactionList: React.FC = () => {
 
             {/* バルク操作 */}
             {selectedTransactions.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t">
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-border">
                 <span className="text-sm text-text-muted">
                   {selectedTransactions.length}件選択中
                 </span>
@@ -654,7 +654,7 @@ const AITransactionList: React.FC = () => {
         <div className="bg-surface rounded-xl shadow-sm border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-gray-50 to-surface-highlight">
+              <thead className="bg-surface-highlight">
                 <tr>
                   <th className="px-6 py-4 text-left">
                     <button
@@ -664,7 +664,7 @@ const AITransactionList: React.FC = () => {
                       {selectedTransactions.length === filteredAITransactions.length && filteredAITransactions.length > 0 ? (
                         <CheckSquare className="w-4 h-4 text-primary" />
                       ) : (
-                        <Square className="w-4 h-4" />
+                        <Square className="w-4 h-4 text-text-muted" />
                       )}
                       <span>選択</span>
                     </button>
