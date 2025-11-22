@@ -419,7 +419,7 @@ const AITransactionList: React.FC = () => {
 
             {/* パフォーマンス指標 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border border-blue-100">
+              <div className="bg-surface p-6 rounded-xl border border-border">
                 <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center">
                   <Cpu className="w-5 h-5 mr-2 text-primary" />
                   処理パフォーマンス
@@ -435,21 +435,21 @@ const AITransactionList: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-text-muted">精度向上率</span>
-                    <span className="text-lg font-bold text-green-600">+{advancedStats.weeklyImprovement.toFixed(1)}%</span>
+                    <span className="text-lg font-bold text-green-500">+{advancedStats.weeklyImprovement.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
+              <div className="bg-surface p-6 rounded-xl border border-border">
                 <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center">
-                  <Target className="w-5 h-5 mr-2 text-purple-600" />
+                  <Target className="w-5 h-5 mr-2 text-purple-500" />
                   信頼度分析
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-text-muted">高信頼度 (90%+)</span>
                     <div className="flex items-center">
-                      <span className="text-lg font-bold text-green-600">{advancedStats.highConfidenceCount}</span>
+                      <span className="text-lg font-bold text-green-500">{advancedStats.highConfidenceCount}</span>
                       <div className="ml-2 w-12 bg-border rounded-full h-2">
                         <div
                           className="bg-green-500 h-2 rounded-full"
@@ -461,7 +461,7 @@ const AITransactionList: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-text-muted">中信頼度 (70-89%)</span>
                     <div className="flex items-center">
-                      <span className="text-lg font-bold text-yellow-600">{advancedStats.mediumConfidenceCount}</span>
+                      <span className="text-lg font-bold text-yellow-500">{advancedStats.mediumConfidenceCount}</span>
                       <div className="ml-2 w-12 bg-border rounded-full h-2">
                         <div
                           className="bg-yellow-500 h-2 rounded-full"
@@ -473,7 +473,7 @@ const AITransactionList: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-text-muted">低信頼度 (70%未満)</span>
                     <div className="flex items-center">
-                      <span className="text-lg font-bold text-red-600">{advancedStats.lowConfidenceCount}</span>
+                      <span className="text-lg font-bold text-red-500">{advancedStats.lowConfidenceCount}</span>
                       <div className="ml-2 w-12 bg-border rounded-full h-2">
                         <div
                           className="bg-red-500 h-2 rounded-full"
@@ -485,15 +485,15 @@ const AITransactionList: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border border-green-100">
+              <div className="bg-surface p-6 rounded-xl border border-border">
                 <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center">
-                  <Trophy className="w-5 h-5 mr-2 text-green-600" />
+                  <Trophy className="w-5 h-5 mr-2 text-green-500" />
                   学習成果
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-text-muted">全体精度</span>
-                    <span className="text-lg font-bold text-green-600">{advancedStats.averageConfidence.toFixed(1)}%</span>
+                    <span className="text-lg font-bold text-green-500">{advancedStats.averageConfidence.toFixed(1)}%</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-text-muted">学習進捗</span>
@@ -501,7 +501,7 @@ const AITransactionList: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-text-muted">今週の分析</span>
-                    <span className="text-lg font-bold text-purple-600">{advancedStats.recentTransactions}件</span>
+                    <span className="text-lg font-bold text-purple-500">{advancedStats.recentTransactions}件</span>
                   </div>
                 </div>
               </div>
@@ -841,7 +841,7 @@ const AITransactionList: React.FC = () => {
         </div>
 
         {/* AI学習進捗とインサイト */}
-        <div className="mt-8 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 p-8 rounded-xl border border-blue-100">
+        <div className="mt-8 bg-surface p-8 rounded-xl border border-border">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center">
@@ -855,11 +855,11 @@ const AITransactionList: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-text-muted">平均精度:</span>
-                  <span className="font-semibold text-purple-600">{advancedStats.averageConfidence.toFixed(1)}%</span>
+                  <span className="font-semibold text-purple-500">{advancedStats.averageConfidence.toFixed(1)}%</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-text-muted">高精度分析:</span>
-                  <span className="font-semibold text-green-600">{advancedStats.highConfidenceCount}件</span>
+                  <span className="font-semibold text-green-500">{advancedStats.highConfidenceCount}件</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-text-muted">処理速度:</span>
@@ -891,7 +891,7 @@ const AITransactionList: React.FC = () => {
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-text-muted">AI成熟度</span>
-                    <span className="font-semibold text-orange-600">{advancedStats.aiMaturity.toFixed(1)}%</span>
+                    <span className="font-semibold text-orange-500">{advancedStats.aiMaturity.toFixed(1)}%</span>
                   </div>
                   <div className="w-full bg-surface rounded-full h-4 shadow-inner">
                     <div
@@ -911,17 +911,17 @@ const AITransactionList: React.FC = () => {
                 今週のハイライト
               </h3>
               <div className="space-y-4">
-                <div className="bg-surface/70 backdrop-blur-sm p-4 rounded-lg">
+                <div className="bg-background p-4 rounded-lg border border-border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-text-muted">新規分析</span>
                     <span className="font-bold text-primary">{advancedStats.recentTransactions}件</span>
                   </div>
                   <div className="text-xs text-text-muted">過去7日間</div>
                 </div>
-                <div className="bg-surface/70 backdrop-blur-sm p-4 rounded-lg">
+                <div className="bg-background p-4 rounded-lg border border-border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-text-muted">精度向上</span>
-                    <span className={`font-bold ${advancedStats.weeklyImprovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`font-bold ${advancedStats.weeklyImprovement >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                       {advancedStats.weeklyImprovement >= 0 ? '+' : ''}{advancedStats.weeklyImprovement.toFixed(1)}%
                     </span>
                   </div>
