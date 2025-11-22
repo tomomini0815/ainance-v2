@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -13,8 +13,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const auth = useAuth()
   const { loading, isAuthenticated } = auth || {}
+  const location = useLocation()
 
-  console.log('ProtectedRouteの認証状態:', { loading, isAuthenticated })
+  console.log('ProtectedRouteの認証状態:', { loading, isAuthenticated, pathname: location.pathname })
 
   // 認証状態を確認中
   if (loading) {
@@ -26,7 +27,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // 認証されていない場合はログインページにリダイレクト
+  // ただし、リダイレクト元がログインページの場合は無限ループを防ぐため/homeにリダイレクト
   if (!isAuthenticated) {
+    if (location.pathname === '/login') {
+      return <Navigate to="/" replace />
+    }
     return <Navigate to="/login" replace />
   }
 
