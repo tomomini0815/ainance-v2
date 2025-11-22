@@ -11,13 +11,14 @@
         var hash = location.hash;
         var search = location.search;
         
-        // 既にルートパスにある場合はリダイレクトしない
-        if (path === '/ainance-v2/') {
+        // ルートパスまたはindex.htmlの場合はリダイレクトしない
+        if (path === '/ainance-v2/' || path === '/ainance-v2/index.html') {
           return;
         }
         
         // それ以外の場合はルートパスにリダイレクト
-        location.replace('/ainance-v2/');
+        // HashRouterを使用しているので、ハッシュも保持する
+        location.replace('/ainance-v2/' + hash);
       })();
     </script>
   </head>
