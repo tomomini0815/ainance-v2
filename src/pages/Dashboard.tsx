@@ -129,17 +129,17 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-main tracking-tight truncate">ダッシュボード</h1>
-          <p className="text-text-muted mt-0.5 truncate text-sm sm:text-base hidden sm:block">財務状況の概要と最近の活動</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-text-main tracking-tight">ダッシュボード</h1>
+          <p className="text-text-muted mt-1">財務状況の概要と最近の活動</p>
         </div>
 
-        <div className="flex gap-3 flex-shrink-0">
+        <div className="flex gap-3 w-full sm:w-auto">
           <button
             onClick={downloadCSV}
             disabled={transactions.length === 0}
-            className={`btn-secondary flex-none flex items-center justify-center ${transactions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`btn-secondary flex-1 sm:flex-none flex items-center justify-center ${transactions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Download className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">CSV出力</span>
@@ -147,7 +147,7 @@ const Dashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setShowCreateForm(true)}
-            className="btn-primary flex-none flex items-center justify-center"
+            className="btn-primary flex-1 sm:flex-none flex items-center justify-center"
           >
             <Plus className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">新規取引</span>
@@ -155,8 +155,6 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
       </div>
-
-      <p className="text-text-muted mt-0.5 mb-4 text-sm sm:hidden">財務状況の概要と最近の活動</p>
 
       <QuickActions />
 
