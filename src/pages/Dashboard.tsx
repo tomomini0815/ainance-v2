@@ -130,12 +130,12 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-text-main tracking-tight">ダッシュボード</h1>
-          <p className="text-text-muted mt-1">財務状況の概要と最近の活動</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-3xl font-bold text-text-main tracking-tight truncate">ダッシュボード</h1>
+          <p className="text-text-muted mt-1 truncate">財務状況の概要と最近の活動</p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-shrink-0">
           <button
             onClick={downloadCSV}
             disabled={transactions.length === 0}
