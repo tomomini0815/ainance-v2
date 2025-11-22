@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useBusinessType } from '../hooks/useBusinessType'
+import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { ChevronDown, ChevronUp, Building, User, Plus, Edit, Trash2, Check, X } from 'lucide-react'
+import { useAuth } from '../hooks/useAuth'
 
 interface BusinessTypeSwitcherProps {
   userId?: string
@@ -11,14 +12,27 @@ interface BusinessTypeSwitcherProps {
 }
 
 const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
-  userId,
+  userId: propUserId,
   onBusinessTypeChange,
   displayMode = 'dropdown'
 }) => {
+  const { user } = useAuth();
+  const userId = propUserId || user?.id;
+
   console.log('BusinessTypeSwitcher rendered with userId:', userId);
 
   const [showDropdown, setShowDropdown] = useState(false)
-  const { businessTypes, loading, currentBusinessType, createBusinessType, switchBusinessType, updateBusinessType, deleteBusinessType, refetch } = useBusinessType(userId)
+  const {
+    businessTypes,
+    loading,
+    currentBusinessType,
+    createBusinessType,
+    switchBusinessType,
+    updateBusinessType,
+    deleteBusinessType,
+    refreshBusinessTypes
+  } = useBusinessTypeContext()
+
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingBusinessType, setEditingBusinessType] = useState<any>(null)
@@ -41,25 +55,25 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
     if (!currentBusinessType && localBusinessType) {
       onBusinessTypeChange?.(localBusinessType)
     }
-  }, [localBusinessType, onBusinessTypeChange])
+  }, [localBusinessType, onBusinessTypeChange, currentBusinessType])
 
   // userIdが変更されたときにデータを再取得
   useEffect(() => {
     if (userId) {
-      refetch()
+      refreshBusinessTypes()
     }
-  }, [userId, refetch])
+  }, [userId, refreshBusinessTypes])
 
   // businessTypesが空の場合、自動的に新規作成モーダルを表示
   useEffect(() => {
-    if (businessTypes.length === 0 && userId) {
+    if (businessTypes.length === 0 && userId && !loading) {
       // 少し遅延させて自動表示（UIが正しくレンダリングされるのを待つため）
       const timer = setTimeout(() => {
         setShowCreateModal(true)
       }, 500)
       return () => clearTimeout(timer)
     }
-  }, [businessTypes.length, userId])
+  }, [businessTypes.length, userId, loading])
 
   const handleCreateSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -105,21 +119,21 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
         clearTimeout(timeoutId);
         return
       }
-      
+
       if (!address) {
         alert('住所を入力してください')
         setIsSubmitting(false)
         clearTimeout(timeoutId);
         return
       }
-      
+
       if (!representativeName) {
         alert('代表者名を入力してください')
         setIsSubmitting(false)
         clearTimeout(timeoutId);
         return
       }
-      
+
       if (!businessType) {
         alert('業態形態を選択してください')
         setIsSubmitting(false)
@@ -147,6 +161,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
         setLocalBusinessType(result)
         setShowCreateModal(false)
         onBusinessTypeChange?.(result)
+        refreshBusinessTypes() // Refresh context
         console.log('Business type created and set successfully')
       } else {
         console.error('createBusinessType returned null')
@@ -185,6 +200,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
       }
       setShowEditModal(false)
       setEditingBusinessType(null)
+      refreshBusinessTypes() // Refresh context
     }
   }
 
@@ -218,14 +234,14 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
         return;
       }
     }
-    
+
     await deleteBusinessType(businessTypeId)
     // 削除した業態が現在の業態の場合、ローカルストレージをクリア
     if (localBusinessType && localBusinessType.id === businessTypeId) {
       setLocalBusinessType(null)
       onBusinessTypeChange?.(null)
       // 新しいアクティブな業態を取得
-      refetch()
+      refreshBusinessTypes()
     }
     setShowDropdown(false)
   }
@@ -234,7 +250,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
     return (
       <div className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-        <span className="text-sm text-gray-700">読み込み中...</span>
+        <span className="text-sm text-text-muted">読み込み中...</span>
       </div>
     )
   }

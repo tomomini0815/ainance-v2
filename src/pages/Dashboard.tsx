@@ -16,8 +16,11 @@ const TransactionForm = React.lazy(() => import('../components/TransactionForm')
 // Preload components
 // これらのコンポーネントはReact.lazyで遅延読み込みされるため、明示的なプリロードは不要です
 
+import { useBusinessTypeContext } from '../context/BusinessTypeContext'
+
 const Dashboard: React.FC = () => {
-  const { transactions, createTransaction } = useMySQLTransactions();
+  const { currentBusinessType } = useBusinessTypeContext();
+  const { transactions, createTransaction } = useMySQLTransactions(currentBusinessType?.id);
   const { aiTransactions, loading: aiTransactionsLoading } = useMySQLAITransactions();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();

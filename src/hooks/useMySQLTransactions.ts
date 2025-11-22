@@ -17,6 +17,7 @@ interface Transaction {
   location?: string;
   recurring?: boolean;
   recurring_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  business_type_id?: string;
 }
 
 // UUIDのバリデーション関数
@@ -25,18 +26,24 @@ const isValidUUID = (uuid: string): boolean => {
   return uuidRegex.test(uuid);
 };
 
-export const useMySQLTransactions = () => {
+export const useMySQLTransactions = (businessTypeId?: string) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
 
   // 取引データをSupabaseから取得
   const fetchTransactions = useCallback(async () => {
+    // businessTypeIdがない場合は何もしない（または全件取得するが、今回は分離が目的なので取得しない）
+    if (!businessTypeId) {
+      setTransactions([]);
+      return;
+    }
+
     setLoading(true);
-    
+
     // ログインユーザーの取得
     const storedUser = localStorage.getItem('user');
     let userId = '00000000-0000-0000-0000-000000000000'; // デフォルトの匿名ユーザーID
-    
+
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
@@ -47,12 +54,13 @@ export const useMySQLTransactions = () => {
         console.error('ユーザー情報の解析に失敗しました:', error);
       }
     }
-    
+
     try {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .eq('creator', userId)
+        .eq('business_type_id', businessTypeId) // 業態形態でフィルタリング
         .order('date', { ascending: false });
 
       if (error) throw error;
@@ -64,10 +72,14 @@ export const useMySQLTransactions = () => {
       setTransactions([]);
       setLoading(false);
     }
-  }, []);
+  }, [businessTypeId]);
 
   // 新しい取引をSupabaseに保存
   const createTransaction = async (transaction: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!businessTypeId) {
+      throw new Error('業態形態が選択されていません');
+    }
+
     try {
       // creatorが有効なUUIDであることを確認
       if (!isValidUUID(transaction.creator)) {
@@ -79,6 +91,7 @@ export const useMySQLTransactions = () => {
       const transactionWithCreator = {
         ...transaction,
         creator: transaction.creator || '00000000-0000-0000-0000-000000000000',
+        business_type_id: businessTypeId // 業態形態IDを追加
       };
 
       console.log('取引データを保存中:', transactionWithCreator);
@@ -91,9 +104,9 @@ export const useMySQLTransactions = () => {
       if (error) throw error;
 
       console.log('取引データ保存成功:', data.id);
-      
+
       const newTransaction: Transaction = data;
-      
+
       setTransactions(prev => [newTransaction, ...prev]);
       return data.id;
     } catch (error: any) {
@@ -117,9 +130,9 @@ export const useMySQLTransactions = () => {
         .single();
 
       if (error) throw error;
-      
+
       const updatedTransaction: Transaction = data;
-      
+
       setTransactions(prev =>
         prev.map(transaction =>
           transaction.id === id ? updatedTransaction : transaction
@@ -140,7 +153,7 @@ export const useMySQLTransactions = () => {
         .eq('id', id);
 
       if (error) throw error;
-      
+
       setTransactions(prev => prev.filter(transaction => transaction.id !== id));
     } catch (error) {
       console.error('取引の削除に失敗しました:', error);

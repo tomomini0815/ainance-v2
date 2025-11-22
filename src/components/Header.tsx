@@ -4,6 +4,7 @@ import { Search, Bell, Menu, Settings, LogOut, Sun, Moon, Building, User } from 
 import BusinessTypeSwitcher from './BusinessTypeSwitcher'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../context/ThemeContext'
+import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -13,15 +14,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const navigate = useNavigate()
   const { user, signOut, loading } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const { currentBusinessType } = useBusinessTypeContext()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [currentBusinessType, setCurrentBusinessType] = useState<any>(null)
-
-  const userId = useMemo(() => {
-    console.log('Header - user object:', user)
-    console.log('Header - derived userId:', user?.id)
-    return user?.id
-  }, [user?.id])
 
   const handleSignOut = async () => {
     try {
@@ -32,19 +27,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     }
   }
 
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     console.log('検索:', searchTerm)
   }
-
-  const handleBusinessTypeChange = (businessType: any) => {
-    setCurrentBusinessType(businessType)
-  }
-
-  // ユーザーIDが変更されたときに現在の業態形態をリセット
-  useEffect(() => {
-    setCurrentBusinessType(null)
-  }, [userId])
 
   return (
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-white/5 h-16 transition-colors duration-300">
@@ -186,8 +173,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       <div className="px-2 py-1.5">
                         <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">業態形態</h3>
                         <BusinessTypeSwitcher
-                          userId={userId}
-                          onBusinessTypeChange={handleBusinessTypeChange}
                           displayMode="inline"
                         />
                       </div>

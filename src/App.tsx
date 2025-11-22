@@ -4,6 +4,7 @@ import './App.css'
 
 // Components
 import { AuthProvider } from './components/AuthProvider'
+import { BusinessTypeProvider } from './context/BusinessTypeContext'
 import { ThemeProvider } from './context/ThemeContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
@@ -47,100 +48,102 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <React.Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* パブリックルート */}
-            <Route path="/login" element={<Login />} />
+        <BusinessTypeProvider>
+          <React.Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* パブリックルート */}
+              <Route path="/login" element={<Login />} />
 
-            {/* 保護されたルート - Layoutでラップ */}
-            <Route element={<Layout />}>
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/receipt-processing"
-                element={
-                  <ProtectedRoute>
-                    <ReceiptProcessing />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/invoice-creation"
-                element={
-                  <ProtectedRoute>
-                    <InvoiceCreation />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/business-analysis"
-                element={
-                  <ProtectedRoute>
-                    <BusinessAnalysis />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/chat-to-book"
-                element={
-                  <ProtectedRoute>
-                    <ChatToBook />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/business-conversion"
-                element={
-                  <ProtectedRoute>
-                    <BusinessConversion />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/integration-settings"
-                element={
-                  <ProtectedRoute>
-                    <IntegrationSettings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/transaction-history"
-                element={
-                  <ProtectedRoute>
-                    <TransactionHistory />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/ai-transaction-list"
-                element={
-                  <ProtectedRoute>
-                    <AITransactionList />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/tax-filing-support"
-                element={
-                  <ProtectedRoute>
-                    <TaxFilingSupport />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
+              {/* 保護されたルート - Layoutでラップ */}
+              <Route element={<Layout />}>
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/receipt-processing"
+                  element={
+                    <ProtectedRoute>
+                      <ReceiptProcessing />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/invoice-creation"
+                  element={
+                    <ProtectedRoute>
+                      <InvoiceCreation />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/business-analysis"
+                  element={
+                    <ProtectedRoute>
+                      <BusinessAnalysis />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/chat-to-book"
+                  element={
+                    <ProtectedRoute>
+                      <ChatToBook />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/business-conversion"
+                  element={
+                    <ProtectedRoute>
+                      <BusinessConversion />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/integration-settings"
+                  element={
+                    <ProtectedRoute>
+                      <IntegrationSettings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/transaction-history"
+                  element={
+                    <ProtectedRoute>
+                      <TransactionHistory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ai-transaction-list"
+                  element={
+                    <ProtectedRoute>
+                      <AITransactionList />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/tax-filing-support"
+                  element={
+                    <ProtectedRoute>
+                      <TaxFilingSupport />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
 
-            {/* デフォルトルート */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </React.Suspense>
+              {/* デフォルトルート */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </React.Suspense>
+        </BusinessTypeProvider>
       </AuthProvider>
     </ThemeProvider>
   )

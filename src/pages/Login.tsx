@@ -48,7 +48,7 @@ const Login: React.FC = () => {
             console.error('Login Page Error:', err);
             console.error('Error Code:', err.code);
             console.error('Error Message:', err.message);
-            
+
             // エラーメッセージの表示
             if (err.message) {
                 setError(`ログインに失敗しました: ${err.message}`);
@@ -97,7 +97,7 @@ const Login: React.FC = () => {
                     <h2 className="text-xl font-semibold text-text-main mb-6">
                         {showResetForm ? 'パスワードリセット' : 'ログイン'}
                     </h2>
-                    
+
                     {/* ネットワーク状態の表示 */}
                     {!isOnline && (
                         <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 px-4 py-3 rounded-xl text-sm mb-6 flex items-center">
