@@ -6,8 +6,10 @@
     <script>
       // GitHub PagesでSPAを正しく動作させるためのリダイレクトスクリプト
       (function() {
-        // ルートパスにリダイレクト
-        location.replace('/ainance-v2/');
+        var redirect = sessionStorage.redirect;
+        sessionStorage.redirect = location.href;
+        // ダッシュボードページにリダイレクト
+        location.replace('/ainance-v2/#/');
       })();
     </script>
   </head>
