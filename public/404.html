@@ -6,21 +6,18 @@
     <script>
       // GitHub PagesでSPAを正しく動作させるためのリダイレクトスクリプト
       (function() {
-        // 現在のホストを確認
-        var host = location.host;
+        // すべてのパスをハッシュルーティングに変換
         var path = location.pathname;
+        var search = location.search;
+        var hash = location.hash;
         
-        // GitHub Pagesのカスタムドメインを使用している場合
-        if (host === 'ainance.app') {
-          // すべてのパスをハッシュルーティングに変換
-          var redirectUrl = '/#' + path + location.search + location.hash;
-          location.replace(redirectUrl);
+        // ルートパスの場合はそのままリロード
+        if (path === '/' || path === '/ainance-v2/') {
+          // 何もしない
         } else {
-          // GitHub PagesのデフォルトURLを使用している場合
-          // 現在のパスをセッションストレージに保存
-          sessionStorage.setItem('redirect', path + location.search + location.hash);
-          // ルートパスにリダイレクト
-          location.replace('/ainance-v2/');
+          // それ以外のパスはハッシュルーティングに変換
+          var redirectUrl = '/ainance-v2/#' + path + search + hash;
+          location.replace(redirectUrl);
         }
       })();
     </script>
