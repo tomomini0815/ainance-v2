@@ -66,7 +66,7 @@ const QuickActions: React.FC = () => {
         <Link
           key={index}
           to={action.link}
-          className="glass-card rounded-xl p-4 hover:bg-surface-highlight transition-all duration-300 group border border-white/5 hover:border-white/10 hover:-translate-y-1"
+          className="bg-white rounded-xl p-4 hover:bg-surface-highlight transition-all duration-300 group border border-border hover:border-border-strong hover:-translate-y-1 shadow-sm hover:shadow-md"
         >
           <div className="flex flex-col items-center text-center h-full">
             <div className={`w-12 h-12 ${action.color} rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 border ${action.borderColor}`}>

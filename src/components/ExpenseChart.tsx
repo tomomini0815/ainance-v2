@@ -124,7 +124,7 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6">
+    <div className="bg-white rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-text-main">支出カテゴリ</h3>
         <button className="text-sm text-primary hover:text-primary/80 transition-colors">詳細を見る</button>
