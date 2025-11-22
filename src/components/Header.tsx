@@ -103,14 +103,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               </form>
             </div>
 
-            {/* Mobile Menu Button (Mobile only) */}
-            <button
-              onClick={onMenuClick}
-              className="md:hidden p-2 text-text-muted hover:text-primary rounded-lg hover:bg-white/5 transition-colors"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -201,6 +193,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 </>
               )}
             </div>
+
+            {/* Mobile Menu Button (Mobile only) */}
+            <button
+              onClick={onMenuClick}
+              className="md:hidden p-2 text-text-muted hover:text-primary rounded-lg hover:bg-white/5 transition-colors"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
           </div>
         </div>
       </div>
