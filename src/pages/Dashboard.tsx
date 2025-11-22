@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
 
   // Skeleton Loader Component
   const DashboardSkeleton = () => (
-    <div className="min-h-screen animate-pulse">
+    <div className="min-h-screen">
       <div className="p-4 bg-red-500 text-white text-center mb-4">
         <p>ダッシュボードのローディング中...</p>
         <p>authLoading: {authLoading ? 'true' : 'false'}</p>

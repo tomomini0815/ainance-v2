@@ -183,7 +183,15 @@ const LandingPage: React.FC = () => {
                   transition={{ delay: 3.2 }}
                   className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6"
                 >
-                  <MagneticButton onClick={() => navigate('/dashboard')}>
+                  <MagneticButton onClick={() => {
+                    // ログイン状態を確認し、必要に応じてログインページにリダイレクト
+                    const user = localStorage.getItem('user');
+                    if (user) {
+                      navigate('/dashboard');
+                    } else {
+                      navigate('/login');
+                    }
+                  }}>
                     <div className="px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-gray-200 transition-colors flex items-center space-x-2 group">
                       <span>Start Free Trial</span>
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
