@@ -42,25 +42,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             <Link to="/dashboard" className="flex items-center">
               <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Ainance</h1>
             </Link>
-
-            {/* Mobile: Business Type Display */}
-            {currentBusinessType ? (
-              <div className="flex items-center space-x-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg ml-2">
-                {currentBusinessType.business_type === 'individual' ? (
-                  <User className="w-3 h-3 text-blue-600" />
-                ) : (
-                  <Building className="w-3 h-3 text-green-600" />
-                )}
-                <span className="text-xs font-medium text-blue-800 truncate max-w-[80px]">
-                  {currentBusinessType.company_name}
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded-lg ml-2">
-                <User className="w-3 h-3 text-gray-400" />
-                <span className="text-xs text-gray-500">未選択</span>
-              </div>
-            )}
           </div>
 
           {/* Center: Business Type Display (Desktop only) */}
