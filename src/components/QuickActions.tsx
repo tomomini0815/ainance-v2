@@ -10,7 +10,7 @@ const QuickActions: React.FC = () => {
       icon: Calculator,
       link: '/chat-to-book',
       color: 'bg-purple-500/20',
-      iconColor: 'text-purple-400',
+      iconColor: 'text-purple-500',
       borderColor: 'border-purple-500/30'
     },
     {
@@ -19,7 +19,7 @@ const QuickActions: React.FC = () => {
       icon: Camera,
       link: '/receipt-processing',
       color: 'bg-emerald-500/20',
-      iconColor: 'text-emerald-400',
+      iconColor: 'text-emerald-500',
       borderColor: 'border-emerald-500/30'
     },
     {
@@ -28,7 +28,7 @@ const QuickActions: React.FC = () => {
       icon: FileText,
       link: '/invoice-creation',
       color: 'bg-blue-500/20',
-      iconColor: 'text-blue-400',
+      iconColor: 'text-blue-500',
       borderColor: 'border-blue-500/30'
     },
     {
@@ -37,7 +37,7 @@ const QuickActions: React.FC = () => {
       icon: BarChart2,
       link: '/transaction-history',
       color: 'bg-amber-500/20',
-      iconColor: 'text-amber-400',
+      iconColor: 'text-amber-500',
       borderColor: 'border-amber-500/30'
     },
     {
@@ -46,7 +46,7 @@ const QuickActions: React.FC = () => {
       icon: BookOpen,
       link: '/tax-filing-support',
       color: 'bg-rose-500/20',
-      iconColor: 'text-rose-400',
+      iconColor: 'text-rose-500',
       borderColor: 'border-rose-500/30'
     },
     {
@@ -55,7 +55,7 @@ const QuickActions: React.FC = () => {
       icon: LinkIcon,
       link: '/integration-settings',
       color: 'bg-indigo-500/20',
-      iconColor: 'text-indigo-400',
+      iconColor: 'text-indigo-500',
       borderColor: 'border-indigo-500/30'
     }
   ];
