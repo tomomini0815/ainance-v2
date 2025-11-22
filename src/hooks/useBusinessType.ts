@@ -113,6 +113,7 @@ export const useBusinessType = (userId?: string) => {
   // 業態形態を作成
   const createBusinessType = async (data: Omit<BusinessType, 'id' | 'user_id' | 'is_active' | 'created_at' | 'updated_at'>) => {
     console.log('createBusinessType called with data:', data);
+    console.log('Current user ID:', userId);
     
     if (!userId) {
       console.error('ユーザーIDがありません');
@@ -144,6 +145,8 @@ export const useBusinessType = (userId?: string) => {
       }
 
       console.log('Supabaseに保存するデータ:', newBusinessTypeData);
+      
+      // Supabaseにデータを挿入
       const { data: insertedData, error } = await supabase
         .from('business_type')
         .insert(newBusinessTypeData)
@@ -152,6 +155,9 @@ export const useBusinessType = (userId?: string) => {
 
       if (error) {
         console.error('Supabaseへの挿入に失敗しました:', error);
+        console.error('エラーコード:', error.code);
+        console.error('エラーメッセージ:', error.message);
+        console.error('エラー詳細:', error.details);
         throw error;
       }
 
@@ -166,8 +172,21 @@ export const useBusinessType = (userId?: string) => {
       return newBusinessType
     } catch (error: any) {
       console.error('業態形態の作成に失敗しました:', error)
+      console.error('エラーの詳細:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      
       // より詳細なエラーメッセージを表示
-      const errorMessage = error.message || error.error_description || '不明なエラー';
+      let errorMessage = '不明なエラー';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error_description) {
+        errorMessage = error.error_description;
+      }
+      
       toast.error(`業態形態の作成に失敗しました: ${errorMessage}`)
       return null
     }

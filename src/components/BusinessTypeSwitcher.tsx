@@ -171,8 +171,21 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
     } catch (error: any) {
       clearTimeout(timeoutId); // エラー発生時はタイムアウトをクリア
       console.error('Error in handleCreateSubmit:', error)
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      
       // より詳細なエラーメッセージを表示
-      const errorMessage = error.message || error.error_description || '不明なエラー';
+      let errorMessage = '不明なエラー';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error_description) {
+        errorMessage = error.error_description;
+      }
+      
       alert(`エラーが発生しました: ${errorMessage}`)
     } finally {
       setIsSubmitting(false)

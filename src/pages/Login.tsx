@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Chrome } from 'lucide-react';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ const Login: React.FC = () => {
     const [resetSent, setResetSent] = useState(false);
     const [showResetForm, setShowResetForm] = useState(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
-    const { signIn } = useAuth();
+    const { signIn, signInWithGoogle } = useAuth();
     const navigate = useNavigate();
 
     // ネットワーク状態の監視
@@ -83,6 +83,29 @@ const Login: React.FC = () => {
         }
     };
 
+    // Googleログイン機能
+    const handleGoogleLogin = async () => {
+        setError('');
+        setLoading(true);
+
+        // ネットワーク状態の確認
+        if (!navigator.onLine) {
+            setError('インターネットに接続されていません。ネットワーク接続を確認してください。');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            await signInWithGoogle();
+            navigate('/dashboard');
+        } catch (err: any) {
+            console.error('Googleログインエラー:', err);
+            setError(`Googleログインに失敗しました。エラー: ${err.message || '不明なエラー'}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
             <div className="w-full max-w-md">
@@ -148,56 +171,83 @@ const Login: React.FC = () => {
                             </button>
                         </form>
                     ) : (
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-medium text-text-muted mb-1.5">
-                                    メールアドレス
-                                </label>
+                        <>
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-medium text-text-muted mb-1.5">
+                                        メールアドレス
+                                    </label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-surface-highlight border border-border rounded-xl text-text-main focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm hover:bg-surface-hover"
+                                            placeholder="name@company.com"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-text-muted mb-1.5">
+                                        パスワード
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                                        <input
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-surface-highlight border border-border rounded-xl text-text-main focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm hover:bg-surface-hover"
+                                            placeholder="••••••••"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading || !isOnline}
+                                    className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <>
+                                            ログイン
+                                            <ArrowRight className="w-4 h-4 ml-2" />
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+
+                            {/* Googleログインボタン */}
+                            <div className="mt-6">
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-surface-highlight border border-border rounded-xl text-text-main focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm hover:bg-surface-hover"
-                                        placeholder="name@company.com"
-                                        required
-                                    />
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-border"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-sm">
+                                        <span className="px-2 bg-surface text-text-muted">
+                                            または
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6">
+                                    <button
+                                        onClick={handleGoogleLogin}
+                                        disabled={loading || !isOnline}
+                                        className="w-full flex items-center justify-center px-4 py-2.5 border border-border rounded-xl shadow-sm text-sm font-medium text-text-main bg-surface hover:bg-surface-highlight transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <Chrome className="w-5 h-5 mr-2" />
+                                        Googleでログイン
+                                    </button>
                                 </div>
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-text-muted mb-1.5">
-                                    パスワード
-                                </label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                                    <input
-                                        type="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-surface-highlight border border-border rounded-xl text-text-main focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm hover:bg-surface-hover"
-                                        placeholder="••••••••"
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading || !isOnline}
-                                className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading ? (
-                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                ) : (
-                                    <>
-                                        ログイン
-                                        <ArrowRight className="w-4 h-4 ml-2" />
-                                    </>
-                                )}
-                            </button>
-                        </form>
+                        </>
                     )}
 
                     <div className="mt-6 text-center">

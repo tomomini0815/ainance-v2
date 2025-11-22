@@ -1,6 +1,8 @@
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState } from 'react'
 import { useSession } from '../hooks/useSession'
 import { supabase } from '../lib/supabaseClient'
+import { auth, googleProvider } from '../lib/firebase'
+import { signInWithPopup, User as FirebaseUser } from 'firebase/auth'
 
 interface AuthContextType {
   user: any;
@@ -9,6 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<any>;
   signUp: (name: string, email: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -85,6 +88,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) throw error
       setSession(null)
     },
+    signInWithGoogle: async () => {
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const firebaseUser: FirebaseUser = result.user;
+        
+        // Firebaseユーザー情報をSupabaseに同期
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: await firebaseUser.getIdToken(),
+        });
+        
+        if (error) throw error;
+        
+        setSession(data.session);
+        return data;
+      } catch (error: any) {
+        console.error('Googleログインエラー:', error);
+        throw error;
+      }
+    }
   }), [session])
 
   // オフライン時の表示
