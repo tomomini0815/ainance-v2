@@ -12,9 +12,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   fallback 
 }) => {
   const auth = useAuth()
-  const { loading } = auth || {}
+  const { loading, isAuthenticated } = auth || {}
 
-  console.log('ProtectedRouteの認証状態:', { loading, auth })
+  console.log('ProtectedRouteの認証状態:', { loading, isAuthenticated })
 
   // 認証状態を確認中
   if (loading) {
@@ -25,7 +25,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     )
   }
 
-  // 常に子コンポーネントを表示（認証チェックを省略）
+  // 認証されていない場合はログインページにリダイレクト
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  // 認証されている場合は子コンポーネントを表示
   return <>{children}</>
 }
 
