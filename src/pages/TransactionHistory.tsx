@@ -196,10 +196,10 @@ const TransactionHistory: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">データを読み込んでいます...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-text-muted">データを読み込んでいます...</p>
         </div>
       </div>
     )
@@ -208,18 +208,18 @@ const TransactionHistory: React.FC = () => {
   // エラー処理を追加
   if (!transactions || transactions.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* ヘッダー */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div>
               <div className="flex items-center mb-2">
-                <Link to="/dashboard" className="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <ArrowLeft className="w-6 h-6 text-gray-600 hover:text-gray-900" />
+                <Link to="/dashboard" className="mr-4 p-2 rounded-lg hover:bg-surface-highlight transition-colors">
+                  <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
                 </Link>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">取引履歴</h1>
-                  <p className="text-gray-600 mt-1">すべての取引履歴を確認・管理できます</p>
+                  <h1 className="text-3xl font-bold text-text-main">取引履歴</h1>
+                  <p className="text-text-muted mt-1">すべての取引履歴を確認・管理できます</p>
                 </div>
               </div>
             </div>
@@ -236,46 +236,46 @@ const TransactionHistory: React.FC = () => {
 
           {/* 統計カード */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-            <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-gray-500">総取引数</div>
-                  <div className="text-2xl font-bold mt-1 text-gray-900">0</div>
+                  <div className="text-sm font-medium text-text-muted">総取引数</div>
+                  <div className="text-2xl font-bold mt-1 text-text-main">0</div>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-3">
-                  <FileText className="w-6 h-6 text-blue-500" />
+                <div className="rounded-lg bg-primary/10 p-3">
+                  <FileText className="w-6 h-6 text-primary" />
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-gray-500">収入</div>
-                  <div className="text-2xl font-bold mt-1 text-green-600">¥0</div>
+                  <div className="text-sm font-medium text-text-muted">収入</div>
+                  <div className="text-2xl font-bold mt-1 text-green-500">¥0</div>
                 </div>
-                <div className="rounded-lg bg-green-50 p-3">
+                <div className="rounded-lg bg-green-500/10 p-3">
                   <TrendingUp className="w-6 h-6 text-green-500" />
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-gray-500">支出</div>
-                  <div className="text-2xl font-bold mt-1 text-red-600">¥0</div>
+                  <div className="text-sm font-medium text-text-muted">支出</div>
+                  <div className="text-2xl font-bold mt-1 text-red-500">¥0</div>
                 </div>
-                <div className="rounded-lg bg-red-50 p-3">
+                <div className="rounded-lg bg-red-500/10 p-3">
                   <TrendingDown className="w-6 h-6 text-red-500" />
                 </div>
               </div>
             </div>
-            <div className="rounded-xl shadow-sm p-5 border border-green-100 bg-green-50 hover:shadow-md transition-shadow">
+            <div className="rounded-xl shadow-sm p-5 border border-green-500/20 bg-green-500/5 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-gray-500">収支</div>
-                  <div className="text-2xl font-bold mt-1 text-green-600">¥0</div>
+                  <div className="text-sm font-medium text-text-muted">収支</div>
+                  <div className="text-2xl font-bold mt-1 text-green-500">¥0</div>
                 </div>
-                <div className="rounded-lg bg-green-100 p-3">
+                <div className="rounded-lg bg-green-500/10 p-3">
                   <DollarSign className="w-6 h-6 text-green-500" />
                 </div>
               </div>
@@ -283,10 +283,10 @@ const TransactionHistory: React.FC = () => {
           </div>
 
           {/* メッセージ */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">取引が見つかりません</h3>
-            <p className="text-gray-500 mb-6">まだ取引が登録されていないか、条件に一致する取引がありません</p>
+          <div className="bg-surface rounded-xl shadow-sm border border-border p-8 text-center">
+            <FileText className="w-16 h-16 text-text-muted mx-auto mb-4" />
+            <h3 className="text-xl font-medium text-text-main mb-2">取引が見つかりません</h3>
+            <p className="text-text-muted mb-6">まだ取引が登録されていないか、条件に一致する取引がありません</p>
             <button
               onClick={() => setShowCreateForm(true)}
               className="btn-primary flex items-center mx-auto"
@@ -299,19 +299,19 @@ const TransactionHistory: React.FC = () => {
 
         {/* 新規取引作成モーダル */}
         {showCreateForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-border">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">新規取引</h2>
+                  <h2 className="text-xl font-bold text-text-main">新規取引</h2>
                   <button
                     onClick={() => {
                       setShowCreateForm(false)
                       setEditingTransaction(null)
                     }}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="p-2 rounded-lg hover:bg-surface-highlight transition-colors"
                   >
-                    <X className="w-5 h-5 text-gray-500" />
+                    <X className="w-5 h-5 text-text-muted" />
                   </button>
                 </div>
                 <TransactionForm
