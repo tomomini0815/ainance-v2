@@ -212,7 +212,7 @@ const LandingPage: React.FC = () => {
                   className="relative z-10 transform-style-3d group"
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/30 to-purple-500/30 rounded-3xl blur-3xl transform translate-y-10 group-hover:blur-2xl transition-all duration-700"></div>
-                  <div className="w-full rounded-3xl shadow-2xl border border-white/10 backdrop-blur-sm transform transition-transform duration-700 group-hover:rotate-x-0 group-hover:scale-105 bg-gradient-to-br from-blue-900/20 to-purple-900/20 flex items-center justify-center min-h-[400px]">
+                  <div className="w-full rounded-3xl shadow-2xl border-[8px] border-[#1e293b] relative z-10 bg-gradient-to-br from-blue-900/20 to-purple-900/20 flex items-center justify-center min-h-[400px]">
                     <img
                       src="/assets/real_dashboard_desktop.png"
                       alt="Dashboard Interface"
@@ -221,6 +221,10 @@ const LandingPage: React.FC = () => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         target.parentElement!.innerHTML = '<div class="text-center p-8"><div class="text-4xl mb-4">📊</div><p class="text-gray-400">Dashboard Preview</p></div>';
+                      }}
+                      onLoad={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        console.log('Desktop image loaded successfully:', target.src);
                       }}
                     />
                   </div>
@@ -240,6 +244,10 @@ const LandingPage: React.FC = () => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         target.parentElement!.innerHTML = '<div class="text-center p-4"><div class="text-2xl mb-2">📱</div><p class="text-gray-400 text-xs">Mobile Preview</p></div>';
+                      }}
+                      onLoad={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        console.log('Mobile image loaded successfully:', target.src);
                       }}
                     />
                   </motion.div>
@@ -378,6 +386,10 @@ const LandingPage: React.FC = () => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         target.parentElement!.innerHTML = '<div class="text-center p-8"><div class="text-4xl mb-4">📱</div><p class="text-gray-400">Mobile App Preview</p></div>';
+                      }}
+                      onLoad={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        console.log('Mobile app image loaded successfully:', target.src);
                       }}
                     />
                   </div>
