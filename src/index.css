@@ -6,12 +6,12 @@
 
 :root {
   /* Light Mode - Original Design */
-  --background: #f8fafc;
-  /* Slate 50 */
+  --background: #f1f3f5;
+  /* Light gray background for better contrast */
   --surface: #ffffff;
   /* White */
-  --surface-highlight: #f1f5f9;
-  /* Slate 100 */
+  --surface-highlight: #f8f9fa;
+  /* Very light gray for subtle highlights */
 
   /* Primary Color */
   --primary: #4f46e5;
