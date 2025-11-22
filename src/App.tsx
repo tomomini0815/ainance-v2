@@ -138,7 +138,6 @@ function App() {
 
             {/* デフォルトルート */}
             <Route path="/" element={<LandingPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </React.Suspense>
