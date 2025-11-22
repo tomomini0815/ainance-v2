@@ -94,7 +94,7 @@ const AITransactionList: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [confidenceFilter, setConfidenceFilter] = useState('')
   const [verificationFilter, setVerificationFilter] = useState('')
-  const [selectedTransactions, setSelectedTransactions] = useState<number[]>([])
+  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([])
   const [showLearningDetails, setShowLearningDetails] = useState(true)
   const [showPerformanceMetrics, setShowPerformanceMetrics] = useState(true)
   const [feedbackText, setFeedbackText] = useState('')
@@ -243,7 +243,7 @@ const AITransactionList: React.FC = () => {
   }
 
   // チェックボックス管理
-  const toggleSelectTransaction = (transactionId: number) => {
+  const toggleSelectTransaction = (transactionId: string) => {
     setSelectedTransactions(prev =>
       prev.includes(transactionId)
         ? prev.filter(id => id !== transactionId)
@@ -260,7 +260,7 @@ const AITransactionList: React.FC = () => {
   }
 
   // AI分類の確認処理（フィードバック付き）
-  const handleVerification = async (transactionId: number, verified: boolean) => {
+  const handleVerification = async (transactionId: string, verified: boolean) => {
     await verifyAITransaction(transactionId, verified, feedbackText)
     setFeedbackText('')
   }
@@ -286,7 +286,7 @@ const AITransactionList: React.FC = () => {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
       </div>
     )
@@ -603,7 +603,7 @@ const AITransactionList: React.FC = () => {
 
             {/* 金額範囲選択 */}
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">金額範囲</label>
+              <label className="block text-sm font-medium text-text-muted mb-2">金額範囲</label>
               <AmountRangeSelector
                 min={amountRange.min}
                 max={amountRange.max}
