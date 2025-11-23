@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Upload, FileText, CheckCircle, ArrowRight, Camera, X, RefreshCw, FileImage, Search, Eye, RotateCcw, Check, Save, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import DocumentUpload from '../components/DocumentUpload';
-// HeaderコンポーネントはApp.tsxでレンダリングされるため、ここでは削除
-// レシートスキャナーコンポーネントをインポート
-import ReceiptScanner from '../components/ReceiptScanner'
+import ReceiptCamera from '../components/ReceiptCamera';
 import { ReceiptData as ParsedReceiptData } from '../utils/ReceiptParser'
 
 interface ReceiptData {
@@ -106,9 +106,6 @@ const ReceiptProcessing: React.FC = () => {
   const [editData, setEditData] = useState<Partial<ReceiptData>>({})
 
   const [showCamera, setShowCamera] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
 
   // フィルターと検索の状態
   const [searchTerm, setSearchTerm] = useState('')
@@ -120,125 +117,18 @@ const ReceiptProcessing: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState(false)
 
   // カメラ開始処理
-  const startCamera = async () => {
-    // モバイル端末からのアクセスかどうかを判定
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    // HTTP環境でのカメラアクセスに関する警告を表示（localhostのみ許可）
-    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-      // モバイル端末からのアクセスの場合、特別な警告を表示
-      if (isMobile) {
-        const confirmed = window.confirm(
-          'モバイル端末からのカメラアクセスにはHTTPS環境が必要です。' +
-          '現在はHTTP環境のため、カメラが動作しない可能性があります。' +
-          'テスト目的であれば、PCのlocalhost環境でアクセスしてください。' +
-          '続行しますか？'
-        );
-        if (!confirmed) return;
-      } else {
-        // PCからのアクセスの場合
-        const confirmed = window.confirm(
-          'カメラ機能を使用するにはHTTPS環境またはlocalhostが必要です。' +
-          'HTTP環境ではカメラが動作しない可能性があります。' +
-          '続行しますか？'
-        );
-        if (!confirmed) return;
-      }
-    }
-
-    try {
-      // 背面カメラを優先して試す
-      let stream: MediaStream;
-
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        });
-      } catch (err) {
-        // 背面カメラが利用できない場合はフロントカメラを試す
-        console.warn('背面カメラが利用できません。フロントカメラを試します。', err);
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'user',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        });
-      }
-
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setShowCamera(true);
-    } catch (err) {
-      console.error('カメラの起動に失敗しました:', err);
-      // より詳細なエラーメッセージを表示
-      if (err instanceof DOMException && err.name === 'NotAllowedError') {
-        alert('カメラの使用が拒否されました。ブラウザの設定でカメラの使用を許可してください。');
-      } else if (err instanceof DOMException && err.name === 'NotFoundError') {
-        alert('利用可能なカメラが見つかりません。');
-      } else if (err instanceof DOMException && err.name === 'NotReadableError') {
-        alert('カメラが他のアプリケーションによって使用中です。');
-      } else {
-        // HTTP環境でのエラーメッセージを追加
-        if (location.protocol !== 'https:') {
-          // モバイル端末からのアクセスの場合、特別なメッセージを表示
-          if (isMobile) {
-            alert('モバイル端末からのカメラアクセスにはHTTPS環境が必要です。PCのlocalhost環境でテストしてください。');
-          } else {
-            alert('カメラの起動に失敗しました。HTTP環境ではカメラが動作しない可能性があります。HTTPS環境またはlocalhostでのみカメラ機能を使用できます。');
-          }
-        } else {
-          alert('カメラの起動に失敗しました。ブラウザの設定を確認してください。');
-        }
-      }
-    }
+  const startCamera = () => {
+    setShowCamera(true);
   }
 
   // カメラ停止処理
   const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
-    }
     setShowCamera(false)
-  }
-
-  // 写真撮影処理
-  const capturePhoto = async () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current
-      const canvas = canvasRef.current
-      const context = canvas.getContext('2d')
-
-      // canvasのサイズをvideoに合わせる
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
-
-      // videoの現在のフレームをcanvasに描画
-      if (context) {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-        // 画像をBlobとして取得
-        canvas.toBlob(async (blob) => {
-          if (blob) {
-            // OCR処理を実行
-            await processReceiptImage(blob)
-          }
-        }, 'image/jpeg', 0.95)
-      }
-
-      stopCamera()
-    }
   }
 
   // レシート画像処理（OCR実装の強化版）
   const processReceiptImage = async (imageBlob: Blob) => {
+    setShowCamera(false); // Close camera
     // Google Cloud Vision APIを使用して処理
     await processReceiptImageWithVisionAPI(imageBlob);
   };
@@ -707,15 +597,6 @@ const ReceiptProcessing: React.FC = () => {
   // カテゴリ一覧の取得
   const categories = Array.from(new Set(uploadedReceipts.map(r => r.category)));
 
-  // コンポーネントのクリーンアップ
-  React.useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop())
-      }
-    }
-  }, [])
-
   return (
     <div className="min-h-screen bg-background">
       {/* HeaderコンポーネントはApp.tsxでレンダリングされるため、ここでは削除 */}
@@ -844,41 +725,12 @@ const ReceiptProcessing: React.FC = () => {
           </div>
         </div>
 
-        {/* カメラモーダル */}
+        {/* 高性能レシートカメラ */}
         {showCamera && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div className="bg-surface rounded-lg w-full max-w-2xl">
-              <div className="p-4 border-b border-border flex justify-between items-center">
-                <h3 className="text-lg font-semibold">カメラでレシートを撮影</h3>
-                <button
-                  onClick={stopCamera}
-                  className="text-text-muted hover:text-text-muted"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="p-4">
-                <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-contain"
-                  />
-                  {/* 撮影ガイドオーバーレイ */}
-                  <div className="absolute inset-0 border-2 border-dashed border-white m-8 pointer-events-none"></div>
-                </div>
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={capturePhoto}
-                    className="w-16 h-16 rounded-full bg-surface border-4 border-border flex items-center justify-center hover:bg-surface-highlight transition-colors"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-red-500"></div>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ReceiptCamera
+            onCapture={processReceiptImage}
+            onClose={stopCamera}
+          />
         )}
 
         {/* 詳細モーダル */}
@@ -1031,26 +883,19 @@ const ReceiptProcessing: React.FC = () => {
           </div>
         )}
 
-        {/* キャンバス（非表示） */}
-        <canvas ref={canvasRef} className="hidden" />
-
         {/* アップロードエリア */}
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">レシートをアップロード</h2>
 
-          {/* レシートスキャナー */}
+          {/* カメラボタン */}
           <div className="mb-6">
-            <ReceiptScanner
-              onScanComplete={handleScanComplete}
-              onProcessingStateChange={(state) => {
-                setScanState(prev => ({
-                  ...prev,
-                  isProcessing: state.isProcessing,
-                  progress: state.progress,
-                  currentStep: state.currentStep
-                }));
-              }}
-            />
+            <button
+              onClick={startCamera}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Camera className="w-5 h-5" />
+              カメラでレシートを撮影
+            </button>
           </div>
 
           {/* 処理状態の表示 */}
