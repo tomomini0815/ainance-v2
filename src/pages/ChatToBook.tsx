@@ -24,6 +24,7 @@ const ChatToBook: React.FC = () => {
   const [editData, setEditData] = useState<Partial<Transaction>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
+  const [approvedTransactions, setApprovedTransactions] = useState<string[]>([]); // 承認された取引のIDを管理
   const recognitionRef = useRef<any>(null);
   const { user } = useAuth();
   const { currentBusinessType } = useBusinessType(user?.id);
@@ -84,11 +85,13 @@ const ChatToBook: React.FC = () => {
       const dbTransactionIds = dbTransactions.map((t: any) => t.id);
       
       // ローカルの一時データ（DBにまだ保存されていないデータ）のみをフィルタリング
-      const localTempData = prev.filter(t => !dbTransactionIds.includes(t.id));
+      // ただし、一括承認済みのデータは除外する
+      const localTempData = prev.filter(t => !dbTransactionIds.includes(t.id) && !approvedTransactions.includes(t.id));
       
       // DBから取得したデータとローカルの一時データを結合
+      // ただし、承認された取引は除外する
       const mergedTransactions = [
-        ...dbTransactions.map((t: any) => ({
+        ...dbTransactions.filter((t: any) => !approvedTransactions.includes(t.id)).map((t: any) => ({
           id: t.id,
           date: t.date,
           description: t.description || t.item || '',
@@ -103,7 +106,7 @@ const ChatToBook: React.FC = () => {
       
       return mergedTransactions;
     });
-  }, [dbTransactions]);
+  }, [dbTransactions, approvedTransactions]);
 
   const startListening = () => {
     if (recognitionRef.current) {
@@ -279,12 +282,16 @@ const ChatToBook: React.FC = () => {
       
       // Supabaseに保存するデータを準備（idフィールドを除外）
       const { id, ...transactionData } = transaction;
+      
+      // descriptionから「〇〇円」を削除
+      const cleanedDescription = transactionData.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
+      
       console.log('saveTransactionToDB - 保存するデータ:', transactionData);
       
       // useTransactionsフックのcreateTransaction関数を使用して取引を保存
       const result = await createTransaction({
         ...transactionData,
-        item: transactionData.description,
+        item: cleanedDescription,
         type: transactionData.type,
         creator: user?.id || '00000000-0000-0000-0000-000000000000'
       });
@@ -309,10 +316,11 @@ const ChatToBook: React.FC = () => {
       console.log('recordTransaction - 開始:', transaction);
       const savedTransaction = await saveTransactionToDB(transaction);
       console.log('recordTransaction - 保存された取引:', savedTransaction);
-      // 成功したらローカルリストから削除
+      // 成功したらローカルリストから削除し、承認された取引のIDを追加
       if (savedTransaction) {
         setTransactions(prev => prev.filter(t => t.id !== transaction.id));
-        console.log('recordTransaction - ローカルリストから削除しました');
+        setApprovedTransactions(prev => [...prev, transaction.id]);
+        console.log('recordTransaction - ローカルリストから削除し、承認された取引のIDを追加しました');
       }
       
       // データの再取得
@@ -384,6 +392,8 @@ const ChatToBook: React.FC = () => {
       // 成功した取引をローカルリストから削除
       setTransactions(prev => prev.filter(t => !selectedItems.some(item => item.id === t.id)));
       setSelectedTransactions(prev => prev.filter(id => !selectedItems.some(item => item.id === id)));
+      // 承認された取引のIDを追加
+      setApprovedTransactions(prev => [...prev, ...selectedItems.map(item => item.id)]);
       
       // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
       await fetchTransactions();
@@ -616,7 +626,7 @@ const ChatToBook: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-surface divide-y divide-border">
-                  {transactions.map((transaction) => (
+                  {transactions.filter(transaction => !approvedTransactions.includes(transaction.id)).map((transaction) => (
                     <tr key={transaction.id}>
                       <td className="px-4 py-3 text-sm">
                         <button
@@ -726,7 +736,7 @@ const ChatToBook: React.FC = () => {
                 </tbody>
               </table>
 
-              {transactions.length === 0 && (
+              {transactions.filter(transaction => !approvedTransactions.includes(transaction.id)).length === 0 && (
                 <div className="text-center py-8 text-text-muted">
                   <p>まだ取引がありません</p>
                   <p className="text-sm mt-2">音声入力で取引を追加してください</p>
