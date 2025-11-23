@@ -448,51 +448,44 @@ const TransactionHistory: React.FC = () => {
         </div>
 
         {/* 統計カード */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-          <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
+        <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow mb-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between">
                 <div className="text-xs font-medium text-text-muted">総取引数</div>
-                <div className="text-xl font-bold mt-1 text-text-main">{stats.total}</div>
-              </div>
-              <div className="rounded-lg bg-primary/10 p-2">
-                <FileText className="w-5 h-5 text-primary" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-medium text-text-muted">収入</div>
-                <div className="text-xl font-bold mt-1 text-green-500">¥{stats.income.toLocaleString()}</div>
-              </div>
-              <div className="rounded-lg bg-green-500/10 p-2">
-                <TrendingUp className="w-5 h-5 text-green-500" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-medium text-text-muted">支出</div>
-                <div className="text-xl font-bold mt-1 text-red-500">¥{stats.expense.toLocaleString()}</div>
-              </div>
-              <div className="rounded-lg bg-red-500/10 p-2">
-                <TrendingDown className="w-5 h-5 text-red-500" />
-              </div>
-            </div>
-          </div>
-          <div className={`rounded-xl shadow-sm p-4 border hover:shadow-md transition-shadow ${stats.balance >= 0 ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'
-            }`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-medium text-text-muted">収支</div>
-                <div className={`text-xl font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  ¥{stats.balance.toLocaleString()}
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <FileText className="w-5 h-5 text-primary" />
                 </div>
               </div>
-              <div className={`rounded-lg p-2 ${stats.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-                <DollarSign className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+              <div className="text-xl font-bold text-text-main mt-1">{stats.total}</div>
+            </div>
+            <div className="border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-medium text-text-muted">収入</div>
+                <div className="rounded-lg bg-green-500/10 p-2">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                </div>
+              </div>
+              <div className="text-xl font-bold text-green-500 mt-1">¥{stats.income.toLocaleString()}</div>
+            </div>
+            <div className="border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-medium text-text-muted">支出</div>
+                <div className="rounded-lg bg-red-500/10 p-2">
+                  <TrendingDown className="w-5 h-5 text-red-500" />
+                </div>
+              </div>
+              <div className="text-xl font-bold text-red-500 mt-1">¥{stats.expense.toLocaleString()}</div>
+            </div>
+            <div className="border rounded-lg p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-medium text-text-muted">収支</div>
+                <div className={`rounded-lg p-2 ${stats.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                  <DollarSign className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                </div>
+              </div>
+              <div className={`text-xl font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                ¥{stats.balance.toLocaleString()}
               </div>
             </div>
           </div>
