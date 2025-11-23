@@ -299,7 +299,7 @@ const AITransactionList: React.FC = () => {
         {/* 強化されたヘッダー */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
           <div className="flex items-center mb-4 lg:mb-0">
-            <Link to="/dashboard" className="mr-4 p-2 rounded-lg hover:bg-surface-highlight transition-colors">
+            <Link to="/dashboard" className="mr-4 p-2 rounded-lg bg-surface hover:bg-surface-highlight transition-colors">
               <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
             </Link>
             <div>
