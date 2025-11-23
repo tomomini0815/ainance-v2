@@ -209,8 +209,17 @@ const ChatToBook: React.FC = () => {
     setTimeout(() => {
       const transactionData = extractTransactionData(transcript);
 
+      // UUID v4 を生成する関数
+      const generateUUID = () => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0,
+            v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      };
+
       const newTransaction: Transaction = {
-        id: Date.now().toString(),
+        id: generateUUID(),
         ...transactionData
       };
 
@@ -319,7 +328,7 @@ const ChatToBook: React.FC = () => {
       // 成功したらローカルリストから削除し、承認された取引のIDを追加
       if (savedTransaction) {
         setTransactions(prev => prev.filter(t => t.id !== transaction.id));
-        setApprovedTransactions(prev => [...prev, transaction.id]);
+        setApprovedTransactions(prev => [...prev, savedTransaction.tempId]);
         console.log('recordTransaction - ローカルリストから削除し、承認された取引のIDを追加しました');
       }
       
@@ -393,7 +402,7 @@ const ChatToBook: React.FC = () => {
       setTransactions(prev => prev.filter(t => !selectedItems.some(item => item.id === t.id)));
       setSelectedTransactions(prev => prev.filter(id => !selectedItems.some(item => item.id === id)));
       // 承認された取引のIDを追加
-      setApprovedTransactions(prev => [...prev, ...selectedItems.map(item => item.id)]);
+      setApprovedTransactions(prev => [...prev, ...successfulTempIds]);
       
       // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
       await fetchTransactions();
