@@ -127,3 +127,120 @@ export const updateReceiptStatus = async (
 ): Promise<Receipt | null> => {
   return updateReceipt(id, { status });
 };
+
+/**
+ * レシートを承認して取引データを各テーブルに保存
+ */
+export const approveReceiptAndCreateTransaction = async (
+  receiptId: string,
+  receipt: Receipt,
+  businessType: 'individual' | 'corporation',
+  userId: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // 1. レシートステータスを'approved'に更新
+    const updatedReceipt = await updateReceiptStatus(receiptId, 'approved');
+    if (!updatedReceipt) {
+      throw new Error('レシートのステータス更新に失敗しました');
+    }
+
+    // 2. トランザクションデータの準備
+    const transactionData = {
+      item: receipt.merchant,
+      amount: receipt.amount,
+      date: receipt.date,
+      category: receipt.category,
+      type: 'expense', // 支出として記録
+      description: receipt.description || `${receipt.merchant}でのレシート`,
+      receipt_url: null, // 必要に応じて画像URLを設定
+      creator: userId,
+      tags: [],
+      location: null,
+      recurring: false,
+      recurring_frequency: null as any,
+    };
+
+    // 3. 事業タイプに応じて適切なテーブルに保存
+    const tableName = businessType === 'individual' 
+      ? 'individual_transactions' 
+      : 'corporation_transactions';
+
+    const transactionPayload = businessType === 'corporation'
+      ? {
+          ...transactionData,
+          department: null,
+          project_code: null,
+          approval_status: 'approved' as const,
+        }
+      : transactionData;
+
+    const { data: transactionResult, error: transactionError } = await supabase
+      .from(tableName)
+      .insert([transactionPayload])
+      .select()
+      .single();
+
+    if (transactionError) {
+      console.error('トランザクション保存エラー:', transactionError);
+      throw new Error(`${tableName}への保存に失敗しました: ${transactionError.message}`);
+    }
+
+    console.log(`${tableName}に保存成功:`, transactionResult);
+
+    // 4. AI処理結果をai_transactionsテーブルに保存
+    const aiTransactionData = {
+      item: receipt.merchant,
+      amount: receipt.amount,
+      category: receipt.category,
+      confidence: receipt.confidence,
+      ai_category: mapToAiCategory(receipt.category),
+      manual_verified: true, // 承認されたのでtrue
+      original_text: receipt.description || '',
+      receipt_url: null,
+      location: null,
+      creator: userId,
+      ai_suggestions: [],
+      learning_feedback: `承認済み: 信頼度${receipt.confidence}%`,
+      processing_time: null,
+    };
+
+    const { data: aiResult, error: aiError } = await supabase
+      .from('ai_transactions')
+      .insert([aiTransactionData])
+      .select()
+      .single();
+
+    if (aiError) {
+      console.warn('AI トランザクション保存エラー（警告のみ）:', aiError);
+      // AI保存は失敗してもメイン処理は継続
+    } else {
+      console.log('ai_transactionsに保存成功:', aiResult);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('approveReceiptAndCreateTransaction エラー:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '不明なエラーが発生しました',
+    };
+  }
+};
+
+/**
+ * カテゴリをAIカテゴリにマッピング
+ */
+const mapToAiCategory = (category: string): '交通費' | '食費' | '消耗品費' | '通信費' | '光熱費' | 'その他' => {
+  const categoryMap: Record<string, '交通費' | '食費' | '消耗品費' | '通信費' | '光熱費' | 'その他'> = {
+    '旅費交通費': '交通費',
+    '交通費': '交通費',
+    '接待交際費': '食費',
+    '食費': '食費',
+    '消耗品費': '消耗品費',
+    '通信費': '通信費',
+    '水道光熱費': '光熱費',
+    '光熱費': '光熱費',
+  };
+
+  return categoryMap[category] || 'その他';
+};

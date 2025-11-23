@@ -3,8 +3,9 @@ import { Upload, FileText, CheckCircle, ArrowRight, Camera, X, RefreshCw, FileIm
 import DocumentUpload from '../components/DocumentUpload';
 import ReceiptCamera from '../components/ReceiptCamera';
 import { ReceiptData as ParsedReceiptData } from '../utils/ReceiptParser'
-import { saveReceipt, getReceipts, updateReceiptStatus } from '../services/receiptService'
+import { saveReceipt, getReceipts, updateReceiptStatus, approveReceiptAndCreateTransaction } from '../services/receiptService'
 import { useAuth } from '../components/AuthProvider'
+import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 interface ReceiptData {
   id: string
@@ -50,6 +51,7 @@ interface ScanState {
 
 const ReceiptProcessing: React.FC = () => {
   const { user } = useAuth(); // 認証されたユーザーを取得
+  const { currentBusinessType } = useBusinessTypeContext(); // 事業タイプを取得
 
   const [uploadedReceipts, setUploadedReceipts] = useState<ReceiptData[]>([])
 
@@ -318,31 +320,48 @@ const ReceiptProcessing: React.FC = () => {
     });
   };
 
-  // テキストからレシート情報を抽出する関数（改善版）
+  // テキストからレシート情報を抽出する関数（日本語対応強化版）
   const extractReceiptData = (text: string) => {
     console.log('抽出対象テキスト:', text);
 
-    // 正規表現パターン（日本語レシート対応）
+    // 全角数字を半角に変換するヘルパー関数
+    const normalizeText = (str: string) => {
+      return str.replace(/[０-９]/g, (s) => {
+        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+      }).replace(/[Ａ-Ｚａ-ｚ]/g, (s) => {
+        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+      });
+    };
+
+    const normalizedText = normalizeText(text);
+
+    // 正規表現パターン（日本語レシート対応強化）
     const patterns = {
-      // 金額パターン（様々な表記に対応）
+      // 金額パターン
       totalAmount: [
-        /合計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
-        /総計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
+        /(?:合計|総計|お買上計|領収金額|支払金額|請求金額)[\s:：]*[¥￥]*\s*([0-9,]+)/i,
+        /合\s*計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
         /小計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
-        /計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
-        /total[\s:：]*[¥￥]*\s*([0-9,]+)/i,
-        /[¥￥]\s*([0-9,]+)/
+        /(?:現\s*金|クレ(?:ジット)?|PayPay|d払い|auPAY|LINE\s*Pay)[\s:：]*[¥￥]*\s*([0-9,]+)/i,
+        /[¥￥]\s*([0-9,]+)(?!\s*[\-\+])/ // 単独の金額表記（マイナス表記を除く）
       ],
       // 日付パターン
       date: [
         /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})[日]?/,
         /(\d{2,4})[\/\-](\d{1,2})[\/\-](\d{1,2})/,
-        /(\d{4})\.(\d{2})\.(\d{2})/
+        /(\d{4})\.(\d{2})\.(\d{2})/,
+        /(?:令和|R)(\d{1,2})[年\/\-](\d{1,2})[月\/\-](\d{1,2})[日]?/ // 和暦対応
       ],
       // 税率パターン
-      taxRate: /[税消費]*税?\s*([0-9]+)\s*%/i,
-      // 店舗名パターン（行の最初の方に来ることが多い）
-      storeName: /^([ァ-ヶー・ A-Za-z0-9　\s]+)/m
+      taxRate: [
+        /(?:10|8)%対象/i,
+        /消費税等?\s*\(?(10|8)%\)?/i,
+        /内税/
+      ],
+      // 電話番号パターン
+      phone: /(?:TEL|電話|Tel|tel)[:：\s]*(\d{2,4}[-\s]\d{2,4}[-\s]\d{3,4})/,
+      // インボイス登録番号
+      invoice: /(T\d{13})/
     };
 
     // 店舗名の候補を検索
@@ -357,28 +376,56 @@ const ReceiptProcessing: React.FC = () => {
       'スターバックス', 'スタバ', 'Starbucks',
       'マクドナルド', "McDonald's",
       'すき家', '吉野家', '松屋',
-      'イオン', 'AEON'
+      'イオン', 'AEON', 'マックスバリュ',
+      'ユニクロ', 'UNIQLO', 'GU',
+      'ニトリ', '無印良品',
+      'ダイソー', 'DAISO', 'セリア',
+      'マツモトキヨシ', 'ウエルシア',
+      'ドン・キホーテ', 'ビックカメラ', 'ヨドバシカメラ'
     ];
 
-    // テキストの最初の数行から店舗名を探す
-    const lines = text.split('\n').slice(0, 5);
+    // 1. キーワードマッチング
     for (const keyword of merchantKeywords) {
-      for (const line of lines) {
-        if (line.includes(keyword)) {
-          merchant = keyword;
-          merchantConfidence = 90;
-          break;
-        }
+      if (normalizedText.includes(keyword)) {
+        merchant = keyword;
+        merchantConfidence = 95;
+        break;
       }
-      if (merchantConfidence > 0) break;
     }
 
-    // キーワードで見つからない場合は最初の行を使用
+    const lines = normalizedText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+    // 2. 電話番号の近くにある行を店舗名として推測
+    if (merchantConfidence < 50) {
+      const phoneMatch = normalizedText.match(patterns.phone);
+      if (phoneMatch) {
+        // 電話番号が見つかった場合、その数行前を探索
+        const phoneIndex = lines.findIndex(line => line.includes(phoneMatch[1]) || line.includes(phoneMatch[0]));
+        if (phoneIndex > 0) {
+          // 電話番号の1-3行前をチェック
+          for (let i = Math.max(0, phoneIndex - 3); i < phoneIndex; i++) {
+            const line = lines[i];
+            // 明らかに店舗名っぽくない行を除外（日付や金額のみなど）
+            if (line.length > 2 && line.length < 20 && !line.match(/[\d\/\-\.:\s]+$/)) {
+              merchant = line;
+              merchantConfidence = 70;
+              break; // 一番上の行を優先したい場合はループ順序を逆にするか、ここでbreakしない
+            }
+          }
+        }
+      }
+    }
+
+    // 3. 最初の行を使用（フォールバック）
     if (merchantConfidence === 0 && lines.length > 0) {
-      const firstLine = lines[0].trim();
-      if (firstLine.length > 0 && firstLine.length < 30) {
+      const firstLine = lines[0];
+      // 記号や数字だけの行を除外
+      if (firstLine.length > 1 && !/^[\d\s\-\/\.:¥￥]+$/.test(firstLine)) {
         merchant = firstLine;
-        merchantConfidence = 60;
+        merchantConfidence = 50;
+      } else if (lines.length > 1) {
+        merchant = lines[1]; // 2行目を試す
+        merchantConfidence = 40;
       }
     }
 
@@ -386,15 +433,33 @@ const ReceiptProcessing: React.FC = () => {
     let date = '';
     let dateConfidence = 0;
     for (const pattern of patterns.date) {
-      const dateMatch = text.match(pattern);
+      const dateMatch = normalizedText.match(pattern);
       if (dateMatch) {
-        const year = dateMatch[1]?.length === 2 ? '20' + dateMatch[1] : dateMatch[1];
-        const month = dateMatch[2]?.padStart(2, '0');
-        const day = dateMatch[3]?.padStart(2, '0');
-        date = `${year}-${month}-${day}`;
-        dateConfidence = 85;
-        break;
+        let year = dateMatch[1];
+        const month = dateMatch[2].padStart(2, '0');
+        const day = dateMatch[3].padStart(2, '0');
+
+        // 和暦変換
+        if (pattern.toString().includes('令和') || pattern.toString().includes('R')) {
+          year = (parseInt(year) + 2018).toString();
+        } else if (year.length === 2) {
+          year = '20' + year;
+        }
+
+        // 有効な日付かチェック
+        const dateObj = new Date(`${year}-${month}-${day}`);
+        if (!isNaN(dateObj.getTime()) && dateObj.getFullYear() > 2000 && dateObj.getFullYear() < 2030) {
+          date = `${year}-${month}-${day}`;
+          dateConfidence = 90;
+          break;
+        }
       }
+    }
+
+    // 日付が見つからない場合、今日の日付を設定
+    if (!date) {
+      date = new Date().toISOString().split('T')[0];
+      dateConfidence = 10; // 低い信頼度
     }
 
     // 金額を検索
@@ -402,28 +467,32 @@ const ReceiptProcessing: React.FC = () => {
     let amountConfidence = 0;
 
     for (const pattern of patterns.totalAmount) {
-      const amountMatch = text.match(pattern);
+      const amountMatch = normalizedText.match(pattern);
       if (amountMatch) {
-        const amountStr = amountMatch[1].replace(/,/g, '');
+        const amountStr = amountMatch[1].replace(/[,，]/g, ''); // 全角カンマも考慮
         const parsedAmount = parseInt(amountStr);
         if (!isNaN(parsedAmount) && parsedAmount > 0) {
           amount = parsedAmount;
-          amountConfidence = 85;
+          amountConfidence = 90;
           break;
         }
       }
     }
 
-    // 金額が見つからない場合、全ての数字から最大値を探す
+    // 金額が見つからない場合、全ての数字から最大値を探す（ただし日付や電話番号と誤認しないように注意）
     if (amount === 0) {
-      const allNumbers = text.match(/[0-9,]+/g);
+      const allNumbers = normalizedText.match(/[0-9,]+/g);
       if (allNumbers) {
         const numbers = allNumbers
-          .map(n => parseInt(n.replace(/,/g, '')))
-          .filter(n => !isNaN(n) && n > 0 && n < 1000000);
+          .map(n => parseInt(n.replace(/[,，]/g, '')))
+          .filter(n => !isNaN(n) && n > 0 && n < 1000000); // 100万円未満
+
+        // 日付っぽい数字（20240101など）を除外するロジックが必要だが、簡易的に最大値を取る
         if (numbers.length > 0) {
+          // 単純な最大値ではなく、頻出する金額や、合計っぽい位置にあるものを探すべきだが、
+          // ここでは簡易的に最大値を採用しつつ信頼度を下げる
           amount = Math.max(...numbers);
-          amountConfidence = 60;
+          amountConfidence = 40;
         }
       }
     }
@@ -431,14 +500,21 @@ const ReceiptProcessing: React.FC = () => {
     // 税率を検索
     let taxRate = 10; // デフォルト10%
     let taxRateConfidence = 50;
-    const taxRateMatch = text.match(patterns.taxRate);
-    if (taxRateMatch) {
-      taxRate = parseInt(taxRateMatch[1]);
-      taxRateConfidence = 85;
+
+    if (normalizedText.match(/8%|軽減税率/)) {
+      taxRate = 8;
+      taxRateConfidence = 80;
+    } else if (normalizedText.match(/10%/)) {
+      taxRate = 10;
+      taxRateConfidence = 80;
     }
 
+    // インボイス登録番号の抽出（あれば信頼度アップ）
+    const invoiceMatch = normalizedText.match(patterns.invoice);
+    const hasInvoice = !!invoiceMatch;
+
     const totalConfidence = Math.round(
-      (merchantConfidence + dateConfidence + amountConfidence + taxRateConfidence) / 4
+      (merchantConfidence + dateConfidence + amountConfidence + taxRateConfidence + (hasInvoice ? 20 : 0)) / (hasInvoice ? 5 : 4)
     );
 
     console.log('抽出結果:', {
@@ -446,6 +522,7 @@ const ReceiptProcessing: React.FC = () => {
       date,
       amount,
       taxRate,
+      hasInvoice,
       confidence: totalConfidence
     });
 
@@ -455,8 +532,8 @@ const ReceiptProcessing: React.FC = () => {
       amount,
       taxRate,
       category: '未分類', // デフォルトカテゴリ
-      description: 'OCRで抽出',
-      confidence: totalConfidence,
+      description: hasInvoice ? `インボイス登録番号: ${invoiceMatch![1]}` : 'OCRで抽出',
+      confidence: Math.min(100, totalConfidence),
       confidenceScores: {
         merchant: merchantConfidence,
         date: dateConfidence,
@@ -502,11 +579,56 @@ const ReceiptProcessing: React.FC = () => {
   }
 
   const handleApprove = async (id: string) => {
-    setUploadedReceipts(prev => prev.map(receipt =>
-      receipt.id === id ? { ...receipt, status: 'approved' as const } : receipt
-    ))
-    // Supabaseにも保存
-    await updateReceiptStatus(id, 'approved');
+    // レシート情報を取得
+    const receipt = uploadedReceipts.find(r => r.id === id);
+    if (!receipt || !user?.uid) {
+      console.error('レシートまたはユーザーが見つかりません');
+      return;
+    }
+
+    // 事業タイプを取得（デフォルトは個人）
+    const businessType = currentBusinessType?.business_type || 'individual';
+
+    // UIを先に更新（楽観的更新）
+    setUploadedReceipts(prev => prev.map(r =>
+      r.id === id ? { ...r, status: 'approved' as const } : r
+    ));
+
+    // レシートデータを作成
+    const receiptData = {
+      id: receipt.id,
+      user_id: user.uid,
+      date: receipt.date,
+      merchant: receipt.merchant,
+      amount: receipt.amount,
+      category: receipt.category,
+      description: receipt.description,
+      confidence: receipt.confidence,
+      status: 'approved' as const,
+      tax_rate: receipt.taxRate,
+      confidence_scores: receipt.confidenceScores,
+    };
+
+    // 各テーブルに保存
+    const result = await approveReceiptAndCreateTransaction(
+      id,
+      receiptData,
+      businessType,
+      user.uid
+    );
+
+    if (result.success) {
+      console.log('✅ レシート承認完了: 各テーブルに保存されました');
+      // 成功通知を表示（オプション）
+      alert(`レシートが承認され、${businessType === 'individual' ? '個人' : '法人'}の取引として記録されました！`);
+    } else {
+      console.error('❌ レシート承認エラー:', result.error);
+      // エラー時は状態を元に戻す
+      setUploadedReceipts(prev => prev.map(r =>
+        r.id === id ? { ...r, status: 'pending' as const } : r
+      ));
+      alert(`エラーが発生しました: ${result.error}`);
+    }
   }
 
   const handleReject = async (id: string) => {
@@ -764,27 +886,40 @@ const ReceiptProcessing: React.FC = () => {
                   最近のアップロード
                 </h2>
                 <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-background rounded-xl border border-border hover:border-primary/50 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                          <FileText className="w-5 h-5" />
+                  {uploadedReceipts.length > 0 ? (
+                    uploadedReceipts.slice(0, 3).map((receipt) => (
+                      <div key={receipt.id} className="flex items-center justify-between p-4 bg-background rounded-xl border border-border hover:border-primary/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-text-main">{receipt.merchant}</p>
+                            <p className="text-sm text-text-muted">{receipt.date} {receipt.amount > 0 ? `¥${receipt.amount.toLocaleString()}` : ''}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-text-main">セブンイレブン ジャパン</p>
-                          <p className="text-sm text-text-muted">2024年3月{15 - i}日 12:30</p>
+                        <div className="flex items-center gap-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${receipt.status === 'approved' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                            receipt.status === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                              'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                            }`}>
+                            {receipt.status === 'approved' ? '処理完了' :
+                              receipt.status === 'rejected' ? '却下' : '処理中'}
+                          </span>
+                          <button
+                            onClick={() => showReceiptDetails(receipt)}
+                            className="p-2 text-text-muted hover:text-primary transition-colors"
+                          >
+                            <ArrowRight className="w-5 h-5" />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
-                          処理完了
-                        </span>
-                        <button className="p-2 text-text-muted hover:text-primary transition-colors">
-                          <ArrowRight className="w-5 h-5" />
-                        </button>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-text-muted">
+                      まだアップロードされたレシートはありません
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
