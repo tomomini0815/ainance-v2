@@ -1,5 +1,4 @@
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState } from 'react'
-import { useSession } from '../hooks/useSession'
 import { supabase } from '../lib/supabaseClient'
 // Firebaseのインポートを一時的に無効化しました
 // import { auth, googleProvider } from '../lib/firebase'
@@ -23,7 +22,8 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [session, setSession] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true) // 初期値をtrueに変更
   const [isOnline, setIsOnline] = useState(navigator.onLine)
 
   // ネットワーク状態の監視
@@ -42,43 +42,70 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Supabaseセッション状態の監視
   useEffect(() => {
+    // 初期セッションの取得
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null)
+      setLoading(false) // セッション取得後にloadingをfalseに設定
+    })
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
+      setUser(session?.user || null)
+      setLoading(false) // 認証状態変更時にloadingをfalseに設定
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    
-    if (error) throw error
-    return data
+    setLoading(true) // ログイン処理開始時にloadingをtrueに設定
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (error) throw error
+      setUser(data.user)
+      return data
+    } finally {
+      setLoading(false) // ログイン処理終了時にloadingをfalseに設定
+    }
   }
 
   const signUp = async (name: string, email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
+    setLoading(true) // サインアップ処理開始時にloadingをtrueに設定
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          }
         }
-      }
-    })
-    
-    if (error) throw error
-    return data
+      })
+      
+      if (error) throw error
+      setUser(data.user)
+      return data
+    } finally {
+      setLoading(false) // サインアップ処理終了時にloadingをfalseに設定
+    }
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    setLoading(true) // ログアウト処理開始時にloadingをtrueに設定
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      setUser(null)
+    } finally {
+      setLoading(false) // ログアウト処理終了時にloadingをfalseに設定
+    }
   }
 
   // Firebase関連の関数を一時的に無効化しました
@@ -94,16 +121,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // };
 
   const value = useMemo(() => ({
-    user: session?.user || null,
-    isAuthenticated: !!session?.user,
-    // loadingステートを常にfalseに設定し、即時表示を実現
-    loading: false,
+    user: user,
+    isAuthenticated: !!user,
+    loading, // 実際のloadingステートを使用
     signIn,
     signUp,
     signOut,
     // Firebase関連の関数を一時的に無効化しました
     // signInWithGoogle,
-  }), [session])
+  }), [user, loading]) // userとloadingを依存配列に追加
 
   return (
     <AuthContext.Provider value={value}>

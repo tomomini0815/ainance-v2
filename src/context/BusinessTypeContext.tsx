@@ -43,6 +43,11 @@ export const BusinessTypeProvider: React.FC<{ children: React.ReactNode }> = ({ 
         refetch
     } = useBusinessType(user?.id);
 
+    console.log('BusinessTypeProvider - user:', user);
+    console.log('BusinessTypeProvider - hookCurrentBusinessType:', hookCurrentBusinessType);
+    console.log('BusinessTypeProvider - hookBusinessTypes:', hookBusinessTypes);
+    console.log('BusinessTypeProvider - hookLoading:', hookLoading);
+
     // Context state to ensure we can trigger updates
     const [currentBusinessType, setCurrentBusinessType] = useState<BusinessType | null>(null);
     const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([]);
@@ -50,6 +55,7 @@ export const BusinessTypeProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Sync with hook state
     useEffect(() => {
+        console.log('BusinessTypeProvider - hook state updated');
         setCurrentBusinessType(hookCurrentBusinessType);
         setBusinessTypes(hookBusinessTypes);
         setLoading(hookLoading);

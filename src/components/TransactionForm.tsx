@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { X, Star, Clock, Zap, Calendar, Tag, Wallet, TrendingUp, TrendingDown } from 'lucide-react'
+import { Star, Clock, Zap, Calendar, Tag, Wallet, TrendingUp, TrendingDown } from 'lucide-react'
 
 interface Transaction {
   id?: number
@@ -64,17 +64,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
   }, [])
 
   const categoryOptions = useMemo(() => {
-    const commonCategories = [
-      '食費', '交通費', '消耗品費', '通信費', '光熱費', '住居費', '医療費', '教育費',
-      '娯楽費', '衣服費', '美容費', '交際費', '給与', '副業収入', '賞与', '事業所得',
-      '配当金', '利息', '家賃収入', 'その他収入', 'その他支出',
-      // 新規勘定科目
+    const accountCategories = [
       '接待交際費', '消耗品費', '修繕費', '保険料', '支払手数料', '新聞図書費', 
       '外注費', '租税公課', '水道光熱費', '通信費', '地代家賃', '旅費交通費', 
-      '広告宣伝費', '雑費'
+      '広告宣伝費', '雑費', '業務委託収入'
     ]
 
-    const allCategories = [...new Set([...favoriteCategories, ...commonCategories])]
+    const allCategories = [...new Set([...favoriteCategories, ...accountCategories])]
     return allCategories
   }, [favoriteCategories])
 
@@ -169,7 +165,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     setRecentTransactions(newRecent)
     localStorage.setItem('recentTransactions', JSON.stringify(newRecent))
 
-    onSubmit({ ...formData, creator })
+    // typeプロパティが設定されていない場合、amountの正負で判断
+    const transactionData = { ...formData, creator };
+    if (!transactionData.type) {
+      const amount = typeof transactionData.amount === 'string' ? parseFloat(transactionData.amount) : transactionData.amount;
+      transactionData.type = amount > 0 ? 'income' : 'expense';
+      console.log('typeプロパティを自動設定:', transactionData.type);
+    }
+
+    onSubmit(transactionData)
   }
 
   const getCategoryIcon = (category: string, type: string) => {
@@ -197,16 +201,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
   return (
     <form onSubmit={handleSubmit} className="space-y-6 text-text-main">
       <div className="flex justify-between items-center mb-6 border-b border-border pb-4">
-        <h2 className="text-xl font-bold text-text-main">
-          {transaction ? '取引編集' : '新規取引作成'}
-        </h2>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-text-muted hover:text-text-main transition-colors p-1 hover:bg-white/5 rounded-lg"
-        >
-          <X className="w-6 h-6" />
-        </button>
+        <div></div>
+        <div></div>
       </div>
 
       {recentTransactions.length > 0 && !transaction && (
@@ -240,66 +236,30 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-text-muted mb-1.5">取引項目</label>
-          <div className="relative">
-            <input
-              type="text"
-              name="item"
-              value={formData.item}
-              onChange={handleChange}
-              placeholder="例: コンビニ買い物"
-              className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main placeholder-text-muted transition-all"
-              required
-              list="item-options"
-            />
-            <datalist id="item-options">
-              <option value="コンビニ買い物" />
-              <option value="スーパーマーケット" />
-              <option value="給与" />
-              <option value="交通費" />
-              <option value="外食" />
-              <option value="カフェ" />
-              <option value="ガソリン" />
-              <option value="電車賃" />
-            </datalist>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-text-muted mb-1.5">金額</label>
-          <div className="relative">
-            <input
-              type="number"
-              name="amount"
-              value={formData.amount || ''}
-              onChange={handleChange}
-              onFocus={() => setIsAmountFocused(true)}
-              onBlur={() => setTimeout(() => setIsAmountFocused(false), 200)}
-              className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main placeholder-text-muted transition-all"
-              required
-              min="0"
-              step="1"
-            />
-            {isAmountFocused && (
-              <div className="absolute top-full left-0 mt-2 w-full bg-surface border border-border rounded-xl shadow-xl z-10 p-3 animate-in fade-in zoom-in-95 duration-200">
-                <div className="text-xs text-text-muted mb-2">クイック入力:</div>
-                <div className="flex flex-wrap gap-2">
-                  {quickAmountOptions.map(amount => (
-                    <button
-                      key={amount}
-                      type="button"
-                      onClick={() => handleQuickAmountSelect(amount)}
-                      className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${quickAmount === amount
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                        : 'bg-surface-highlight text-text-secondary hover:bg-surface-highlight border border-border'
-                        }`}
-                    >
-                      ¥{amount.toLocaleString()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          <label className="block text-sm font-medium text-text-muted mb-1.5">タイプ</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
+              className={`flex items-center justify-center px-4 py-2.5 rounded-xl border transition-all ${formData.type === 'expense'
+                ? 'bg-rose-500/20 border-rose-500/30 text-rose-400 shadow-lg shadow-rose-500/10'
+                : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
+                }`}
+            >
+              <TrendingDown className="w-4 h-4 mr-2" />
+              支出
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
+              className={`flex items-center justify-center px-4 py-2.5 rounded-xl border transition-all ${formData.type === 'income'
+                ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/10'
+                : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
+                }`}
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              収入
+            </button>
           </div>
         </div>
 
@@ -319,7 +279,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-text-muted mb-1.5">カテゴリ</label>
+          <label className="block text-sm font-medium text-text-muted mb-1.5">カテゴリ(勘定科目)</label>
           <div className="relative">
             <select
               name="category"
@@ -329,7 +289,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
               required
             >
               <option value="" className="bg-surface-highlight text-text-muted">カテゴリを選択</option>
-              {categoryOptions.map(category => (
+              <option value="業務委託収入" className="bg-surface-highlight">業務委託収入</option>
+              {categoryOptions.filter(category => category !== '業務委託収入').map(category => (
                 <option key={category} value={category} className="bg-surface-highlight text-text-main">{category}</option>
               ))}
             </select>
@@ -368,30 +329,89 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-text-muted mb-1.5">タイプ</label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
-              className={`flex items-center justify-center px-4 py-2.5 rounded-xl border transition-all ${formData.type === 'expense'
-                ? 'bg-rose-500/20 border-rose-500/30 text-rose-400 shadow-lg shadow-rose-500/10'
-                : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
-                }`}
+          <label className="block text-sm font-medium text-text-muted mb-1.5">取引項目</label>
+          <div className="relative">
+            <select
+              name="item"
+              value={formData.item}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all"
+              required
             >
-              <TrendingDown className="w-4 h-4 mr-2" />
-              支出
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
-              className={`flex items-center justify-center px-4 py-2.5 rounded-xl border transition-all ${formData.type === 'income'
-                ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/10'
-                : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
-                }`}
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              収入
-            </button>
+              <option value="" className="bg-surface-highlight text-text-muted">取引項目を選択</option>
+              <option value="売上" className="bg-surface-highlight">売上</option>
+              <option value="コンビニ買い物" className="bg-surface-highlight">コンビニ買い物</option>
+              <option value="飲食代" className="bg-surface-highlight">飲食代</option>
+              <option value="事務用品" className="bg-surface-highlight">事務用品</option>
+              <option value="コーヒー代" className="bg-surface-highlight">コーヒー代</option>
+              <option value="新聞代" className="bg-surface-highlight">新聞代</option>
+              <option value="書籍代" className="bg-surface-highlight">書籍代</option>
+              <option value="切手代" className="bg-surface-highlight">切手代</option>
+              <option value="宅配便代" className="bg-surface-highlight">宅配便代</option>
+              <option value="電気代" className="bg-surface-highlight">電気代</option>
+              <option value="家賃" className="bg-surface-highlight">家賃</option>
+              <option value="インターネット接続料" className="bg-surface-highlight">インターネット接続料</option>
+              <option value="電話料金" className="bg-surface-highlight">電話料金</option>
+              <option value="水道代" className="bg-surface-highlight">水道代</option>
+              <option value="ガス代" className="bg-surface-highlight">ガス代</option>
+              <option value="出張費" className="bg-surface-highlight">出張費</option>
+              <option value="修理代" className="bg-surface-highlight">修理代</option>
+              <option value="高速道路料金" className="bg-surface-highlight">高速道路料金</option>
+              <option value="固定資産税" className="bg-surface-highlight">固定資産税</option>
+              <option value="自動車税" className="bg-surface-highlight">自動車税</option>
+              <option value="印紙税" className="bg-surface-highlight">印紙税</option>
+              <option value="チラシ作成費" className="bg-surface-highlight">チラシ作成費</option>
+              <option value="ウェブ広告費" className="bg-surface-highlight">ウェブ広告費</option>
+              <option value="看板設置費" className="bg-surface-highlight">看板設置費</option>
+              <option value="贈答品代" className="bg-surface-highlight">贈答品代</option>
+              <option value="火災保険料" className="bg-surface-highlight">火災保険料</option>
+              <option value="振込手数料" className="bg-surface-highlight">振込手数料</option>
+              <option value="税理士報酬" className="bg-surface-highlight">税理士報酬</option>
+              <option value="デザイン委託費" className="bg-surface-highlight">デザイン委託費</option>
+              <option value="システム開発費" className="bg-surface-highlight">システム開発費</option>
+              <option value="少額費用" className="bg-surface-highlight">少額費用</option>
+            </select>
+            <div className="absolute right-3.5 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <Zap className="w-4 h-4 text-text-muted" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-text-muted mb-1.5">金額</label>
+          <div className="relative">
+            <input
+              type="number"
+              name="amount"
+              value={formData.amount || ''}
+              onChange={handleChange}
+              onFocus={() => setIsAmountFocused(true)}
+              onBlur={() => setTimeout(() => setIsAmountFocused(false), 200)}
+              className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main placeholder-text-muted transition-all"
+              required
+              min="0"
+              step="1"
+            />
+            {isAmountFocused && (
+              <div className="absolute top-full left-0 mt-2 w-full bg-surface border border-border rounded-xl shadow-xl z-10 p-3 animate-in fade-in zoom-in-95 duration-200">
+                <div className="text-xs text-text-muted mb-2">クイック入力:</div>
+                <div className="flex flex-wrap gap-2">
+                  {quickAmountOptions.map(amount => (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => handleQuickAmountSelect(amount)}
+                      className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${quickAmount === amount
+                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                        : 'bg-surface-highlight text-text-secondary hover:bg-surface-highlight border border-border'
+                        }`}
+                    >
+                      ¥{amount.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -471,7 +491,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                 onClick={() => handleTagRemove(tag)}
                 className="ml-1.5 hover:text-primary/80 transition-colors"
               >
-                <X className="w-3 h-3" />
+                <span className="text-xs">×</span>
               </button>
             </span>
           ))}

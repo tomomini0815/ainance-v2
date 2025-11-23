@@ -1,12 +1,14 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Search, Filter, Plus, ChevronDown, Calendar, DollarSign, Tag, FileText, Download, Trash2, Edit, TrendingUp, TrendingDown, X, Upload } from 'lucide-react'
 import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
 import TransactionTable from '../components/TransactionTable'
 import TransactionForm from '../components/TransactionForm'
+import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 const TransactionHistory: React.FC = () => {
-  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction } = useMySQLTransactions()
+  const { currentBusinessType } = useBusinessTypeContext()
+  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction, fetchTransactions } = useMySQLTransactions(currentBusinessType?.id)
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<any>(null)
@@ -19,6 +21,13 @@ const TransactionHistory: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+
+  // データの再取得
+  useEffect(() => {
+    if (currentBusinessType?.id) {
+      fetchTransactions();
+    }
+  }, [currentBusinessType, fetchTransactions]);
 
   // 利用可能なカテゴリの取得
   const availableCategories = useMemo(() => {
@@ -97,20 +106,86 @@ const TransactionHistory: React.FC = () => {
 
   // 統計情報
   const stats = useMemo(() => {
-    const totalIncome = transactions
-      .filter(t => parseFloat(t.amount as any) > 0)
-      .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount as any)), 0)
+    console.log('取引履歴 - 取引データ:', transactions);
+    
+    // amountの値を安全に取得するヘルパー関数
+    const getAmountValue = (amount: any): number => {
+      if (typeof amount === 'number') {
+        return amount;
+      }
+      if (typeof amount === 'string') {
+        const parsed = parseFloat(amount);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+      if (typeof amount === 'object' && amount !== null) {
+        // オブジェクトの場合、valueやamountプロパティを探す
+        const objValue = amount.value || amount.amount || amount.number || 0;
+        if (typeof objValue === 'number') {
+          return objValue;
+        }
+        if (typeof objValue === 'string') {
+          const parsed = parseFloat(objValue);
+          return isNaN(parsed) ? 0 : parsed;
+        }
+        return 0;
+      }
+      return 0;
+    };
+    
+    // 金額を確実に数値に変換して計算
+    const incomeTransactions = transactions.filter(t => {
+      // typeが'income'の場合を優先
+      if (t.type === 'income') {
+        return true;
+      }
+      
+      // amountが正の数値の場合も収入として扱う
+      const amount = getAmountValue(t.amount);
+      const isValid = !isNaN(amount) && isFinite(amount) && amount > 0;
+      console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
+      return isValid;
+    });
+    
+    const expenseTransactions = transactions.filter(t => {
+      // typeが'expense'の場合を優先
+      if (t.type === 'expense') {
+        return true;
+      }
+      
+      // amountが負の数値の場合も支出として扱う
+      const amount = getAmountValue(t.amount);
+      const isValid = !isNaN(amount) && isFinite(amount) && amount < 0;
+      console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
+      return isValid;
+    });
+    
+    const totalIncome = incomeTransactions.reduce((sum, t) => {
+      const amount = getAmountValue(t.amount);
+      const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
+      console.log(`収入計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
+      return sum + validAmount;
+    }, 0);
 
-    const totalExpense = transactions
-      .filter(t => parseFloat(t.amount as any) < 0)
-      .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount as any)), 0)
+    const totalExpense = expenseTransactions.reduce((sum, t) => {
+      const amount = getAmountValue(t.amount);
+      // 支出の場合は金額を正の値として計算（表示時にマイナスを付ける）
+      const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
+      console.log(`支出計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
+      return sum + validAmount;
+    }, 0);
 
-    return {
+    const result = {
       total: transactions.length,
       income: totalIncome,
       expense: totalExpense,
       balance: totalIncome - totalExpense
-    }
+    };
+    
+    console.log('取引履歴 - 統計情報計算結果:', result);
+    console.log('取引履歴 - 収入取引:', incomeTransactions);
+    console.log('取引履歴 - 支出取引:', expenseTransactions);
+    
+    return result;
   }, [transactions])
 
   // チェックボックス操作
@@ -158,7 +233,18 @@ const TransactionHistory: React.FC = () => {
         }
       }
 
+      // typeプロパティが設定されていない場合、amountの正負で判断
+      if (!transactionData.type) {
+        const amount = typeof transactionData.amount === 'string' ? parseFloat(transactionData.amount) : transactionData.amount;
+        transactionData.type = amount > 0 ? 'income' : 'expense';
+        console.log('typeプロパティを自動設定:', transactionData.type);
+      }
+
       await createTransaction(transactionData)
+      
+      // データの再取得
+      await fetchTransactions();
+      
       setShowCreateForm(false)
     } catch (error) {
       console.error('取引の作成に失敗:', error)
@@ -171,6 +257,10 @@ const TransactionHistory: React.FC = () => {
     if (!editingTransaction) return
     try {
       await updateTransaction(editingTransaction.id, transactionData)
+      
+      // データの再取得
+      await fetchTransactions();
+      
       setEditingTransaction(null)
     } catch (error) {
       console.error('取引の更新に失敗:', error)
@@ -297,13 +387,13 @@ const TransactionHistory: React.FC = () => {
           </div>
         </main>
 
-        {/* 新規取引作成モーダル */}
+        {/* 新規取引作成モーダル（取引がない場合の表示用） */}
         {showCreateForm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-border">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-text-main">新規取引</h2>
+                  <h2 className="text-xl font-bold text-text-main">最初の取引を追加</h2>
                   <button
                     onClick={() => {
                       setShowCreateForm(false)
@@ -742,7 +832,7 @@ const TransactionHistory: React.FC = () => {
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-text-main">
-                  {editingTransaction ? '取引を編集' : '新規取引'}
+                  {editingTransaction ? '取引を編集' : '新規取引作成'}
                 </h2>
                 <button
                   onClick={() => {

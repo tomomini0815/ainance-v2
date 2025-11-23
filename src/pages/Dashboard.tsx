@@ -4,7 +4,7 @@ import QuickActions from '../components/QuickActions'
 import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
 import { useMySQLAITransactions } from '../hooks/useMySQLAITransactions'
 import { useAuth } from '../hooks/useAuth'
-import { Download, Plus } from 'lucide-react'
+import { Download, Plus, X, FileText, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
 
 // Lazy load heavy components
 const RevenueChart = React.lazy(() => import('../components/RevenueChart'));
@@ -20,10 +20,14 @@ import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 const Dashboard: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext();
-  const { transactions, createTransaction } = useMySQLTransactions(currentBusinessType?.id);
+  const { transactions, loading, createTransaction, fetchTransactions } = useMySQLTransactions(currentBusinessType?.id);
   const { aiTransactions, loading: aiTransactionsLoading } = useMySQLAITransactions();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+
+  console.log('ダッシュボード - currentBusinessType:', currentBusinessType);
+  console.log('ダッシュボード - transactions:', transactions);
+  console.log('ダッシュボード - loading:', loading);
 
   useEffect(() => {
     const handleOpenModal = () => setShowCreateForm(true);
@@ -33,6 +37,111 @@ const Dashboard: React.FC = () => {
       window.removeEventListener('openCreateTransactionModal', handleOpenModal);
     };
   }, []);
+
+  // データの再取得
+  useEffect(() => {
+    if (currentBusinessType?.id) {
+      fetchTransactions();
+    }
+  }, [currentBusinessType, fetchTransactions]);
+
+  // 統計情報
+  const stats = useMemo(() => {
+    console.log('取引データ:', transactions);
+    
+    // 各取引の詳細情報を出力
+    transactions.forEach((t, index) => {
+      console.log(`取引 ${index + 1}:`, {
+        id: t.id,
+        item: t.item,
+        amount: t.amount,
+        amountType: typeof t.amount,
+        amountStructure: typeof t.amount === 'object' ? Object.keys(t.amount) : 'N/A',
+        date: t.date,
+        category: t.category,
+        type: t.type
+      });
+    });
+    
+    // amountの値を安全に取得するヘルパー関数
+    const getAmountValue = (amount: any): number => {
+      if (typeof amount === 'number') {
+        return amount;
+      }
+      if (typeof amount === 'string') {
+        const parsed = parseFloat(amount);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+      if (typeof amount === 'object' && amount !== null) {
+        // オブジェクトの場合、valueやamountプロパティを探す
+        const objValue = amount.value || amount.amount || amount.number || 0;
+        if (typeof objValue === 'number') {
+          return objValue;
+        }
+        if (typeof objValue === 'string') {
+          const parsed = parseFloat(objValue);
+          return isNaN(parsed) ? 0 : parsed;
+        }
+        return 0;
+      }
+      return 0;
+    };
+    
+    // 金額を確実に数値に変換して計算
+    const incomeTransactions = transactions.filter(t => {
+      // typeが'income'の場合を優先
+      if (t.type === 'income') {
+        return true;
+      }
+      
+      // amountが正の数値の場合も収入として扱う
+      const amount = getAmountValue(t.amount);
+      const isValid = !isNaN(amount) && isFinite(amount) && amount > 0;
+      console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
+      return isValid;
+    });
+    
+    const expenseTransactions = transactions.filter(t => {
+      // typeが'expense'の場合を優先
+      if (t.type === 'expense') {
+        return true;
+      }
+      
+      // amountが負の数値の場合も支出として扱う
+      const amount = getAmountValue(t.amount);
+      const isValid = !isNaN(amount) && isFinite(amount) && amount < 0;
+      console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
+      return isValid;
+    });
+    
+    const totalIncome = incomeTransactions.reduce((sum, t) => {
+      const amount = getAmountValue(t.amount);
+      const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
+      console.log(`収入計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
+      return sum + validAmount;
+    }, 0);
+
+    const totalExpense = expenseTransactions.reduce((sum, t) => {
+      const amount = getAmountValue(t.amount);
+      // 支出の場合は金額を正の値として計算（表示時にマイナスを付ける）
+      const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
+      console.log(`支出計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
+      return sum + validAmount;
+    }, 0);
+
+    const result = {
+      total: transactions.length,
+      income: totalIncome,
+      expense: totalExpense,
+      balance: totalIncome - totalExpense
+    };
+    
+    console.log('統計情報計算結果:', result);
+    console.log('収入取引:', incomeTransactions);
+    console.log('支出取引:', expenseTransactions);
+    
+    return result;
+  }, [transactions])
 
   // Skeleton Loader Component
   const DashboardSkeleton = () => (
@@ -105,21 +214,32 @@ const Dashboard: React.FC = () => {
     try {
       console.log('取引作成を開始:', transactionData);
 
-      if (authUser && authUser.id) {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(authUser.id)) {
-          transactionData.creator = authUser.id;
-        } else {
-          transactionData.creator = '00000000-0000-0000-0000-000000000000';
+      // creatorフィールドをローカルストレージから取得したユーザー情報で設定
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          transactionData.creator = userData.id;
+        } catch (error) {
+          console.error('ユーザー情報の解析に失敗しました:', error);
         }
-      } else {
-        transactionData.creator = '00000000-0000-0000-0000-000000000000';
       }
 
       console.log('creator IDを設定:', transactionData.creator);
 
+      // typeプロパティが設定されていない場合、amountの正負で判断
+      if (!transactionData.type) {
+        const amount = typeof transactionData.amount === 'string' ? parseFloat(transactionData.amount) : transactionData.amount;
+        transactionData.type = amount > 0 ? 'income' : 'expense';
+        console.log('typeプロパティを自動設定:', transactionData.type);
+      }
+
       const result = await createTransaction(transactionData);
       console.log('取引作成成功:', result);
+      
+      // データの再取得
+      await fetchTransactions();
+      
       setShowCreateForm(false);
     } catch (error: any) {
       console.error('取引の作成に失敗:', error);
@@ -154,6 +274,57 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* 統計カード */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-text-muted">総取引数</div>
+              <div className="text-2xl font-bold mt-1 text-text-main">{stats.total}</div>
+            </div>
+            <div className="rounded-lg bg-primary/10 p-3">
+              <FileText className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-text-muted">収入</div>
+              <div className="text-2xl font-bold mt-1 text-green-500">¥{stats.income.toLocaleString()}</div>
+            </div>
+            <div className="rounded-lg bg-green-500/10 p-3">
+              <TrendingUp className="w-6 h-6 text-green-500" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-text-muted">支出</div>
+              <div className="text-2xl font-bold mt-1 text-red-500">¥{stats.expense.toLocaleString()}</div>
+            </div>
+            <div className="rounded-lg bg-red-500/10 p-3">
+              <TrendingDown className="w-6 h-6 text-red-500" />
+            </div>
+          </div>
+        </div>
+        <div className={`rounded-xl shadow-sm p-5 border hover:shadow-md transition-shadow ${stats.balance >= 0 ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'
+          }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-text-muted">収支</div>
+              <div className={`text-2xl font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                ¥{stats.balance.toLocaleString()}
+              </div>
+            </div>
+            <div className={`rounded-lg p-3 ${stats.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+              <DollarSign className={`w-6 h-6 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <QuickActions />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -185,6 +356,15 @@ const Dashboard: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-text-main">新規取引作成</h2>
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  className="p-2 rounded-lg hover:bg-surface-highlight transition-colors"
+                >
+                  <X className="w-5 h-5 text-text-muted" />
+                </button>
+              </div>
               <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
                 <TransactionForm
                   onSubmit={handleCreateTransaction}
@@ -199,4 +379,4 @@ const Dashboard: React.FC = () => {
   )
 }
 
-export default Dashboard
+export default Dashboard;

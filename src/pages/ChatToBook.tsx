@@ -287,6 +287,10 @@ const ChatToBook: React.FC = () => {
       await saveTransactionToDB(transaction);
       // 成功したらローカルリストから削除
       setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+      
+      // データの再取得
+      await fetchTransactions();
+      
       alert('取引が正常に記録されました');
     } catch (error) {
       console.error('取引の記録に失敗しました:', error);
@@ -345,6 +349,9 @@ const ChatToBook: React.FC = () => {
       // 成功した取引をローカルリストから削除
       setTransactions(prev => prev.filter(t => !successfulIds.includes(t.id)));
       setSelectedTransactions(prev => prev.filter(id => !successfulIds.includes(id)));
+      
+      // データの再取得
+      await fetchTransactions();
     } catch (error) {
       console.error('取引の一括記録中にエラーが発生しました:', error);
       alert('取引の一括記録に失敗しました: ' + (error as Error).message);

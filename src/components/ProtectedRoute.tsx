@@ -29,10 +29,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // 認証されていない場合はログインページにリダイレクト
   // ただし、リダイレクト元がログインページの場合は無限ループを防ぐため/homeにリダイレクト
   if (!isAuthenticated) {
+    // ページリロード時に元のページを保持するため、リダイレクト時に元のページ情報を保持
     if (location.pathname === '/login') {
       return <Navigate to="/" replace />
     }
-    return <Navigate to="/login" replace />
+    // 元のページ情報を保持してログインページにリダイレクト
+    return <Navigate to="/login" state={{ from: location }} replace />
   }
 
   // 認証されている場合は子コンポーネントを表示

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Lock, Mail, ArrowRight, Chrome } from 'lucide-react';
+import { Lock, Mail, ArrowRight } from 'lucide-react';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -12,8 +12,12 @@ const Login: React.FC = () => {
     const [resetSent, setResetSent] = useState(false);
     const [showResetForm, setShowResetForm] = useState(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
-    const { signIn, signInWithGoogle } = useAuth();
+    const { signIn } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // リダイレクト先のパスを取得（デフォルトは/dashboard）
+    const from = location.state?.from?.pathname || '/dashboard';
 
     // ネットワーク状態の監視
     useEffect(() => {
@@ -43,7 +47,8 @@ const Login: React.FC = () => {
 
         try {
             await signIn(email, password);
-            navigate('/dashboard');
+            // 元のページにリダイレクト、またはデフォルトの/dashboardに遷移
+            navigate(from, { replace: true });
         } catch (err: any) {
             console.error('Login Page Error:', err);
             console.error('Error Code:', err.code);
@@ -78,29 +83,6 @@ const Login: React.FC = () => {
         } catch (err: any) {
             console.error('パスワードリセットエラー:', err);
             setError(`パスワードリセットメールの送信に失敗しました。エラー: ${err.message}`);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Googleログイン機能
-    const handleGoogleLogin = async () => {
-        setError('');
-        setLoading(true);
-
-        // ネットワーク状態の確認
-        if (!navigator.onLine) {
-            setError('インターネットに接続されていません。ネットワーク接続を確認してください。');
-            setLoading(false);
-            return;
-        }
-
-        try {
-            await signInWithGoogle();
-            navigate('/dashboard');
-        } catch (err: any) {
-            console.error('Googleログインエラー:', err);
-            setError(`Googleログインに失敗しました。エラー: ${err.message || '不明なエラー'}`);
         } finally {
             setLoading(false);
         }
@@ -222,31 +204,6 @@ const Login: React.FC = () => {
                                     )}
                                 </button>
                             </form>
-
-                            {/* Googleログインボタン */}
-                            <div className="mt-6">
-                                <div className="relative">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <div className="w-full border-t border-border"></div>
-                                    </div>
-                                    <div className="relative flex justify-center text-sm">
-                                        <span className="px-2 bg-surface text-text-muted">
-                                            または
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="mt-6">
-                                    <button
-                                        onClick={handleGoogleLogin}
-                                        disabled={loading || !isOnline}
-                                        className="w-full flex items-center justify-center px-4 py-2.5 border border-border rounded-xl shadow-sm text-sm font-medium text-text-main bg-surface hover:bg-surface-highlight transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <Chrome className="w-5 h-5 mr-2" />
-                                        Googleでログイン
-                                    </button>
-                                </div>
-                            </div>
                         </>
                     )}
 

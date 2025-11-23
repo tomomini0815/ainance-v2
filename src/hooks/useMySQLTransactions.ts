@@ -17,7 +17,6 @@ interface Transaction {
   location?: string;
   recurring?: boolean;
   recurring_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  business_type_id?: string;
 }
 
 // UUIDのバリデーション関数
@@ -30,10 +29,43 @@ export const useMySQLTransactions = (businessTypeId?: string) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
 
+  console.log('useMySQLTransactions - businessTypeId:', businessTypeId);
+
+  // 業態形態情報を取得する関数
+  const fetchBusinessType = useCallback(async () => {
+    if (!businessTypeId) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('business_type')
+        .select('*')
+        .eq('id', businessTypeId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('業態形態情報の取得に失敗しました:', error);
+      return null;
+    }
+  }, [businessTypeId]);
+
+  // 業態形態に応じてテーブル名を決定
+  const getTableName = useCallback(async () => {
+    // businessTypeIdがない場合はデフォルトのテーブル名を返す
+    if (!businessTypeId) return 'individual_transactions';
+    
+    const businessTypeData = await fetchBusinessType();
+    if (!businessTypeData) return 'individual_transactions'; // デフォルト
+    
+    return businessTypeData.business_type === 'corporation' ? 'corporation_transactions' : 'individual_transactions';
+  }, [businessTypeId, fetchBusinessType]);
+
   // 取引データをSupabaseから取得
   const fetchTransactions = useCallback(async () => {
-    // businessTypeIdがない場合は何もしない（または全件取得するが、今回は分離が目的なので取得しない）
+    // businessTypeIdがない場合は何もしない
     if (!businessTypeId) {
+      console.log('businessTypeIdがありません。取引データをクリアします。');
       setTransactions([]);
       return;
     }
@@ -56,23 +88,34 @@ export const useMySQLTransactions = (businessTypeId?: string) => {
     }
 
     try {
+      const tableName = await getTableName();
+      console.log('取引データを取得するテーブル:', tableName);
+      console.log('ユーザーID:', userId);
       const { data, error } = await supabase
-        .from('transactions')
+        .from(tableName)
         .select('*')
         .eq('creator', userId)
-        .eq('business_type_id', businessTypeId) // 業態形態でフィルタリング
         .order('date', { ascending: false });
 
-      if (error) throw error;
-
-      setTransactions(data || []);
+      if (error) {
+        // テーブルが存在しない場合のエラー処理
+        if (error.message && error.message.includes('not found')) {
+          console.warn(`テーブル ${tableName} が存在しません。テーブルを作成するか、管理者に問い合わせてください。`);
+          setTransactions([]);
+        } else {
+          throw error;
+        }
+      } else {
+        console.log('取得した取引データ:', data);
+        setTransactions(data || []);
+      }
       setLoading(false);
     } catch (error: any) {
       console.error(`取引データの取得に失敗しました: ${error.message}`);
       setTransactions([]);
       setLoading(false);
     }
-  }, [businessTypeId]);
+  }, [businessTypeId, getTableName]);
 
   // 新しい取引をSupabaseに保存
   const createTransaction = async (transaction: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>) => {
@@ -90,24 +133,36 @@ export const useMySQLTransactions = (businessTypeId?: string) => {
       // creatorが空の場合、デフォルト値を設定
       const transactionWithCreator = {
         ...transaction,
-        creator: transaction.creator || '00000000-0000-0000-0000-000000000000',
-        business_type_id: businessTypeId // 業態形態IDを追加
+        creator: transaction.creator || '00000000-0000-0000-0000-000000000000'
       };
 
+      const tableName = await getTableName();
       console.log('取引データを保存中:', transactionWithCreator);
+      console.log('保存するテーブル:', tableName);
       const { data, error } = await supabase
-        .from('transactions')
+        .from(tableName)
         .insert(transactionWithCreator)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // テーブルが存在しない場合のエラー処理
+        if (error.message && error.message.includes('not found')) {
+          throw new Error(`テーブル ${tableName} が存在しません。テーブルを作成するか、管理者に問い合わせてください。`);
+        } else {
+          throw error;
+        }
+      }
 
       console.log('取引データ保存成功:', data.id);
 
       const newTransaction: Transaction = data;
 
       setTransactions(prev => [newTransaction, ...prev]);
+      
+      // データの再取得
+      await fetchTransactions();
+      
       return data.id;
     } catch (error: any) {
       console.error('取引の作成に失敗しました:', error);
@@ -121,9 +176,14 @@ export const useMySQLTransactions = (businessTypeId?: string) => {
 
   // 取引を更新
   const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    if (!businessTypeId) {
+      throw new Error('業態形態が選択されていません');
+    }
+
     try {
+      const tableName = await getTableName();
       const { data, error } = await supabase
-        .from('transactions')
+        .from(tableName)
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -138,6 +198,9 @@ export const useMySQLTransactions = (businessTypeId?: string) => {
           transaction.id === id ? updatedTransaction : transaction
         )
       );
+      
+      // データの再取得
+      await fetchTransactions();
     } catch (error) {
       console.error('取引の更新に失敗しました:', error);
       throw error;
@@ -146,15 +209,23 @@ export const useMySQLTransactions = (businessTypeId?: string) => {
 
   // 取引を削除
   const deleteTransaction = async (id: string) => {
+    if (!businessTypeId) {
+      throw new Error('業態形態が選択されていません');
+    }
+
     try {
+      const tableName = await getTableName();
       const { error } = await supabase
-        .from('transactions')
+        .from(tableName)
         .delete()
         .eq('id', id);
 
       if (error) throw error;
 
       setTransactions(prev => prev.filter(transaction => transaction.id !== id));
+      
+      // データの再取得
+      await fetchTransactions();
     } catch (error) {
       console.error('取引の削除に失敗しました:', error);
       throw error;

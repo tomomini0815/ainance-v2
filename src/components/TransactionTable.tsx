@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, TrendingUp, TrendingDown, Plus, FileText } from 'lucide-react'
+import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
+import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 interface Transaction {
   id: string | number
@@ -27,20 +29,57 @@ interface TransactionTableProps {
 }
 
 const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpenCreateModal, showCreateButton = true }) => {
-  const getCategoryIcon = (category: string, amount: number) => {
-    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const { currentBusinessType } = useBusinessTypeContext();
+  const { transactions: fetchedTransactions, loading, fetchTransactions } = useMySQLTransactions(currentBusinessType?.id);
+
+  // データの再取得
+  useEffect(() => {
+    if (currentBusinessType?.id) {
+      fetchTransactions();
+    }
+  }, [currentBusinessType, fetchTransactions]);
+
+  const getCategoryIcon = (category: string, amount: number, isFinalIncome?: boolean, isFinalExpense?: boolean) => {
+    console.log('getCategoryIcon called with:', { category, amount, isFinalIncome, isFinalExpense });
+    
+    // isFinalIncomeとisFinalExpenseの両方がtrueの場合、isFinalExpenseを優先
+    if (isFinalIncome === true && isFinalExpense === true) {
+      console.log('Both isFinalIncome and isFinalExpense are true, prioritizing expense');
+      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />
+    }
+    
+    // isFinalIncomeまたはisFinalExpenseが指定されている場合、それを優先
+    if (isFinalIncome === true) {
+      console.log('Returning TrendingUp icon for income');
+      return <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
+    }
+
+    if (isFinalExpense === true) {
+      console.log('Returning TrendingDown icon for expense');
+      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />
+    }
+
+    // amountが文字列の場合、数値に変換
+    let numericAmount = amount;
+    if (typeof amount === 'string') {
+      numericAmount = parseFloat(amount);
+    }
+    
     const isValidAmount = !isNaN(numericAmount) && isFinite(numericAmount);
     const isIncome = isValidAmount && numericAmount > 0;
     const isExpense = isValidAmount && numericAmount < 0;
 
     if (isIncome) {
-      return <TrendingUp className="w-4 h-4 text-emerald-400 mr-2" />
+      console.log('Returning TrendingUp icon for positive amount');
+      return <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
     }
 
     if (isExpense) {
-      return <TrendingDown className="w-4 h-4 text-rose-400 mr-2" />
+      console.log('Returning TrendingDown icon for negative amount');
+      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />
     }
 
+    // 金額が0または無効な場合のデフォルトアイコン
     const badgeClass = "inline-flex items-center justify-center w-6 h-6 rounded-full mr-2 text-xs font-bold";
 
     switch (category) {
@@ -59,9 +98,36 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
     }
   }
 
-  const latestTransactions = [...transactions]
+  const latestTransactions = [...(transactions.length > 0 ? transactions : fetchedTransactions)]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5)
+
+  if (loading) {
+    return (
+      <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-text-main">最近の履歴</h3>
+          <div className="flex items-center space-x-3">
+            <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
+              <div className="flex items-center">
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 mr-3"></div>
+                <div>
+                  <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                  <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+              </div>
+              <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
@@ -100,24 +166,40 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
           <tbody className="divide-y divide-white/5">
             {latestTransactions.length > 0 ? (
               latestTransactions.map((transaction) => {
-                const amount = typeof transaction.amount === 'string'
-                  ? parseFloat(transaction.amount)
-                  : typeof transaction.amount === 'number'
-                    ? transaction.amount
-                    : 0;
+                // amountの型を確実に数値に変換
+                let amount = transaction.amount;
+                if (typeof transaction.amount === 'string') {
+                  amount = parseFloat(transaction.amount);
+                } else if (typeof transaction.amount === 'number') {
+                  amount = transaction.amount;
+                } else {
+                  amount = 0;
+                }
 
                 const isValidAmount = !isNaN(amount) && isFinite(amount);
                 const isExplicitIncome = transaction.type === 'income';
                 const isExplicitExpense = transaction.type === 'expense';
 
-                const isFinalIncome = isExplicitIncome || (isValidAmount && amount > 0);
-                const isFinalExpense = isExplicitExpense || (isValidAmount && amount < 0);
+                // isExplicitIncomeまたはisExplicitExpenseが指定されている場合、それを優先
+                // ただし、両方がtrueになることはないので、isExplicitExpenseを優先
+                const isFinalIncome = isExplicitIncome && !isExplicitExpense ? true : (isValidAmount && amount > 0 && !isExplicitExpense);
+                const isFinalExpense = isExplicitExpense ? true : (isValidAmount && amount < 0);
+
+                console.log('Transaction processing:', { 
+                  id: transaction.id, 
+                  amount, 
+                  type: transaction.type, 
+                  isExplicitIncome, 
+                  isExplicitExpense, 
+                  isFinalIncome, 
+                  isFinalExpense 
+                });
 
                 return (
                   <tr key={transaction.id} className="hover:bg-white/5 transition-colors group">
                     <td className="py-4 px-4">
                       <div className="flex items-center">
-                        {getCategoryIcon(transaction.category, amount)}
+                        {getCategoryIcon(transaction.category, amount, isFinalIncome, isFinalExpense)}
                         <div>
                           <div className="font-medium text-text-main text-sm group-hover:text-white transition-colors">{transaction.item}</div>
                           <div className="text-xs text-text-muted sm:hidden mt-0.5">
@@ -133,13 +215,13 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                     <td className="py-4 px-4 text-right font-medium">
                       <div className="flex items-center justify-end">
                         {isFinalIncome ?
-                          <TrendingUp className="w-3 h-3 text-emerald-400 mr-1.5" /> :
+                          <TrendingUp className="w-4 h-4 text-green-500 mr-1" /> :
                           isFinalExpense ?
-                            <TrendingDown className="w-3 h-3 text-rose-400 mr-1.5" /> :
+                            <TrendingDown className="w-4 h-4 text-red-500 mr-1" /> :
                             null
                         }
-                        <span className={isFinalIncome ? 'text-emerald-400' : isFinalExpense ? 'text-rose-400' : 'text-text-muted'}>
-                          {isFinalIncome ? '+' : isFinalExpense ? '' : ''}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}
+                        <span className={isFinalIncome ? 'text-green-500' : isFinalExpense ? 'text-red-500' : 'text-text-muted'}>
+                          {isFinalIncome ? '' : isFinalExpense ? '-' : ''}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}
                         </span>
                       </div>
                     </td>
@@ -151,9 +233,11 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                       })}
                     </td>
                     <td className="py-4 px-4 text-center">
-                      <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${isFinalIncome ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                          isFinalExpense ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
-                            'bg-slate-500/10 text-text-muted border-slate-500/20'
+                      <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${isFinalIncome ?
+                          'bg-green-500/10 text-green-600' :
+                          isFinalExpense ?
+                            'bg-red-500/10 text-red-600' :
+                            'bg-slate-500/10 text-text-muted'
                         }`}>
                         {transaction.category}
                       </span>
