@@ -358,6 +358,50 @@ const ChatToBook: React.FC = () => {
     }
   };
 
+  // 一括削除機能を追加
+  const bulkDeleteTransactions = async () => {
+    if (selectedTransactions.length === 0) {
+      alert('削除する取引を選択してください');
+      return;
+    }
+
+    if (!window.confirm(`${selectedTransactions.length}件の取引を削除してもよろしいですか？`)) {
+      return;
+    }
+
+    try {
+      // 選択された取引を一括で削除
+      const deletePromises = selectedTransactions.map(id => deleteTransaction(id));
+      const results = await Promise.allSettled(deletePromises);
+
+      const successful = results.filter(result => result.status === 'fulfilled').length;
+      const failed = results.filter(result => result.status === 'rejected').length;
+
+      // 失敗した取引のエラー情報をコンソールに出力
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`取引削除失敗 (${index + 1}):`, result.reason);
+        }
+      });
+
+      if (failed > 0) {
+        alert(`${successful}件の取引が正常に削除されましたが、${failed}件の取引の削除に失敗しました。詳細はコンソールを確認してください。`);
+      } else {
+        alert(`${successful}件の取引が正常に削除されました`);
+      }
+
+      // 成功した取引をローカルリストから削除
+      setTransactions(prev => prev.filter(t => !selectedTransactions.includes(t.id)));
+      setSelectedTransactions([]);
+      
+      // データの再取得
+      await fetchTransactions();
+    } catch (error) {
+      console.error('取引の一括削除中にエラーが発生しました:', error);
+      alert('取引の一括削除に失敗しました: ' + (error as Error).message);
+    }
+  };
+
   // 取引の選択状態を切り替え
   const toggleTransactionSelection = (id: string) => {
     setSelectedTransactions(prev =>
@@ -489,25 +533,23 @@ const ChatToBook: React.FC = () => {
               </div>
               <div className="flex space-x-2">
                 {selectedTransactions.length > 0 && (
-                  <button
-                    onClick={bulkRecordTransactions}
-                    className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    一括記録 ({selectedTransactions.length})
-                  </button>
+                  <>
+                    <button
+                      onClick={bulkDeleteTransactions}
+                      className="flex items-center px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      一括削除 ({selectedTransactions.length})
+                    </button>
+                    <button
+                      onClick={bulkRecordTransactions}
+                      className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      一括記録 ({selectedTransactions.length})
+                    </button>
+                  </>
                 )}
-                <button
-                  onClick={exportTransactions}
-                  disabled={transactions.length === 0}
-                  className={`flex items-center px-3 py-1 rounded-md text-sm transition-colors ${transactions.length === 0
-                      ? 'bg-surface-highlight text-text-muted cursor-not-allowed'
-                      : 'bg-primary text-white hover:bg-primary/90'
-                    }`}
-                >
-                  <Download className="w-4 h-4 mr-1" />
-                  CSVエクスポート
-                </button>
               </div>
             </div>
 
