@@ -5,6 +5,8 @@ import { ArrowLeft } from 'lucide-react';
 import DocumentUpload from '../components/DocumentUpload';
 import ReceiptCamera from '../components/ReceiptCamera';
 import { ReceiptData as ParsedReceiptData } from '../utils/ReceiptParser'
+import { saveReceipt, getReceipts, updateReceiptStatus } from '../services/receiptService'
+import { useAuth } from '../components/AuthProvider'
 
 interface ReceiptData {
   id: string
@@ -49,58 +51,15 @@ interface ScanState {
 }
 
 const ReceiptProcessing: React.FC = () => {
-  const [uploadedReceipts, setUploadedReceipts] = useState<ReceiptData[]>([
-    {
-      id: '1',
-      date: '2024-01-15',
-      merchant: 'セブンイレブン',
-      amount: 1200,
-      category: '消耗品費',
-      description: '事務用品購入',
-      confidence: 95,
-      status: 'pending'
-    },
-    {
-      id: '2',
-      date: '2024-01-14',
-      merchant: 'スターバックス',
-      amount: 580,
-      category: '接待交際費',
-      description: 'クライアント打ち合わせ',
-      confidence: 88,
-      status: 'approved'
-    }
-  ])
+  const { user } = useAuth(); // 認証されたユーザーを取得
+
+  const [uploadedReceipts, setUploadedReceipts] = useState<ReceiptData[]>([])
 
   // スキャン状態の管理
   const [scanState, setScanState] = useState<ScanState>({
     isProcessing: false,
     retryCount: 0
   })
-
-  // サンプルレシートデータを追加
-  const sampleReceipts: ReceiptData[] = [
-    {
-      id: '3',
-      date: '2024-01-16',
-      merchant: 'ローソン',
-      amount: 750,
-      category: '消耗品費',
-      description: 'コピー用紙',
-      confidence: 90,
-      status: 'pending'
-    },
-    {
-      id: '4',
-      date: '2024-01-13',
-      merchant: 'マクドナルド',
-      amount: 680,
-      category: '接待交際費',
-      description: '社内打合せ',
-      confidence: 85,
-      status: 'pending'
-    }
-  ];
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editData, setEditData] = useState<Partial<ReceiptData>>({})
@@ -116,6 +75,30 @@ const ReceiptProcessing: React.FC = () => {
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
 
+  // Supabaseからレシートデータをロード
+  useEffect(() => {
+    const loadReceipts = async () => {
+      if (!user?.uid) return;
+
+      const receipts = await getReceipts(user.uid);
+      const formattedReceipts: ReceiptData[] = receipts.map(r => ({
+        id: r.id!,
+        date: r.date,
+        merchant: r.merchant,
+        amount: r.amount,
+        category: r.category,
+        description: r.description,
+        confidence: r.confidence,
+        status: r.status,
+        taxRate: r.tax_rate,
+        confidenceScores: r.confidence_scores
+      }));
+      setUploadedReceipts(formattedReceipts);
+    };
+
+    loadReceipts();
+  }, [user]);
+
   // カメラ開始処理
   const startCamera = () => {
     setShowCamera(true);
@@ -129,139 +112,159 @@ const ReceiptProcessing: React.FC = () => {
   // レシート画像処理（OCR実装の強化版）
   const processReceiptImage = async (imageBlob: Blob) => {
     setShowCamera(false); // Close camera
-    // Google Cloud Vision APIを使用して処理
-    await processReceiptImageWithVisionAPI(imageBlob);
+    // Tesseract.jsを使用して処理
+    await processReceiptImageWithTesseract(imageBlob);
   };
 
-  // Google Cloud Vision APIを使用したレシート画像処理
-  const processReceiptImageWithVisionAPI = async (imageBlob: Blob) => {
+  // Tesseract.jsを使用したレシート画像処理
+  const processReceiptImageWithTesseract = async (imageBlob: Blob) => {
     // 処理状態を更新
     setScanState({
       isProcessing: true,
-      retryCount: 0
+      retryCount: 0,
+      progress: 0,
+      currentStep: 'OCR処理を開始しています...'
     });
 
+    // 新しいレシートを追加（処理中状態）
+    const newReceipt: ReceiptData = {
+      id: Date.now().toString(),
+      date: new Date().toISOString().split('T')[0],
+      merchant: '処理中...',
+      amount: 0,
+      category: '未分類',
+      description: '解析中...',
+      confidence: 0,
+      status: 'pending'
+    }
+    setUploadedReceipts(prev => [newReceipt, ...prev])
+
     try {
-      // 画像をBase64に変換
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const imageData = e.target?.result as string;
-        if (!imageData) {
-          throw new Error('画像データの読み込みに失敗しました');
-        }
+      // 動的インポートでTesseract.jsを読み込み
+      const Tesseract = await import('tesseract.js');
 
-        // Base64文字列からプレフィックスを削除
-        const base64Image = imageData.split(',')[1];
+      // 画像URLを作成
+      const imageUrl = URL.createObjectURL(imageBlob);
 
-        // Google Cloud Vision APIの設定
-        // 実際のAPIキーは環境変数から取得
-        const apiKey = import.meta.env.VITE_GOOGLE_VISION_API_KEY;
-        if (!apiKey) {
-          throw new Error('Google Cloud Vision APIキーが設定されていません');
-        }
-
-        // 新しいレシートを追加（処理中状態）
-        const newReceipt: ReceiptData = {
-          id: Date.now().toString(),
-          date: new Date().toISOString().split('T')[0],
-          merchant: '処理中...',
-          amount: 0,
-          category: '未分類',
-          description: '解析中...',
-          confidence: 0,
-          status: 'pending'
-        }
-        setUploadedReceipts(prev => [newReceipt, ...prev])
-
-        try {
-          // Google Cloud Vision APIにリクエストを送信
-          const response = await fetch(
-            `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                requests: [
-                  {
-                    image: {
-                      content: base64Image
-                    },
-                    features: [
-                      {
-                        type: 'TEXT_DETECTION',
-                        maxResults: 100
-                      }
-                    ]
-                  }
-                ]
-              })
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error(`APIリクエスト失敗: ${response.status} ${response.statusText}`);
-          }
-
-          const result = await response.json();
-          console.log('Vision API結果:', result);
-
-          // レスポンスからテキストを取得
-          const ocrText = result.responses[0]?.fullTextAnnotation?.text || '';
-
-          if (!ocrText) {
-            throw new Error('テキストが検出されませんでした');
-          }
-
-          // テキストから情報を抽出
-          const extractedData = extractReceiptData(ocrText);
-
-          // レシート情報を更新
-          setUploadedReceipts(prev => prev.map(receipt =>
-            receipt.id === newReceipt.id
-              ? {
-                ...receipt,
-                merchant: extractedData.merchant || '不明',
-                date: extractedData.date || receipt.date,
-                amount: extractedData.amount || 0,
-                taxRate: extractedData.taxRate || 0,
-                description: extractedData.description || 'OCR処理完了',
-                confidence: extractedData.confidence || 80,
-                confidenceScores: extractedData.confidenceScores
-              }
-              : receipt
-          ));
-        } catch (error: any) {
-          console.error('Vision API処理エラー:', error);
-          // エラーの場合、エラーメッセージを表示
-          setUploadedReceipts(prev => prev.map(receipt =>
-            receipt.id === newReceipt.id
-              ? {
-                ...receipt,
-                merchant: '解析エラー',
-                description: `OCR処理に失敗しました: ${error.message}`,
-                confidence: 0
-              }
-              : receipt
-          ));
-        } finally {
-          // 処理状態を更新
-          setScanState(prev => ({
-            ...prev,
-            isProcessing: false
-          }));
-        }
-      };
-
-      reader.readAsDataURL(imageBlob);
-    } catch (error: any) {
-      console.error('画像処理エラー:', error);
       setScanState(prev => ({
         ...prev,
-        isProcessing: false,
-        errorMessage: `画像の処理中にエラーが発生しました: ${error.message}`
+        progress: 10,
+        currentStep: 'OCRエンジンを初期化中...'
       }));
+
+      // OCR処理を実行（日本語+英語）
+      const result = await Tesseract.recognize(
+        imageUrl,
+        'jpn+eng',
+        {
+          logger: (m: any) => {
+            if (m.status === 'recognizing text') {
+              const progress = Math.round(m.progress * 80) + 10; // 10-90%
+              setScanState(prev => ({
+                ...prev,
+                progress,
+                currentStep: `テキストを認識中... ${Math.round(m.progress * 100)}%`
+              }));
+            }
+          }
+        }
+      );
+
+      // URLを解放
+      URL.revokeObjectURL(imageUrl);
+
+      console.log('OCR結果:', result.data.text);
+
+      setScanState(prev => ({
+        ...prev,
+        progress: 90,
+        currentStep: 'データを抽出中...'
+      }));
+
+      // テキストから情報を抽出
+      const extractedData = extractReceiptData(result.data.text);
+
+      // レシート情報を更新
+      setUploadedReceipts(prev => prev.map(receipt =>
+        receipt.id === newReceipt.id
+          ? {
+            ...receipt,
+            merchant: extractedData.merchant || '不明',
+            date: extractedData.date || receipt.date,
+            amount: extractedData.amount || 0,
+            taxRate: extractedData.taxRate || 0,
+            description: extractedData.description || 'OCR処理完了',
+            confidence: extractedData.confidence || 70,
+            confidenceScores: extractedData.confidenceScores
+          }
+          : receipt
+      ));
+
+      setScanState(prev => ({
+        ...prev,
+        progress: 95,
+        currentStep: 'データベースに保存中...'
+      }));
+
+      // Supabaseに保存
+      if (user?.uid) {
+        const savedReceipt = await saveReceipt({
+          user_id: user.uid,
+          date: extractedData.date || newReceipt.date,
+          merchant: extractedData.merchant || '不明',
+          amount: extractedData.amount || 0,
+          category: extractedData.category || '未分類',
+          description: extractedData.description || 'OCR処理完了',
+          confidence: extractedData.confidence || 70,
+          status: 'pending',
+          tax_rate: extractedData.taxRate || 0,
+          confidence_scores: extractedData.confidenceScores
+        });
+
+        if (savedReceipt && savedReceipt.id) {
+          // 保存成功：ローカルのレシート情報をSupabaseのIDで更新
+          setUploadedReceipts(prev => prev.map(receipt =>
+            receipt.id === newReceipt.id
+              ? { ...receipt, id: savedReceipt.id! }
+              : receipt
+          ));
+        }
+      }
+
+      setScanState(prev => ({
+        ...prev,
+        progress: 100,
+        currentStep: '完了'
+      }));
+
+      // 成功メッセージ
+      setTimeout(() => {
+        setScanState({
+          isProcessing: false,
+          retryCount: 0
+        });
+      }, 500);
+
+    } catch (error: any) {
+      console.error('OCR処理エラー:', error);
+
+      // エラーの場合、エラーメッセージを表示
+      setUploadedReceipts(prev => prev.map(receipt =>
+        receipt.id === newReceipt.id
+          ? {
+            ...receipt,
+            merchant: '解析エラー',
+            description: `OCR処理に失敗しました: ${error.message}`,
+            confidence: 0
+          }
+          : receipt
+      ));
+
+      setScanState({
+        isProcessing: false,
+        retryCount: 0,
+        errorMessage: `OCR処理に失敗しました: ${error.message}`
+      });
     }
   };
 
@@ -317,70 +320,145 @@ const ReceiptProcessing: React.FC = () => {
     });
   };
 
-  // テキストからレシート情報を抽出する関数（簡易的な実装）
+  // テキストからレシート情報を抽出する関数（改善版）
   const extractReceiptData = (text: string) => {
-    // 正規表現パターン
+    console.log('抽出対象テキスト:', text);
+
+    // 正規表現パターン（日本語レシート対応）
     const patterns = {
-      totalAmount: /合計|総計|total.*?([0-9,]+)円/i,
-      date: /(\d{4}[年/-]\d{1,2}[月/-]\d{1,2}[日]?)|(\d{2}\/\d{2}\/\d{2})/i,
-      taxRate: /税率?\s*([0-9]+)%|消費税.*?([0-9]+)%/i,
-      storeName: /^([ァ-ヴー・ａ-ｚＡ-Ｚ0-9\u4E00-\u9FFF]+)(店|ストア|マート)/i
+      // 金額パターン（様々な表記に対応）
+      totalAmount: [
+        /合計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
+        /総計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
+        /小計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
+        /計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
+        /total[\s:：]*[¥￥]*\s*([0-9,]+)/i,
+        /[¥￥]\s*([0-9,]+)/
+      ],
+      // 日付パターン
+      date: [
+        /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})[日]?/,
+        /(\d{2,4})[\/\-](\d{1,2})[\/\-](\d{1,2})/,
+        /(\d{4})\.(\d{2})\.(\d{2})/
+      ],
+      // 税率パターン
+      taxRate: /[税消費]*税?\s*([0-9]+)\s*%/i,
+      // 店舗名パターン（行の最初の方に来ることが多い）
+      storeName: /^([ァ-ヶー・ A-Za-z0-9　\s]+)/m
     };
 
     // 店舗名の候補を検索
     let merchant = '不明';
     let merchantConfidence = 0;
 
-    const storeNameMatch = text.match(patterns.storeName);
-    if (storeNameMatch) {
-      merchant = storeNameMatch[1] + (storeNameMatch[2] || '');
-      merchantConfidence = 90;
-    } else {
-      // 代替方法で店舗名を検索
-      const merchantKeywords = ['セブンイレブン', 'ローソン', 'ファミリーマート', 'スターバックス', 'マクドナルド'];
-      for (const keyword of merchantKeywords) {
-        if (text.includes(keyword)) {
+    // よく知られた店舗名のリスト
+    const merchantKeywords = [
+      'セブンイレブン', 'セブン-イレブン', 'セブン',
+      'ローソン', 'LAWSON',
+      'ファミリーマート', 'ファミマ', 'FamilyMart',
+      'スターバックス', 'スタバ', 'Starbucks',
+      'マクドナルド', "McDonald's",
+      'すき家', '吉野家', '松屋',
+      'イオン', 'AEON'
+    ];
+
+    // テキストの最初の数行から店舗名を探す
+    const lines = text.split('\n').slice(0, 5);
+    for (const keyword of merchantKeywords) {
+      for (const line of lines) {
+        if (line.includes(keyword)) {
           merchant = keyword;
-          merchantConfidence = 80;
+          merchantConfidence = 90;
           break;
         }
+      }
+      if (merchantConfidence > 0) break;
+    }
+
+    // キーワードで見つからない場合は最初の行を使用
+    if (merchantConfidence === 0 && lines.length > 0) {
+      const firstLine = lines[0].trim();
+      if (firstLine.length > 0 && firstLine.length < 30) {
+        merchant = firstLine;
+        merchantConfidence = 60;
       }
     }
 
     // 日付を検索
     let date = '';
     let dateConfidence = 0;
-    const dateMatch = text.match(patterns.date);
-    if (dateMatch) {
-      date = dateMatch[0];
-      dateConfidence = 85;
+    for (const pattern of patterns.date) {
+      const dateMatch = text.match(pattern);
+      if (dateMatch) {
+        const year = dateMatch[1]?.length === 2 ? '20' + dateMatch[1] : dateMatch[1];
+        const month = dateMatch[2]?.padStart(2, '0');
+        const day = dateMatch[3]?.padStart(2, '0');
+        date = `${year}-${month}-${day}`;
+        dateConfidence = 85;
+        break;
+      }
     }
 
-    // 金額を検索（最も大きな数値を金額と仮定）
+    // 金額を検索
     let amount = 0;
     let amountConfidence = 0;
-    const amountMatches = text.match(/\d{3,}/g);
-    if (amountMatches) {
-      amount = Math.max(...amountMatches.map(Number));
-      amountConfidence = 80;
+
+    for (const pattern of patterns.totalAmount) {
+      const amountMatch = text.match(pattern);
+      if (amountMatch) {
+        const amountStr = amountMatch[1].replace(/,/g, '');
+        const parsedAmount = parseInt(amountStr);
+        if (!isNaN(parsedAmount) && parsedAmount > 0) {
+          amount = parsedAmount;
+          amountConfidence = 85;
+          break;
+        }
+      }
+    }
+
+    // 金額が見つからない場合、全ての数字から最大値を探す
+    if (amount === 0) {
+      const allNumbers = text.match(/[0-9,]+/g);
+      if (allNumbers) {
+        const numbers = allNumbers
+          .map(n => parseInt(n.replace(/,/g, '')))
+          .filter(n => !isNaN(n) && n > 0 && n < 1000000);
+        if (numbers.length > 0) {
+          amount = Math.max(...numbers);
+          amountConfidence = 60;
+        }
+      }
     }
 
     // 税率を検索
-    let taxRate = 0;
-    let taxRateConfidence = 0;
+    let taxRate = 10; // デフォルト10%
+    let taxRateConfidence = 50;
     const taxRateMatch = text.match(patterns.taxRate);
     if (taxRateMatch) {
-      taxRate = parseInt(taxRateMatch[1] || taxRateMatch[2]);
+      taxRate = parseInt(taxRateMatch[1]);
       taxRateConfidence = 85;
     }
+
+    const totalConfidence = Math.round(
+      (merchantConfidence + dateConfidence + amountConfidence + taxRateConfidence) / 4
+    );
+
+    console.log('抽出結果:', {
+      merchant,
+      date,
+      amount,
+      taxRate,
+      confidence: totalConfidence
+    });
 
     return {
       merchant,
       date,
       amount,
       taxRate,
+      category: '未分類', // デフォルトカテゴリ
       description: 'OCRで抽出',
-      confidence: Math.round((merchantConfidence + dateConfidence + amountConfidence + taxRateConfidence) / 4),
+      confidence: totalConfidence,
       confidenceScores: {
         merchant: merchantConfidence,
         date: dateConfidence,
@@ -425,22 +503,21 @@ const ReceiptProcessing: React.FC = () => {
     }
   }
 
-  const handleApprove = (id: string) => {
+  const handleApprove = async (id: string) => {
     setUploadedReceipts(prev => prev.map(receipt =>
       receipt.id === id ? { ...receipt, status: 'approved' as const } : receipt
     ))
+    // Supabaseにも保存
+    await updateReceiptStatus(id, 'approved');
   }
 
-  const handleReject = (id: string) => {
+  const handleReject = async (id: string) => {
     setUploadedReceipts(prev => prev.map(receipt =>
       receipt.id === id ? { ...receipt, status: 'rejected' as const } : receipt
     ))
+    // Supabaseにも保存
+    await updateReceiptStatus(id, 'rejected');
   }
-
-  // サンプルレシートを追加する関数
-  const addSampleReceipts = () => {
-    setUploadedReceipts(prev => [...sampleReceipts, ...prev]);
-  };
 
   // サンプル画像でOCRテストを行う関数
   const testOCROnSampleImage = async () => {
