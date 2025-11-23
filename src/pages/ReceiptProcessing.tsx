@@ -1,7 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Upload, FileText, CheckCircle, ArrowRight, Camera, X, RefreshCw, FileImage, Search, Eye, RotateCcw, Check, Save, AlertTriangle } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import DocumentUpload from '../components/DocumentUpload';
 import ReceiptCamera from '../components/ReceiptCamera';
 import { ReceiptData as ParsedReceiptData } from '../utils/ReceiptParser'
@@ -518,6 +516,46 @@ const ReceiptProcessing: React.FC = () => {
     // Supabaseにも保存
     await updateReceiptStatus(id, 'rejected');
   }
+
+  // サンプルレシートを追加する関数（テスト用）
+  const addSampleReceipts = () => {
+    const sampleData: ReceiptData[] = [
+      {
+        id: Date.now().toString(),
+        date: '2024-01-15',
+        merchant: 'セブンイレブン',
+        amount: 1320,
+        category: '消耗品費',
+        description: 'コピー用紙',
+        confidence: 95,
+        status: 'pending',
+        taxRate: 10
+      },
+      {
+        id: (Date.now() + 1).toString(),
+        date: '2024-01-14',
+        merchant: 'マクドナルド',
+        amount: 748,
+        category: '接待交際費',
+        description: 'ビッグマックセット',
+        confidence: 92,
+        status: 'pending',
+        taxRate: 10
+      },
+      {
+        id: (Date.now() + 2).toString(),
+        date: '2024-01-13',
+        merchant: 'ローソン',
+        amount: 540,
+        category: '消耗品費',
+        description: '飲料水',
+        confidence: 88,
+        status: 'pending',
+        taxRate: 8
+      }
+    ];
+    setUploadedReceipts(prev => [...sampleData, ...prev]);
+  };
 
   // サンプル画像でOCRテストを行う関数
   const testOCROnSampleImage = async () => {
