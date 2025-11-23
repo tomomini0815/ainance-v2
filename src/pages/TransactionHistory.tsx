@@ -330,7 +330,7 @@ const TransactionHistory: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs font-medium text-text-muted">総取引数</div>
-                  <div className="text-xl font-bold mt-1 text-text-main">0</div>
+                  <div className="text-xl font-bold mt-1 text-primary">0</div>
                 </div>
                 <div className="rounded-lg bg-primary/10 p-2">
                   <FileText className="w-5 h-5 text-primary" />
@@ -457,7 +457,7 @@ const TransactionHistory: React.FC = () => {
                   <FileText className="w-5 h-5 text-primary" />
                 </div>
               </div>
-              <div className="text-xl font-bold text-text-main mt-1">{stats.total}</div>
+              <div className="text-xl font-bold text-primary mt-1">{stats.total}</div>
             </div>
             <div className="border border-border rounded-lg p-3">
               <div className="flex items-center justify-between">
