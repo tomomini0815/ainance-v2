@@ -280,7 +280,7 @@ const Dashboard: React.FC = () => {
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div className="text-xs font-medium text-text-muted">総取引数</div>
-              <div className="rounded-lg bg-primary/10 p-2">
+              <div className="rounded-lg bg-primary/5 p-2">
                 <FileText className="w-5 h-5 text-primary" />
               </div>
             </div>
@@ -289,7 +289,7 @@ const Dashboard: React.FC = () => {
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div className="text-xs font-medium text-text-muted">収入</div>
-              <div className="rounded-lg bg-green-500/10 p-2">
+              <div className="rounded-lg bg-green-500/5 p-2">
                 <TrendingUp className="w-5 h-5 text-green-500" />
               </div>
             </div>
@@ -298,7 +298,7 @@ const Dashboard: React.FC = () => {
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div className="text-xs font-medium text-text-muted">支出</div>
-              <div className="rounded-lg bg-red-500/10 p-2">
+              <div className="rounded-lg bg-red-500/5 p-2">
                 <TrendingDown className="w-5 h-5 text-red-500" />
               </div>
             </div>
@@ -307,7 +307,7 @@ const Dashboard: React.FC = () => {
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div className="text-xs font-medium text-text-muted">収支</div>
-              <div className={`rounded-lg p-2 ${stats.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+              <div className={`rounded-lg p-2 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
                 <JapaneseYen className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
             </div>
