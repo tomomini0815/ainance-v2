@@ -254,52 +254,53 @@ const ChatToBook: React.FC = () => {
     }
   };
 
-  // 取引をデータベースに保存
-  const saveTransactionToDB = async (transaction: Transaction) => {
+  // 取引をDBに保存する関数
+  const saveTransactionToDB = async (transaction: Transaction): Promise<{ id: string; tempId: string } | null> => {
+    console.log('saveTransactionToDB - 取引データ:', transaction);
     try {
-      // ユーザーがログインしていない場合
-      if (!user) {
-        throw new Error('ユーザーがログインしていません。ログインしてください。');
-      }
-
-      // Supabaseに保存するデータの準備
-      const transactionData = {
-        item: transaction.description,
-        amount: transaction.amount,
-        date: transaction.date,
-        category: transaction.category,
-        type: transaction.type,
-        description: transaction.description,
-        creator: user.id  // ログインユーザーのIDを設定
-      };
-
+      // tempIdを保存（ローカルリストから削除する際に使用）
+      const tempId = transaction.id;
+      
+      // Supabaseに保存するデータを準備（idフィールドを除外）
+      const { id, ...transactionData } = transaction;
+      console.log('saveTransactionToDB - 保存するデータ:', transactionData);
+      
       // useTransactionsフックのcreateTransaction関数を使用して取引を保存
-      const result = await createTransaction(transactionData);
-
-      if (result.error) {
-        throw result.error;
+      const result = await createTransaction({
+        ...transactionData,
+        item: transactionData.description,
+        creator: user?.id || '00000000-0000-0000-0000-000000000000'
+      });
+      console.log('saveTransactionToDB - 保存結果:', result);
+      
+      if (result.data) {
+        // 保存成功時にtempIdと新しいIDを返す
+        return { id: result.data.id, tempId };
+      } else {
+        console.error('saveTransactionToDB - 保存失敗:', result.error);
+        return null;
       }
-
-      return result.data?.id;
-    } catch (error: any) {
-      console.error('取引の保存中にエラーが発生しました:', error);
-      // ネットワークエラーの場合、より具体的なメッセージを表示
-      if (error.message.includes('Failed to fetch')) {
-        throw new Error('ネットワークエラーが発生しました。インターネット接続を確認してください。');
-      }
-      throw error;
+    } catch (error) {
+      console.error('saveTransactionToDB - エラー:', error);
+      return null;
     }
   };
 
   // 単一の取引を記録
   const recordTransaction = async (transaction: Transaction) => {
     try {
-      await saveTransactionToDB(transaction);
+      console.log('recordTransaction - 開始:', transaction);
+      const savedTransaction = await saveTransactionToDB(transaction);
+      console.log('recordTransaction - 保存された取引:', savedTransaction);
       // 成功したらローカルリストから削除
-      setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+      if (savedTransaction) {
+        setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+        console.log('recordTransaction - ローカルリストから削除しました');
+      }
       
       // データの再取得
       await fetchTransactions();
+      console.log('recordTransaction - データ再取得完了');
       
       alert('取引が正常に記録されました');
     } catch (error) {
@@ -318,6 +319,8 @@ const ChatToBook: React.FC = () => {
   const bulkRecordTransactions = async () => {
     const selectedItems = transactions.filter(t => selectedTransactions.includes(t.id));
 
+    console.log('bulkRecordTransactions - 選択された取引:', selectedItems);
+
     if (selectedItems.length === 0) {
       alert('記録する取引を選択してください');
       return;
@@ -327,6 +330,8 @@ const ChatToBook: React.FC = () => {
       // 選択された取引を一括で保存
       const savePromises = selectedItems.map(transaction => saveTransactionToDB(transaction));
       const results = await Promise.allSettled(savePromises);
+
+      console.log('bulkRecordTransactions - 保存結果:', results);
 
       const successful = results.filter(result => result.status === 'fulfilled').length;
       const failed = results.filter(result => result.status === 'rejected').length;
@@ -350,18 +355,22 @@ const ChatToBook: React.FC = () => {
         alert(`${successful}件の取引が正常に記録されました`);
       }
 
-      // 成功した取引のIDを取得
-      const successfulIds = results
-        .map((result, index) => ({ result, index }))
-        .filter(({ result }) => result.status === 'fulfilled')
-        .map(({ index }) => selectedItems[index].id);
+      // 成功した取引のtempIdを取得
+      const successfulTempIds: string[] = results
+        .filter((result): result is PromiseFulfilledResult<{ id: string; tempId: string } | null> => result.status === 'fulfilled')
+        .map(result => result.value?.tempId)
+        .filter((tempId): tempId is string => tempId !== undefined);
+
+      console.log('bulkRecordTransactions - 成功した取引tempId:', successfulTempIds);
+      console.log('bulkRecordTransactions - 選択された取引ID:', selectedItems.map(t => t.id));
 
       // 成功した取引をローカルリストから削除
-      setTransactions(prev => prev.filter(t => !successfulIds.includes(t.id)));
-      setSelectedTransactions(prev => prev.filter(id => !successfulIds.includes(id)));
+      setTransactions(prev => prev.filter(t => !successfulTempIds.includes(t.id)));
+      setSelectedTransactions(prev => prev.filter(id => !successfulTempIds.includes(id)));
       
       // データの再取得
       await fetchTransactions();
+      console.log('bulkRecordTransactions - データ再取得完了');
     } catch (error) {
       console.error('取引の一括記録中にエラーが発生しました:', error);
       alert('取引の一括記録に失敗しました: ' + (error as Error).message);
