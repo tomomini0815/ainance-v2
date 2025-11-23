@@ -91,7 +91,9 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
   // 新しい取引をSupabaseに保存
   const createTransaction = async (transaction: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>): Promise<CreateTransactionResult> => {
+    console.log('createTransaction - 開始:', transaction);
     if (!userId || !businessType) {
+      console.log('createTransaction - ユーザーIDまたはビジネスタイプがありません:', { userId, businessType });
       return { data: null, error: new Error('ユーザーIDと業態形態が必要です') };
     }
 
@@ -109,16 +111,22 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       };
 
       const tableName = getTableName();
+      console.log('createTransaction - テーブル名:', tableName);
+      console.log('createTransaction - 保存するデータ:', transactionWithCreator);
+      
       const { data, error } = await supabase
         .from(tableName)
         .insert(transactionWithCreator)
         .select()
         .single();
 
+      console.log('createTransaction - Supabaseからの応答:', { data, error });
+
       if (error) throw error;
 
       const newTransaction: Transaction = data;
       setTransactions(prev => [newTransaction, ...prev]);
+      console.log('createTransaction - 新しい取引をローカル状態に追加しました:', newTransaction);
       return { data: newTransaction, error: null };
     } catch (error: any) {
       console.error('取引の作成に失敗しました:', error);

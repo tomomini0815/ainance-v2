@@ -80,9 +80,9 @@
 
 .dark {
   /* Dark Mode - Deep Navy Theme */
-  --background: #0f172a;
-  /* Slate 900 - Matches Sidebar */
-  --surface: #1e293b;
+  --background: #030712;
+  /* Slate 950 - Matches Sidebar */
+  --surface: #0f172a;
   /* Slate 800 */
   --surface-highlight: #334155;
   /* Slate 700 */

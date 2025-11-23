@@ -26,6 +26,7 @@ export const useBusinessType = (userId?: string) => {
 
   // 現在アクティブな業態形態を取得
   const fetchCurrentBusinessType = useCallback(() => {
+    console.log('fetchCurrentBusinessType - 開始:', { userId });
     if (!userId) {
       setLoading(false)
       return
@@ -42,6 +43,7 @@ export const useBusinessType = (userId?: string) => {
         .order('is_active', { ascending: false })
         .order('created_at', { ascending: false })
         .then(({ data, error }) => {
+          console.log('fetchCurrentBusinessType - Supabaseからの応答:', { data, error });
           if (error) {
             console.error('業態形態の取得に失敗しました:', error)
             toast.error('業態形態の取得に失敗しました')
@@ -54,10 +56,12 @@ export const useBusinessType = (userId?: string) => {
             const activeBusinessType = data.find((bt) => bt.is_active)
             if (activeBusinessType) {
               setCurrentBusinessType(activeBusinessType)
+              console.log('fetchCurrentBusinessType - アクティブな業態形態を設定しました:', activeBusinessType);
             } else {
               // アクティブな業態がない場合、最初のものをアクティブとして設定
               const firstBusinessType = data[0]
               setCurrentBusinessType(firstBusinessType)
+              console.log('fetchCurrentBusinessType - 最初の業態形態をアクティブとして設定しました:', firstBusinessType);
 
               // DBにもアクティブとしてマーク
               supabase
@@ -70,6 +74,7 @@ export const useBusinessType = (userId?: string) => {
             // 業態形態がない場合はnullを設定
             setCurrentBusinessType(null)
             setBusinessTypes([])
+            console.log('fetchCurrentBusinessType - 業態形態が見つかりません');
           }
           setLoading(false)
         })

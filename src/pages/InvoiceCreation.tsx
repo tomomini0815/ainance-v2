@@ -437,7 +437,7 @@ const InvoiceCreation: React.FC = () => {
         </div>
 
         {/* 文書タイプ切り替え */}
-        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 border border-border">
           <div className="flex flex-wrap gap-2 sm:gap-4">
             <button
               onClick={() => setDocumentType('invoice')}
@@ -463,7 +463,7 @@ const InvoiceCreation: React.FC = () => {
         </div>
 
         {/* アクションボタン */}
-        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 border border-border">
           <div className="flex flex-wrap gap-2 sm:gap-4 justify-end">
             {/* プレビュー（優先度低） */}
             <button
@@ -495,7 +495,7 @@ const InvoiceCreation: React.FC = () => {
             {/* 送信（高） */}
             <button
               onClick={sendInvoice}
-              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 btn-primary transition-colors text-sm sm:text-base font-semibold"
+              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm sm:text-base font-semibold shadow-lg shadow-primary/25"
             >
               <Send className="mr-1 sm:mr-2" size={16} />
               <span className="whitespace-nowrap">送信</span>
@@ -505,397 +505,154 @@ const InvoiceCreation: React.FC = () => {
 
         {/* 請求書フォーム */}
         <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6">
-          {/* 基本情報 */}
-          <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <div>
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-text-muted">基本情報</h2>
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-text-muted mb-1">発行日</label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={invoiceDate}
-                      onChange={(e) => setInvoiceDate(e.target.value)}
-                      className="w-full p-2 text-sm sm:text-base border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                    />
-                    <Calendar className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-text-muted" size={16} />
-                  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Form Section */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-text-main flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
+                    請求書情報
+                  </h2>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-surface-highlight text-text-muted border border-border">
+                    T1234567890123
+                  </span>
                 </div>
-                {documentType === 'invoice' ? (
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-text-muted mb-1">支払期限</label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full p-2 text-sm sm:text-base border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      />
-                      <Calendar className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-text-muted" size={16} />
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-text-muted mb-1">有効期限</label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={estimateExpiryDate}
-                        onChange={(e) => setEstimateExpiryDate(e.target.value)}
-                        className="w-full p-2 text-sm sm:text-base border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      />
-                      <Calendar className="absolute right-2 sm:right-3 top-2 sm:top-2.5 text-text-muted" size={16} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            <div>
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-text-muted">請求者情報</h2>
-              <div className="bg-background p-3 sm:p-4 rounded-md">
-                <p className="font-medium text-sm sm:text-base">デザイン会社</p>
-                <p className="text-xs sm:text-sm text-text-muted">〒100-0001 東京都千代田区千代田1-1-1</p>
-                <p className="text-xs sm:text-sm text-text-muted">TEL: 03-1234-5678</p>
-                <p className="text-xs sm:text-sm text-text-muted">Email: info@design-company.co.jp</p>
-              </div>
-            </div>
-          </div>
-
-          {/* 請求先情報 */}
-          <div className="mb-6 sm:mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
-              <h2 className="text-lg sm:text-xl font-semibold text-text-muted">請求先情報</h2>
-              <button
-                onClick={openCustomerModal}
-                className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
-              >
-                <Search className="mr-1" size={14} />
-                顧客を選択
-              </button>
-            </div>
-            {customer.name ? (
-              <div className="bg-background p-3 sm:p-4 rounded-md">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                  <div>
-                    <p className="font-medium text-sm sm:text-base">{customer.name}</p>
-                    <p className="text-xs sm:text-sm text-text-muted">{customer.address}</p>
-                    <p className="text-xs sm:text-sm text-text-muted">TEL: {customer.phone}</p>
-                    <p className="text-xs sm:text-sm text-text-muted">Email: {customer.email}</p>
-                  </div>
-                  <button
-                    onClick={() => setCustomer({ id: '', name: '', email: '', phone: '', address: '' })}
-                    className="text-red-500 hover:text-red-700 mt-2 sm:mt-0"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="border-2 border-dashed border-border rounded-md p-6 sm:p-8 text-center">
-                <User className="mx-auto text-text-muted mb-2" size={24} />
-                <p className="text-text-muted text-sm sm:text-base">請求先顧客が選択されていません</p>
-                <button
-                  onClick={openCustomerModal}
-                  className="mt-2 text-primary hover:text-primary/90 font-medium text-sm"
-                >
-                  顧客を選択
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* 銀行口座情報（請求書の場合のみ表示） */}
-          {documentType === 'invoice' && (
-            <div className="mb-6 sm:mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
-                <h2 className="text-lg sm:text-xl font-semibold text-text-muted">振込先情報</h2>
-                <button
-                  onClick={openBankAccountModal}
-                  className="flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
-                >
-                  <Search className="mr-1" size={14} />
-                  口座を選択
-                </button>
-              </div>
-              {bankAccount.bankName ? (
-                <div className="p-6 max-w-7xl mx-auto space-y-8">
-                  <div className="flex justify-between items-center">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                        請求書作成
-                      </h1>
-                      <p className="text-text-muted mt-2">
-                        インボイス制度に対応した適格請求書を簡単に作成できます
-                      </p>
+                      <label className="block text-sm font-medium text-text-muted mb-2">取引先</label>
+                      <input
+                        type="text"
+                        className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        placeholder="株式会社〇〇"
+                      />
                     </div>
-                    <div className="flex gap-3">
-                      <button className="px-4 py-2 bg-surface border border-border rounded-lg text-text-main hover:bg-surface-highlight transition-colors flex items-center gap-2">
-                        <Download className="w-4 h-4" />
-                        下書き一覧
-                      </button>
-                      <button className="px-4 py-2 btn-primary transition-colors flex items-center gap-2 shadow-lg shadow-primary/25">
-                        <Plus className="w-4 h-4" />
-                        新規作成
-                      </button>
+                    <div>
+                      <label className="block text-sm font-medium text-text-muted mb-2">請求日</label>
+                      <input
+                        type="date"
+                        className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Form Section */}
-                    <div className="lg:col-span-2 space-y-6">
-                      <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
-                        <div className="flex items-center justify-between mb-6">
-                          <h2 className="text-xl font-semibold text-text-main flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-primary" />
-                            請求書情報
-                          </h2>
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-surface-highlight text-text-muted border border-border">
-                            T1234567890123
-                          </span>
-                        </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-muted mb-2">件名</label>
+                    <input
+                      type="text"
+                      className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      placeholder="〇〇開発案件 3月分ご請求"
+                    />
+                  </div>
 
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-2 gap-6">
-                            <div>
-                              <label className="block text-sm font-medium text-text-muted mb-2">取引先</label>
+                  {/* Items Table */}
+                  <div className="border border-border rounded-xl overflow-x-auto bg-background">
+                    <table className="w-full">
+                      <thead className="bg-surface-highlight">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">品目</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-24">数量</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">単価</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">金額</th>
+                          <th className="px-4 py-3 w-10"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {[1, 2].map((i) => (
+                          <tr key={i}>
+                            <td className="px-4 py-3">
                               <input
                                 type="text"
-                                className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                placeholder="株式会社〇〇"
+                                className="w-full bg-transparent border-none focus:ring-0 text-text-main placeholder-text-muted"
+                                placeholder="品目を入力"
                               />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-text-muted mb-2">請求日</label>
+                            </td>
+                            <td className="px-4 py-3">
                               <input
-                                type="date"
-                                className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                type="number"
+                                className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
+                                placeholder="1"
                               />
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-text-muted mb-2">件名</label>
-                            <input
-                              type="text"
-                              className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
-                              placeholder="〇〇開発案件 3月分ご請求"
-                            />
-                          </div>
-
-                          {/* Items Table */}
-                          <div className="border border-border rounded-xl overflow-x-auto">
-                            <table className="w-full">
-                              <thead className="bg-surface-highlight">
-                                <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">品目</th>
-                                  <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-24">数量</th>
-                                  <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">単価</th>
-                                  <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">金額</th>
-                                  <th className="px-4 py-3 w-10"></th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-border bg-surface">
-                                {[1, 2].map((i) => (
-                                  <tr key={i}>
-                                    <td className="px-4 py-3">
-                                      <input
-                                        type="text"
-                                        className="w-full bg-transparent border-none focus:ring-0 text-text-main placeholder-text-muted"
-                                        placeholder="品目を入力"
-                                      />
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <input
-                                        type="number"
-                                        className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
-                                        placeholder="1"
-                                      />
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <input
-                                        type="number"
-                                        className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
-                                        placeholder="0"
-                                      />
-                                    </td>
-                                    <td className="px-4 py-3 text-right text-text-main">¥0</td>
-                                    <td className="px-4 py-3 text-center">
-                                      <button className="text-text-muted hover:text-red-400 transition-colors">
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                            <div className="p-3 bg-surface-highlight border-t border-border">
-                              <button className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1">
-                                <Plus className="w-4 h-4" />
-                                行を追加
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="number"
+                                className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
+                                placeholder="0"
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-right text-text-main">¥0</td>
+                            <td className="px-4 py-3 text-center">
+                              <button className="text-text-muted hover:text-red-400 transition-colors">
+                                <Trash2 className="w-4 h-4" />
                               </button>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-end">
-                            <div className="w-64 space-y-3">
-                              <div className="flex justify-between text-text-muted">
-                                <span>小計</span>
-                                <span>¥0</span>
-                              </div>
-                              <div className="flex justify-between text-text-muted">
-                                <span>消費税 (10%)</span>
-                                <span>¥0</span>
-                              </div>
-                              <div className="flex justify-between text-lg font-bold text-text-main pt-3 border-t border-border">
-                                <span>合計</span>
-                                <span>¥0</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="p-3 bg-surface-highlight border-t border-border">
+                      <button className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1">
+                        <Plus className="w-4 h-4" />
+                        行を追加
+                      </button>
                     </div>
+                  </div>
 
-                    {/* Sidebar Actions */}
-                    <div className="space-y-6">
-                      <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold text-text-main mb-4">アクション</h3>
-                        <div className="space-y-3">
-                          <button className="w-full btn-primary transition-colors shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
-                            <Send className="w-4 h-4" />
-                            メールで送信
-                          </button>
-                          <button className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2">
-                            <Download className="w-4 h-4" />
-                            PDFダウンロード
-                          </button>
-                          <button className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2">
-                            <Save className="w-4 h-4" />
-                            下書き保存
-                          </button>
-                        </div>
+                  <div className="flex justify-end">
+                    <div className="w-64 space-y-3">
+                      <div className="flex justify-between text-text-muted">
+                        <span>小計</span>
+                        <span>¥0</span>
                       </div>
-
-                      <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold text-text-main mb-4">最近の請求書</h3>
-                        <div className="space-y-4">
-                          {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-highlight transition-colors cursor-pointer group">
-                              <div>
-                                <p className="font-medium text-text-main group-hover:text-primary transition-colors">株式会社〇〇 御中</p>
-                                <p className="text-xs text-text-muted">2024/03/{20 - i}</p>
-                              </div>
-                              <span className="text-sm font-bold text-text-main">¥150,000</span>
-                            </div>
-                          ))}
-                        </div>
+                      <div className="flex justify-between text-text-muted">
+                        <span>消費税 (10%)</span>
+                        <span>¥0</span>
+                      </div>
+                      <div className="flex justify-between text-lg font-bold text-text-main pt-3 border-t border-border">
+                        <span>合計</span>
+                        <span>¥0</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="border-2 border-dashed border-border rounded-md p-6 sm:p-8 text-center">
-                  <Banknote className="mx-auto text-text-muted mb-2" size={24} />
-                  <p className="text-text-muted text-sm sm:text-base">振込先口座が選択されていません</p>
-                  <button
-                    onClick={openBankAccountModal}
-                    className="mt-2 text-primary hover:text-primary/90 font-medium text-sm"
-                  >
-                    口座を選択
+              </div>
+            </div>
+
+            {/* Sidebar Actions */}
+            <div className="space-y-6">
+              <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-text-main mb-4">アクション</h3>
+                <div className="space-y-3">
+                  <button className="w-full btn-primary transition-colors shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
+                    <Send className="w-4 h-4" />
+                    メールで送信
+                  </button>
+                  <button className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2">
+                    <Download className="w-4 h-4" />
+                    PDFダウンロード
+                  </button>
+                  <button className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2">
+                    <Save className="w-4 h-4" />
+                    下書き保存
                   </button>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
 
-          {/* 明細 */}
-          <div className="mb-6 sm:mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
-              <h2 className="text-lg sm:text-xl font-semibold text-text-muted">明細</h2>
-              <button
-                onClick={addItem}
-                className="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm"
-              >
-                <Plus className="mr-1" size={14} />
-                商品・サービスを追加
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-surface-highlight">
-                    <th className="p-2 text-left text-xs sm:text-sm">商品・サービス</th>
-                    <th className="p-2 text-right text-xs sm:text-sm">数量</th>
-                    <th className="p-2 text-right text-xs sm:text-sm">単価</th>
-                    <th className="p-2 text-right text-xs sm:text-sm">金額</th>
-                    <th className="p-2 text-center text-xs sm:text-sm">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr key={item.id} className="border-b">
-                      <td className="p-2">
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                          className="w-full p-1 text-sm border border-border rounded focus:ring-2 focus:ring-primary focus:border-primary"
-                          placeholder="商品・サービス名"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
-                          className="w-full p-1 text-sm border border-border rounded text-right focus:ring-2 focus:ring-primary focus:border-primary"
-                          min="0"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <input
-                          type="number"
-                          value={item.unitPrice}
-                          onChange={(e) => updateItem(item.id, 'unitPrice', parseInt(e.target.value) || 0)}
-                          className="w-full p-1 text-sm border border-border rounded text-right focus:ring-2 focus:ring-primary focus:border-primary"
-                          min="0"
-                        />
-                      </td>
-                      <td className="p-2 text-right text-sm">
-                        ¥{item.amount.toLocaleString()}
-                      </td>
-                      <td className="p-2 text-center">
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
+              <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-text-main mb-4">最近の請求書</h3>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-highlight transition-colors cursor-pointer group border border-border">
+                      <div>
+                        <p className="font-medium text-text-main group-hover:text-primary transition-colors">株式会社〇〇 御中</p>
+                        <p className="text-xs text-text-muted">2024/03/{20 - i}</p>
+                      </div>
+                      <span className="text-sm font-bold text-text-main">¥150,000</span>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* 合計 */}
-          <div className="bg-background p-4 sm:p-6 rounded-md">
-            <div className="flex justify-end">
-              <div className="w-full sm:w-64">
-                <div className="flex justify-between mb-1 sm:mb-2 text-sm sm:text-base">
-                  <span>小計:</span>
-                  <span>¥{subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between mb-1 sm:mb-2 text-sm sm:text-base">
-                  <span>消費税(10%):</span>
-                  <span>¥{taxAmount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between font-bold text-base sm:text-lg pt-2 border-t text-sm sm:text-base">
-                  <span>合計:</span>
-                  <span>¥{totalAmount.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -905,12 +662,12 @@ const InvoiceCreation: React.FC = () => {
         {/* 顧客選択モーダル */}
         {showCustomerModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h3 className="text-lg font-semibold">顧客を選択</h3>
+            <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden border border-border">
+              <div className="flex justify-between items-center p-4 border-b border-border">
+                <h3 className="text-lg font-semibold text-text-main">顧客を選択</h3>
                 <button
                   onClick={closeModal}
-                  className="text-text-muted hover:text-text-muted"
+                  className="text-text-muted hover:text-text-main"
                 >
                   <X size={24} />
                 </button>
@@ -920,7 +677,7 @@ const InvoiceCreation: React.FC = () => {
                   <input
                     type="text"
                     placeholder="顧客を検索..."
-                    className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -934,10 +691,9 @@ const InvoiceCreation: React.FC = () => {
                     .map(customer => (
                       <div
                         key={customer.id}
-                        className="p-3 border border-border rounded-md hover:bg-background cursor-pointer"
-                        onClick={() => selectCustomer(customer)}
+                        className="p-3 border border-border rounded-md hover:bg-background cursor-pointer bg-background"
                       >
-                        <p className="font-medium">{customer.name}</p>
+                        <p className="font-medium text-text-main">{customer.name}</p>
                         <p className="text-sm text-text-muted">{customer.email}</p>
                         <p className="text-sm text-text-muted">{customer.phone}</p>
                         <p className="text-sm text-text-muted">{customer.address}</p>
@@ -963,12 +719,12 @@ const InvoiceCreation: React.FC = () => {
         {/* 銀行口座選択モーダル */}
         {showBankAccountModal && documentType === 'invoice' && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h3 className="text-lg font-semibold">銀行口座を選択</h3>
+            <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden border border-border">
+              <div className="flex justify-between items-center p-4 border-b border-border">
+                <h3 className="text-lg font-semibold text-text-main">銀行口座を選択</h3>
                 <button
                   onClick={closeModal}
-                  className="text-text-muted hover:text-text-muted"
+                  className="text-text-muted hover:text-text-main"
                 >
                   <X size={24} />
                 </button>
@@ -978,10 +734,9 @@ const InvoiceCreation: React.FC = () => {
                   {bankAccounts.map(account => (
                     <div
                       key={account.id}
-                      className="p-3 border border-border rounded-md hover:bg-background cursor-pointer"
-                      onClick={() => selectBankAccount(account)}
+                      className="p-3 border border-border rounded-md hover:bg-background cursor-pointer bg-background"
                     >
-                      <p className="font-medium">{account.bankName} {account.branchName}</p>
+                      <p className="font-medium text-text-main">{account.bankName} {account.branchName}</p>
                       <p className="text-sm text-text-muted">{account.accountType} {account.accountNumber}</p>
                       <p className="text-sm text-text-muted">口座名義: {account.accountHolder}</p>
                     </div>
@@ -1006,65 +761,67 @@ const InvoiceCreation: React.FC = () => {
         {/* 新規顧客作成モーダル */}
         {showNewCustomerModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-surface rounded-lg max-w-md w-full">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h3 className="text-lg font-semibold">新規顧客を作成</h3>
+            <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden border border-border">
+              <div className="flex justify-between items-center p-4 border-b border-border">
+                <h3 className="text-lg font-semibold text-text-main">新規顧客を作成</h3>
                 <button
                   onClick={closeModal}
-                  className="text-text-muted hover:text-text-muted"
+                  className="text-text-muted hover:text-text-main"
                 >
                   <X size={24} />
                 </button>
               </div>
-              <div className="p-4">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">顧客名</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      value={newCustomer.name}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">メールアドレス</label>
-                    <input
-                      type="email"
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      value={newCustomer.email}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">電話番号</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      value={newCustomer.phone}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">住所</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      value={newCustomer.address}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
-                    />
-                  </div>
+              <div className="p-4 overflow-auto max-h-[70vh] space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">顧客名</label>
+                  <input
+                    type="text"
+                    value={newCustomer.name}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                    placeholder="顧客名"
+                  />
                 </div>
-                <div className="mt-6 flex justify-end gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">メールアドレス</label>
+                  <input
+                    type="email"
+                    value={newCustomer.email}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                    placeholder="example@company.co.jp"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">電話番号</label>
+                  <input
+                    type="tel"
+                    value={newCustomer.phone}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                    placeholder="03-1234-5678"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">住所</label>
+                  <textarea
+                    value={newCustomer.address}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                    placeholder="〒100-0001 東京都千代田区千代田1-1-1"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-highlight"
+                    className="px-4 py-2 border border-border text-text-muted rounded-md hover:bg-surface-highlight transition-colors"
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={createCustomer}
-                    className="btn-primary"
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
                   >
                     作成
                   </button>
@@ -1075,78 +832,80 @@ const InvoiceCreation: React.FC = () => {
         )}
 
         {/* 新規銀行口座作成モーダル */}
-        {showNewBankAccountModal && documentType === 'invoice' && (
+        {showNewBankAccountModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-surface rounded-lg max-w-md w-full">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h3 className="text-lg font-semibold">新規銀行口座を作成</h3>
+            <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden border border-border">
+              <div className="flex justify-between items-center p-4 border-b border-border">
+                <h3 className="text-lg font-semibold text-text-main">新規銀行口座を作成</h3>
                 <button
                   onClick={closeModal}
-                  className="text-text-muted hover:text-text-muted"
+                  className="text-text-muted hover:text-text-main"
                 >
                   <X size={24} />
                 </button>
               </div>
-              <div className="p-4">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">銀行名</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      value={newBankAccount.bankName}
-                      onChange={(e) => setNewBankAccount({ ...newBankAccount, bankName: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">支店名</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      value={newBankAccount.branchName}
-                      onChange={(e) => setNewBankAccount({ ...newBankAccount, branchName: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">口座種別</label>
-                    <select
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      value={newBankAccount.accountType}
-                      onChange={(e) => setNewBankAccount({ ...newBankAccount, accountType: e.target.value as '普通' | '当座' })}
-                    >
-                      <option value="普通">普通</option>
-                      <option value="当座">当座</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">口座番号</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      value={newBankAccount.accountNumber}
-                      onChange={(e) => setNewBankAccount({ ...newBankAccount, accountNumber: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">口座名義</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                      value={newBankAccount.accountHolder}
-                      onChange={(e) => setNewBankAccount({ ...newBankAccount, accountHolder: e.target.value })}
-                    />
-                  </div>
+              <div className="p-4 overflow-auto max-h-[70vh] space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">銀行名</label>
+                  <input
+                    type="text"
+                    value={newBankAccount.bankName}
+                    onChange={(e) => setNewBankAccount({ ...newBankAccount, bankName: e.target.value })}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                    placeholder="銀行名"
+                  />
                 </div>
-                <div className="mt-6 flex justify-end gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">支店名</label>
+                  <input
+                    type="text"
+                    value={newBankAccount.branchName}
+                    onChange={(e) => setNewBankAccount({ ...newBankAccount, branchName: e.target.value })}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                    placeholder="支店名"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">口座種別</label>
+                  <select
+                    value={newBankAccount.accountType}
+                    onChange={(e) => setNewBankAccount({ ...newBankAccount, accountType: e.target.value as '普通' | '当座' })}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                  >
+                    <option value="普通">普通</option>
+                    <option value="当座">当座</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">口座番号</label>
+                  <input
+                    type="text"
+                    value={newBankAccount.accountNumber}
+                    onChange={(e) => setNewBankAccount({ ...newBankAccount, accountNumber: e.target.value })}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                    placeholder="口座番号"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">口座名義</label>
+                  <input
+                    type="text"
+                    value={newBankAccount.accountHolder}
+                    onChange={(e) => setNewBankAccount({ ...newBankAccount, accountHolder: e.target.value })}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                    placeholder="口座名義"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-highlight"
+                    className="px-4 py-2 border border-border text-text-muted rounded-md hover:bg-surface-highlight transition-colors"
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={createBankAccount}
-                    className="btn-primary"
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
                   >
                     作成
                   </button>
@@ -1159,79 +918,113 @@ const InvoiceCreation: React.FC = () => {
         {/* プレビューモーダル */}
         {showPreviewModal && previewBlobUrl && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-surface rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h3 className="text-lg font-semibold">PDFプレビュー</h3>
+            <div className="bg-surface rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-border">
+              <div className="flex justify-between items-center p-4 border-b border-border">
+                <h3 className="text-lg font-semibold text-text-main">{documentType === 'invoice' ? '請求書' : '見積書'} プレビュー</h3>
                 <button
                   onClick={closePreviewModal}
-                  className="text-text-muted hover:text-text-muted"
+                  className="text-text-muted hover:text-text-main"
                 >
                   <X size={24} />
                 </button>
               </div>
-              <div className="p-4 overflow-auto max-h-[70vh]">
+              <div className="flex-1 overflow-auto p-4 bg-white">
                 <iframe
                   src={previewBlobUrl}
-                  className="w-full h-[70vh]"
-                  title="PDFプレビュー"
+                  className="w-full h-full min-h-[500px]"
+                  title="PDF Preview"
                 />
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ダウンロード確認モーダル */}
-        {showDownloadConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-surface rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">PDFダウンロード</h3>
-              <p className="mb-6">{documentType === 'invoice' ? '請求書' : '見積書'}をPDFとしてダウンロードしますか？</p>
-              <div className="flex justify-end gap-3">
+              <div className="p-4 border-t border-border flex justify-end gap-2">
                 <button
-                  onClick={closeDownloadConfirm}
-                  className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-highlight"
+                  onClick={closePreviewModal}
+                  className="px-4 py-2 border border-border text-text-muted rounded-md hover:bg-surface-highlight transition-colors"
                 >
-                  キャンセル
+                  閉じる
                 </button>
                 <button
-                  onClick={handleDownloadPDF}
-                  className="btn-primary"
+                  onClick={savePDF}
+                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
                 >
-                  ダウンロード
+                  保存
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* 送信モーダル */}
+        {/* 請求書送信モーダル */}
         {showSendModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-surface rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">{documentType === 'invoice' ? '請求書送信' : '見積書送信'}</h3>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-text-muted mb-1">送信先メールアドレス</label>
-                <input
-                  type="email"
-                  value={sendEmail}
-                  onChange={(e) => setSendEmail(e.target.value)}
-                  className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                  placeholder="メールアドレスを入力"
-                />
-              </div>
-              <div className="flex justify-end gap-3">
+            <div className="bg-surface rounded-lg max-w-md w-full overflow-hidden border border-border">
+              <div className="flex justify-between items-center p-4 border-b border-border">
+                <h3 className="text-lg font-semibold text-text-main">{documentType === 'invoice' ? '請求書' : '見積書'} 送信</h3>
                 <button
                   onClick={closeSendModal}
-                  className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-highlight"
+                  className="text-text-muted hover:text-text-main"
                 >
-                  キャンセル
+                  <X size={24} />
                 </button>
+              </div>
+              <div className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">送信先メールアドレス</label>
+                  <input
+                    type="email"
+                    value={sendEmail}
+                    onChange={(e) => setSendEmail(e.target.value)}
+                    className="w-full p-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-text-main"
+                    placeholder="recipient@example.com"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <button
+                    onClick={closeSendModal}
+                    className="px-4 py-2 border border-border text-text-muted rounded-md hover:bg-surface-highlight transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handleSendInvoice}
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                  >
+                    送信
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PDFダウンロード確認モーダル */}
+        {showDownloadConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-surface rounded-lg max-w-md w-full overflow-hidden border border-border">
+              <div className="flex justify-between items-center p-4 border-b border-border">
+                <h3 className="text-lg font-semibold text-text-main">PDFダウンロード</h3>
                 <button
-                  onClick={handleSendInvoice}
-                  className="btn-primary"
+                  onClick={closeDownloadConfirm}
+                  className="text-text-muted hover:text-text-main"
                 >
-                  送信
+                  <X size={24} />
                 </button>
+              </div>
+              <div className="p-4">
+                <p className="text-text-main mb-4">{documentType === 'invoice' ? '請求書' : '見積書'}をPDFとしてダウンロードしますか？</p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={closeDownloadConfirm}
+                    className="px-4 py-2 border border-border text-text-muted rounded-md hover:bg-surface-highlight transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                  >
+                    ダウンロード
+                  </button>
+                </div>
               </div>
             </div>
           </div>

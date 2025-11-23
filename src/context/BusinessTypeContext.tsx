@@ -32,16 +32,7 @@ const BusinessTypeContext = createContext<BusinessTypeContextType | undefined>(u
 
 export const BusinessTypeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();
-    const {
-        currentBusinessType: hookCurrentBusinessType,
-        businessTypes: hookBusinessTypes,
-        loading: hookLoading,
-        createBusinessType: hookCreateBusinessType,
-        switchBusinessType: hookSwitchBusinessType,
-        updateBusinessType: hookUpdateBusinessType,
-        deleteBusinessType: hookDeleteBusinessType,
-        refetch
-    } = useBusinessType(user?.id);
+    const { currentBusinessType: hookCurrentBusinessType, businessTypes: hookBusinessTypes, loading: hookLoading, createBusinessType: hookCreateBusinessType, switchBusinessType: hookSwitchBusinessType, updateBusinessType: hookUpdateBusinessType, deleteBusinessType: hookDeleteBusinessType, refetch } = useBusinessType(user?.id);
 
     console.log('BusinessTypeProvider - user:', user);
     console.log('BusinessTypeProvider - hookCurrentBusinessType:', hookCurrentBusinessType);

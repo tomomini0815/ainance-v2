@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ArrowLeft, Search, Filter, Plus, ChevronDown, Calendar, JapaneseYen, Tag, FileText, Download, Trash2, Edit, TrendingUp, TrendingDown, X, Upload } from 'lucide-react'
 import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
 import TransactionTable from '../components/TransactionTable'
@@ -28,6 +28,16 @@ const TransactionHistory: React.FC = () => {
       fetchTransactions();
     }
   }, [currentBusinessType, fetchTransactions]);
+
+  // URLクエリパラメータから検索語を取得
+  const location = useLocation();
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const query = searchParams.get('search');
+    if (query) {
+      setSearchTerm(query);
+    }
+  }, [location.search]);
 
   // カスタムイベントリスナーを追加して、取引が記録されたときにデータを再取得
   useEffect(() => {
@@ -153,7 +163,7 @@ const TransactionHistory: React.FC = () => {
       if (t.type === 'income') {
         return true;
       }
-      
+
       // typeが'expense'の場合は除外
       if (t.type === 'expense') {
         return false;
@@ -171,7 +181,7 @@ const TransactionHistory: React.FC = () => {
       if (t.type === 'expense') {
         return true;
       }
-      
+
       // typeが'income'の場合は除外
       if (t.type === 'income') {
         return false;

@@ -2,10 +2,9 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     Home, Receipt, FileText, BarChart3, MessageSquare, Users,
-    Settings, LogOut, ChevronLeft, ChevronRight, X, Building, User
+    Settings, LogOut, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useBusinessType } from '../hooks/useBusinessType';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface SidebarProps {
@@ -71,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <aside
                 className={`
           fixed top-0 left-0 h-screen z-50
-          bg-[#1e293b] border-r border-white/5
+          bg-[#0f172a] border-r border-white/5
           transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           ${isExpanded ? 'w-72' : 'w-20'}
@@ -91,39 +90,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {/* Mobile Close Button */}
                         <button
                             onClick={onCloseMobile}
-                            className="md:hidden p-2 text-text-muted hover:text-white"
+                            className="md:hidden p-2 text-primary bg-primary/10 rounded-lg shadow-[0_0_15px_rgba(99,102,241,0.5)] hover:bg-primary/20 transition-all duration-300"
                         >
-                            <X size={20} />
+                            <X size={28} />
                         </button>
                     </div>
-
-                    {/* Business Type Display */}
-                    {isExpanded && (
-                        <div className="mb-6">
-                            {currentBusinessType ? (
-                                <div className="flex items-center space-x-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg">
-                                    {currentBusinessType.business_type === 'individual' ? (
-                                        <User className="w-4 h-4 text-blue-600" />
-                                    ) : (
-                                        <Building className="w-4 h-4 text-green-600" />
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-medium text-blue-800 truncate">
-                                            {currentBusinessType.business_type === 'individual' ? '個人事業主' : '法人'}
-                                        </div>
-                                        <div className="text-xs text-blue-600 truncate">
-                                            {currentBusinessType.company_name}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
-                                    <User className="w-4 h-4 text-gray-400" />
-                                    <span className="text-sm text-gray-500">業態形態を選択</span>
-                                </div>
-                            )}
-                        </div>
-                    )}
 
                     {/* Navigation */}
                     <nav className="flex-1 space-y-2">
@@ -168,9 +139,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {/* Expand/Collapse Button (Desktop only) */}
                     <button
                         onClick={onToggleExpand}
-                        className="hidden md:flex absolute -right-3 top-20 w-6 h-6 bg-surface border border-white/10 rounded-full items-center justify-center text-text-muted hover:text-white hover:bg-surface-highlight transition-colors shadow-lg"
+                        className="hidden md:flex absolute -right-3 top-8 w-8 h-8 bg-surface border border-white/10 rounded-full items-center justify-center text-text-muted hover:text-white hover:bg-surface-highlight transition-all duration-300 shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] drop-shadow-[0_0_3px_rgba(99,102,241,0.6)]"
                     >
-                        {isExpanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                        {isExpanded ? <ChevronLeft size={20} className="text-primary drop-shadow-[0_0_5px_rgba(99,102,241,0.8)] hover:text-primary/80 transition-colors duration-300" /> : <ChevronRight size={20} className="text-primary drop-shadow-[0_0_5px_rgba(99,102,241,0.8)] hover:text-primary/80 transition-colors duration-300" />}
                     </button>
                 </div>
             </aside>
