@@ -109,25 +109,35 @@ const ChatToBook: React.FC = () => {
     const amountPattern = /(\d+(?:万)?(?:千)?(?:円)?)/g;
     const amounts = text.match(amountPattern);
 
-    // カテゴリマッピング（優先順位付き）
+    // TransactionForm.tsxのカテゴリオプションを参考にカテゴリマッピングを作成
     const categoryMapping: Array<{ keywords: string[]; category: string; type: 'income' | 'expense'; priority: number }> = [
       // 収入系（高優先度）
-      { keywords: ['売上'], category: '売上', type: 'income', priority: 10 },
+      { keywords: ['売上'], category: '業務委託収入', type: 'income', priority: 10 },
       { keywords: ['給与'], category: '給与', type: 'income', priority: 9 },
 
+      // 支出系（高優先度 - 消耗品費、接待交際費）
+      { keywords: ['消耗品', '文具', 'コピー', 'オフィス用品'], category: '消耗品費', type: 'expense', priority: 10 },
+      { keywords: ['接待', '会食', '食事', 'ディナー', 'ランチ'], category: '接待交際費', type: 'expense', priority: 9 },
+      
       // 支出系（中優先度）
-      { keywords: ['交通費', '電車', 'バス', 'タクシー'], category: '交通費', type: 'expense', priority: 7 },
+      { keywords: ['交通費', '電車', 'バス', 'タクシー'], category: '旅費交通費', type: 'expense', priority: 7 },
       { keywords: ['食費', 'ランチ', 'ディナー', 'コーヒー'], category: '食費', type: 'expense', priority: 6 },
-      { keywords: ['消耗品', '文具', 'コピー'], category: '消耗品費', type: 'expense', priority: 5 },
-      { keywords: ['接待', '会食'], category: '接待交際費', type: 'expense', priority: 5 },
-      { keywords: ['通信費', '電話料金'], category: '通信費', type: 'expense', priority: 4 },
-      { keywords: ['光熱費', '電気', 'ガス', '水道'], category: '水道光熱費', type: 'expense', priority: 4 },
+      { keywords: ['通信費', '電話料金'], category: '通信費', type: 'expense', priority: 5 },
+      { keywords: ['光熱費', '電気', 'ガス', '水道'], category: '水道光熱費', type: 'expense', priority: 5 },
+      { keywords: ['修繕', '修理'], category: '修繕費', type: 'expense', priority: 4 },
+      { keywords: ['保険'], category: '保険料', type: 'expense', priority: 4 },
+      { keywords: ['手数料'], category: '支払手数料', type: 'expense', priority: 4 },
+      { keywords: ['新聞', '図書'], category: '新聞図書費', type: 'expense', priority: 3 },
+      { keywords: ['外注'], category: '外注費', type: 'expense', priority: 3 },
+      { keywords: ['税金'], category: '租税公課', type: 'expense', priority: 3 },
+      { keywords: ['広告', '宣伝'], category: '広告宣伝費', type: 'expense', priority: 2 },
+      { keywords: ['地代', '家賃'], category: '地代家賃', type: 'expense', priority: 2 },
 
       // 低優先度（デフォルト）
       { keywords: ['費用', '費'], category: '雑費', type: 'expense', priority: 1 }
     ];
 
-    let detectedCategory = '未分類';
+    let detectedCategory = '雑費'; // デフォルトカテゴリ
     let detectedType: 'income' | 'expense' = 'expense';
     let maxPriority = 0;
 
