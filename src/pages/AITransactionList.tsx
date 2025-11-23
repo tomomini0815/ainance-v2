@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSupabaseTransactions } from '../hooks/useSupabaseTransactions'
-import { Search, Check, X, Brain, Eye, TrendingUp, SquareCheck as CheckSquare, Square, Target, Award, Clock, RefreshCw, Lightbulb, Activity, Cpu, Database, PieChart, Users, Globe, Star, Trophy, Gauge, Rocket, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ArrowLeft, Search, Check, X, Brain, Eye, TrendingUp, SquareCheck as CheckSquare, Square, Target, Award, Clock, RefreshCw, Lightbulb, Activity, Cpu, Database, PieChart, Users, Globe, Star, Trophy, Gauge, Rocket, Sparkles } from 'lucide-react'
 
 // 金額範囲選択コンポーネント
 const AmountRangeSelector = ({ min, max, onMinChange, onMaxChange }: {
@@ -297,26 +298,31 @@ const AITransactionList: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* 強化されたヘッダー */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-text-main mb-2">
-              AI自動仕分けシステム
-              <span className="ml-3 text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1 rounded-full">
-                v2.0 Pro
-              </span>
-            </h1>
-            <p className="text-text-muted">次世代機械学習による高精度な取引分類と継続的な学習改善</p>
-            <div className="flex items-center mt-2 space-x-4">
-              <div className="flex items-center text-sm text-green-600">
-                <Activity className="w-4 h-4 mr-1" />
-                <span>リアルタイム学習</span>
-              </div>
-              <div className="flex items-center text-sm text-primary">
-                <Cpu className="w-4 h-4 mr-1" />
-                <span>ニューラルネットワーク</span>
-              </div>
-              <div className="flex items-center text-sm text-purple-600">
-                <Database className="w-4 h-4 mr-1" />
-                <span>ビッグデータ分析</span>
+          <div className="flex items-center mb-4 lg:mb-0">
+            <Link to="/dashboard" className="mr-4 p-2 rounded-lg hover:bg-surface-highlight transition-colors">
+              <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-text-main mb-2">
+                AI自動仕分けシステム
+                <span className="ml-3 text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1 rounded-full">
+                  v2.0 Pro
+                </span>
+              </h1>
+              <p className="text-text-muted">次世代機械学習による高精度な取引分類と継続的な学習改善</p>
+              <div className="flex items-center mt-2 space-x-4">
+                <div className="flex items-center text-sm text-green-600">
+                  <Activity className="w-4 h-4 mr-1" />
+                  <span>リアルタイム学習</span>
+                </div>
+                <div className="flex items-center text-sm text-primary">
+                  <Cpu className="w-4 h-4 mr-1" />
+                  <span>ニューラルネットワーク</span>
+                </div>
+                <div className="flex items-center text-sm text-purple-600">
+                  <Database className="w-4 h-4 mr-1" />
+                  <span>ビッグデータ分析</span>
+                </div>
               </div>
             </div>
           </div>
