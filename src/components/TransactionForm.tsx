@@ -67,7 +67,11 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     const commonCategories = [
       '食費', '交通費', '消耗品費', '通信費', '光熱費', '住居費', '医療費', '教育費',
       '娯楽費', '衣服費', '美容費', '交際費', '給与', '副業収入', '賞与', '事業所得',
-      '配当金', '利息', '家賃収入', 'その他収入', 'その他支出'
+      '配当金', '利息', '家賃収入', 'その他収入', 'その他支出',
+      // 新規勘定科目
+      '接待交際費', '消耗品費', '修繕費', '保険料', '支払手数料', '新聞図書費', 
+      '外注費', '租税公課', '水道光熱費', '通信費', '地代家賃', '旅費交通費', 
+      '広告宣伝費', '雑費'
     ]
 
     const allCategories = [...new Set([...favoriteCategories, ...commonCategories])]
