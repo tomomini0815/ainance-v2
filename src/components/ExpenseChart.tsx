@@ -76,34 +76,7 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'right' as const,
-        labels: {
-          usePointStyle: true,
-          padding: 15,
-          color: '#94a3b8',
-          font: {
-            size: 12,
-            family: 'Inter',
-          },
-          generateLabels: function (chart: any) {
-            const data = chart.data
-            if (data.labels.length && data.datasets.length) {
-              return data.labels.map((label: string, index: number) => {
-                const value = data.datasets[0].data[index]
-                return {
-                  text: `${label} ${value}%`,
-                  fillStyle: data.datasets[0].backgroundColor[index],
-                  strokeStyle: data.datasets[0].backgroundColor[index],
-                  lineWidth: 0,
-                  pointStyle: 'circle',
-                  hidden: false,
-                  index: index
-                }
-              })
-            }
-            return []
-          }
-        },
+        display: false, // Disable built-in legend to center the chart
       },
       tooltip: {
         callbacks: {
@@ -130,12 +103,12 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
         <button className="text-sm text-primary hover:text-primary/80 transition-colors">詳細を見る</button>
       </div>
 
-      <div className="chart-container h-72 w-full relative">
+      <div className="chart-container h-64 w-full relative">
         <Doughnut data={data} options={options} />
         {/* Center Text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <p className="text-xs text-text-muted">総支出</p>
-          <p className="text-xl font-bold text-text-main">¥{totalAmount.toLocaleString()}</p>
+          <p className="text-sm text-text-muted">総支出</p>
+          <p className="text-2xl font-bold text-text-main">¥{totalAmount.toLocaleString()}</p>
         </div>
       </div>
 
@@ -143,15 +116,15 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
         <h4 className="font-medium text-text-secondary mb-3 text-sm">カテゴリ別支出内訳</h4>
         <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
           {labels.map((label, index) => (
-            <div key={label} className="flex items-center justify-between group">
+            <div key={label} className="flex items-center justify-between group p-2 rounded-lg hover:bg-surface-highlight transition-colors">
               <div className="flex items-center">
                 <div
-                  className="w-2 h-2 rounded-full mr-3 transition-transform group-hover:scale-125"
+                  className="w-3 h-3 rounded-full mr-3 shadow-sm"
                   style={{ backgroundColor: backgroundColors[index] }}
                 ></div>
-                <span className="text-sm text-text-muted group-hover:text-text-main transition-colors">{label}</span>
+                <span className="text-sm text-text-secondary group-hover:text-text-main transition-colors">{label}</span>
               </div>
-              <span className="text-sm font-medium text-text-secondary">¥{amountData[index].toLocaleString()}</span>
+              <span className="text-sm font-bold text-text-main">¥{amountData[index].toLocaleString()}</span>
             </div>
           ))}
         </div>

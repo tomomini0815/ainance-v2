@@ -15,7 +15,7 @@ const Login: React.FC = () => {
     const { signIn } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     // リダイレクト先のパスを取得（デフォルトは/dashboard）
     const from = location.state?.from?.pathname || '/dashboard';
 

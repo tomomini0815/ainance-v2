@@ -79,13 +79,13 @@
 }
 
 .dark {
-  /* Dark Mode - Deep & Eye-Friendly */
-  --background: #1a1b1e;
-  /* Very dark gray */
-  --surface: #25262b;
-  /* Dark gray */
-  --surface-highlight: #2c2e33;
-  /* Light dark gray */
+  /* Dark Mode - Deep Navy Theme */
+  --background: #0f172a;
+  /* Slate 900 - Matches Sidebar */
+  --surface: #1e293b;
+  /* Slate 800 */
+  --surface-highlight: #334155;
+  /* Slate 700 */
 
   /* Primary Color - Bright Blue for Dark Mode */
   --primary: #5c7cfa;

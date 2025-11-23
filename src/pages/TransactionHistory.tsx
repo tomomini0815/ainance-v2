@@ -107,7 +107,7 @@ const TransactionHistory: React.FC = () => {
   // 統計情報
   const stats = useMemo(() => {
     console.log('取引履歴 - 取引データ:', transactions);
-    
+
     // amountの値を安全に取得するヘルパー関数
     const getAmountValue = (amount: any): number => {
       if (typeof amount === 'number') {
@@ -131,34 +131,34 @@ const TransactionHistory: React.FC = () => {
       }
       return 0;
     };
-    
+
     // 金額を確実に数値に変換して計算
     const incomeTransactions = transactions.filter(t => {
       // typeが'income'の場合を優先
       if (t.type === 'income') {
         return true;
       }
-      
+
       // amountが正の数値の場合も収入として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount > 0;
       console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
       return isValid;
     });
-    
+
     const expenseTransactions = transactions.filter(t => {
       // typeが'expense'の場合を優先
       if (t.type === 'expense') {
         return true;
       }
-      
+
       // amountが負の数値の場合も支出として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount < 0;
       console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
       return isValid;
     });
-    
+
     const totalIncome = incomeTransactions.reduce((sum, t) => {
       const amount = getAmountValue(t.amount);
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
@@ -180,11 +180,11 @@ const TransactionHistory: React.FC = () => {
       expense: totalExpense,
       balance: totalIncome - totalExpense
     };
-    
+
     console.log('取引履歴 - 統計情報計算結果:', result);
     console.log('取引履歴 - 収入取引:', incomeTransactions);
     console.log('取引履歴 - 支出取引:', expenseTransactions);
-    
+
     return result;
   }, [transactions])
 
@@ -241,10 +241,10 @@ const TransactionHistory: React.FC = () => {
       }
 
       await createTransaction(transactionData)
-      
+
       // データの再取得
       await fetchTransactions();
-      
+
       setShowCreateForm(false)
     } catch (error) {
       console.error('取引の作成に失敗:', error)
@@ -257,10 +257,10 @@ const TransactionHistory: React.FC = () => {
     if (!editingTransaction) return
     try {
       await updateTransaction(editingTransaction.id, transactionData)
-      
+
       // データの再取得
       await fetchTransactions();
-      
+
       setEditingTransaction(null)
     } catch (error) {
       console.error('取引の更新に失敗:', error)
@@ -325,7 +325,7 @@ const TransactionHistory: React.FC = () => {
           </div>
 
           {/* 統計カード */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
             <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -512,8 +512,8 @@ const TransactionHistory: React.FC = () => {
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className={`px-4 py-2.5 text-sm rounded-lg transition-colors flex items-center space-x-2 ${showFilters
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-surface-highlight text-text-muted hover:bg-border'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-surface-highlight text-text-muted hover:bg-border'
                     }`}
                 >
                   <Filter className="w-4 h-4" />
@@ -705,8 +705,8 @@ const TransactionHistory: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${transaction.type === 'income'
-                            ? 'bg-green-500/10 text-green-600'
-                            : 'bg-red-500/10 text-red-600'
+                          ? 'bg-green-500/10 text-green-600'
+                          : 'bg-red-500/10 text-red-600'
                           }`}>
                           {transaction.category}
                         </span>
@@ -794,8 +794,8 @@ const TransactionHistory: React.FC = () => {
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
-                              ? 'z-10 bg-primary/10 border-primary text-primary'
-                              : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
+                            ? 'z-10 bg-primary/10 border-primary text-primary'
+                            : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
                             }`}
                         >
                           {pageNum}

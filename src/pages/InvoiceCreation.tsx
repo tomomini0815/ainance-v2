@@ -685,7 +685,7 @@ const InvoiceCreation: React.FC = () => {
                           </div>
 
                           {/* Items Table */}
-                          <div className="border border-border rounded-xl overflow-hidden">
+                          <div className="border border-border rounded-xl overflow-x-auto">
                             <table className="w-full">
                               <thead className="bg-surface-highlight">
                                 <tr>

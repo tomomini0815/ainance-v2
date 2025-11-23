@@ -48,7 +48,7 @@ const Dashboard: React.FC = () => {
   // 統計情報
   const stats = useMemo(() => {
     console.log('取引データ:', transactions);
-    
+
     // 各取引の詳細情報を出力
     transactions.forEach((t, index) => {
       console.log(`取引 ${index + 1}:`, {
@@ -62,7 +62,7 @@ const Dashboard: React.FC = () => {
         type: t.type
       });
     });
-    
+
     // amountの値を安全に取得するヘルパー関数
     const getAmountValue = (amount: any): number => {
       if (typeof amount === 'number') {
@@ -86,34 +86,34 @@ const Dashboard: React.FC = () => {
       }
       return 0;
     };
-    
+
     // 金額を確実に数値に変換して計算
     const incomeTransactions = transactions.filter(t => {
       // typeが'income'の場合を優先
       if (t.type === 'income') {
         return true;
       }
-      
+
       // amountが正の数値の場合も収入として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount > 0;
       console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
       return isValid;
     });
-    
+
     const expenseTransactions = transactions.filter(t => {
       // typeが'expense'の場合を優先
       if (t.type === 'expense') {
         return true;
       }
-      
+
       // amountが負の数値の場合も支出として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount < 0;
       console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
       return isValid;
     });
-    
+
     const totalIncome = incomeTransactions.reduce((sum, t) => {
       const amount = getAmountValue(t.amount);
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
@@ -135,11 +135,11 @@ const Dashboard: React.FC = () => {
       expense: totalExpense,
       balance: totalIncome - totalExpense
     };
-    
+
     console.log('統計情報計算結果:', result);
     console.log('収入取引:', incomeTransactions);
     console.log('支出取引:', expenseTransactions);
-    
+
     return result;
   }, [transactions])
 
@@ -236,10 +236,10 @@ const Dashboard: React.FC = () => {
 
       const result = await createTransaction(transactionData);
       console.log('取引作成成功:', result);
-      
+
       // データの再取得
       await fetchTransactions();
-      
+
       setShowCreateForm(false);
     } catch (error: any) {
       console.error('取引の作成に失敗:', error);
