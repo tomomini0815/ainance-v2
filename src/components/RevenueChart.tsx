@@ -51,10 +51,17 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
       const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
 
       if (monthlyData[monthKey]) {
+        // typeプロパティを確認して、収益と支出を正しく分類
         if (transaction.type === 'income') {
-          monthlyData[monthKey].revenue += amount;
+          monthlyData[monthKey].revenue += Math.abs(amount);
         } else if (transaction.type === 'expense') {
-          monthlyData[monthKey].expense += amount;
+          monthlyData[monthKey].expense += Math.abs(amount);
+        }
+        // typeが指定されていない場合は従来のロジックを使用
+        else if (amount > 0) {
+          monthlyData[monthKey].revenue += amount;
+        } else if (amount < 0) {
+          monthlyData[monthKey].expense += Math.abs(amount);
         }
       }
     });

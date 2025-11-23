@@ -8,7 +8,7 @@ interface Transaction {
   amount: number
   date: string
   category: string
-  type: string
+  type: 'income' | 'expense'
   description?: string
   receipt_url?: string
   creator: string

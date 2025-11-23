@@ -45,6 +45,21 @@ const Dashboard: React.FC = () => {
     }
   }, [currentBusinessType, fetchTransactions]);
 
+  // カスタムイベントリスナーを追加して、取引が記録されたときにデータを再取得
+  useEffect(() => {
+    const handleTransactionRecorded = () => {
+      if (currentBusinessType?.id) {
+        fetchTransactions();
+      }
+    };
+
+    window.addEventListener('transactionRecorded', handleTransactionRecorded);
+
+    return () => {
+      window.removeEventListener('transactionRecorded', handleTransactionRecorded);
+    };
+  }, [currentBusinessType, fetchTransactions]);
+
   // 統計情報
   const stats = useMemo(() => {
     console.log('取引データ:', transactions);
@@ -93,8 +108,13 @@ const Dashboard: React.FC = () => {
       if (t.type === 'income') {
         return true;
       }
+      
+      // typeが'expense'の場合は除外
+      if (t.type === 'expense') {
+        return false;
+      }
 
-      // amountが正の数値の場合も収入として扱う
+      // typeが指定されていない場合のみ、amountが正の数値の場合を収入として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount > 0;
       console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
@@ -106,8 +126,13 @@ const Dashboard: React.FC = () => {
       if (t.type === 'expense') {
         return true;
       }
+      
+      // typeが'income'の場合は除外
+      if (t.type === 'income') {
+        return false;
+      }
 
-      // amountが負の数値の場合も支出として扱う
+      // typeが指定されていない場合のみ、amountが負の数値の場合を支出として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount < 0;
       console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
@@ -116,6 +141,7 @@ const Dashboard: React.FC = () => {
 
     const totalIncome = incomeTransactions.reduce((sum, t) => {
       const amount = getAmountValue(t.amount);
+      // 収入は常に正の値として計算
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
       console.log(`収入計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
       return sum + validAmount;
@@ -123,7 +149,7 @@ const Dashboard: React.FC = () => {
 
     const totalExpense = expenseTransactions.reduce((sum, t) => {
       const amount = getAmountValue(t.amount);
-      // 支出の場合は金額を正の値として計算（表示時にマイナスを付ける）
+      // 支出は常に正の値として計算
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
       console.log(`支出計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
       return sum + validAmount;

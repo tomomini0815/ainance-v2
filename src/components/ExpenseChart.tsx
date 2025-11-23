@@ -19,7 +19,8 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
     const categoryTotals: { [key: string]: number } = {};
 
     expenseTransactions.forEach(transaction => {
-      const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
+      // 金額を絶対値として計算（支出は正の値として扱う）
+      const amount = Math.abs(typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount);
 
       if (categoryTotals[transaction.category]) {
         categoryTotals[transaction.category] += amount;

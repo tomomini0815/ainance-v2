@@ -39,24 +39,39 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
     }
   }, [currentBusinessType, fetchTransactions]);
 
+  // カスタムイベントリスナーを追加して、取引が記録されたときにデータを再取得
+  useEffect(() => {
+    const handleTransactionRecorded = () => {
+      if (currentBusinessType?.id) {
+        fetchTransactions();
+      }
+    };
+
+    window.addEventListener('transactionRecorded', handleTransactionRecorded);
+
+    return () => {
+      window.removeEventListener('transactionRecorded', handleTransactionRecorded);
+    };
+  }, [currentBusinessType, fetchTransactions]);
+
   const getCategoryIcon = (category: string, amount: number, isFinalIncome?: boolean, isFinalExpense?: boolean) => {
     console.log('getCategoryIcon called with:', { category, amount, isFinalIncome, isFinalExpense });
     
     // isFinalIncomeとisFinalExpenseの両方がtrueの場合、isFinalExpenseを優先
     if (isFinalIncome === true && isFinalExpense === true) {
       console.log('Both isFinalIncome and isFinalExpense are true, prioritizing expense');
-      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />
+      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />;
     }
     
     // isFinalIncomeまたはisFinalExpenseが指定されている場合、それを優先
     if (isFinalIncome === true) {
       console.log('Returning TrendingUp icon for income');
-      return <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
+      return <TrendingUp className="w-4 h-4 text-green-500 mr-2" />;
     }
 
     if (isFinalExpense === true) {
       console.log('Returning TrendingDown icon for expense');
-      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />
+      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />;
     }
 
     // amountが文字列の場合、数値に変換
@@ -71,12 +86,12 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
 
     if (isIncome) {
       console.log('Returning TrendingUp icon for positive amount');
-      return <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
+      return <TrendingUp className="w-4 h-4 text-green-500 mr-2" />;
     }
 
     if (isExpense) {
       console.log('Returning TrendingDown icon for negative amount');
-      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />
+      return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />;
     }
 
     // 金額が0または無効な場合のデフォルトアイコン
@@ -84,23 +99,23 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
 
     switch (category) {
       case '交通費':
-        return <span className={`${badgeClass} bg-blue-500/20 text-blue-400`}>交</span>
+        return <span className={`${badgeClass} bg-blue-500/20 text-blue-400`}>交</span>;
       case '食費':
-        return <span className={`${badgeClass} bg-emerald-500/20 text-emerald-400`}>食</span>
+        return <span className={`${badgeClass} bg-emerald-500/20 text-emerald-400`}>食</span>;
       case '消耗品費':
-        return <span className={`${badgeClass} bg-purple-500/20 text-purple-400`}>消</span>
+        return <span className={`${badgeClass} bg-purple-500/20 text-purple-400`}>消</span>;
       case '通信費':
-        return <span className={`${badgeClass} bg-amber-500/20 text-amber-400`}>通</span>
+        return <span className={`${badgeClass} bg-amber-500/20 text-amber-400`}>通</span>;
       case '光熱費':
-        return <span className={`${badgeClass} bg-rose-500/20 text-rose-400`}>光</span>
+        return <span className={`${badgeClass} bg-rose-500/20 text-rose-400`}>光</span>;
       default:
-        return <span className={`${badgeClass} bg-slate-500/20 text-text-muted`}>他</span>
+        return <span className={`${badgeClass} bg-slate-500/20 text-text-muted`}>他</span>;
     }
-  }
+  };
 
   const latestTransactions = [...(transactions.length > 0 ? transactions : fetchedTransactions)]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5)
+    .slice(0, 5);
 
   if (loading) {
     return (
@@ -181,9 +196,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                 const isExplicitExpense = transaction.type === 'expense';
 
                 // isExplicitIncomeまたはisExplicitExpenseが指定されている場合、それを優先
-                // ただし、両方がtrueになることはないので、isExplicitExpenseを優先
-                const isFinalIncome = isExplicitIncome && !isExplicitExpense ? true : (isValidAmount && amount > 0 && !isExplicitExpense);
-                const isFinalExpense = isExplicitExpense ? true : (isValidAmount && amount < 0);
+                // 両方がtrueになることはないので、isExplicitIncomeを優先
+                const isFinalIncome = isExplicitIncome ? true : (isExplicitExpense ? false : (isValidAmount && amount > 0));
+                const isFinalExpense = isExplicitExpense ? true : (isExplicitIncome ? false : (isValidAmount && amount < 0));
 
                 console.log('Transaction processing:', { 
                   id: transaction.id, 

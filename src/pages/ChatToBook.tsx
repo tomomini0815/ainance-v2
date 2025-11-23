@@ -77,6 +77,7 @@ const ChatToBook: React.FC = () => {
 
   // DBから取引データを取得
   useEffect(() => {
+    // DBから取得した取引データのみを表示（ローカルの一時データは除外）
     setTransactions(dbTransactions.map((t: any) => ({
       id: t.id,
       date: t.date,
@@ -269,6 +270,7 @@ const ChatToBook: React.FC = () => {
       const result = await createTransaction({
         ...transactionData,
         item: transactionData.description,
+        type: transactionData.type,
         creator: user?.id || '00000000-0000-0000-0000-000000000000'
       });
       console.log('saveTransactionToDB - 保存結果:', result);
@@ -368,9 +370,12 @@ const ChatToBook: React.FC = () => {
       setTransactions(prev => prev.filter(t => !successfulTempIds.includes(t.id)));
       setSelectedTransactions(prev => prev.filter(id => !successfulTempIds.includes(id)));
       
-      // データの再取得
+      // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
       await fetchTransactions();
       console.log('bulkRecordTransactions - データ再取得完了');
+      
+      // ページ全体のデータ再取得をトリガーするカスタムイベントを発火
+      window.dispatchEvent(new CustomEvent('transactionRecorded'));
     } catch (error) {
       console.error('取引の一括記録中にエラーが発生しました:', error);
       alert('取引の一括記録に失敗しました: ' + (error as Error).message);
