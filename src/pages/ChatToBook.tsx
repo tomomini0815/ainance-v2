@@ -78,16 +78,31 @@ const ChatToBook: React.FC = () => {
   // DBから取引データを取得
   useEffect(() => {
     // DBから取得した取引データのみを表示（ローカルの一時データは除外）
-    setTransactions(dbTransactions.map((t: any) => ({
-      id: t.id,
-      date: t.date,
-      description: t.description || t.item || '',
-      amount: t.amount,
-      category: t.category,
-      type: t.type as 'income' | 'expense',
-      created_at: t.created_at,
-      updated_at: t.updated_at
-    })));
+    // ただし、一括記録後に再取得されたデータはローカルリストに追加しない
+    setTransactions(prev => {
+      // DBから取得した取引のIDリスト
+      const dbTransactionIds = dbTransactions.map((t: any) => t.id);
+      
+      // ローカルの一時データ（DBにまだ保存されていないデータ）のみをフィルタリング
+      const localTempData = prev.filter(t => !dbTransactionIds.includes(t.id));
+      
+      // DBから取得したデータとローカルの一時データを結合
+      const mergedTransactions = [
+        ...dbTransactions.map((t: any) => ({
+          id: t.id,
+          date: t.date,
+          description: t.description || t.item || '',
+          amount: t.amount,
+          category: t.category,
+          type: t.type as 'income' | 'expense',
+          created_at: t.created_at,
+          updated_at: t.updated_at
+        })),
+        ...localTempData
+      ];
+      
+      return mergedTransactions;
+    });
   }, [dbTransactions]);
 
   const startListening = () => {
@@ -367,8 +382,8 @@ const ChatToBook: React.FC = () => {
       console.log('bulkRecordTransactions - 選択された取引ID:', selectedItems.map(t => t.id));
 
       // 成功した取引をローカルリストから削除
-      setTransactions(prev => prev.filter(t => !successfulTempIds.includes(t.id)));
-      setSelectedTransactions(prev => prev.filter(id => !successfulTempIds.includes(id)));
+      setTransactions(prev => prev.filter(t => !selectedItems.some(item => item.id === t.id)));
+      setSelectedTransactions(prev => prev.filter(id => !selectedItems.some(item => item.id === id)));
       
       // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
       await fetchTransactions();
@@ -570,7 +585,7 @@ const ChatToBook: React.FC = () => {
                       className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
                     >
                       <CheckCircle className="w-4 h-4 mr-1" />
-                      一括記録 ({selectedTransactions.length})
+                      一括承認 ({selectedTransactions.length})
                     </button>
                   </>
                 )}
@@ -689,7 +704,7 @@ const ChatToBook: React.FC = () => {
                               onClick={() => recordTransaction(transaction)}
                               className="text-green-500 hover:text-green-600 mr-2"
                             >
-                              <Plus className="w-4 h-4" />
+                              <CheckCircle className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEdit(transaction)}
