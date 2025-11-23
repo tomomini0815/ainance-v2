@@ -262,7 +262,7 @@ const ChatToBook: React.FC = () => {
         throw new Error('ユーザーがログインしていません。ログインしてください。');
       }
 
-      // Firebaseに保存するデータの準備
+      // Supabaseに保存するデータの準備
       const transactionData = {
         item: transaction.description,
         amount: transaction.amount,
