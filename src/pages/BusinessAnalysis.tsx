@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, BarChart3, TrendingUp, TrendingDown, DollarSign, Users, Calendar, Filter, Download } from 'lucide-react';
+import { ArrowLeft, BarChart3, TrendingUp, TrendingDown, JapaneseYen, Users, Calendar, Filter, Download } from 'lucide-react';
 // HeaderコンポーネントはApp.tsxでレンダリングされるため、ここでは削除
 
 const BusinessAnalysis: React.FC = () => {
@@ -148,7 +148,7 @@ const BusinessAnalysis: React.FC = () => {
             <div className="bg-green-500/10 rounded-lg p-5 border border-green-500/20">
               <div className="flex items-center">
                 <div className="p-2 bg-green-500/20 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-500" />
+                  <JapaneseYen className="w-6 h-6 text-green-500" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-text-muted">利益</p>

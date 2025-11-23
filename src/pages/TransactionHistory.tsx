@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Search, Filter, Plus, ChevronDown, Calendar, DollarSign, Tag, FileText, Download, Trash2, Edit, TrendingUp, TrendingDown, X, Upload } from 'lucide-react'
+import { ArrowLeft, Search, Filter, Plus, ChevronDown, Calendar, JapaneseYen, Tag, FileText, Download, Trash2, Edit, TrendingUp, TrendingDown, X, Upload } from 'lucide-react'
 import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
 import TransactionTable from '../components/TransactionTable'
 import TransactionForm from '../components/TransactionForm'
@@ -366,7 +366,7 @@ const TransactionHistory: React.FC = () => {
                   <div className="text-xl font-bold mt-1 text-green-500">¥0</div>
                 </div>
                 <div className="rounded-lg bg-green-500/10 p-2">
-                  <DollarSign className="w-5 h-5 text-green-500" />
+                  <JapaneseYen className="w-5 h-5 text-green-500" />
                 </div>
               </div>
             </div>
@@ -477,11 +477,11 @@ const TransactionHistory: React.FC = () => {
               </div>
               <div className="text-xl font-bold text-red-500 mt-1">¥{stats.expense.toLocaleString()}</div>
             </div>
-            <div className="border rounded-lg p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+            <div className="border border-border rounded-lg p-3">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-medium text-text-muted">収支</div>
                 <div className={`rounded-lg p-2 ${stats.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-                  <DollarSign className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                  <JapaneseYen className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
                 </div>
               </div>
               <div className={`text-xl font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
