@@ -325,48 +325,48 @@ const TransactionHistory: React.FC = () => {
           </div>
 
           {/* 統計カード */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-            <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-text-muted">総取引数</div>
-                  <div className="text-2xl font-bold mt-1 text-text-main">0</div>
+                  <div className="text-xs font-medium text-text-muted">総取引数</div>
+                  <div className="text-xl font-bold mt-1 text-text-main">0</div>
                 </div>
-                <div className="rounded-lg bg-primary/10 p-3">
-                  <FileText className="w-6 h-6 text-primary" />
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <FileText className="w-5 h-5 text-primary" />
                 </div>
               </div>
             </div>
-            <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
+            <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-text-muted">収入</div>
-                  <div className="text-2xl font-bold mt-1 text-green-500">¥0</div>
+                  <div className="text-xs font-medium text-text-muted">収入</div>
+                  <div className="text-xl font-bold mt-1 text-green-500">¥0</div>
                 </div>
-                <div className="rounded-lg bg-green-500/10 p-3">
-                  <TrendingUp className="w-6 h-6 text-green-500" />
+                <div className="rounded-lg bg-green-500/10 p-2">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
                 </div>
               </div>
             </div>
-            <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
+            <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-text-muted">支出</div>
-                  <div className="text-2xl font-bold mt-1 text-red-500">¥0</div>
+                  <div className="text-xs font-medium text-text-muted">支出</div>
+                  <div className="text-xl font-bold mt-1 text-red-500">¥0</div>
                 </div>
-                <div className="rounded-lg bg-red-500/10 p-3">
-                  <TrendingDown className="w-6 h-6 text-red-500" />
+                <div className="rounded-lg bg-red-500/10 p-2">
+                  <TrendingDown className="w-5 h-5 text-red-500" />
                 </div>
               </div>
             </div>
-            <div className="rounded-xl shadow-sm p-5 border border-green-500/20 bg-green-500/5 hover:shadow-md transition-shadow">
+            <div className="rounded-xl shadow-sm p-4 border border-green-500/20 bg-green-500/5 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-text-muted">収支</div>
-                  <div className="text-2xl font-bold mt-1 text-green-500">¥0</div>
+                  <div className="text-xs font-medium text-text-muted">収支</div>
+                  <div className="text-xl font-bold mt-1 text-green-500">¥0</div>
                 </div>
-                <div className="rounded-lg bg-green-500/10 p-3">
-                  <DollarSign className="w-6 h-6 text-green-500" />
+                <div className="rounded-lg bg-green-500/10 p-2">
+                  <DollarSign className="w-5 h-5 text-green-500" />
                 </div>
               </div>
             </div>
@@ -448,51 +448,51 @@ const TransactionHistory: React.FC = () => {
         </div>
 
         {/* 統計カード */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-          <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+          <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium text-text-muted">総取引数</div>
-                <div className="text-2xl font-bold mt-1 text-text-main">{stats.total}</div>
+                <div className="text-xs font-medium text-text-muted">総取引数</div>
+                <div className="text-xl font-bold mt-1 text-text-main">{stats.total}</div>
               </div>
-              <div className="rounded-lg bg-primary/10 p-3">
-                <FileText className="w-6 h-6 text-primary" />
+              <div className="rounded-lg bg-primary/10 p-2">
+                <FileText className="w-5 h-5 text-primary" />
               </div>
             </div>
           </div>
-          <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
+          <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium text-text-muted">収入</div>
-                <div className="text-2xl font-bold mt-1 text-green-500">¥{stats.income.toLocaleString()}</div>
+                <div className="text-xs font-medium text-text-muted">収入</div>
+                <div className="text-xl font-bold mt-1 text-green-500">¥{stats.income.toLocaleString()}</div>
               </div>
-              <div className="rounded-lg bg-green-500/10 p-3">
-                <TrendingUp className="w-6 h-6 text-green-500" />
+              <div className="rounded-lg bg-green-500/10 p-2">
+                <TrendingUp className="w-5 h-5 text-green-500" />
               </div>
             </div>
           </div>
-          <div className="bg-surface rounded-xl shadow-sm p-5 border border-border hover:shadow-md transition-shadow">
+          <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium text-text-muted">支出</div>
-                <div className="text-2xl font-bold mt-1 text-red-500">¥{stats.expense.toLocaleString()}</div>
+                <div className="text-xs font-medium text-text-muted">支出</div>
+                <div className="text-xl font-bold mt-1 text-red-500">¥{stats.expense.toLocaleString()}</div>
               </div>
-              <div className="rounded-lg bg-red-500/10 p-3">
-                <TrendingDown className="w-6 h-6 text-red-500" />
+              <div className="rounded-lg bg-red-500/10 p-2">
+                <TrendingDown className="w-5 h-5 text-red-500" />
               </div>
             </div>
           </div>
-          <div className={`rounded-xl shadow-sm p-5 border hover:shadow-md transition-shadow ${stats.balance >= 0 ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'
+          <div className={`rounded-xl shadow-sm p-4 border hover:shadow-md transition-shadow ${stats.balance >= 0 ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'
             }`}>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium text-text-muted">収支</div>
-                <div className={`text-2xl font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <div className="text-xs font-medium text-text-muted">収支</div>
+                <div className={`text-xl font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                   ¥{stats.balance.toLocaleString()}
                 </div>
               </div>
-              <div className={`rounded-lg p-3 ${stats.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-                <DollarSign className={`w-6 h-6 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+              <div className={`rounded-lg p-2 ${stats.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                <DollarSign className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
             </div>
           </div>
