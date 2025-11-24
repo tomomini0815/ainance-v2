@@ -295,6 +295,9 @@ const TransactionHistory: React.FC = () => {
       // データの再取得
       await fetchTransactions();
 
+      // カスタムイベントを発火して他のコンポーネントでデータを再取得
+      window.dispatchEvent(new CustomEvent('transactionRecorded'));
+
       setShowCreateForm(false)
     } catch (error) {
       console.error('取引の作成に失敗:', error)
@@ -310,6 +313,9 @@ const TransactionHistory: React.FC = () => {
 
       // データの再取得
       await fetchTransactions();
+
+      // カスタムイベントを発火して他のコンポーネントでデータを再取得
+      window.dispatchEvent(new CustomEvent('transactionRecorded'));
 
       setEditingTransaction(null)
     } catch (error) {

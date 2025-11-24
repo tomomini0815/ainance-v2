@@ -278,6 +278,9 @@ const Dashboard: React.FC = () => {
       // データの再取得
       await fetchTransactions();
 
+      // カスタムイベントを発火して他のコンポーネントでデータを再取得
+      window.dispatchEvent(new CustomEvent('transactionRecorded'));
+
       setShowCreateForm(false);
     } catch (error: any) {
       console.error('取引の作成に失敗:', error);
