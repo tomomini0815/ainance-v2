@@ -14,6 +14,7 @@ import Layout from './components/Layout'
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const ReceiptProcessing = React.lazy(() => import('./pages/ReceiptProcessing'));
+const QuickReceiptScan = React.lazy(() => import('./pages/QuickReceiptScan'));
 const InvoiceCreation = React.lazy(() => import('./pages/InvoiceCreation'));
 const BusinessAnalysis = React.lazy(() => import('./pages/BusinessAnalysis'));
 const ChatToBook = React.lazy(() => import('./pages/ChatToBook'));
@@ -69,6 +70,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <ReceiptProcessing />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/quick-scan"
+                  element={
+                    <ProtectedRoute>
+                      <QuickReceiptScan />
                     </ProtectedRoute>
                   }
                 />
