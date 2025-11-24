@@ -28,6 +28,7 @@ const ChatToBook: React.FC = () => {
   const recognitionRef = useRef<any>(null);
   const { user } = useAuth();
   const { currentBusinessType } = useBusinessType(user?.id);
+  // currentBusinessType?.business_typeを明示的に渡す
   const { transactions: dbTransactions, createTransaction, updateTransaction, deleteTransaction, loading, fetchTransactions } = useTransactions(user?.id, currentBusinessType?.business_type);
   const navigate = useNavigate();
 
@@ -41,20 +42,30 @@ const ChatToBook: React.FC = () => {
 
     // @ts-ignore
     const recognition = new window.webkitSpeechRecognition();
-    recognition.continuous = false; // 連続認識をオフに変更
+    recognition.continuous = true; // 連続認識をオン
     recognition.interimResults = true;
     recognition.lang = 'ja-JP';
 
+    let lastResultIndex = 0;
+
     recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      let finalTranscript = '';
+      
+      // 前回の結果以降の新しい結果のみを処理
+      for (let i = lastResultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          setTranscript(prev => prev + transcript + ' ');
-        } else {
-          interimTranscript += transcript;
+          finalTranscript += transcript + ' ';
         }
       }
+      
+      // 最終結果がある場合のみ更新
+      if (finalTranscript) {
+        setTranscript(prev => prev + finalTranscript);
+      }
+      
+      // 最後の結果インデックスを更新
+      lastResultIndex = event.results.length;
     };
 
     recognition.onerror = (event: any) => {
@@ -63,8 +74,18 @@ const ChatToBook: React.FC = () => {
     };
 
     recognition.onend = () => {
-      // 自動再開を削除し、状態のみ更新
-      setIsListening(false);
+      // 自動再開機能を追加
+      if (isListening) {
+        try {
+          lastResultIndex = 0; // 再開時にインデックスをリセット
+          recognition.start();
+        } catch (error) {
+          console.error('音声認識の再開に失敗:', error);
+          setIsListening(false);
+        }
+      } else {
+        setIsListening(false);
+      }
     };
 
     recognitionRef.current = recognition;
@@ -74,7 +95,7 @@ const ChatToBook: React.FC = () => {
         recognitionRef.current.stop();
       }
     };
-  }, []);
+  }, [isListening]); // isListeningを依存配列に追加
 
   // DBから取引データを取得
   useEffect(() => {
@@ -224,6 +245,7 @@ const ChatToBook: React.FC = () => {
       };
 
       setTransactions(prev => [newTransaction, ...prev]);
+      // 処理後にテキストをクリアして重複を防ぐ
       setTranscript('');
       setIsProcessing(false);
     }, 1000);
@@ -521,7 +543,7 @@ const ChatToBook: React.FC = () => {
                 <button
                   onClick={isListening ? stopListening : startListening}
                   className={`flex items-center justify-center w-16 h-16 rounded-full ${isListening
-                      ? 'bg-red-500 hover:bg-red-600'
+                      ? 'bg-red-500 hover:bg-red-600 animate-pulse'
                       : 'bg-primary hover:bg-primary/90'
                     } text-white transition-colors shadow-lg shadow-primary/25`}
                 >
@@ -535,7 +557,17 @@ const ChatToBook: React.FC = () => {
 
               <div className="text-center mb-4">
                 <p className="text-sm text-text-muted">
-                  {isListening ? '音声認識中...' : 'マイクボタンをクリックして開始'}
+                  {isListening ? (
+                    <span className="flex items-center justify-center">
+                      <span className="flex h-3 w-3 mr-2">
+                        <span className="animate-ping absolute h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative h-3 w-3 rounded-full bg-red-500"></span>
+                      </span>
+                      音声認識中... 話してください
+                    </span>
+                  ) : (
+                    'マイクボタンをクリックして開始'
+                  )}
                 </p>
               </div>
             </div>
@@ -551,7 +583,17 @@ const ChatToBook: React.FC = () => {
               />
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setTranscript('')}
+                disabled={!transcript.trim()}
+                className={`px-4 py-2 rounded-md transition-colors ${!transcript.trim()
+                    ? 'bg-surface-highlight text-text-muted cursor-not-allowed'
+                    : 'bg-gray-500 text-white hover:bg-gray-600'
+                  }`}
+              >
+                クリア
+              </button>
               <button
                 onClick={processTranscript}
                 disabled={!transcript.trim() || isProcessing}
@@ -635,12 +677,13 @@ const ChatToBook: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-surface divide-y divide-border">
-                  {transactions.filter(transaction => !approvedTransactions.includes(transaction.id)).map((transaction) => (
-                    <tr key={transaction.id}>
+                  {transactions.map((transaction) => (
+                    <tr key={transaction.id} className={approvedTransactions.includes(transaction.id) ? 'opacity-50' : ''}>
                       <td className="px-4 py-3 text-sm">
                         <button
                           onClick={() => toggleTransactionSelection(transaction.id)}
                           className="flex items-center"
+                          disabled={approvedTransactions.includes(transaction.id)}
                         >
                           {selectedTransactions.includes(transaction.id) ? (
                             <CheckCircle className="w-5 h-5 text-primary" />
@@ -721,19 +764,22 @@ const ChatToBook: React.FC = () => {
                           <>
                             <button
                               onClick={() => recordTransaction(transaction)}
-                              className="text-green-500 hover:text-green-600 mr-2"
+                              className={`mr-2 ${approvedTransactions.includes(transaction.id) ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
+                              disabled={approvedTransactions.includes(transaction.id)}
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEdit(transaction)}
-                              className="text-primary hover:text-primary/80 mr-2"
+                              className={`mr-2 ${approvedTransactions.includes(transaction.id) ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
+                              disabled={approvedTransactions.includes(transaction.id)}
                             >
                               <Edit3 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(transaction.id)}
-                              className="text-red-500 hover:text-red-600"
+                              className={approvedTransactions.includes(transaction.id) ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}
+                              disabled={approvedTransactions.includes(transaction.id)}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
