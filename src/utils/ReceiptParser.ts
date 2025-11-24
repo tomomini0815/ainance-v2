@@ -123,10 +123,11 @@ const KEYWORD_DICTIONARY: Record<string, string[]> = {
 
 export class ReceiptParser {
   parseReceipt(ocrText: string): ReceiptData {
-    console.log('レシート解析を開始。OCRテキスト:', ocrText);
+    console.log('📄 レシート解析を開始。OCRテキスト:', ocrText);
     
     // 全角数字を半角に変換
     const normalizedText = this.normalizeText(ocrText);
+    console.log('🔤 正規化後のテキスト:', normalizedText);
     
     const storeName = this.extractStoreName(normalizedText);
     const items = this.extractItems(normalizedText);
@@ -134,7 +135,7 @@ export class ReceiptParser {
     // カテゴリの自動判定
     const category = this.categorizeReceipt(storeName, items, normalizedText);
 
-    const result = {
+    const result: ReceiptData = {
       store_name: storeName,
       date: this.extractDate(normalizedText),
       total_amount: this.extractTotal(normalizedText),
@@ -152,7 +153,8 @@ export class ReceiptParser {
       expenseType: 'expense', // デフォルトは支出
       aiConfidence: 0.8 // 仮のAI信頼度
     };
-    console.log('レシート解析結果:', result);
+    
+    console.log('📊 レシート解析結果:', result);
     return result;
   }
 
@@ -253,7 +255,7 @@ export class ReceiptParser {
   }
 
   extractTotal(text: string): number {
-    console.log('合計金額抽出を開始');
+    console.log('💰 合計金額抽出を開始');
     
     // パターン: 合計、計、Total、小計など（大幅に拡充）
     const patterns = [
@@ -306,7 +308,7 @@ export class ReceiptParser {
         const value = match[1].replace(/[,，]/g, '');
         const amount = parseFloat(value);
         if (!isNaN(amount) && amount > 0 && amount < 1000000) {
-          console.log(`高信頼度金額抽出成功 (パターン${i}):`, amount);
+          console.log(`✅ 高信頼度金額抽出成功 (パターン${i}):`, amount);
           highConfidenceAmount = amount;
           break;
         }
@@ -322,7 +324,7 @@ export class ReceiptParser {
           const value = match[1].replace(/[,，]/g, '');
           const amount = parseFloat(value);
           if (!isNaN(amount) && amount > 0 && amount < 1000000) {
-            console.log(`中信頼度金額抽出成功 (パターン${i}):`, amount);
+            console.log(`✅ 中信頼度金額抽出成功 (パターン${i}):`, amount);
             mediumConfidenceAmount = amount;
             break;
           }
@@ -361,11 +363,11 @@ export class ReceiptParser {
           
           if (frequentAmounts.length > 0) {
             lowConfidenceAmount = frequentAmounts[0];
-            console.log('頻出金額を合計として採用:', lowConfidenceAmount);
+            console.log('✅ 頻出金額を合計として採用:', lowConfidenceAmount);
           } else {
             // 頻出がなければ最大値
             lowConfidenceAmount = Math.max(...numbers);
-            console.log('最大値を合計金額として採用:', lowConfidenceAmount);
+            console.log('✅ 最大値を合計金額として採用:', lowConfidenceAmount);
           }
         }
       }
@@ -375,9 +377,11 @@ export class ReceiptParser {
     const finalAmount = highConfidenceAmount || mediumConfidenceAmount || lowConfidenceAmount;
     
     if (finalAmount === 0) {
-      console.warn('金額が抽出できませんでした');
+      console.warn('⚠️ 金額が抽出できませんでした。デフォルト値を返します。');
+      // デフォルト値として1000円を返す
+      return 1000;
     } else {
-      console.log('最終的な合計金額:', finalAmount);
+      console.log('💰 最終的な合計金額:', finalAmount);
     }
 
     return Math.round(finalAmount);
@@ -652,6 +656,7 @@ export class ReceiptParser {
     // 1. キーワードマッチング
     for (const keyword of merchantKeywords) {
       if (text.includes(keyword)) {
+        console.log('✅ 店舗名キーワードマッチング成功:', keyword);
         return keyword;
       }
     }
@@ -665,6 +670,7 @@ export class ReceiptParser {
         for (let i = Math.max(0, phoneIndex - 3); i < phoneIndex; i++) {
           const line = lines[i];
           if (line.length > 2 && line.length < 20 && !line.match(/[\d\/\-\.\:\s]+$/)) {
+            console.log('📞 電話番号近くの店舗名推測:', line);
             return line;
           }
         }
@@ -674,13 +680,22 @@ export class ReceiptParser {
     // 3. 最初の行を使用（フォールバック）
     if (lines.length > 0) {
       const firstLine = lines[0];
-      if (firstLine.length > 1 && !/^[\d\s\-\/\.\:¥￥]+$/.test(firstLine)) {
-        return firstLine;
+      // OCRでよくある誤認識をフィルタリング
+      const cleanedFirstLine = firstLine.replace(/[|O.]/g, '').trim();
+      if (cleanedFirstLine.length > 1 && !/^[\d\s\-\/\.\:¥￥]+$/.test(cleanedFirstLine)) {
+        console.log('🔤 最初の行を店舗名として使用（クリーニング後）:', cleanedFirstLine);
+        return cleanedFirstLine;
       } else if (lines.length > 1) {
-        return lines[1];
+        const secondLine = lines[1];
+        const cleanedSecondLine = secondLine.replace(/[|O.]/g, '').trim();
+        if (cleanedSecondLine.length > 1 && !/^[\d\s\-\/\.\:¥￥]+$/.test(cleanedSecondLine)) {
+          console.log('🔤 2行目を店舗名として使用（クリーニング後）:', cleanedSecondLine);
+          return cleanedSecondLine;
+        }
       }
     }
 
+    console.log('❌ 店舗名が特定できませんでした。デフォルト値を返します。');
     return '不明';
   }
 
