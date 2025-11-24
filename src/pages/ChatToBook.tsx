@@ -88,6 +88,11 @@ const ChatToBook: React.FC = () => {
 
   // DBから取引データを取得
   useEffect(() => {
+    console.log('ChatToBook - DBから取引データを取得中', { 
+      dbTransactionsCount: dbTransactions.length,
+      dbTransactionIds: dbTransactions.map(t => t.id)
+    });
+    
     // DBから取得した取引データのみを表示（ローカルの一時データは除外）
     // ただし、一括記録後に再取得されたデータはローカルリストに追加しない
     setTransactions(prev => {
@@ -119,6 +124,13 @@ const ChatToBook: React.FC = () => {
       const uniqueTransactions = mergedTransactions.filter((transaction, index, self) => 
         index === self.findIndex(t => t.id === transaction.id)
       );
+      
+      console.log('ChatToBook - 合成された取引データ:', { 
+        mergedCount: mergedTransactions.length,
+        uniqueCount: uniqueTransactions.length,
+        dbTransactionIds,
+        localTempDataCount: localTempData.length
+      });
       
       return uniqueTransactions;
     });
@@ -447,8 +459,8 @@ const ChatToBook: React.FC = () => {
     console.log('認証されたユーザーID:', user.id);
     
     const selectedItems = transactions.filter(t => selectedTransactions.includes(t.id));
-
     console.log('bulkRecordTransactions - 選択された取引:', selectedItems);
+    console.log('bulkRecordTransactions - DB取引データ:', dbTransactions);
 
     if (selectedItems.length === 0) {
       alert('記録する取引を選択してください');
@@ -469,6 +481,8 @@ const ChatToBook: React.FC = () => {
       console.log('取引分類結果:', { 
         existingCount: existingTransactions.length, 
         newCount: newTransactions.length,
+        existingTransactions: existingTransactions.map(t => ({id: t.id, item: t.description})),
+        newTransactions: newTransactions.map(t => ({id: t.id, item: t.description})),
         dbTransactionsCount: dbTransactions.length,
         dbTransactionIds: dbTransactions.map(t => t.id)
       });
