@@ -24,6 +24,7 @@ const TransactionHistory = React.lazy(() => import('./pages/TransactionHistory')
 const AITransactionList = React.lazy(() => import('./pages/AITransactionList'));
 const TaxFilingSupport = React.lazy(() => import('./pages/TaxFilingSupport'));
 const Login = React.lazy(() => import('./pages/Login'));
+const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
 
 // プリロード関数
 const preloadRoute = (importFunc: () => Promise<any>) => {
@@ -142,6 +143,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <TaxFilingSupport />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/database-test"
+                  element={
+                    <ProtectedRoute>
+                      <DatabaseTestPage />
                     </ProtectedRoute>
                   }
                 />
