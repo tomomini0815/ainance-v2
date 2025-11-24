@@ -1024,121 +1024,114 @@ const ReceiptProcessing: React.FC = () => {
             </p>
           </div>
 
-        {/* アップロードエリア */}
-        <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">レシートをアップロード</h2>
+          {/* アップロードエリア */}
+          <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">レシートをアップロード</h2>
 
-          {/* カメラボタン */}
-          <div className="mb-6">
-            <button
-              onClick={startCamera}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              <Camera className="w-5 h-5" />
-              カメラでレシートを撮影
-            </button>
-          </div>
+            {/* カメラボタン */}
+            <div className="mb-6">
+              <button
+                onClick={startCamera}
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 font-bold text-lg"
+              >
+                <Camera className="w-6 h-6" />
+                カメラでレシートを撮影
+              </button>
+            </div>
 
-          {/* 処理状態の表示 */}
-          {scanState.isProcessing && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="flex items-center mb-2">
-                <RefreshCw className="w-5 h-5 text-blue-500 animate-spin mr-2" />
-                <span className="text-blue-700 font-medium">レシートを処理中です...</span>
+            {/* 処理状態の表示 */}
+            {scanState.isProcessing && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center mb-2">
+                  <RefreshCw className="w-5 h-5 text-blue-500 animate-spin mr-2" />
+                  <span className="text-blue-700 font-medium">レシートを処理中です...</span>
+                </div>
+                {scanState.currentStep && (
+                  <div className="text-sm text-primary mb-2">
+                    処理ステップ: {scanState.currentStep}
+                  </div>
+                )}
+                {scanState.progress !== undefined && (
+                  <div className="w-full bg-border rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${scanState.progress}%` }}
+                    ></div>
+                  </div>
+                )}
               </div>
-              {scanState.currentStep && (
-                <div className="text-sm text-primary mb-2">
-                  処理ステップ: {scanState.currentStep}
-                </div>
-              )}
-              {scanState.progress !== undefined && (
-                <div className="w-full bg-border rounded-full h-2">
-                  <div
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${scanState.progress}%` }}
-                  ></div>
-                </div>
-              )}
-            </div>
-          )}
+            )}
 
-          {/* エラーメッセージの表示 */}
-          {scanState.errorMessage && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center">
-              <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
-              <span className="text-red-700">{scanState.errorMessage}</span>
-              {scanState.retryCount < 3 && (
-                <button
-                  onClick={retryProcessing}
-                  className="ml-4 px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm"
-                >
-                  再試行
-                </button>
-              )}
-            </div>
-          )}
+            {/* エラーメッセージの表示 */}
+            {scanState.errorMessage && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center">
+                <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                <span className="text-red-700">{scanState.errorMessage}</span>
+                {scanState.retryCount < 3 && (
+                  <button
+                    onClick={retryProcessing}
+                    className="ml-4 px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm"
+                  >
+                    再試行
+                  </button>
+                )}
+              </div>
+            )}
 
-          {/* サンプルレシート追加ボタン（開発用） */}
-          <div className="mb-4 flex flex-wrap gap-2">
-            <button
-              onClick={addSampleReceipts}
-              className="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm w-full sm:w-auto"
-            >
-              サンプルレシートを追加（テスト用）
-            </button>
-            <button
-              onClick={testOCROnSampleImage}
-              className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm w-full sm:w-auto"
-            >
-              OCRテストを実行（サンプル画像）
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* ファイルアップロード */}
-            <label className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <Upload className="w-8 h-8 text-text-muted mx-auto mb-2" />
-              <p className="text-sm font-medium text-text-muted">ファイルを選択</p>
-              <p className="text-xs text-text-muted">PNG, JPG, PDF対応</p>
-            </label>
-
-            {/* カメラ撮影 */}
-            <div
-              className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors"
-              onClick={startCamera}
-            >
-              <Camera className="w-8 h-8 text-text-muted mx-auto mb-2" />
-              <p className="text-sm font-medium text-text-muted">カメラで撮影</p>
-              <p className="text-xs text-text-muted">その場で撮影</p>
+            {/* サンプルレシート追加ボタン（開発用） */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                onClick={addSampleReceipts}
+                className="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm w-full sm:w-auto"
+              >
+                サンプルレシートを追加（テスト用）
+              </button>
+              <button
+                onClick={testOCROnSampleImage}
+                className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm w-full sm:w-auto"
+              >
+                OCRテストを実行（サンプル画像）
+              </button>
             </div>
 
-            {/* ドラッグ&ドロップ */}
-            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-              <FileImage className="w-8 h-8 text-text-muted mx-auto mb-2" />
-              <p className="text-sm font-medium text-text-muted">ドラッグ&ドロップ</p>
-              <p className="text-xs text-text-muted">ここに画像をドロップ</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* ファイルアップロード */}
+              <label className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Upload className="w-8 h-8 text-text-muted mx-auto mb-2" />
+                <p className="text-sm font-medium text-text-muted">ファイルを選択</p>
+                <p className="text-xs text-text-muted">PNG, JPG, PDF対応</p>
+              </label>
+
+              {/* カメラ撮影 */}
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors"
+                onClick={startCamera}
+              >
+                <Camera className="w-8 h-8 text-text-muted mx-auto mb-2" />
+                <p className="text-sm font-medium text-text-muted">カメラで撮影</p>
+                <p className="text-xs text-text-muted">その場で撮影</p>
+              </div>
+
+              {/* ドラッグ&ドロップ */}
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                <FileImage className="w-8 h-8 text-text-muted mx-auto mb-2" />
+                <p className="text-sm font-medium text-text-muted">ドラッグ&ドロップ</p>
+                <p className="text-xs text-text-muted">ここに画像をドロップ</p>
+              </div>
             </div>
           </div>
-        </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Upload Section */}
+            {/* Upload Section removed - using the new upload area above */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-text-main mb-4 flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-primary" />
-                  レシートアップロード
-                </h2>
-                <DocumentUpload onUpload={handleFileUpload} />
-              </div>
-
               {/* Recent Uploads List */}
               <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
                 <h2 className="text-xl font-semibold text-text-main mb-4 flex items-center gap-2">
@@ -1699,6 +1692,21 @@ const ReceiptProcessing: React.FC = () => {
             </table>
           </div>
         </div>
+        {/* 結果モーダル */}
+        {showResultModal && extractedData && (
+          <ReceiptResultModal
+            receiptData={extractedData}
+            onClose={() => {
+              setShowResultModal(false);
+              setExtractedData(null);
+            }}
+            onRetake={() => {
+              setShowResultModal(false);
+              setExtractedData(null);
+              setShowCamera(true);
+            }}
+          />
+        )}
       </main>
     </div>
   )
