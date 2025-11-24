@@ -43,7 +43,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
   useEffect(() => {
     const handleTransactionRecorded = () => {
       if (currentBusinessType?.id) {
-        fetchTransactions();
+        fetchTransactions(); // _TRANSACTION_TABLE_FETCH_TRANSACTIONS_
       }
     };
 

@@ -94,6 +94,9 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
             );
 
             if (result.success) {
+                // カスタムイベントを発火してダッシュボードのデータを更新
+                window.dispatchEvent(new CustomEvent('transactionRecorded'));
+
                 // 成功通知
                 alert('✅ レシートが記録されました！ダッシュボードに反映されています。');
 
@@ -115,7 +118,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
                 {/* ヘッダー */}
-                <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white p-8 rounded-t-3xl shadow-lg z-10">
+                <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white p-6 md:p-8 rounded-t-3xl shadow-lg z-10">
                     <div className="flex justify-between items-start">
                         <div className="flex-1">
                             <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl mb-4">
@@ -166,8 +169,8 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                             <button
                                 onClick={() => setIsEditing(!isEditing)}
                                 className={`flex items-center px-4 py-2 rounded-xl font-medium transition-all ${isEditing
-                                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                                     }`}
                             >
                                 {isEditing ? (
@@ -271,8 +274,8 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                     key={cat.value}
                                     onClick={() => handleCategoryChange(cat.value)}
                                     className={`group p-5 rounded-2xl border-2 text-left transition-all duration-200 transform hover:scale-105 ${selectedCategory === cat.value
-                                            ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg shadow-blue-200/50'
-                                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50 hover:shadow-md'
+                                        ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg shadow-blue-200/50'
+                                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50 hover:shadow-md'
                                         }`}
                                 >
                                     <div className={`text-3xl mb-2 transition-transform group-hover:scale-110 ${selectedCategory === cat.value ? 'animate-bounce' : ''
@@ -311,8 +314,8 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                         onClick={handleSave}
                         disabled={isSaving || !selectedCategory}
                         className={`w-full sm:w-auto px-10 py-4 rounded-xl font-bold text-lg text-white flex items-center justify-center transition-all shadow-lg transform ${isSaving || !selectedCategory
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-700 hover:via-blue-800 hover:to-indigo-800 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105'
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-700 hover:via-blue-800 hover:to-indigo-800 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105'
                             }`}
                     >
                         {isSaving ? (
