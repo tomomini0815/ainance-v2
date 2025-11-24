@@ -38,13 +38,20 @@ const Dashboard: React.FC = () => {
   // データの再取得
   useEffect(() => {
     if (currentBusinessType?.id) {
+      console.log('ダッシュボード - データ再取得を実行');
       fetchTransactions();
     }
   }, [currentBusinessType, fetchTransactions]);
 
+  // transactionsの状態変化を監視
+  useEffect(() => {
+    console.log('ダッシュボード - transactions状態が更新されました:', transactions);
+  }, [transactions]);
+
   // カスタムイベントリスナーを追加して、取引が記録されたときにデータを再取得
   useEffect(() => {
     const handleTransactionRecorded = () => {
+      console.log('ダッシュボード - transactionRecordedイベントを受信');
       if (currentBusinessType?.id) {
         fetchTransactions();
       }
@@ -60,7 +67,7 @@ const Dashboard: React.FC = () => {
   // 承認イベントリスナーを追加して、取引が承認されたときにデータを再取得
   useEffect(() => {
     const handleTransactionApproved = () => {
-      console.log('transactionApprovedイベントを受信');
+      console.log('ダッシュボード - transactionApprovedイベントを受信');
       if (currentBusinessType?.id) {
         fetchTransactions();
       }
