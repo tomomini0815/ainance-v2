@@ -75,11 +75,11 @@ const Dashboard: React.FC = () => {
 
   // 統計情報
   const stats = useMemo(() => {
-    console.log('取引データ:', transactions);
+    console.log('ダッシュボード - 取引データ:', transactions);
 
     // 各取引の詳細情報を出力
     transactions.forEach((t, index) => {
-      console.log(`取引 ${index + 1}:`, {
+      console.log(`ダッシュボード - 取引 ${index + 1}:`, {
         id: t.id,
         item: t.item,
         amount: t.amount,
@@ -130,7 +130,7 @@ const Dashboard: React.FC = () => {
       // typeが指定されていない場合のみ、amountが正の数値の場合を収入として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount > 0;
-      console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
+      console.log(`ダッシュボード - 取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
       return isValid;
     });
 
@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
       // typeが指定されていない場合のみ、amountが負の数値の場合を支出として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount < 0;
-      console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
+      console.log(`ダッシュボード - 取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
       return isValid;
     });
 
@@ -156,7 +156,7 @@ const Dashboard: React.FC = () => {
       const amount = getAmountValue(t.amount);
       // 収入は常に正の値として計算
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
-      console.log(`収入計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
+      console.log(`ダッシュボード - 収入計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
       return sum + validAmount;
     }, 0);
 
@@ -164,7 +164,7 @@ const Dashboard: React.FC = () => {
       const amount = getAmountValue(t.amount);
       // 支出は常に正の値として計算
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
-      console.log(`支出計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
+      console.log(`ダッシュボード - 支出計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
       return sum + validAmount;
     }, 0);
 
@@ -175,9 +175,9 @@ const Dashboard: React.FC = () => {
       balance: totalIncome - totalExpense
     };
 
-    console.log('統計情報計算結果:', result);
-    console.log('収入取引:', incomeTransactions);
-    console.log('支出取引:', expenseTransactions);
+    console.log('ダッシュボード - 統計情報計算結果:', result);
+    console.log('ダッシュボード - 収入取引:', incomeTransactions);
+    console.log('ダッシュボード - 支出取引:', expenseTransactions);
 
     return result;
   }, [transactions])

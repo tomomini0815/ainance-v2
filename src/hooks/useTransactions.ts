@@ -82,7 +82,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
       if (error) throw error;
 
-      console.log('取引データ取得成功:', { count: data?.length, data });
+      console.log('取引データ取得成功:', { count: data?.length, data, tableName });
       setTransactions(data || []);
       setLoading(false);
     } catch (error) {

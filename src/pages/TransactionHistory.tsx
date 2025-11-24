@@ -188,7 +188,7 @@ const TransactionHistory: React.FC = () => {
       // typeが指定されていない場合のみ、amountが正の数値の場合を収入として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount > 0;
-      console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
+      console.log(`取引履歴 - 取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
       return isValid;
     });
 
@@ -206,14 +206,14 @@ const TransactionHistory: React.FC = () => {
       // typeが指定されていない場合のみ、amountが負の数値の場合を支出として扱う
       const amount = getAmountValue(t.amount);
       const isValid = !isNaN(amount) && isFinite(amount) && amount < 0;
-      console.log(`取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
+      console.log(`取引履歴 - 取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
       return isValid;
     });
 
     const totalIncome = incomeTransactions.reduce((sum, t) => {
       const amount = getAmountValue(t.amount);
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
-      console.log(`収入計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
+      console.log(`取引履歴 - 収入計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
       return sum + validAmount;
     }, 0);
 
@@ -221,7 +221,7 @@ const TransactionHistory: React.FC = () => {
       const amount = getAmountValue(t.amount);
       // 支出の場合は金額を正の値として計算（表示時にマイナスを付ける）
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
-      console.log(`支出計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
+      console.log(`取引履歴 - 支出計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
       return sum + validAmount;
     }, 0);
 
