@@ -3,7 +3,7 @@ import { Check, X, Edit2, FileText, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
-import { approveReceiptAndCreateTransaction } from '../services/receiptService';
+import { approveReceiptAndCreateTransaction, saveReceipt } from '../services/receiptService';
 
 interface ReceiptData {
     merchant: string;
@@ -75,9 +75,8 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
         try {
             const businessType = currentBusinessType?.business_type || 'individual';
 
-            // レシートデータを作成
+            // レシートデータを作成（IDはデータベースで自動生成）
             const receiptToSave = {
-                id: Date.now().toString(),
                 user_id: user.uid,
                 date: editedData.date,
                 merchant: editedData.merchant,
@@ -94,10 +93,17 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 },
             };
 
-            // レシートを承認して取引を作成
+            // レシートを保存
+            const savedReceipt = await saveReceipt(receiptToSave);
+
+            if (!savedReceipt || !savedReceipt.id) {
+                throw new Error('レシートの保存に失敗しました');
+            }
+
+            // 保存されたレシートIDを使って取引を作成
             const result = await approveReceiptAndCreateTransaction(
-                receiptToSave.id,
-                receiptToSave,
+                savedReceipt.id,
+                savedReceipt,
                 businessType,
                 user.uid
             );
@@ -125,82 +131,78 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
                 {/* ヘッダー */}
-                <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white p-6 md:p-8 rounded-t-3xl shadow-lg z-10">
-                    <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl mb-4">
-                                <FileText className="w-8 h-8" />
-                            </div>
-                            <h2 className="text-3xl md:text-4xl font-extrabold mb-2">レシート読み取り結果</h2>
-                            <p className="text-blue-100 text-lg">内容を確認して、カテゴリを選択してください</p>
+                <div className="sticky top-0 bg-white text-gray-900 p-4 border-b border-gray-200 rounded-t-2xl z-10">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                            <FileText className="w-5 h-5 text-blue-600 mr-2" />
+                            <h2 className="text-lg font-bold">レシート読み取り結果</h2>
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-3 hover:bg-white/20 rounded-xl transition-colors ml-4 flex-shrink-0"
+                            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
                         >
-                            <X className="w-7 h-7" />
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
+                    <p className="text-xs text-gray-600 mt-1">内容を確認して、カテゴリを選択してください</p>
                 </div>
 
                 {/* 信頼度バー */}
-                <div className="bg-gradient-to-r from-green-50 via-blue-50 to-indigo-50 p-6 border-b border-gray-100">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                                <span className="text-sm font-semibold text-gray-700">AI 認識精度</span>
-                            </div>
-                            <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                                {Math.round(editedData.confidence)}%
-                            </span>
+                <div className="bg-gray-50 p-3 border-b border-gray-200">
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center">
+                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+                            <span className="text-xs font-medium text-gray-700">AI認識精度</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
-                            <div
-                                className="bg-gradient-to-r from-green-500 via-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-1000 shadow-md"
-                                style={{ width: `${editedData.confidence}%` }}
-                            />
-                        </div>
+                        <span className="text-sm font-bold text-blue-600">
+                            {Math.round(editedData.confidence)}%
+                        </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div
+                            className="bg-gradient-to-r from-green-500 to-blue-500 h-1.5 rounded-full transition-all duration-500"
+                            style={{ width: `${editedData.confidence}%` }}
+                        />
                     </div>
                 </div>
 
                 {/* メインコンテンツ */}
-                <div className="p-8 md:p-10 space-y-8">
+                <div className="p-5 space-y-6">
                     {/* 抽出データセクション */}
-                    <div className="max-w-4xl mx-auto">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-2xl font-bold text-gray-900 flex items-center">
-                                <div className="w-2 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full mr-3" />
+                    <div>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-base font-bold text-gray-900 flex items-center">
+                                <div className="w-1 h-4 bg-blue-600 rounded-full mr-2" />
                                 抽出データ
                             </h3>
                             <button
                                 onClick={() => setIsEditing(!isEditing)}
-                                className={`flex items-center px-4 py-2 rounded-xl font-medium transition-all ${isEditing
+                                className={`flex items-center px-2.5 py-1.5 text-xs rounded-lg font-medium transition-all ${isEditing
                                     ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                     : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                                     }`}
                             >
                                 {isEditing ? (
                                     <>
-                                        <Check className="w-5 h-5 mr-2" />
-                                        編集完了
+                                        <Check className="w-3 h-3 mr-1" />
+                                        完了
                                     </>
                                 ) : (
                                     <>
-                                        <Edit2 className="w-5 h-5 mr-2" />
-                                        データを編集
+                                        <Edit2 className="w-3 h-3 mr-1" />
+                                        編集
                                     </>
                                 )}
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 gap-3">
                             {/* 店舗名 */}
-                            <div className="lg:col-span-3">
-                                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                                    <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <span className="w-4 h-4 bg-blue-100 rounded mr-1 flex items-center justify-center text-[8px]">
                                         🏪
                                     </span>
                                     店舗名
@@ -210,99 +212,99 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                         type="text"
                                         value={editedData.merchant}
                                         onChange={(e) => handleFieldEdit('merchant', e.target.value)}
-                                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-medium transition-all"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
                                         placeholder="店舗名を入力"
                                     />
                                 ) : (
-                                    <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl text-xl font-bold text-gray-900 border-2 border-blue-100">
+                                    <div className="px-3 py-2 bg-blue-50 rounded-lg text-sm font-medium text-gray-900 border border-blue-100">
                                         {editedData.merchant}
                                     </div>
                                 )}
                             </div>
 
-                            {/* 日付 */}
-                            <div className="lg:col-span-1">
-                                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                                    <span className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2">
-                                        📅
-                                    </span>
-                                    日付
-                                </label>
-                                {isEditing ? (
-                                    <input
-                                        type="date"
-                                        value={editedData.date}
-                                        onChange={(e) => handleFieldEdit('date', e.target.value)}
-                                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium transition-all"
-                                    />
-                                ) : (
-                                    <div className="px-5 py-4 bg-gray-50 rounded-xl font-semibold text-gray-900 border-2 border-gray-100">
-                                        {editedData.date}
-                                    </div>
-                                )}
-                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* 日付 */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                        <span className="w-4 h-4 bg-green-100 rounded mr-1 flex items-center justify-center text-[8px]">
+                                            📅
+                                        </span>
+                                        日付
+                                    </label>
+                                    {isEditing ? (
+                                        <input
+                                            type="date"
+                                            value={editedData.date}
+                                            onChange={(e) => handleFieldEdit('date', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                        />
+                                    ) : (
+                                        <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm font-medium text-gray-900 border border-gray-200">
+                                            {editedData.date}
+                                        </div>
+                                    )}
+                                </div>
 
-                            {/* 金額 */}
-                            <div className="lg:col-span-2">
-                                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                                    <span className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-2">
-                                        💰
-                                    </span>
-                                    金額
-                                </label>
-                                {isEditing ? (
-                                    <input
-                                        type="number"
-                                        value={editedData.amount}
-                                        onChange={(e) => handleFieldEdit('amount', parseInt(e.target.value))}
-                                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-medium transition-all"
-                                        placeholder="金額を入力"
-                                    />
-                                ) : (
-                                    <div className="px-5 py-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-orange-600 border-2 border-yellow-100">
-                                        ¥{editedData.amount.toLocaleString()}
-                                    </div>
-                                )}
+                                {/* 金額 */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                        <span className="w-4 h-4 bg-yellow-100 rounded mr-1 flex items-center justify-center text-[8px]">
+                                            💰
+                                        </span>
+                                        金額
+                                    </label>
+                                    {isEditing ? (
+                                        <input
+                                            type="number"
+                                            value={editedData.amount}
+                                            onChange={(e) => handleFieldEdit('amount', parseInt(e.target.value))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                            placeholder="金額を入力"
+                                        />
+                                    ) : (
+                                        <div className="px-3 py-2 bg-yellow-50 rounded-lg text-sm font-bold text-yellow-700 border border-yellow-200">
+                                            ¥{editedData.amount.toLocaleString()}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* カテゴリ選択セクション */}
-                    <div className="max-w-4xl mx-auto">
-                        <h3 className="text-2xl font-bold text-gray-900 flex items-center mb-6">
-                            <div className="w-2 h-8 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full mr-3" />
+                    <div>
+                        <h3 className="text-base font-bold text-gray-900 flex items-center mb-3">
+                            <div className="w-1 h-4 bg-purple-600 rounded-full mr-2" />
                             カテゴリを選択
-                            <span className="ml-3 px-3 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-full">
+                            <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded-full">
                                 必須
                             </span>
                         </h3>
 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 gap-2">
                             {CATEGORIES.map((cat) => (
                                 <button
                                     key={cat.value}
                                     onClick={() => handleCategoryChange(cat.value)}
-                                    className={`group p-5 rounded-2xl border-2 text-left transition-all duration-200 transform hover:scale-105 ${selectedCategory === cat.value
-                                        ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg shadow-blue-200/50'
-                                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50 hover:shadow-md'
+                                    className={`p-3 rounded-lg border text-left transition-all text-sm ${selectedCategory === cat.value
+                                        ? 'border-blue-500 bg-blue-50 shadow-sm'
+                                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                                         }`}
                                 >
-                                    <div className={`text-3xl mb-2 transition-transform group-hover:scale-110 ${selectedCategory === cat.value ? 'animate-bounce' : ''
-                                        }`}>
-                                        {cat.label.split(' ')[0]}
+                                    <div className="flex items-center">
+                                        <div className="text-base mr-2">
+                                            {cat.label.split(' ')[0]}
+                                        </div>
+                                        <div className="font-medium text-gray-900">
+                                            {cat.label.split(' ')[1]}
+                                        </div>
+                                        {selectedCategory === cat.value && (
+                                            <Check className="w-4 h-4 ml-auto text-blue-600" />
+                                        )}
                                     </div>
-                                    <div className="font-bold text-gray-900 mb-1">
-                                        {cat.label.split(' ')[1]}
-                                    </div>
-                                    <div className="text-xs text-gray-600 leading-tight">
+                                    <div className="text-[10px] text-gray-600 mt-1">
                                         {cat.description}
                                     </div>
-                                    {selectedCategory === cat.value && (
-                                        <div className="mt-2 flex items-center text-blue-600 text-sm font-semibold">
-                                            <Check className="w-4 h-4 mr-1" />
-                                            選択中
-                                        </div>
-                                    )}
                                 </button>
                             ))}
                         </div>
@@ -310,37 +312,32 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 </div>
 
                 {/* フッター */}
-                <div className="sticky bottom-0 bg-gradient-to-r from-gray-50 to-gray-100 p-6 md:p-8 rounded-b-3xl border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+                <div className="sticky bottom-0 bg-gray-50 p-4 rounded-b-2xl border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <button
                         onClick={onRetake}
-                        className="w-full sm:w-auto px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-semibold flex items-center justify-center shadow-sm hover:shadow-md"
+                        className="w-full sm:w-auto px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium flex items-center justify-center"
                     >
-                        <RotateCcw className="w-5 h-5 mr-2" />
+                        <RotateCcw className="w-4 h-4 mr-1" />
                         撮り直す
                     </button>
 
                     <button
                         onClick={handleSave}
                         disabled={isSaving || !selectedCategory}
-                        className={`w-full sm:w-auto px-10 py-4 rounded-xl font-bold text-lg text-white flex items-center justify-center transition-all shadow-lg transform ${isSaving || !selectedCategory
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-700 hover:via-blue-800 hover:to-indigo-800 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105'
+                        className={`w-full sm:w-auto px-4 py-2.5 rounded-lg font-medium text-sm flex items-center justify-center transition-all ${isSaving || !selectedCategory
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
                             }`}
                     >
                         {isSaving ? (
                             <>
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3" />
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                                 保存中...
                             </>
                         ) : (
                             <>
-                                <Check className="w-6 h-6 mr-2" />
+                                <Check className="w-4 h-4 mr-1" />
                                 データを記録する
-                                {selectedCategory && (
-                                    <div className="ml-2 px-2 py-1 bg-white/20 rounded-full text-sm">
-                                        →
-                                    </div>
-                                )}
                             </>
                         )}
                     </button>
