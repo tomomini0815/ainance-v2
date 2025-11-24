@@ -25,6 +25,7 @@ export interface Receipt {
  */
 export const saveReceipt = async (receipt: Omit<Receipt, 'id' | 'created_at' | 'updated_at'>): Promise<Receipt | null> => {
   try {
+    console.log('レシートを保存中:', receipt);
     const { data, error } = await supabase
       .from('receipts')
       .insert([receipt])
@@ -49,6 +50,7 @@ export const saveReceipt = async (receipt: Omit<Receipt, 'id' | 'created_at' | '
  */
 export const getReceipts = async (userId: string): Promise<Receipt[]> => {
   try {
+    console.log('レシートを取得中:', { userId });
     const { data, error } = await supabase
       .from('receipts')
       .select('*')
@@ -60,6 +62,7 @@ export const getReceipts = async (userId: string): Promise<Receipt[]> => {
       throw error;
     }
 
+    console.log('レシート取得成功:', { count: data?.length, data });
     return data || [];
   } catch (error) {
     console.error('getReceipts エラー:', error);
@@ -72,6 +75,7 @@ export const getReceipts = async (userId: string): Promise<Receipt[]> => {
  */
 export const updateReceipt = async (id: string, updates: Partial<Receipt>): Promise<Receipt | null> => {
   try {
+    console.log('レシートを更新中:', { id, updates });
     const { data, error } = await supabase
       .from('receipts')
       .update({
@@ -100,6 +104,7 @@ export const updateReceipt = async (id: string, updates: Partial<Receipt>): Prom
  */
 export const deleteReceipt = async (id: string): Promise<boolean> => {
   try {
+    console.log('レシートを削除中:', { id });
     const { error } = await supabase
       .from('receipts')
       .delete()
@@ -125,6 +130,7 @@ export const updateReceiptStatus = async (
   id: string,
   status: 'pending' | 'approved' | 'rejected'
 ): Promise<Receipt | null> => {
+  console.log('レシートステータスを更新中:', { id, status });
   return updateReceipt(id, { status });
 };
 
@@ -138,6 +144,8 @@ export const approveReceiptAndCreateTransaction = async (
   userId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    console.log('レシート承認と取引作成を開始:', { receiptId, receipt, businessType, userId });
+    
     // 1. レシートステータスを'approved'に更新
     const updatedReceipt = await updateReceiptStatus(receiptId, 'approved');
     if (!updatedReceipt) {
@@ -174,6 +182,7 @@ export const approveReceiptAndCreateTransaction = async (
         }
       : transactionData;
 
+    console.log('トランザクションを保存中:', { tableName, transactionPayload });
     const { data: transactionResult, error: transactionError } = await supabase
       .from(tableName)
       .insert([transactionPayload])
@@ -204,6 +213,7 @@ export const approveReceiptAndCreateTransaction = async (
       processing_time: null,
     };
 
+    console.log('AIトランザクションを保存中:', { aiTransactionData });
     const { data: aiResult, error: aiError } = await supabase
       .from('ai_transactions')
       .insert([aiTransactionData])

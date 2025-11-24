@@ -75,6 +75,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
 
         try {
             const businessType = currentBusinessType?.business_type || 'individual';
+            console.log('レシート保存を開始:', { user, businessType, editedData, selectedCategory });
 
             // レシートデータを作成（IDはデータベースで自動生成）
             // user.idを使用するように修正
@@ -97,6 +98,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
 
             // レシートを保存
             const savedReceipt = await saveReceipt(receiptToSave);
+            console.log('レシート保存結果:', { savedReceipt });
 
             if (!savedReceipt || !savedReceipt.id) {
                 throw new Error('レシートの保存に失敗しました');
@@ -110,6 +112,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 businessType,
                 user.id
             );
+            console.log('取引作成結果:', { result });
 
             if (result.success) {
                 // カスタムイベントを発火してダッシュボードのデータを更新

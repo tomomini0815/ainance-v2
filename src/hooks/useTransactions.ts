@@ -73,6 +73,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
     const tableName = getTableName();
 
     try {
+      console.log('取引データを取得中:', { userId, businessType, tableName });
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
@@ -81,6 +82,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
       if (error) throw error;
 
+      console.log('取引データ取得成功:', { count: data?.length, data });
       setTransactions(data || []);
       setLoading(false);
     } catch (error) {
@@ -147,6 +149,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
     try {
       const tableName = getTableName();
+      console.log('取引を更新中:', { id, updates, tableName });
       const { data, error } = await supabase
         .from(tableName)
         .update(updates)
@@ -157,6 +160,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       if (error) throw error;
 
       const updatedTransaction: Transaction = data;
+      console.log('取引更新成功:', updatedTransaction);
       setTransactions(prev =>
         prev.map(transaction =>
           transaction.id === id ? updatedTransaction : transaction
@@ -178,6 +182,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
     try {
       const tableName = getTableName();
+      console.log('取引を削除中:', { id, tableName });
       const { error } = await supabase
         .from(tableName)
         .delete()
@@ -185,6 +190,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
       if (error) throw error;
 
+      console.log('取引削除成功:', id);
       setTransactions(prev => prev.filter(transaction => transaction.id !== id));
       return { error: null };
     } catch (error) {
