@@ -368,6 +368,7 @@ const ChatToBook: React.FC = () => {
         );
 
         // 承認イベントを発火
+        console.log('transactionApprovedイベントを発火');
         window.dispatchEvent(new CustomEvent('transactionApproved'));
 
         console.log('recordTransaction - 取引を承認しました');

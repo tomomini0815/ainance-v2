@@ -11,7 +11,7 @@ const DatabaseTestPage: React.FC = () => {
           <Link to="/dashboard" className="mr-4">
             <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
           </Link>
-          <h1 className="text-2xl font-bold text-text-main">データベース接続テスト</h1>
+          <h1 className="text-2xl font-bold text-text-main">データベーステスト</h1>
         </div>
 
         <DatabaseTest />

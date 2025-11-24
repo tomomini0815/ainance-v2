@@ -57,6 +57,7 @@ const TransactionHistory: React.FC = () => {
   // 承認イベントリスナーを追加して、取引が承認されたときにデータを再取得
   useEffect(() => {
     const handleTransactionApproved = () => {
+      console.log('transactionApprovedイベントを受信');
       if (currentBusinessType?.id) {
         fetchTransactions();
       }
