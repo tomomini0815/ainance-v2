@@ -450,8 +450,8 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
 
                         {/* Guide Overlay with Edge Detection - 縦長レシート用 */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            {/* 縦長のレシート撮影ガイド（3:4のアスペクト比） */}
-                            <div className="relative" style={{ width: '75%', paddingBottom: '100%' }}>
+                            {/* 縦長のレシート撮影ガイド（4:3のアスペクト比） */}
+                            <div className="relative" style={{ width: '85%', paddingBottom: '113.33%' }}>
                                 <div className="absolute inset-0 border-4 border-primary/60 rounded-lg shadow-2xl" style={{
                                     boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)'
                                 }}>
