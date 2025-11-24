@@ -378,29 +378,6 @@ const Dashboard: React.FC = () => {
         <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
           <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-text-main">取引履歴</h3>
-              <Link
-                to="/transaction-history"
-                className="flex items-center text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-              >
-                詳細一覧
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Link>
-            </div>
-            <div className="text-center py-8 text-text-muted">
-              <p>すべての取引履歴を表示するには、詳細一覧ページにアクセスしてください。</p>
-              <Link
-                to="/transaction-history"
-                className="mt-4 inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                取引履歴を見る
-              </Link>
-            </div>
-          </div>
-        </Suspense>
-        <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
-            <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-text-main">AI推奨取引</h3>
               <div className="flex items-center space-x-3">
                 <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
