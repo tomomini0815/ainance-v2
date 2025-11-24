@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Camera, Sparkles, Zap, CheckCircle } from 'lucide-react';
+import Tesseract from 'tesseract.js';
 import ReceiptCamera from '../components/ReceiptCamera';
 import ReceiptResultModal from '../components/ReceiptResultModal';
+import { ReceiptParser } from '../utils/ReceiptParser';
 
 interface ExtractedReceiptData {
     merchant: string;
@@ -17,41 +19,58 @@ const QuickReceiptScan: React.FC = () => {
     const [showResultModal, setShowResultModal] = useState(false);
     const [extractedData, setExtractedData] = useState<ExtractedReceiptData | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [statusMessage, setStatusMessage] = useState('処理中...');
 
     const handleCapture = async (imageBlob: Blob) => {
         setShowCamera(false);
         setIsProcessing(true);
+        setStatusMessage('画像を解析中...');
 
         try {
-            // Tesseract.jsを使用してOCR処理
-            const Tesseract = await import('tesseract.js');
             const imageUrl = URL.createObjectURL(imageBlob);
+            console.log('画像URL生成:', imageUrl);
 
-            const result = await Tesseract.recognize(imageUrl, 'jpn+eng');
+            // タイムアウト付きでOCR実行
+            const ocrPromise = Tesseract.recognize(imageUrl, 'jpn+eng', {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        setStatusMessage(`文字を読み取っています... ${Math.round(m.progress * 100)}%`);
+                    }
+                }
+            });
+
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('OCR処理がタイムアウトしました')), 30000)
+            );
+
+            const result: any = await Promise.race([ocrPromise, timeoutPromise]);
             URL.revokeObjectURL(imageUrl);
 
-            console.log('OCR結果:', result.data.text);
+            console.log('OCR完了:', result.data.text.substring(0, 100) + '...');
+            setStatusMessage('データを抽出中...');
 
-            // 簡易データ抽出（実際のReceiptParserを使用）
-            const { ReceiptParser } = await import('../utils/ReceiptParser');
+            // データ抽出
             const parser = new ReceiptParser();
             const parsed = parser.parseReceipt(result.data.text);
+
+            console.log('パース結果:', parsed);
 
             setExtractedData({
                 merchant: parsed.store_name || '不明',
                 date: parsed.date || new Date().toISOString().split('T')[0],
                 amount: parsed.total_amount || 0,
-                category: '雑費',
+                category: '雑費', // デフォルト
                 taxRate: parsed.tax_rate || 0,
                 confidence: 80,
             });
 
             setShowResultModal(true);
-        } catch (error) {
+        } catch (error: any) {
             console.error('OCR処理エラー:', error);
-            alert('レシートの読み取りに失敗しました');
+            alert(`レシートの読み取りに失敗しました: ${error.message}`);
         } finally {
             setIsProcessing(false);
+            setStatusMessage('処理中...');
         }
     };
 
@@ -238,7 +257,7 @@ const QuickReceiptScan: React.FC = () => {
                                         AI が読み取り中...
                                     </h3>
                                     <p className="text-gray-600 mb-8">
-                                        レシートからデータを抽出しています
+                                        {statusMessage}
                                     </p>
                                     <div className="max-w-md mx-auto bg-white rounded-2xl p-6 shadow-lg">
                                         <div className="flex items-center justify-between text-sm mb-3">
