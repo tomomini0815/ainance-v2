@@ -38,6 +38,12 @@ const CATEGORIES = {
   ENTERTAINMENT: '接待交際費',
   UTILITIES: '水道光熱費',
   COMMUNICATION: '通信費',
+  INSURANCE: '保険料',
+  RENT: '家賃',
+  LOAN: 'ローン返済',
+  TAX: '税金',
+  SALARY: '給与',
+  BONUS: '賞与',
   OTHER: 'その他'
 };
 
@@ -49,29 +55,69 @@ const KEYWORD_DICTIONARY: Record<string, string[]> = {
     'すき家', '吉野家', '松屋', 'サイゼリヤ', 'ガスト', 'くら寿司', 'スシロー',
     'イオン', 'イトーヨーカドー', 'ライフ', 'サミット', '西友', 'マックスバリュ',
     '成城石井', 'カルディ', '業務スーパー', '飲食店', 'レストラン', 'カフェ',
-    '居酒屋', 'バー', '食堂', 'フード', 'ドリンク', 'お茶', 'コーヒー'
+    '居酒屋', 'バー', '食堂', 'フード', 'ドリンク', 'お茶', 'コーヒー',
+    'コンビニ', '牛丼', '定食', 'ラーメン', 'うどん', 'そば', 'パスタ',
+    'ピザ', 'ハンバーグ', 'オムライス', 'カレー', '丼物', '惣菜'
   ],
   [CATEGORIES.TRANSPORT]: [
     'タクシー', '交通', '鉄道', 'バス', '駅', '切符', '定期券', 'Suica', 'PASMO',
     'JR', '地下鉄', 'メトロ', '航空', '飛行機', '空港', 'ガソリン', '給油',
-    '駐車場', 'パーキング', '高速道路', 'ETC', '出張', '旅費'
+    '駐車場', 'パーキング', '高速道路', 'ETC', '出張', '旅費',
+    '電車', '新幹線', '特急', '急行', '快速', '普通', '各駅停車',
+    'モノレール', 'ケーブルカー', '路面電車', ' tram', ' ferry', '船',
+    'レンタカー', 'カーシェアリング', 'Uber', 'Lyft'
   ],
   [CATEGORIES.SUPPLIES]: [
     'ドラッグストア', '薬局', 'マツモトキヨシ', 'ウエルシア', 'ツルハ',
     'ユニクロ', 'GU', '無印良品', 'ニトリ', 'ダイソー', 'セリア', 'キャンドゥ',
     'ドン・キホーテ', 'ホームセンター', 'カインズ', 'コーナン', '文具', '事務用品',
-    '日用品', '雑貨', '洗剤', 'トイレットペーパー', 'ティッシュ', 'コピー', '印刷'
+    '日用品', '雑貨', '洗剤', 'トイレットペーパー', 'ティッシュ', 'コピー', '印刷',
+    'オフィス用品', '消耗品', 'インク', 'トナー', '紙', 'ファイル', 'ノート',
+    'ボールペン', 'シャープペンシル', '消しゴム', '定規', 'はさみ', 'のり',
+    'ホッチキス', 'ステープラー', 'テープ', '養生テープ', 'ビニール袋'
   ],
   [CATEGORIES.ENTERTAINMENT]: [
     '居酒屋', 'カラオケ', 'ゴルフ', 'チケット', '映画', 'コンサート', 'イベント',
-    'ギフト', '贈答', 'お土産', '接待', '会食', 'パーティ'
+    'ギフト', '贈答', 'お土産', '接待', '会食', 'パーティ',
+    '遊園地', 'テーマパーク', '水族館', '動物園', '美術館', '博物館',
+    'ゲームセンター', 'パチンコ', '競馬', '競艇', 'オートレース',
+    '旅行', '観光', '宿泊', 'ホテル', '旅館', '民宿'
   ],
   [CATEGORIES.COMMUNICATION]: [
     '携帯', 'スマホ', '電話', 'インターネット', 'Wi-Fi', 'プロバイダ',
-    'ドコモ', 'au', 'ソフトバンク', '楽天モバイル', '切手', '郵便', '宅配', '送料'
+    'ドコモ', 'au', 'ソフトバンク', '楽天モバイル', '切手', '郵便', '宅配', '送料',
+    'Skype', 'Zoom', 'Teams', 'Slack', 'LINE', 'WhatsApp', 'Telegram',
+    'Netflix', 'Amazon Prime', 'Disney+', 'Spotify', 'Apple Music',
+    'Yahoo! BB', 'NURO', 'So-net', 'BIGLOBE', 'OCN', 'ぷらら'
   ],
   [CATEGORIES.UTILITIES]: [
-    '電気', 'ガス', '水道', '東京電力', '関西電力', '東京ガス', '大阪ガス', '水道局'
+    '電気', 'ガス', '水道', '東京電力', '関西電力', '東京ガス', '大阪ガス', '水道局',
+    'エネオス', '出光', 'コスモ', 'シェル', 'エネオス', 'JOMO', '千葉石油',
+    '灯油', 'プロパン', '都市ガス', '天然ガス', '水道料金', '下水道',
+    '電力量', 'ガス使用量', '水使用量', '基本料金', '従量料金'
+  ],
+  [CATEGORIES.INSURANCE]: [
+    '保険', '生命保険', '損害保険', '医療保険', '生命', '損害', '医療',
+    '年金', '共済', 'JA共済', 'あんしん', '損害', '生命保険料', '損害保険料'
+  ],
+  [CATEGORIES.RENT]: [
+    '家賃', '賃料', '賃貸', 'マンション', 'アパート', '物件', '不動産',
+    '敷金', '礼金', '保証金', '共益費', '管理費'
+  ],
+  [CATEGORIES.LOAN]: [
+    'ローン', '返済', '借入', 'カードローン', '住宅ローン', '教育ローン', '車両ローン',
+    'カードローン返済', '住宅ローン返済', '教育ローン返済', '車両ローン返済'
+  ],
+  [CATEGORIES.TAX]: [
+    '税', '税金', '所得税', '住民税', '固定資産税', '自動車税', '軽自動車税',
+    '国民健康保険税', '後期高齢者医療保険', '国民年金保険料'
+  ],
+  [CATEGORIES.SALARY]: [
+    '給与', '給料', '月給', '時給', '日給', 'ボーナス', '賞与', '手当',
+    '残業代', '割増賃金', '退職金'
+  ],
+  [CATEGORIES.BONUS]: [
+    'ボーナス', '賞与', '特別手当', '一時金', 'インセンティブ', '歩合'
   ]
 };
 
@@ -128,7 +174,7 @@ export class ReceiptParser {
     for (const [category, keywords] of Object.entries(KEYWORD_DICTIONARY)) {
       for (const keyword of keywords) {
         if (storeName.includes(keyword)) {
-          scores[category] += 10; // 店舗名の一致は重みを高く
+          scores[category] += 15; // 店舗名の一致は重みをさらに高く
         }
       }
     }
@@ -138,7 +184,7 @@ export class ReceiptParser {
       for (const [category, keywords] of Object.entries(KEYWORD_DICTIONARY)) {
         for (const keyword of keywords) {
           if (item.name.includes(keyword)) {
-            scores[category] += 3;
+            scores[category] += 5; // 商品名の一致も重みを高く
           }
         }
       }
@@ -147,10 +193,49 @@ export class ReceiptParser {
     // 3. テキスト全体からのキーワード検索
     for (const [category, keywords] of Object.entries(KEYWORD_DICTIONARY)) {
       for (const keyword of keywords) {
+        // 店舗名と商品名に含まれるキーワードは重みを下げる
+        const isInStoreName = storeName.includes(keyword);
+        const isInItems = items.some(item => item.name.includes(keyword));
+        
         if (text.includes(keyword)) {
-          scores[category] += 1;
+          if (isInStoreName || isInItems) {
+            scores[category] += 1; // 既にカウント済みのキーワードは重みを低く
+          } else {
+            scores[category] += 2; // 新しいキーワードは重みを中程度
+          }
         }
       }
+    }
+
+    // 4. 特殊なパターンの検出
+    // 給与やボーナスのパターン
+    if (text.includes('給与') || text.includes('給料') || text.includes('月給') || 
+        text.includes('時給') || text.includes('日給') || text.includes('手当')) {
+      scores[CATEGORIES.SALARY] += 20;
+    }
+    
+    if (text.includes('ボーナス') || text.includes('賞与') || text.includes('特別手当')) {
+      scores[CATEGORIES.BONUS] += 20;
+    }
+    
+    // 保険料のパターン
+    if (text.includes('保険') && (text.includes('料') || text.includes('金'))) {
+      scores[CATEGORIES.INSURANCE] += 15;
+    }
+    
+    // 家賃のパターン
+    if (text.includes('家賃') || text.includes('賃料') || text.includes('賃貸')) {
+      scores[CATEGORIES.RENT] += 15;
+    }
+    
+    // ローン返済のパターン
+    if (text.includes('ローン') && text.includes('返済')) {
+      scores[CATEGORIES.LOAN] += 15;
+    }
+    
+    // 税金のパターン
+    if (text.includes('税') && (text.includes('金') || text.includes('料'))) {
+      scores[CATEGORIES.TAX] += 10;
     }
 
     // スコアが最も高いカテゴリを選択

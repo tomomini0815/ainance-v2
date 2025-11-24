@@ -834,6 +834,32 @@ const ReceiptProcessing: React.FC = () => {
   // カテゴリ一覧の取得
   const categories = Array.from(new Set(uploadedReceipts.map(r => r.category)));
 
+  // AI自動処理機能
+  const [isAutoProcessing, setIsAutoProcessing] = useState(false);
+  
+  const handleAutoProcess = async () => {
+    setIsAutoProcessing(true);
+    try {
+      // 保留中のレシートを自動処理
+      const pendingReceipts = uploadedReceipts.filter(r => r.status === 'pending');
+      
+      for (const receipt of pendingReceipts) {
+        try {
+          // ここでAI処理を実行
+          // 実際のアプリケーションでは、AIサービスを呼び出して処理を行う
+          await new Promise(resolve => setTimeout(resolve, 1000)); // シミュレーション
+          
+          // 処理が成功したら承認状態に変更
+          await handleApprove(receipt.id);
+        } catch (error) {
+          console.error(`レシート ${receipt.id} の自動処理に失敗しました:`, error);
+        }
+      }
+    } finally {
+      setIsAutoProcessing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* HeaderコンポーネントはApp.tsxでレンダリングされるため、ここでは削除 */}
@@ -866,6 +892,20 @@ const ReceiptProcessing: React.FC = () => {
                 アップロードされたレシートをAIが解析し、自動で仕訳データを作成します
               </p>
             </div>
+            <button
+              onClick={handleAutoProcess}
+              disabled={isAutoProcessing}
+              className={`px-4 py-2 rounded-lg transition-colors ${isAutoProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/90'}`}
+            >
+              {isAutoProcessing ? (
+                <span className="flex items-center">
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  処理中...
+                </span>
+              ) : (
+                'AI自動処理'
+              )}
+            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
