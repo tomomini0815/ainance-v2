@@ -22,19 +22,22 @@ const QuickReceiptScan: React.FC = () => {
     const [statusMessage, setStatusMessage] = useState('処理中...');
 
     const handleCapture = async (imageBlob: Blob) => {
+        console.log('📸 handleCapture called with imageBlob:', imageBlob);
         setShowCamera(false);
         setIsProcessing(true);
         setStatusMessage('画像を解析中...');
 
         try {
             const imageUrl = URL.createObjectURL(imageBlob);
-            console.log('画像URL生成:', imageUrl);
+            console.log('🖼️ 画像URL生成:', imageUrl);
 
             // タイムアウト付きでOCR実行
             const ocrPromise = Tesseract.recognize(imageUrl, 'jpn+eng', {
                 logger: m => {
                     if (m.status === 'recognizing text') {
-                        setStatusMessage(`文字を読み取っています... ${Math.round(m.progress * 100)}%`);
+                        const progress = Math.round(m.progress * 100);
+                        console.log(`🔍 OCR進捗: ${progress}%`);
+                        setStatusMessage(`文字を読み取っています... ${progress}%`);
                     }
                 }
             });
@@ -47,9 +50,9 @@ const QuickReceiptScan: React.FC = () => {
             try {
                 const result: any = await Promise.race([ocrPromise, timeoutPromise]);
                 ocrText = result.data.text;
-                console.log('OCR完了:', ocrText.substring(0, 100) + '...');
+                console.log('✅ OCR完了:', ocrText.substring(0, 100) + '...');
             } catch (ocrError) {
-                console.warn('OCR処理に失敗しましたが、手動入力を続行します:', ocrError);
+                console.warn('⚠️ OCR処理に失敗しましたが、手動入力を続行します:', ocrError);
                 // OCR失敗時も続行
             }
 
@@ -61,31 +64,39 @@ const QuickReceiptScan: React.FC = () => {
             // OCRテキストが空でもパースを実行（デフォルト値を返すはず）
             const parsed = parser.parseReceipt(ocrText || '');
 
-            console.log('パース結果:', parsed);
+            console.log('📊 パース結果:', parsed);
 
-            setExtractedData({
+            const extractedData = {
                 merchant: parsed.store_name || '',
                 date: parsed.date || new Date().toISOString().split('T')[0],
                 amount: parsed.total_amount || 0,
                 category: '雑費', // デフォルト
                 taxRate: parsed.tax_rate || 0,
                 confidence: ocrText ? 80 : 0, // OCR成功なら80、失敗なら0
-            });
+            };
 
+            console.log('📦 設定するextractedData:', extractedData);
+            setExtractedData(extractedData);
+
+            console.log('🚀 setShowResultModalをtrueに設定');
             setShowResultModal(true);
         } catch (error: any) {
-            console.error('処理エラー:', error);
+            console.error('💥 処理エラー:', error);
             // 致命的なエラーの場合でも、手動入力のためにモーダルを表示
-            setExtractedData({
+            const errorData = {
                 merchant: '',
                 date: new Date().toISOString().split('T')[0],
                 amount: 0,
                 category: '雑費',
                 taxRate: 10,
                 confidence: 0,
-            });
+            };
+            
+            console.log('❌ エラー時のextractedData:', errorData);
+            setExtractedData(errorData);
             setShowResultModal(true);
         } finally {
+            console.log('🏁 handleCapture finallyブロック');
             setIsProcessing(false);
             setStatusMessage('処理中...');
         }
@@ -97,6 +108,7 @@ const QuickReceiptScan: React.FC = () => {
     };
 
     const handleClose = () => {
+        console.log('🚪 モーダルを閉じる');
         setShowResultModal(false);
         setExtractedData(null);
     };
@@ -335,20 +347,23 @@ const QuickReceiptScan: React.FC = () => {
                 )}
 
                 {/* 結果モーダル */}
-                {showResultModal && (
-                    <ReceiptResultModal
-                        receiptData={extractedData || {
-                            merchant: '',
-                            date: new Date().toISOString().split('T')[0],
-                            amount: 0,
-                            category: '雑費',
-                            taxRate: 10,
-                            confidence: 0,
-                        }}
-                        onClose={handleClose}
-                        onRetake={handleRetake}
-                    />
-                )}
+                {(() => {
+                    console.log('🔍 モーダルレンダリングチェック:', { showResultModal, extractedData });
+                    return showResultModal && (
+                        <ReceiptResultModal
+                            receiptData={extractedData || {
+                                merchant: '',
+                                date: new Date().toISOString().split('T')[0],
+                                amount: 0,
+                                category: '雑費',
+                                taxRate: 10,
+                                confidence: 0,
+                            }}
+                            onClose={handleClose}
+                            onRetake={handleRetake}
+                        />
+                    );
+                })()}
             </div>
         </div>
     );

@@ -37,6 +37,8 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
     onClose,
     onRetake,
 }) => {
+    console.log('🎯 ReceiptResultModalが呼び出されました', { receiptData });
+    
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
     const navigate = useNavigate();
