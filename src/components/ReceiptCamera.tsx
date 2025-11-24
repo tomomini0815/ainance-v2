@@ -207,7 +207,7 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
         };
     };
 
-    // Capture photo with quality check
+    // Capture photo with quality check（超高解像度版）
     const capture = useCallback(() => {
         if (videoRef.current && canvasRef.current && !isCapturing) {
             setIsCapturing(true);
@@ -216,13 +216,24 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
             const video = videoRef.current;
             const canvas = canvasRef.current;
 
+            // 超高解像度設定（実際のビデオ解像度を使用）
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
+            console.log(`📸 撮影解像度: ${canvas.width}x${canvas.height}`);
+
             const ctx = canvas.getContext('2d');
             if (ctx) {
+                // 高品質レンダリング設定
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+
                 ctx.drawImage(video, 0, 0);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+
+                // 最高画質で出力（0.98）
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.98);
+
+                console.log(`💾 画像サイズ: ${(dataUrl.length / 1024 / 1024).toFixed(2)}MB`);
 
                 // 振動フィードバック
                 if ('vibrate' in navigator) {
