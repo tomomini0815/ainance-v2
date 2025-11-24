@@ -48,10 +48,18 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
       }
     };
 
+    const handleTransactionApproved = () => {
+      if (currentBusinessType?.id) {
+        fetchTransactions();
+      }
+    };
+
     window.addEventListener('transactionRecorded', handleTransactionRecorded);
+    window.addEventListener('transactionApproved', handleTransactionApproved);
 
     return () => {
       window.removeEventListener('transactionRecorded', handleTransactionRecorded);
+      window.removeEventListener('transactionApproved', handleTransactionApproved);
     };
   }, [currentBusinessType, fetchTransactions]);
 

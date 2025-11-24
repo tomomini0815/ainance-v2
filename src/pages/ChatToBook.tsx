@@ -373,6 +373,13 @@ const ChatToBook: React.FC = () => {
 
         console.log('recordTransaction - 取引を承認しました');
         alert('取引が正常に承認されました');
+        
+        // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
+        await fetchTransactions();
+        console.log('recordTransaction - データ再取得完了');
+        
+        // ページ全体のデータ再取得をトリガーするカスタムイベントを発火
+        window.dispatchEvent(new CustomEvent('transactionRecorded'));
       } else {
         // 新規取引を作成
         const cleanedDescription = transaction.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
@@ -396,6 +403,13 @@ const ChatToBook: React.FC = () => {
         
         console.log('recordTransaction - 新規取引を作成しました');
         alert('取引が正常に作成されました');
+        
+        // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
+        await fetchTransactions();
+        console.log('recordTransaction - データ再取得完了');
+        
+        // ページ全体のデータ再取得をトリガーするカスタムイベントを発火
+        window.dispatchEvent(new CustomEvent('transactionRecorded'));
       }
     } catch (error) {
       console.error('取引の記録に失敗しました:', error);

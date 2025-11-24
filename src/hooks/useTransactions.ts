@@ -207,11 +207,12 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
     try {
       const tableName = getTableName();
-      console.log('取引を承認中:', { id, tableName });
+      console.log('取引を承認中:', { id, tableName, userId, businessType });
       const { data, error } = await supabase
         .from(tableName)
         .update({ approval_status: 'approved', updated_at: new Date().toISOString() })
         .eq('id', id)
+        .eq('creator', userId) // creatorも条件に追加してセキュリティを強化
         .select()
         .single();
 
@@ -224,6 +225,9 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
           transaction.id === id ? updatedTransaction : transaction
         )
       );
+
+      // データの再取得を実行
+      await fetchTransactions();
 
       return { data: updatedTransaction, error: null };
     } catch (error) {
