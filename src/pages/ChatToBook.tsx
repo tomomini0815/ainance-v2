@@ -41,20 +41,32 @@ const ChatToBook: React.FC = () => {
 
     // @ts-ignore
     const recognition = new window.webkitSpeechRecognition();
-    recognition.continuous = false; // 連続認識をオフに変更
+    recognition.continuous = true; // 連続認識をオンに変更
     recognition.interimResults = true;
     recognition.lang = 'ja-JP';
 
     recognition.onresult = (event: any) => {
       let interimTranscript = '';
+      let finalTranscript = '';
+      
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          setTranscript(prev => prev + transcript + ' ');
+          finalTranscript += transcript + ' ';
         } else {
           interimTranscript += transcript;
         }
       }
+      
+      // 最終結果と中間結果を結合して表示
+      setTranscript(prev => {
+        // 既存の最終結果に新しい最終結果を追加
+        if (finalTranscript) {
+          return prev + finalTranscript;
+        }
+        // 中間結果の場合は、既存のテキストに中間結果を追加（上書きではない）
+        return prev + interimTranscript;
+      });
     };
 
     recognition.onerror = (event: any) => {
@@ -63,8 +75,12 @@ const ChatToBook: React.FC = () => {
     };
 
     recognition.onend = () => {
-      // 自動再開を削除し、状態のみ更新
-      setIsListening(false);
+      // 自動再開を条件付きで追加
+      if (isListening) {
+        recognition.start();
+      } else {
+        setIsListening(false);
+      }
     };
 
     recognitionRef.current = recognition;
@@ -74,7 +90,7 @@ const ChatToBook: React.FC = () => {
         recognitionRef.current.stop();
       }
     };
-  }, []);
+  }, [isListening]); // isListeningを依存配列に追加
 
   // DBから取引データを取得
   useEffect(() => {
@@ -224,7 +240,8 @@ const ChatToBook: React.FC = () => {
       };
 
       setTransactions(prev => [newTransaction, ...prev]);
-      setTranscript('');
+      // 処理後もテキストをクリアしないように変更（ユーザーが確認できるように）
+      // setTranscript('');
       setIsProcessing(false);
     }, 1000);
   };
@@ -521,7 +538,7 @@ const ChatToBook: React.FC = () => {
                 <button
                   onClick={isListening ? stopListening : startListening}
                   className={`flex items-center justify-center w-16 h-16 rounded-full ${isListening
-                      ? 'bg-red-500 hover:bg-red-600'
+                      ? 'bg-red-500 hover:bg-red-600 animate-pulse'
                       : 'bg-primary hover:bg-primary/90'
                     } text-white transition-colors shadow-lg shadow-primary/25`}
                 >
@@ -535,7 +552,17 @@ const ChatToBook: React.FC = () => {
 
               <div className="text-center mb-4">
                 <p className="text-sm text-text-muted">
-                  {isListening ? '音声認識中...' : 'マイクボタンをクリックして開始'}
+                  {isListening ? (
+                    <span className="flex items-center justify-center">
+                      <span className="flex h-3 w-3 mr-2">
+                        <span className="animate-ping absolute h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative h-3 w-3 rounded-full bg-red-500"></span>
+                      </span>
+                      音声認識中... 話してください
+                    </span>
+                  ) : (
+                    'マイクボタンをクリックして開始'
+                  )}
                 </p>
               </div>
             </div>
@@ -551,7 +578,17 @@ const ChatToBook: React.FC = () => {
               />
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setTranscript('')}
+                disabled={!transcript.trim()}
+                className={`px-4 py-2 rounded-md transition-colors ${!transcript.trim()
+                    ? 'bg-surface-highlight text-text-muted cursor-not-allowed'
+                    : 'bg-gray-500 text-white hover:bg-gray-600'
+                  }`}
+              >
+                クリア
+              </button>
               <button
                 onClick={processTranscript}
                 disabled={!transcript.trim() || isProcessing}
