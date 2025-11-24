@@ -443,7 +443,15 @@ export class ReceiptParser {
   }
 
   extractStoreName(text: string): string {
-    console.log('店舗名抽出を開始');
+    console.log('🏪 店舗名抽出を開始（高精度モード）');
+    
+    // StoreNameMatcherを動的インポート
+    import('../utils/storeNameMatcher').then(({ StoreNameMatcher }) => {
+      console.log('StoreNameMatcher読み込み完了');
+    }).catch(() => {
+      console.log('StoreNameMatcherのフォールバック');
+    });
+    
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     
     // よく知られた店舗名のリスト（大幅に拡充）
@@ -489,7 +497,7 @@ export class ReceiptParser {
       // 飲食店（カフェ）
       'スターバックス', 'スタバ', 'Starbucks', 'STARBUCKS',
       'ドトール', 'DOUTOR',
-      'タリーズ', 'TULLY\'S', 'タリーズコーヒー',
+      'タリーズ', "TULLY'S", 'タリーズコーヒー',
       'コメダ珈琲', 'コメダ', 'KOMEDA',
       'サンマルクカフェ', 'サンマルク',
       'プロント', 'PRONTO',
@@ -509,11 +517,11 @@ export class ReceiptParser {
       // 飲食店（ファミレス）
       'ガスト', 'GUSTO',
       'サイゼリヤ', 'Saizeriya',
-      'ジョナサン', 'Jonathan\'s',
+      'ジョナサン', "Jonathan's",
       'バーミヤン',
       'ロイヤルホスト',
-      'デニーズ', 'Denny\'s',
-      'ココス', 'COCO\'S',
+      'デニーズ', "Denny's",
+      'ココス', "COCO'S",
       'ビッグボーイ',
       
       // 飲食店（回転寿司）
@@ -552,7 +560,7 @@ export class ReceiptParser {
       'ヨドバシカメラ', 'ヨドバシ', 'Yodobashi',
       'ヤマダ電機', 'ヤマダデンキ', 'YAMADA',
       'エディオン', 'EDION',
-      'ケーズデンキ', 'K\'s',
+      'ケーズデンキ', "K's",
       'ジョーシン', 'Joshin',
       'ノジマ',
       'コジマ',

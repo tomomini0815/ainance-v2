@@ -316,7 +316,7 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
     const getQualityIndicator = () => {
         if (!qualityMetrics) return null;
 
-        const { brightness: b, contrast: c, sharpness: s, hasReceipt } = qualityMetrics;
+        const { brightness: b, contrast: c, hasReceipt } = qualityMetrics;
 
         if (b < 40 || b > 220) {
             return { icon: AlertTriangle, text: '明るさが不適切です', color: 'text-yellow-400' };
@@ -324,9 +324,7 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
         if (c < 30) {
             return { icon: AlertTriangle, text: 'コントラストが低いです', color: 'text-yellow-400' };
         }
-        if (s < 20) {
-            return { icon: AlertTriangle, text: 'ピントが合っていません', color: 'text-yellow-400' };
-        }
+        // シャープネスチェックは削除（ピントが合っていませんメッセージを非表示）
         if (!hasReceipt) {
             return { icon: Camera, text: 'レシートを検出中...', color: 'text-blue-400' };
         }
