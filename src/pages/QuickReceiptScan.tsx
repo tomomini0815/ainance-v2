@@ -43,31 +43,48 @@ const QuickReceiptScan: React.FC = () => {
                 setTimeout(() => reject(new Error('OCR処理がタイムアウトしました')), 30000)
             );
 
-            const result: any = await Promise.race([ocrPromise, timeoutPromise]);
-            URL.revokeObjectURL(imageUrl);
+            let ocrText = '';
+            try {
+                const result: any = await Promise.race([ocrPromise, timeoutPromise]);
+                ocrText = result.data.text;
+                console.log('OCR完了:', ocrText.substring(0, 100) + '...');
+            } catch (ocrError) {
+                console.warn('OCR処理に失敗しましたが、手動入力を続行します:', ocrError);
+                // OCR失敗時も続行
+            }
 
-            console.log('OCR完了:', result.data.text.substring(0, 100) + '...');
+            URL.revokeObjectURL(imageUrl);
             setStatusMessage('データを抽出中...');
 
             // データ抽出
             const parser = new ReceiptParser();
-            const parsed = parser.parseReceipt(result.data.text);
+            // OCRテキストが空でもパースを実行（デフォルト値を返すはず）
+            const parsed = parser.parseReceipt(ocrText || '');
 
             console.log('パース結果:', parsed);
 
             setExtractedData({
-                merchant: parsed.store_name || '不明',
+                merchant: parsed.store_name || '',
                 date: parsed.date || new Date().toISOString().split('T')[0],
                 amount: parsed.total_amount || 0,
                 category: '雑費', // デフォルト
                 taxRate: parsed.tax_rate || 0,
-                confidence: 80,
+                confidence: ocrText ? 80 : 0, // OCR成功なら80、失敗なら0
             });
 
             setShowResultModal(true);
         } catch (error: any) {
-            console.error('OCR処理エラー:', error);
-            alert(`レシートの読み取りに失敗しました: ${error.message}`);
+            console.error('処理エラー:', error);
+            // 致命的なエラーの場合でも、手動入力のためにモーダルを表示
+            setExtractedData({
+                merchant: '',
+                date: new Date().toISOString().split('T')[0],
+                amount: 0,
+                category: '雑費',
+                taxRate: 10,
+                confidence: 0,
+            });
+            setShowResultModal(true);
         } finally {
             setIsProcessing(false);
             setStatusMessage('処理中...');
@@ -112,7 +129,7 @@ const QuickReceiptScan: React.FC = () => {
                 {/* メインコンテンツグリッド */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* 左サイドバー - 使い方ガイド */}
-                    <div className="lg:col-span-1 space-y-6">
+                    <div className="lg:col-span-1 space-y-6 order-last lg:order-first">
                         {/* 使い方カード */}
                         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                             <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
@@ -318,9 +335,16 @@ const QuickReceiptScan: React.FC = () => {
                 )}
 
                 {/* 結果モーダル */}
-                {showResultModal && extractedData && (
+                {showResultModal && (
                     <ReceiptResultModal
-                        receiptData={extractedData}
+                        receiptData={extractedData || {
+                            merchant: '',
+                            date: new Date().toISOString().split('T')[0],
+                            amount: 0,
+                            category: '雑費',
+                            taxRate: 10,
+                            confidence: 0,
+                        }}
                         onClose={handleClose}
                         onRetake={handleRetake}
                     />

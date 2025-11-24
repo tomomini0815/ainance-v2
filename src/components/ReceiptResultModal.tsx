@@ -42,8 +42,15 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
     const navigate = useNavigate();
 
     const [isEditing, setIsEditing] = useState(false);
-    const [editedData, setEditedData] = useState(receiptData);
-    const [selectedCategory, setSelectedCategory] = useState(receiptData.category);
+    const [editedData, setEditedData] = useState(receiptData || {
+        merchant: '',
+        date: new Date().toISOString().split('T')[0],
+        amount: 0,
+        category: '雑費',
+        taxRate: 10,
+        confidence: 0,
+    });
+    const [selectedCategory, setSelectedCategory] = useState(receiptData?.category || '雑費');
     const [isSaving, setIsSaving] = useState(false);
 
     const handleCategoryChange = (category: string) => {
