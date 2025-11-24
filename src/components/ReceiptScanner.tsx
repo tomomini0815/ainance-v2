@@ -249,7 +249,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
     }
   };
 
-  // OCR処理
+  // OCR処理（強化版）
   const performOCR = async (imageData: string): Promise<string> => {
     console.log('OCR処理を開始');
     // 画像データからBase64プレフィックスを削除
@@ -261,10 +261,9 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
     console.log('APIキーの存在確認:', !!apiKey);
 
     if (!apiKey) {
-      // APIキーが設定されていない場合は、サンプルデータを返す
-      console.warn('Google Cloud Vision APIキーが設定されていません。サンプルデータを返します。');
-      // より現実的なサンプルデータを返す
-      return "ダイエー\n2024/01/15 14:30:25\nりんご 1個 120円\nバナナ 2本 200円\n合計 320円\n税率 10% 内消費税 29円";
+      // APIキーが設定されていない場合は、Tesseract.jsにフォールバック
+      console.warn('Google Cloud Vision APIキーが設定されていません。Tesseract.jsを使用します。');
+      return await performOCRWithTesseract(imageData);
     }
 
     // 画像データの検証
@@ -275,7 +274,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
 
     try {
       console.log('Google Cloud Vision APIにリクエストを送信中...');
-      // Google Cloud Vision APIにリクエストを送信
+      // Google Cloud Vision APIにリクエストを送信（最適化版）
       const response = await fetch(
         `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
         {
@@ -291,14 +290,24 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
                 },
                 features: [
                   {
-                    type: 'TEXT_DETECTION',
-                    maxResults: 150 // 結果数を増加
+                    type: 'DOCUMENT_TEXT_DETECTION', // ドキュメントテキスト検出を優先
+                    maxResults: 1
                   },
                   {
-                    type: 'DOCUMENT_TEXT_DETECTION', // ドキュメントテキスト検出も追加
-                    maxResults: 150
+                    type: 'TEXT_DETECTION', // 通常のテキスト検出も追加
+                    maxResults: 1
+                  },
+                  {
+                    type: 'IMAGE_PROPERTIES', // 画像品質分析
+                    maxResults: 1
                   }
-                ]
+                ],
+                imageContext: {
+                  languageHints: ['ja', 'en'], // 日本語と英語をヒント
+                  textDetectionParams: {
+                    enableTextDetectionConfidenceScore: true // 信頼度スコアを有効化
+                  }
+                }
               }
             ]
           })
@@ -310,25 +319,60 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('APIエラーレスポンス:', errorText);
-        throw new Error(`APIリクエスト失敗: ${response.status} ${response.statusText}`);
+        // Google Cloud Vision APIが失敗した場合、Tesseract.jsにフォールバック
+        console.warn('Google Cloud Vision APIが失敗しました。Tesseract.jsにフォールバックします。');
+        return await performOCRWithTesseract(imageData);
       }
 
       const result = await response.json();
       console.log('APIレスポンスの内容:', JSON.stringify(result, null, 2));
 
-      // レスポンスからテキストを取得
-      const ocrText = result.responses[0]?.fullTextAnnotation?.text ||
-        result.responses[0]?.textAnnotations?.[0]?.description || '';
+      // レスポンスからテキストを取得（優先順位付き）
+      const ocrText =
+        result.responses[0]?.fullTextAnnotation?.text || // DOCUMENT_TEXT_DETECTION
+        result.responses[0]?.textAnnotations?.[0]?.description || // TEXT_DETECTION
+        '';
+
       console.log('抽出されたテキスト:', ocrText);
 
-      if (!ocrText) {
-        console.warn('OCRでテキストが抽出できませんでした');
-        throw new Error('OCR_FAILED');
+      if (!ocrText || ocrText.trim().length === 0) {
+        console.warn('Google Cloud Vision APIでテキストが抽出できませんでした。Tesseract.jsにフォールバックします。');
+        return await performOCRWithTesseract(imageData);
       }
 
       return ocrText;
     } catch (error) {
       console.error('Vision API処理エラー:', error);
+      // エラーが発生した場合、Tesseract.jsにフォールバック
+      console.warn('Vision API処理エラーが発生しました。Tesseract.jsにフォールバックします。');
+      return await performOCRWithTesseract(imageData);
+    }
+  };
+
+  // Tesseract.jsを使用したOCR処理（フォールバック）
+  const performOCRWithTesseract = async (imageData: string): Promise<string> => {
+    console.log('Tesseract.jsでOCR処理を開始');
+    try {
+      // 動的インポートでTesseract.jsを読み込み
+      const Tesseract = await import('tesseract.js');
+
+      // OCR処理を実行（日本語+英語）
+      const result = await Tesseract.recognize(
+        imageData,
+        'jpn+eng',
+        {
+          logger: (m: any) => {
+            if (m.status === 'recognizing text') {
+              console.log(`Tesseract.js 認識中: ${Math.round(m.progress * 100)}%`);
+            }
+          }
+        }
+      );
+
+      console.log('Tesseract.js OCR結果:', result.data.text);
+      return result.data.text;
+    } catch (error) {
+      console.error('Tesseract.js処理エラー:', error);
       throw new Error('OCR_FAILED');
     }
   };

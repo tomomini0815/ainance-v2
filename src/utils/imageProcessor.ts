@@ -506,7 +506,7 @@ export class ImageProcessor {
     }
 
     /**
-     * 統合画像処理パイプライン
+     * 統合画像処理パイプライン（レシート最適化版）
      * すべての前処理を最適な順序で適用
      * @param imageData - Base64エンコードされた画像データ
      * @param options - 処理オプション
@@ -524,35 +524,71 @@ export class ImageProcessor {
     ): Promise<string> {
         let processed = imageData;
 
-        // 1. 傾き補正（最初に実行）
-        if (options.deskew !== false) {
-            console.log('傾き補正を実行中...');
-            processed = await this.deskewImage(processed);
-        }
+        console.log('====== 画像前処理パイプライン開始 ======');
+        console.log('元画像サイズ:', imageData.length, 'bytes');
 
-        // 2. ノイズ除去
+        // 1. ノイズ除去（最初に実行して画像をクリーンに）
         if (options.removeNoise !== false) {
-            console.log('ノイズ除去を実行中...');
+            console.log('[1/5] ノイズ除去を実行中...');
+            const start = Date.now();
             processed = await this.removeNoise(processed);
+            console.log(`   完了 (${Date.now() - start}ms)`);
         }
 
-        // 3. コントラスト強化
+        // 2. 傾き補正
+        if (options.deskew !== false) {
+            console.log('[2/5] 傾き補正を実行中...');
+            const start = Date.now();
+            processed = await this.deskewImage(processed);
+            console.log(`   完了 (${Date.now() - start}ms)`);
+        }
+
+        // 3. コントラスト強化（テキストを鮮明に）
         if (options.enhanceContrast !== false) {
-            console.log('コントラスト強化を実行中...');
+            console.log('[3/5] コントラスト強化を実行中...');
+            const start = Date.now();
             processed = await this.enhanceContrast(processed);
+            console.log(`   完了 (${Date.now() - start}ms)`);
         }
 
-        // 4. シャープ化
+        // 4. シャープ化（エッジを強調）
         if (options.sharpen !== false) {
-            console.log('シャープ化を実行中...');
+            console.log('[4/5] シャープ化を実行中...');
+            const start = Date.now();
             processed = await this.sharpenText(processed);
+            console.log(`   完了 (${Date.now() - start}ms)`);
         }
 
-        // 5. 二値化（最後に実行）
+        // 5. 適応的二値化（最後に実行してテキストを際立たせる）
         if (options.binarize !== false) {
-            console.log('適応的二値化を実行中...');
+            console.log('[5/5] 適応的二値化を実行中...');
+            const start = Date.now();
             processed = await this.adaptiveBinarization(processed);
+            console.log(`   完了 (${Date.now() - start}ms)`);
         }
+
+        console.log('処理済画像サイズ:', processed.length, 'bytes');
+        console.log('====== 画像前処理パイプライン完了 ======');
+
+        return processed;
+    }
+
+    /**
+     * レシート専用の軽量処理パイプライン
+     * 処理速度を優先し、必要最小限の前処理のみ実行
+     */
+    async processReceiptImageFast(imageData: string): Promise<string> {
+        let processed = imageData;
+
+        console.log('====== 高速処理モード ======');
+
+        // コントラスト強化のみ
+        processed = await this.enhanceContrast(processed);
+
+        // 適応的二値化
+        processed = await this.adaptiveBinarization(processed);
+
+        console.log('====== 高速処理完了 ======');
 
         return processed;
     }

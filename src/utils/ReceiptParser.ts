@@ -254,44 +254,133 @@ export class ReceiptParser {
 
   extractTotal(text: string): number {
     console.log('合計金額抽出を開始');
-    // パターン: 合計、計、Total、小計など
+    
+    // パターン: 合計、計、Total、小計など（大幅に拡充）
     const patterns = [
-      /(?:合計|総計|お買上計|領収金額|支払金額|請求金額|お支払い)[\s:：]*[¥￥]*\s*([0-9,]+)/,
-      /合\s*計[\s:：]*[¥￥]*\s*([0-9,]+)/,
-      /小計[\s:：]*[¥￥]*\s*([0-9,]+)/,
-      /(?:現\s*金|クレ(?:ジット)?|PayPay|d払い|auPAY|LINE\s*Pay)[\s:：]*[¥￥]*\s*([0-9,]+)/,
-      /[Tt]otal\s*:?\s*(?:¥|￥)?([0-9,]+)/,
-      /[¥￥]\s*([0-9,]+)(?!\s*[\-\+])/ // 単独の金額表記
+      // 日本語の合計パターン
+      /(?:合\s*計|総\s*計|お買上計|お買い上げ計|領収金額|支払金額|請求金額|お支払い|お会計)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /合\s*計[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /小\s*計[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      
+      // 決済方法別パターン
+      /(?:現\s*金|現金)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:クレ(?:ジット)?|クレカ|カード)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      
+      // 電子マネー・QRコード決済パターン
+      /PayPay[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:d払い|ｄ払い)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:au\s*PAY|auPAY|auペイ)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:LINE\s*Pay|LINEペイ)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:楽天ペイ|楽天Pay)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:メルペイ|Merpay)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:Suica|スイカ)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:PASMO|パスモ)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:nanaco|ナナコ)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:WAON|ワオン)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:Edy|エディ)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:iD|アイディー)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      /(?:QUICPay|クイックペイ)[\s:：]*[¥￥]*\s*([0-9,，]+)/i,
+      
+      // 英語のTotalパターン
+      /[Tt]otal[\s:：]*(?:¥|￥)?\s*([0-9,，]+)/,
+      /[Ss]ubtotal[\s:：]*(?:¥|￥)?\s*([0-9,，]+)/,
+      /[Aa]mount[\s:：]*(?:¥|￥)?\s*([0-9,，]+)/,
+      
+      // 円マーク付きの金額パターン
+      /[¥￥]\s*([0-9,，]+)(?!\s*[\-\+×÷])/, // 単独の金額表記（演算子を除く）
+      /([0-9,，]+)\s*円(?!\s*[\-\+×÷])/, // 円表記
+      
+      // レシート下部の太字金額（通常は合計）
+      /^\s*([0-9,，]{4,})\s*$/m, // 行頭から行末まで数字のみ（4桁以上）
     ];
 
-    // 「合計」などのキーワードを含むパターンを優先
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
+    // 優先度付きパターンマッチング
+    let highConfidenceAmount = 0;
+    let mediumConfidenceAmount = 0;
+    let lowConfidenceAmount = 0;
+
+    // 高信頼度: 「合計」「総計」などの明確なキーワード付き
+    for (let i = 0; i < 7; i++) { // Adjusted to cover the first few explicit total patterns
+      const match = text.match(patterns[i]);
       if (match) {
         const value = match[1].replace(/[,，]/g, '');
         const amount = parseFloat(value);
-        if (!isNaN(amount) && amount > 0) {
-          console.log('合計金額抽出成功:', amount);
-          return Math.round(amount);
+        if (!isNaN(amount) && amount > 0 && amount < 1000000) {
+          console.log(`高信頼度金額抽出成功 (パターン${i}):`, amount);
+          highConfidenceAmount = amount;
+          break;
         }
       }
     }
 
-    // 数字が大きい順に並べて、最大の数字を合計金額として扱う（ただし日付などを除外）
-    const allNumbers = text.match(/[0-9,]+/g);
-    if (allNumbers) {
-      const numbers = allNumbers
-        .map(n => parseInt(n.replace(/[,，]/g, '')))
-        .filter(n => !isNaN(n) && n > 0 && n < 1000000); // 100万円未満
-      
-      if (numbers.length > 0) {
-        const maxAmount = Math.max(...numbers);
-        console.log('最大値を合計金額として採用:', maxAmount);
-        return maxAmount;
+    // 中信頼度: 決済方法別パターン
+    if (highConfidenceAmount === 0) {
+      // Start from index 7 to cover payment methods, up to the last few general patterns
+      for (let i = 7; i < patterns.length - 3; i++) { // Adjusted range
+        const match = text.match(patterns[i]);
+        if (match) {
+          const value = match[1].replace(/[,，]/g, '');
+          const amount = parseFloat(value);
+          if (!isNaN(amount) && amount > 0 && amount < 1000000) {
+            console.log(`中信頼度金額抽出成功 (パターン${i}):`, amount);
+            mediumConfidenceAmount = amount;
+            break;
+          }
+        }
       }
     }
 
-    return 0;
+    // 低信頼度: 単独の金額表記
+    if (highConfidenceAmount === 0 && mediumConfidenceAmount === 0) {
+      // すべての数字を抽出して、最も大きいものを選ぶ
+      const allNumbers = text.match(/[0-9,，]+/g);
+      if (allNumbers) {
+        const numbers = allNumbers
+          .map(n => parseInt(n.replace(/[,，]/g, '')))
+          .filter(n => !isNaN(n) && n > 0 && n < 1000000) // 100万円未満
+          .filter(n => {
+            // 日付っぽい数字を除外（8桁の数字など）
+            const str = n.toString();
+            if (str.length === 8 && str.startsWith('20')) return false; // 20240101形式
+            if (str.length === 6 && parseInt(str.substring(0, 2)) <= 25) return false; // 240101形式
+            return true;
+          });
+        
+        if (numbers.length > 0) {
+          // 頻出する金額を探す（同じ金額が複数回出現する場合は信頼度が高い）
+          const frequency: { [key: number]: number } = {};
+          for (const num of numbers) {
+            frequency[num] = (frequency[num] || 0) + 1;
+          }
+          
+          // 頻度が2以上の金額があればそれを優先
+          const frequentAmounts = Object.entries(frequency)
+            .filter(([_, count]) => count >= 2)
+            .map(([amount, _]) => parseInt(amount))
+            .sort((a, b) => b - a);
+          
+          if (frequentAmounts.length > 0) {
+            lowConfidenceAmount = frequentAmounts[0];
+            console.log('頻出金額を合計として採用:', lowConfidenceAmount);
+          } else {
+            // 頻出がなければ最大値
+            lowConfidenceAmount = Math.max(...numbers);
+            console.log('最大値を合計金額として採用:', lowConfidenceAmount);
+          }
+        }
+      }
+    }
+
+    // 最終決定
+    const finalAmount = highConfidenceAmount || mediumConfidenceAmount || lowConfidenceAmount;
+    
+    if (finalAmount === 0) {
+      console.warn('金額が抽出できませんでした');
+    } else {
+      console.log('最終的な合計金額:', finalAmount);
+    }
+
+    return Math.round(finalAmount);
   }
 
   extractDate(text: string): string {
