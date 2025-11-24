@@ -1,21 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import DatabaseTest from '../components/DatabaseTest';
+import ManualDBTest from '../components/ManualDBTest';
 
 const DatabaseTestPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center mb-6">
-          <Link to="/dashboard" className="mr-4">
-            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-6">
+          <Link to="/dashboard" className="text-primary hover:text-primary/80 flex items-center">
+            ← ダッシュボードに戻る
           </Link>
-          <h1 className="text-2xl font-bold text-text-main">データベーステスト</h1>
         </div>
-
-        <DatabaseTest />
-      </main>
+        <h1 className="text-2xl font-bold mb-6">データベース接続テスト</h1>
+        <div className="grid grid-cols-1 gap-6">
+          <DatabaseTest />
+          <ManualDBTest />
+        </div>
+      </div>
     </div>
   );
 };

@@ -202,12 +202,35 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
   // 取引を承認
   const approveTransaction = async (id: string): Promise<UpdateTransactionResult> => {
     if (!userId || !businessType) {
+      console.error('取引承認エラー: ユーザーIDまたは業態形態が不足しています', { userId, businessType });
       return { data: null, error: new Error('ユーザーIDと業態形態が必要です') };
     }
 
     try {
       const tableName = getTableName();
       console.log('取引を承認中:', { id, tableName, userId, businessType });
+      
+      // まず、更新対象の取引が存在するか確認
+      const { data: existingData, error: existingError } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('id', id)
+        .eq('creator', userId)
+        .single();
+
+      if (existingError) {
+        console.error('取引検索エラー:', existingError);
+        throw existingError;
+      }
+
+      if (!existingData) {
+        console.error('取引が見つかりません:', { id, tableName, userId });
+        throw new Error('取引が見つかりません');
+      }
+
+      console.log('更新対象の取引データ:', existingData);
+
+      // 取引を承認状態に更新
       const { data, error } = await supabase
         .from(tableName)
         .update({ approval_status: 'approved', updated_at: new Date().toISOString() })
@@ -216,10 +239,15 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('取引承認エラー:', error);
+        throw error;
+      }
 
       const updatedTransaction: Transaction = data;
       console.log('取引承認成功:', updatedTransaction);
+      
+      // ローカル状態も更新
       setTransactions(prev =>
         prev.map(transaction =>
           transaction.id === id ? updatedTransaction : transaction

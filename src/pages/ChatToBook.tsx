@@ -353,10 +353,13 @@ const ChatToBook: React.FC = () => {
       
       // 既存の取引かどうかを判断
       const isExistingTransaction = dbTransactions.some(t => t.id === transaction.id);
+      console.log('既存の取引かどうか:', { isExistingTransaction, transactionId: transaction.id });
       
       if (isExistingTransaction) {
+        console.log('既存取引の承認処理を開始');
         // 既存の取引を承認状態に更新
         const result = await approveTransaction(transaction.id);
+        console.log('承認処理結果:', result);
         
         if (result.error) {
           throw result.error;
@@ -381,6 +384,7 @@ const ChatToBook: React.FC = () => {
         // ページ全体のデータ再取得をトリガーするカスタムイベントを発火
         window.dispatchEvent(new CustomEvent('transactionRecorded'));
       } else {
+        console.log('新規取引作成処理を開始');
         // 新規取引を作成
         const cleanedDescription = transaction.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
         
@@ -393,6 +397,7 @@ const ChatToBook: React.FC = () => {
           creator: user.id, // 認証されたユーザーのIDを使用
           approval_status: 'approved' // 作成時に承認状態にする
         });
+        console.log('新規取引作成結果:', result);
         
         if (result.error) {
           throw result.error;
