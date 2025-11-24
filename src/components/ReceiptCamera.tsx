@@ -353,8 +353,8 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
                         <button
                             onClick={() => setAutoCapture(!autoCapture)}
                             className={`px-4 py-2 rounded-full text-xs font-medium transition-all backdrop-blur-md ${autoCapture
-                                    ? 'bg-primary/80 text-white'
-                                    : 'bg-black/30 text-white/70'
+                                ? 'bg-primary/80 text-white'
+                                : 'bg-black/30 text-white/70'
                                 }`}
                         >
                             自動撮影: {autoCapture ? 'ON' : 'OFF'}
@@ -448,19 +448,22 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
                             onTouchStart={handleTapFocus}
                         />
 
-                        {/* Guide Overlay with Edge Detection */}
-                        <div className="absolute inset-0 pointer-events-none">
-                            <div className="absolute inset-0 border-[40px] border-black/60">
-                                <div className="w-full h-full border-2 border-white/40 relative shadow-lg">
+                        {/* Guide Overlay with Edge Detection - 縦長レシート用 */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            {/* 縦長のレシート撮影ガイド（3:4のアスペクト比） */}
+                            <div className="relative" style={{ width: '75%', paddingBottom: '100%' }}>
+                                <div className="absolute inset-0 border-4 border-primary/60 rounded-lg shadow-2xl" style={{
+                                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)'
+                                }}>
                                     {/* Enhanced Corner Markers */}
-                                    <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-primary rounded-tl-lg shadow-lg shadow-primary/50" />
-                                    <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-primary rounded-tr-lg shadow-lg shadow-primary/50" />
-                                    <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-lg shadow-lg shadow-primary/50" />
-                                    <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-lg shadow-lg shadow-primary/50" />
+                                    <div className="absolute -top-1 -left-1 w-16 h-16 border-t-[6px] border-l-[6px] border-primary rounded-tl-xl shadow-lg shadow-primary/50" />
+                                    <div className="absolute -top-1 -right-1 w-16 h-16 border-t-[6px] border-r-[6px] border-primary rounded-tr-xl shadow-lg shadow-primary/50" />
+                                    <div className="absolute -bottom-1 -left-1 w-16 h-16 border-b-[6px] border-l-[6px] border-primary rounded-bl-xl shadow-lg shadow-primary/50" />
+                                    <div className="absolute -bottom-1 -right-1 w-16 h-16 border-b-[6px] border-r-[6px] border-primary rounded-br-xl shadow-lg shadow-primary/50" />
 
                                     {/* Center Lines */}
-                                    <div className="absolute top-1/2 left-8 right-8 h-px bg-white/30" />
-                                    <div className="absolute left-1/2 top-8 bottom-8 w-px bg-white/30" />
+                                    <div className="absolute top-1/2 left-4 right-4 h-px bg-primary/40" />
+                                    <div className="absolute left-1/2 top-4 bottom-4 w-px bg-primary/40" />
 
                                     {/* Quality Indicator */}
                                     {qualityIndicator && (
@@ -485,7 +488,7 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
                                     )}
 
                                     {/* Hint Text */}
-                                    <div className="absolute bottom-8 left-0 right-0 text-center">
+                                    <div className="absolute -bottom-16 left-0 right-0 text-center">
                                         <p className="text-white/90 text-sm font-medium drop-shadow-lg mb-2">
                                             レシートを枠内に合わせてください
                                         </p>
