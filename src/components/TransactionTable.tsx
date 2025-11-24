@@ -222,7 +222,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                 });
 
                 return (
-                  <tr key={transaction.id} className={`hover:bg-white/5 transition-colors group ${isApproved ? 'opacity-60' : ''}`}>
+                  <tr key={transaction.id} className={`hover:bg-white/5 transition-colors group ${isApproved ? 'opacity-50' : ''}`}>
                     <td className="py-4 px-4">
                       <div className="flex items-center">
                         {getCategoryIcon(transaction.category, amount, isFinalIncome, isFinalExpense)}

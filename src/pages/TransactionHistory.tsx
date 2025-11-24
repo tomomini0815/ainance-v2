@@ -727,7 +727,7 @@ const TransactionHistory: React.FC = () => {
                     const isApproved = transaction.approval_status === 'approved';
                     
                     return (
-                      <tr key={transaction.id} className={`hover:bg-surface-highlight transition-colors ${isApproved ? 'opacity-60' : ''}`}>
+                      <tr key={transaction.id} className={`hover:bg-surface-highlight transition-colors ${isApproved ? 'opacity-50' : ''}`}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <input
                             type="checkbox"

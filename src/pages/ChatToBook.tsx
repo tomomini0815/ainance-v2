@@ -351,9 +351,15 @@ const ChatToBook: React.FC = () => {
       // ユーザーIDをログに出力
       console.log('認証されたユーザーID:', user.id);
       
-      // 既存の取引かどうかを判断
-      const isExistingTransaction = dbTransactions.some(t => t.id === transaction.id);
-      console.log('既存の取引かどうか:', { isExistingTransaction, transactionId: transaction.id });
+      // 既存の取引かどうかを判断（IDがUUID形式かどうかで判断）
+      const isExistingTransaction = transaction.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(transaction.id) && 
+                                   dbTransactions.some(t => t.id === transaction.id);
+      console.log('既存の取引かどうか:', { 
+        isExistingTransaction, 
+        transactionId: transaction.id,
+        dbTransactionsCount: dbTransactions.length,
+        dbTransactionIds: dbTransactions.map(t => t.id)
+      });
       
       if (isExistingTransaction) {
         console.log('既存取引の承認処理を開始');
@@ -450,15 +456,32 @@ const ChatToBook: React.FC = () => {
     }
 
     try {
-      // 既存の取引と新規取引に分類
-      const existingTransactions = selectedItems.filter(t => dbTransactions.some(dbT => dbT.id === t.id));
-      const newTransactions = selectedItems.filter(t => !dbTransactions.some(dbT => dbT.id === t.id));
+      // 既存の取引と新規取引に分類（IDがUUID形式かどうかで判断）
+      const existingTransactions = selectedItems.filter(t => 
+        t.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.id) &&
+        dbTransactions.some(dbT => dbT.id === t.id)
+      );
+      const newTransactions = selectedItems.filter(t => 
+        !t.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.id) ||
+        !dbTransactions.some(dbT => dbT.id === t.id)
+      );
       
+      console.log('取引分類結果:', { 
+        existingCount: existingTransactions.length, 
+        newCount: newTransactions.length,
+        dbTransactionsCount: dbTransactions.length,
+        dbTransactionIds: dbTransactions.map(t => t.id)
+      });
+
       // 承認処理のPromise
-      const approvePromises = existingTransactions.map(transaction => approveTransaction(transaction.id));
+      const approvePromises = existingTransactions.map(transaction => {
+        console.log('承認処理を実行:', transaction.id);
+        return approveTransaction(transaction.id);
+      });
       
       // 新規作成処理のPromise
       const createPromises = newTransactions.map(transaction => {
+        console.log('新規作成処理を実行:', transaction.id);
         const cleanedDescription = transaction.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
         return createTransaction({
           item: cleanedDescription,
