@@ -54,6 +54,21 @@ const TransactionHistory: React.FC = () => {
     };
   }, [currentBusinessType, fetchTransactions]);
 
+  // 承認イベントリスナーを追加して、取引が承認されたときにデータを再取得
+  useEffect(() => {
+    const handleTransactionApproved = () => {
+      if (currentBusinessType?.id) {
+        fetchTransactions();
+      }
+    };
+
+    window.addEventListener('transactionApproved', handleTransactionApproved);
+
+    return () => {
+      window.removeEventListener('transactionApproved', handleTransactionApproved);
+    };
+  }, [currentBusinessType, fetchTransactions]);
+
   // 利用可能なカテゴリの取得
   const availableCategories = useMemo(() => {
     const categories = transactions.map(t => t.category)

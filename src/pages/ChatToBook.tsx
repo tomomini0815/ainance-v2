@@ -361,12 +361,15 @@ const ChatToBook: React.FC = () => {
         if (result.error) {
           throw result.error;
         }
-        
+
         // ローカル状態も更新
         setTransactions(prev =>
           prev.map(t => t.id === transaction.id ? { ...t, approval_status: 'approved' } : t)
         );
-        
+
+        // 承認イベントを発火
+        window.dispatchEvent(new CustomEvent('transactionApproved'));
+
         console.log('recordTransaction - 取引を承認しました');
         alert('取引が正常に承認されました');
       } else {
@@ -517,6 +520,8 @@ const ChatToBook: React.FC = () => {
       
       // ページ全体のデータ再取得をトリガーするカスタムイベントを発火
       window.dispatchEvent(new CustomEvent('transactionRecorded'));
+      // 承認イベントを発火
+      window.dispatchEvent(new CustomEvent('transactionApproved'));
     } catch (error) {
       console.error('取引の一括記録中にエラーが発生しました:', error);
       alert('取引の一括記録に失敗しました: ' + (error as Error).message);

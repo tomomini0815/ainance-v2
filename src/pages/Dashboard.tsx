@@ -57,6 +57,21 @@ const Dashboard: React.FC = () => {
     };
   }, [currentBusinessType, fetchTransactions]);
 
+  // 承認イベントリスナーを追加して、取引が承認されたときにデータを再取得
+  useEffect(() => {
+    const handleTransactionApproved = () => {
+      if (currentBusinessType?.id) {
+        fetchTransactions();
+      }
+    };
+
+    window.addEventListener('transactionApproved', handleTransactionApproved);
+
+    return () => {
+      window.removeEventListener('transactionApproved', handleTransactionApproved);
+    };
+  }, [currentBusinessType, fetchTransactions]);
+
   // 統計情報
   const stats = useMemo(() => {
     console.log('取引データ:', transactions);
