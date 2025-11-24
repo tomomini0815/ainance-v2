@@ -35,38 +35,39 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
     const [rotation, setRotation] = useState(0);
 
     // Initialize camera with advanced settings
-    useEffect(() => {
-        const startCamera = async () => {
-            try {
-                const constraints = {
-                    video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 },
-                        focusMode: 'continuous',
-                        exposureMode: 'continuous',
-                    }
-                };
-
-                const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-                setStream(mediaStream);
-
-                if (videoRef.current) {
-                    videoRef.current.srcObject = mediaStream;
+    const startCamera = async () => {
+        try {
+            const constraints = {
+                video: {
+                    facingMode: 'environment',
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    focusMode: 'continuous',
+                    exposureMode: 'continuous',
                 }
+            };
 
-                // フラッシュの設定
-                const track = mediaStream.getVideoTracks()[0];
-                const capabilities = track.getCapabilities();
-                if (capabilities.torch) {
-                    applyFlashMode(track, flashMode);
-                }
-            } catch (err) {
-                console.error('Camera error:', err);
-                setError('カメラを起動できませんでした。権限を確認してください。');
+            const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            setStream(mediaStream);
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
             }
-        };
 
+            // フラッシュの設定
+            const track = mediaStream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+            if (capabilities.torch) {
+                applyFlashMode(track, flashMode);
+            }
+        } catch (err) {
+            console.error('Camera error:', err);
+            setError('カメラを起動できませんでした。権限を確認してください。');
+        }
+    };
+
+    // Initialize camera with advanced settings
+    useEffect(() => {
         startCamera();
 
         return () => {
@@ -81,11 +82,11 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
     // Apply flash mode
     const applyFlashMode = async (track: MediaStreamTrack, mode: 'off' | 'on' | 'auto') => {
         try {
-            const capabilities = track.getCapabilities() as any;
+            const capabilities = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
             if (capabilities.torch) {
                 await track.applyConstraints({
                     advanced: [{ torch: mode === 'on' }]
-                } as any);
+                } as unknown as MediaTrackConstraints);
             }
         } catch (err) {
             console.warn('Flash mode not supported:', err);
@@ -112,11 +113,11 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
 
         if (stream) {
             const track = stream.getVideoTracks()[0];
-            const capabilities = track.getCapabilities() as any;
+            const capabilities = track.getCapabilities() as MediaTrackCapabilities & { zoom?: boolean };
             if (capabilities.zoom) {
                 track.applyConstraints({
                     advanced: [{ zoom: newZoom }]
-                } as any);
+                } as unknown as MediaTrackConstraints);
             }
         }
     };
@@ -258,6 +259,17 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
         setBrightness(100);
         setContrast(100);
         setRotation(0);
+        
+        // カメラストリームを再初期化
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        setStream(null);
+        
+        // 少し遅延させてからカメラを再起動
+        setTimeout(() => {
+            startCamera();
+        }, 100);
     };
 
     // Apply image adjustments
@@ -299,13 +311,13 @@ const ReceiptCamera: React.FC<ReceiptCameraProps> = ({ onCapture, onClose }) => 
         if (!stream || capturedImage) return;
 
         const track = stream.getVideoTracks()[0];
-        const capabilities = track.getCapabilities() as any;
+        const capabilities = track.getCapabilities() as MediaTrackCapabilities & { focusMode?: string[] };
 
         if (capabilities.focusMode && capabilities.focusMode.includes('manual')) {
             try {
                 await track.applyConstraints({
                     advanced: [{ focusMode: 'manual' }]
-                } as any);
+                } as unknown as MediaTrackConstraints);
             } catch (err) {
                 console.warn('Manual focus not supported:', err);
             }
