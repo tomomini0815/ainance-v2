@@ -115,8 +115,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
   };
 
   const latestTransactions = [...(transactions.length > 0 ? transactions : fetchedTransactions)]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   if (loading) {
     return (
@@ -148,7 +147,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
   return (
     <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-text-main">最近の履歴</h3>
+        <h3 className="text-lg font-semibold text-text-main">取引履歴</h3>
         <div className="flex items-center space-x-3">
           <Link
             to="/transaction-history"
@@ -282,6 +281,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
         </table>
       </div>
 
+      {/* ページネーション */}
       <div className="flex items-center justify-center mt-6 space-x-2">
         <button className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center text-sm font-medium shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all">
           1
