@@ -44,6 +44,7 @@ interface UseTransactionsReturn {
   createTransaction: (transaction: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>) => Promise<CreateTransactionResult>;
   updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<UpdateTransactionResult>;
   deleteTransaction: (id: string) => Promise<DeleteTransactionResult>;
+  approveTransaction: (id: string) => Promise<UpdateTransactionResult>; // 承認処理を追加
 }
 
 // UUIDのバリデーション関数
@@ -192,6 +193,39 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
     }
   };
 
+  // 取引を承認
+  const approveTransaction = async (id: string): Promise<UpdateTransactionResult> => {
+    if (!userId || !businessType) {
+      return { data: null, error: new Error('ユーザーIDと業態形態が必要です') };
+    }
+
+    try {
+      const tableName = getTableName();
+      console.log('取引を承認中:', { id, tableName });
+      const { data, error } = await supabase
+        .from(tableName)
+        .update({ approval_status: 'approved', updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedTransaction: Transaction = data;
+      console.log('取引承認成功:', updatedTransaction);
+      setTransactions(prev =>
+        prev.map(transaction =>
+          transaction.id === id ? updatedTransaction : transaction
+        )
+      );
+
+      return { data: updatedTransaction, error: null };
+    } catch (error) {
+      console.error('取引の承認に失敗しました:', error);
+      return { data: null, error: error as Error };
+    }
+  };
+
   // 初期読み込み
   useEffect(() => {
     fetchTransactions();
@@ -203,6 +237,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
     fetchTransactions,
     createTransaction,
     updateTransaction,
-    deleteTransaction
+    deleteTransaction,
+    approveTransaction // 承認処理を追加
   };
 };

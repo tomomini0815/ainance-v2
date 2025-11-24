@@ -1,8 +1,7 @@
 import React, { useEffect, useState, Suspense, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import QuickActions from '../components/QuickActions'
-import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
-import { useMySQLAITransactions } from '../hooks/useMySQLAITransactions'
+import { useTransactions } from '../hooks/useTransactions'
 import { useAuth } from '../hooks/useAuth'
 import { Download, Plus, X, FileText, TrendingUp, TrendingDown, JapaneseYen } from 'lucide-react'
 
@@ -10,7 +9,6 @@ import { Download, Plus, X, FileText, TrendingUp, TrendingDown, JapaneseYen } fr
 const RevenueChart = React.lazy(() => import('../components/RevenueChart'));
 const ExpenseChart = React.lazy(() => import('../components/ExpenseChart'));
 const TransactionTable = React.lazy(() => import('../components/TransactionTable'));
-const AITransactionTable = React.lazy(() => import('../components/AITransactionTable'));
 const TransactionForm = React.lazy(() => import('../components/TransactionForm'));
 
 // Preload components
@@ -20,8 +18,7 @@ import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 const Dashboard: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext();
-  const { transactions, loading, createTransaction, fetchTransactions } = useMySQLTransactions(currentBusinessType?.id);
-  const { aiTransactions, loading: aiTransactionsLoading } = useMySQLAITransactions();
+  const { transactions, loading, createTransaction, fetchTransactions } = useTransactions(undefined, currentBusinessType?.business_type);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
 
@@ -364,10 +361,28 @@ const Dashboard: React.FC = () => {
           />
         </Suspense>
         <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <AITransactionTable
-            aiTransactions={aiTransactions}
-            loading={aiTransactionsLoading}
-          />
+          <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-text-main">AI推奨取引</h3>
+              <div className="flex items-center space-x-3">
+                <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 mr-3"></div>
+                    <div>
+                      <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                      <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    </div>
+                  </div>
+                  <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+              ))}
+            </div>
+          </div>
         </Suspense>
       </div>
 

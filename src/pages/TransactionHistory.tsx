@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowLeft, Search, Filter, Plus, ChevronDown, Calendar, JapaneseYen, Tag, FileText, Download, Trash2, Edit, TrendingUp, TrendingDown, X, Upload } from 'lucide-react'
-import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
+import { useTransactions } from '../hooks/useTransactions'
 import TransactionTable from '../components/TransactionTable'
 import TransactionForm from '../components/TransactionForm'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 const TransactionHistory: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext()
-  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction, fetchTransactions } = useMySQLTransactions(currentBusinessType?.id)
+  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction, fetchTransactions } = useTransactions(undefined, currentBusinessType?.business_type)
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<any>(null)
@@ -700,73 +700,83 @@ const TransactionHistory: React.FC = () => {
               </thead>
               <tbody className="bg-surface divide-y divide-border">
                 {paginatedTransactions.length > 0 ? (
-                  paginatedTransactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedTransactions.includes(transaction.id)}
-                          onChange={() => toggleSelectTransaction(transaction.id)}
-                          className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-text-main">{transaction.item}</div>
-                        <div className="text-sm text-text-muted sm:hidden">
-                          {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end">
-                          {transaction.type === 'income' ?
-                            <TrendingUp className="w-4 h-4 text-green-500 mr-1" /> :
-                            <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                          }
-                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
-                            {transaction.type === 'expense' ? '-' : ''}{transaction.amount.toLocaleString()}
+                  paginatedTransactions.map((transaction) => {
+                    // 承認状態をチェック
+                    const isApproved = transaction.approval_status === 'approved';
+                    
+                    return (
+                      <tr key={transaction.id} className={`hover:bg-surface-highlight transition-colors ${isApproved ? 'opacity-60' : ''}`}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedTransactions.includes(transaction.id)}
+                            onChange={() => toggleSelectTransaction(transaction.id)}
+                            className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
+                            disabled={isApproved}
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className={`text-sm font-medium text-text-main ${isApproved ? 'line-through' : ''}`}>{transaction.item}</div>
+                          <div className={`text-sm text-text-muted sm:hidden ${isApproved ? 'line-through' : ''}`}>
+                            {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end">
+                            {transaction.type === 'income' ?
+                              <TrendingUp className={`w-4 h-4 text-green-500 mr-1 ${isApproved ? 'opacity-60' : ''}`} /> :
+                              <TrendingDown className={`w-4 h-4 text-red-500 mr-1 ${isApproved ? 'opacity-60' : ''}`} />
+                            }
+                            <span className={`${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'} ${isApproved ? 'line-through opacity-60' : ''}`}>
+                              {transaction.type === 'expense' ? '-' : ''}{transaction.amount.toLocaleString()}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted hidden sm:table-cell">
+                          <span className={isApproved ? 'line-through opacity-60' : ''}>
+                            {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted hidden sm:table-cell">
-                        {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${transaction.type === 'income'
-                          ? 'bg-green-500/10 text-green-600'
-                          : 'bg-red-500/10 text-red-600'
-                          }`}>
-                          {transaction.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
-                        <div className="flex items-center justify-center space-x-2">
-                          <button
-                            onClick={() => {
-                              setEditingTransaction(transaction)
-                              setShowCreateForm(true)
-                            }}
-                            className="p-2 text-primary hover:text-primary/80 hover:bg-primary/10 rounded-lg transition-colors"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => deleteTransaction(transaction.id)}
-                            className="p-2 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${transaction.type === 'income'
+                            ? 'bg-green-500/10 text-green-600'
+                            : 'bg-red-500/10 text-red-600'
+                            } ${isApproved ? 'opacity-60 line-through' : ''}`}>
+                            {transaction.category}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                          <div className="flex items-center justify-center space-x-2">
+                            <button
+                              onClick={() => {
+                                setEditingTransaction(transaction)
+                                setShowCreateForm(true)
+                              }}
+                              className={`p-2 rounded-lg transition-colors ${isApproved ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80 hover:bg-primary/10'}`}
+                              disabled={isApproved}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => deleteTransaction(transaction.id)}
+                              className={`p-2 rounded-lg transition-colors ${isApproved ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600 hover:bg-red-500/10'}`}
+                              disabled={isApproved}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">

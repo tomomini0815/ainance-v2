@@ -14,6 +14,7 @@ interface Transaction {
   type: 'income' | 'expense';
   created_at?: string;
   updated_at?: string;
+  approval_status?: 'pending' | 'approved' | 'rejected'; // 型を明確に指定
 }
 
 const ChatToBook: React.FC = () => {
@@ -29,7 +30,15 @@ const ChatToBook: React.FC = () => {
   const { user } = useAuth();
   const { currentBusinessType } = useBusinessType(user?.id);
   // currentBusinessType?.business_typeを明示的に渡す
-  const { transactions: dbTransactions, createTransaction, updateTransaction, deleteTransaction, loading, fetchTransactions } = useTransactions(user?.id, currentBusinessType?.business_type);
+  const { 
+    transactions: dbTransactions, 
+    createTransaction, 
+    updateTransaction, 
+    deleteTransaction, 
+    approveTransaction, // approveTransactionを追加
+    loading, 
+    fetchTransactions 
+  } = useTransactions(user?.id, currentBusinessType?.business_type);
   const navigate = useNavigate();
 
   // 音声認識の初期化
@@ -42,30 +51,21 @@ const ChatToBook: React.FC = () => {
 
     // @ts-ignore
     const recognition = new window.webkitSpeechRecognition();
-    recognition.continuous = true; // 連続認識をオン
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'ja-JP';
 
-    let lastResultIndex = 0;
-
     recognition.onresult = (event: any) => {
       let finalTranscript = '';
-      
-      // 前回の結果以降の新しい結果のみを処理
-      for (let i = lastResultIndex; i < event.results.length; i++) {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
           finalTranscript += transcript + ' ';
         }
       }
-      
-      // 最終結果がある場合のみ更新
       if (finalTranscript) {
         setTranscript(prev => prev + finalTranscript);
       }
-      
-      // 最後の結果インデックスを更新
-      lastResultIndex = event.results.length;
     };
 
     recognition.onerror = (event: any) => {
@@ -74,18 +74,7 @@ const ChatToBook: React.FC = () => {
     };
 
     recognition.onend = () => {
-      // 自動再開機能を追加
-      if (isListening) {
-        try {
-          lastResultIndex = 0; // 再開時にインデックスをリセット
-          recognition.start();
-        } catch (error) {
-          console.error('音声認識の再開に失敗:', error);
-          setIsListening(false);
-        }
-      } else {
-        setIsListening(false);
-      }
+      setIsListening(false);
     };
 
     recognitionRef.current = recognition;
@@ -95,7 +84,7 @@ const ChatToBook: React.FC = () => {
         recognitionRef.current.stop();
       }
     };
-  }, [isListening]); // isListeningを依存配列に追加
+  }, []);
 
   // DBから取引データを取得
   useEffect(() => {
@@ -107,12 +96,12 @@ const ChatToBook: React.FC = () => {
       
       // ローカルの一時データ（DBにまだ保存されていないデータ）のみをフィルタリング
       // ただし、一括承認済みのデータは除外する
-      const localTempData = prev.filter(t => !dbTransactionIds.includes(t.id) && !approvedTransactions.includes(t.id));
+      const localTempData = prev.filter(t => !dbTransactionIds.includes(t.id));
       
       // DBから取得したデータとローカルの一時データを結合
-      // ただし、承認された取引は除外する
+      // 承認された取引も表示するが、重複を避ける
       const mergedTransactions = [
-        ...dbTransactions.filter((t: any) => !approvedTransactions.includes(t.id)).map((t: any) => ({
+        ...dbTransactions.map((t: any) => ({
           id: t.id,
           date: t.date,
           description: t.description || t.item || '',
@@ -120,14 +109,20 @@ const ChatToBook: React.FC = () => {
           category: t.category,
           type: t.type as 'income' | 'expense',
           created_at: t.created_at,
-          updated_at: t.updated_at
+          updated_at: t.updated_at,
+          approval_status: t.approval_status // 承認状態を追加
         })),
         ...localTempData
       ];
       
-      return mergedTransactions;
+      // 重複を削除（IDが同じものは除外）
+      const uniqueTransactions = mergedTransactions.filter((transaction, index, self) => 
+        index === self.findIndex(t => t.id === transaction.id)
+      );
+      
+      return uniqueTransactions;
     });
-  }, [dbTransactions, approvedTransactions]);
+  }, [dbTransactions]);
 
   const startListening = () => {
     if (recognitionRef.current) {
@@ -341,24 +336,63 @@ const ChatToBook: React.FC = () => {
     }
   };
 
-  // 単一の取引を記録
+  // 単一の取引を記録（新規作成または承認）
   const recordTransaction = async (transaction: Transaction) => {
     try {
       console.log('recordTransaction - 開始:', transaction);
-      const savedTransaction = await saveTransactionToDB(transaction);
-      console.log('recordTransaction - 保存された取引:', savedTransaction);
-      // 成功したらローカルリストから削除し、承認された取引のIDを追加
-      if (savedTransaction) {
-        setTransactions(prev => prev.filter(t => t.id !== transaction.id));
-        setApprovedTransactions(prev => [...prev, savedTransaction.tempId]);
-        console.log('recordTransaction - ローカルリストから削除し、承認された取引のIDを追加しました');
+      
+      // ユーザーが認証されているか確認
+      if (!user?.id) {
+        alert('ユーザーが認証されていません。ログインしてください。');
+        console.error('ユーザーが認証されていません。userオブジェクト:', user);
+        return;
       }
       
-      // データの再取得
-      await fetchTransactions();
-      console.log('recordTransaction - データ再取得完了');
+      // ユーザーIDをログに出力
+      console.log('認証されたユーザーID:', user.id);
       
-      alert('取引が正常に記録されました');
+      // 既存の取引かどうかを判断
+      const isExistingTransaction = dbTransactions.some(t => t.id === transaction.id);
+      
+      if (isExistingTransaction) {
+        // 既存の取引を承認状態に更新
+        const result = await approveTransaction(transaction.id);
+        
+        if (result.error) {
+          throw result.error;
+        }
+        
+        // ローカル状態も更新
+        setTransactions(prev =>
+          prev.map(t => t.id === transaction.id ? { ...t, approval_status: 'approved' } : t)
+        );
+        
+        console.log('recordTransaction - 取引を承認しました');
+        alert('取引が正常に承認されました');
+      } else {
+        // 新規取引を作成
+        const cleanedDescription = transaction.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
+        
+        const result = await createTransaction({
+          item: cleanedDescription,
+          amount: transaction.amount,
+          date: transaction.date,
+          category: transaction.category,
+          type: transaction.type,
+          creator: user.id, // 認証されたユーザーのIDを使用
+          approval_status: 'approved' // 作成時に承認状態にする
+        });
+        
+        if (result.error) {
+          throw result.error;
+        }
+        
+        // ローカルの一時データを削除
+        setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+        
+        console.log('recordTransaction - 新規取引を作成しました');
+        alert('取引が正常に作成されました');
+      }
     } catch (error) {
       console.error('取引の記録に失敗しました:', error);
       // 認証エラーの場合、ログインページにリダイレクト
@@ -371,8 +405,18 @@ const ChatToBook: React.FC = () => {
     }
   };
 
-  // 複数の取引を一括記録
+  // 複数の取引を一括記録（新規作成または承認）
   const bulkRecordTransactions = async () => {
+    // ユーザーが認証されているか確認
+    if (!user?.id) {
+      alert('ユーザーが認証されていません。ログインしてください。');
+      console.error('ユーザーが認証されていません。userオブジェクト:', user);
+      return;
+    }
+    
+    // ユーザーIDをログに出力
+    console.log('認証されたユーザーID:', user.id);
+    
     const selectedItems = transactions.filter(t => selectedTransactions.includes(t.id));
 
     console.log('bulkRecordTransactions - 選択された取引:', selectedItems);
@@ -383,19 +427,59 @@ const ChatToBook: React.FC = () => {
     }
 
     try {
-      // 選択された取引を一括で保存
-      const savePromises = selectedItems.map(transaction => saveTransactionToDB(transaction));
-      const results = await Promise.allSettled(savePromises);
-
-      console.log('bulkRecordTransactions - 保存結果:', results);
-
-      const successful = results.filter(result => result.status === 'fulfilled').length;
-      const failed = results.filter(result => result.status === 'rejected').length;
-
+      // 既存の取引と新規取引に分類
+      const existingTransactions = selectedItems.filter(t => dbTransactions.some(dbT => dbT.id === t.id));
+      const newTransactions = selectedItems.filter(t => !dbTransactions.some(dbT => dbT.id === t.id));
+      
+      // 承認処理のPromise
+      const approvePromises = existingTransactions.map(transaction => approveTransaction(transaction.id));
+      
+      // 新規作成処理のPromise
+      const createPromises = newTransactions.map(transaction => {
+        const cleanedDescription = transaction.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
+        return createTransaction({
+          item: cleanedDescription,
+          amount: transaction.amount,
+          date: transaction.date,
+          category: transaction.category,
+          type: transaction.type,
+          creator: user.id, // 認証されたユーザーのIDを使用
+          approval_status: 'approved' // 作成時に承認状態にする
+        });
+      });
+      
+      // すべての処理を並列実行
+      const approveResults = await Promise.allSettled(approvePromises);
+      const createResults = await Promise.allSettled(createPromises);
+      
+      console.log('bulkRecordTransactions - 承認結果:', approveResults);
+      console.log('bulkRecordTransactions - 作成結果:', createResults);
+      
+      const approveSuccessful = approveResults.filter(result => result.status === 'fulfilled').length;
+      const createSuccessful = createResults.filter(result => result.status === 'fulfilled').length;
+      
+      const approveFailed = approveResults.filter(result => result.status === 'rejected').length;
+      const createFailed = createResults.filter(result => result.status === 'rejected').length;
+      
+      const totalSuccessful = approveSuccessful + createSuccessful;
+      const totalFailed = approveFailed + createFailed;
+      
       // 失敗した取引のエラー情報をコンソールに出力
-      results.forEach((result, index) => {
+      approveResults.forEach((result, index) => {
         if (result.status === 'rejected') {
-          console.error(`取引記録失敗 (${index + 1}):`, result.reason);
+          console.error(`取引承認失敗 (${index + 1}):`, result.reason);
+          // 認証エラーの場合、ログインページにリダイレクト
+          if (result.reason.message.includes('認証セッションが切れました')) {
+            alert('認証セッションが切れました。ログインページにリダイレクトします。');
+            navigate('/login');
+            return;
+          }
+        }
+      });
+      
+      createResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`新規取引作成失敗 (${index + 1}):`, result.reason);
           // 認証エラーの場合、ログインページにリダイレクト
           if (result.reason.message.includes('認証セッションが切れました')) {
             alert('認証セッションが切れました。ログインページにリダイレクトします。');
@@ -405,26 +489,27 @@ const ChatToBook: React.FC = () => {
         }
       });
 
-      if (failed > 0) {
-        alert(`${successful}件の取引が正常に記録されましたが、${failed}件の取引の記録に失敗しました。詳細はコンソールを確認してください。`);
+      if (totalFailed > 0) {
+        alert(`${totalSuccessful}件の取引が正常に記録されましたが、${totalFailed}件の取引の記録に失敗しました。詳細はコンソールを確認してください。`);
       } else {
-        alert(`${successful}件の取引が正常に記録されました`);
+        alert(`${totalSuccessful}件の取引が正常に記録されました`);
       }
 
-      // 成功した取引のtempIdを取得
-      const successfulTempIds: string[] = results
-        .filter((result): result is PromiseFulfilledResult<{ id: string; tempId: string } | null> => result.status === 'fulfilled')
-        .map(result => result.value?.tempId)
-        .filter((tempId): tempId is string => tempId !== undefined);
-
-      console.log('bulkRecordTransactions - 成功した取引tempId:', successfulTempIds);
-      console.log('bulkRecordTransactions - 選択された取引ID:', selectedItems.map(t => t.id));
-
-      // 成功した取引をローカルリストから削除
-      setTransactions(prev => prev.filter(t => !selectedItems.some(item => item.id === t.id)));
-      setSelectedTransactions(prev => prev.filter(id => !selectedItems.some(item => item.id === id)));
-      // 承認された取引のIDを追加
-      setApprovedTransactions(prev => [...prev, ...successfulTempIds]);
+      // ローカル状態も更新
+      setTransactions(prev => {
+        const updatedTransactions = [...prev];
+        for (let i = 0; i < updatedTransactions.length; i++) {
+          // 承認された取引の更新
+          if (existingTransactions.some(et => et.id === updatedTransactions[i].id)) {
+            updatedTransactions[i] = { ...updatedTransactions[i], approval_status: 'approved' };
+          }
+        }
+        // 新規作成された取引はローカルリストから削除
+        return updatedTransactions.filter(t => !newTransactions.some(nt => nt.id === t.id));
+      });
+      
+      // 選択状態をクリア
+      setSelectedTransactions([]);
       
       // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
       await fetchTransactions();
@@ -678,12 +763,12 @@ const ChatToBook: React.FC = () => {
                 </thead>
                 <tbody className="bg-surface divide-y divide-border">
                   {transactions.map((transaction) => (
-                    <tr key={transaction.id} className={approvedTransactions.includes(transaction.id) ? 'opacity-50' : ''}>
+                    <tr key={transaction.id} className={transaction.approval_status === 'approved' ? 'opacity-50' : ''}>
                       <td className="px-4 py-3 text-sm">
                         <button
                           onClick={() => toggleTransactionSelection(transaction.id)}
                           className="flex items-center"
-                          disabled={approvedTransactions.includes(transaction.id)}
+                          disabled={transaction.approval_status === 'approved'}
                         >
                           {selectedTransactions.includes(transaction.id) ? (
                             <CheckCircle className="w-5 h-5 text-primary" />
@@ -764,22 +849,22 @@ const ChatToBook: React.FC = () => {
                           <>
                             <button
                               onClick={() => recordTransaction(transaction)}
-                              className={`mr-2 ${approvedTransactions.includes(transaction.id) ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
-                              disabled={approvedTransactions.includes(transaction.id)}
+                              className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
+                              disabled={transaction.approval_status === 'approved'}
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEdit(transaction)}
-                              className={`mr-2 ${approvedTransactions.includes(transaction.id) ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
-                              disabled={approvedTransactions.includes(transaction.id)}
+                              className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
+                              disabled={transaction.approval_status === 'approved'}
                             >
                               <Edit3 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(transaction.id)}
-                              className={approvedTransactions.includes(transaction.id) ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}
-                              disabled={approvedTransactions.includes(transaction.id)}
+                              className={transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}
+                              disabled={transaction.approval_status === 'approved'}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -791,7 +876,7 @@ const ChatToBook: React.FC = () => {
                 </tbody>
               </table>
 
-              {transactions.filter(transaction => !approvedTransactions.includes(transaction.id)).length === 0 && (
+              {transactions.filter(transaction => transaction.approval_status !== 'approved').length === 0 && (
                 <div className="text-center py-8 text-text-muted">
                   <p>まだ取引がありません</p>
                   <p className="text-sm mt-2">音声入力で取引を追加してください</p>

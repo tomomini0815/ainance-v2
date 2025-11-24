@@ -55,6 +55,7 @@ CREATE TABLE individual_transactions (
   location TEXT,
   recurring BOOLEAN DEFAULT false,
   recurring_frequency VARCHAR(10) CHECK (recurring_frequency IN ('daily', 'weekly', 'monthly', 'yearly')),
+  approval_status VARCHAR(20) CHECK (approval_status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -64,6 +65,7 @@ CREATE INDEX idx_individual_transactions_creator ON individual_transactions(crea
 CREATE INDEX idx_individual_transactions_date ON individual_transactions(date);
 CREATE INDEX idx_individual_transactions_category ON individual_transactions(category);
 CREATE INDEX idx_individual_transactions_type ON individual_transactions(type);
+CREATE INDEX idx_individual_transactions_approval_status ON individual_transactions(approval_status);
 
 -- 法人用取引テーブルの作成
 CREATE TABLE corporation_transactions (

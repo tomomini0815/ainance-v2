@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useMySQLTransactions } from './useMySQLTransactions';
+import { useTransactions } from './useTransactions';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 import { Home, Receipt, FileText, BarChart3, MessageSquare, Users, Settings } from 'lucide-react';
 
@@ -12,7 +12,7 @@ export interface SearchResultPage {
 
 export const useGlobalSearch = (query: string) => {
   const { currentBusinessType } = useBusinessTypeContext();
-  const { transactions } = useMySQLTransactions(currentBusinessType?.id);
+  const { transactions } = useTransactions(undefined, currentBusinessType?.business_type);
 
   const pages: SearchResultPage[] = [
     { title: 'ダッシュボード', path: '/dashboard', icon: Home, description: 'ホーム画面' },

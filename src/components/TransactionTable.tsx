@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, TrendingUp, TrendingDown, Plus, FileText } from 'lucide-react'
-import { useMySQLTransactions } from '../hooks/useMySQLTransactions'
+import { useTransactions } from '../hooks/useTransactions'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 interface Transaction {
@@ -20,6 +20,7 @@ interface Transaction {
   location?: string
   recurring?: boolean
   recurring_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly'
+  approval_status?: 'pending' | 'approved' | 'rejected'
 }
 
 interface TransactionTableProps {
@@ -30,7 +31,7 @@ interface TransactionTableProps {
 
 const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpenCreateModal, showCreateButton = true }) => {
   const { currentBusinessType } = useBusinessTypeContext();
-  const { transactions: fetchedTransactions, loading, fetchTransactions } = useMySQLTransactions(currentBusinessType?.id);
+  const { transactions: fetchedTransactions, loading, fetchTransactions } = useTransactions(undefined, currentBusinessType?.business_type);
 
   // データの再取得
   useEffect(() => {
@@ -191,6 +192,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                   amount = 0;
                 }
 
+                // 承認状態をチェック
+                const isApproved = transaction.approval_status === 'approved';
+
                 const isValidAmount = !isNaN(amount) && isFinite(amount);
                 const isExplicitIncome = transaction.type === 'income';
                 const isExplicitExpense = transaction.type === 'expense';
@@ -211,13 +215,13 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                 });
 
                 return (
-                  <tr key={transaction.id} className="hover:bg-white/5 transition-colors group">
+                  <tr key={transaction.id} className={`hover:bg-white/5 transition-colors group ${isApproved ? 'opacity-60' : ''}`}>
                     <td className="py-4 px-4">
                       <div className="flex items-center">
                         {getCategoryIcon(transaction.category, amount, isFinalIncome, isFinalExpense)}
                         <div>
-                          <div className="font-medium text-text-main text-sm group-hover:text-white transition-colors">{transaction.item}</div>
-                          <div className="text-xs text-text-muted sm:hidden mt-0.5">
+                          <div className={`font-medium text-text-main text-sm group-hover:text-white transition-colors ${isApproved ? 'line-through' : ''}`}>{transaction.item}</div>
+                          <div className={`text-xs text-text-muted sm:hidden mt-0.5 ${isApproved ? 'line-through' : ''}`}>
                             {new Date(transaction.date).toLocaleDateString('ja-JP', {
                               year: 'numeric',
                               month: 'short',
@@ -230,22 +234,24 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                     <td className="py-4 px-4 text-right font-medium">
                       <div className="flex items-center justify-end">
                         {isFinalIncome ?
-                          <TrendingUp className="w-4 h-4 text-green-500 mr-1" /> :
+                          <TrendingUp className={`w-4 h-4 text-green-500 mr-1 ${isApproved ? 'opacity-60' : ''}`} /> :
                           isFinalExpense ?
-                            <TrendingDown className="w-4 h-4 text-red-500 mr-1" /> :
+                            <TrendingDown className={`w-4 h-4 text-red-500 mr-1 ${isApproved ? 'opacity-60' : ''}`} /> :
                             null
                         }
-                        <span className={isFinalIncome ? 'text-green-500' : isFinalExpense ? 'text-red-500' : 'text-text-muted'}>
+                        <span className={`${isFinalIncome ? 'text-green-500' : isFinalExpense ? 'text-red-500' : 'text-text-muted'} ${isApproved ? 'line-through opacity-60' : ''}`}>
                           {isFinalIncome ? '' : isFinalExpense ? '-' : ''}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}
                         </span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-sm text-text-muted hidden sm:table-cell">
-                      {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
+                      <span className={isApproved ? 'line-through opacity-60' : ''}>
+                        {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </span>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${isFinalIncome ?
@@ -253,7 +259,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                           isFinalExpense ?
                             'bg-red-500/10 text-red-600' :
                             'bg-slate-500/10 text-text-muted'
-                        }`}>
+                        } ${isApproved ? 'opacity-60 line-through' : ''}`}>
                         {transaction.category}
                       </span>
                     </td>
