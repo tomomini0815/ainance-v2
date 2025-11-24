@@ -1319,32 +1319,36 @@ const ReceiptProcessing: React.FC = () => {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => showReceiptDetails(receipt)}
-                      className="text-primary hover:text-blue-900"
+                      className="p-2 text-primary hover:text-blue-900 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                      title="詳細"
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-5 h-5" />
                     </button>
+                    {/* 再試行ボタン（OCR処理に失敗した場合に表示） */}
                     {receipt.merchant === '解析エラー' && (
                       <button
                         onClick={() => retryReceiptProcessing(receipt.id)}
-                        className="text-orange-600 hover:text-orange-900"
+                        className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-full transition-colors duration-200"
                         title="再試行"
                       >
-                        <RotateCcw className="w-4 h-4" />
+                        <RotateCcw className="w-5 h-5" />
                       </button>
                     )}
                     {receipt.status === 'pending' && (
                       <>
                         <button
                           onClick={() => handleApprove(receipt.id)}
-                          className="text-green-600 hover:text-green-900"
+                          className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-full transition-colors duration-200"
+                          title="承認"
                         >
-                          <Check className="w-4 h-4" />
+                          <Check className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleReject(receipt.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-full transition-colors duration-200"
+                          title="却下"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-5 h-5" />
                         </button>
                       </>
                     )}
@@ -1485,41 +1489,45 @@ const ReceiptProcessing: React.FC = () => {
                         {editingId === receipt.id ? (
                           <button
                             onClick={handleSave}
-                            className="text-green-600 hover:text-green-900"
+                            className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-full transition-colors duration-200"
+                            title="保存"
                           >
-                            <Save className="w-4 h-4" />
+                            <Save className="w-5 h-5" />
                           </button>
                         ) : (
                           <>
                             <button
                               onClick={() => showReceiptDetails(receipt)}
-                              className="text-primary hover:text-blue-900"
+                              className="p-2 text-primary hover:text-blue-900 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                              title="詳細"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-5 h-5" />
                             </button>
                             {/* 再試行ボタン（OCR処理に失敗した場合に表示） */}
                             {receipt.merchant === '解析エラー' && (
                               <button
                                 onClick={() => retryReceiptProcessing(receipt.id)}
-                                className="text-orange-600 hover:text-orange-900"
+                                className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-full transition-colors duration-200"
                                 title="再試行"
                               >
-                                <RotateCcw className="w-4 h-4" />
+                                <RotateCcw className="w-5 h-5" />
                               </button>
                             )}
                             {receipt.status === 'pending' && (
                               <>
                                 <button
                                   onClick={() => handleApprove(receipt.id)}
-                                  className="text-green-600 hover:text-green-900"
+                                  className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-full transition-colors duration-200"
+                                  title="承認"
                                 >
-                                  <Check className="w-4 h-4" />
+                                  <Check className="w-5 h-5" />
                                 </button>
                                 <button
                                   onClick={() => handleReject(receipt.id)}
-                                  className="text-red-600 hover:text-red-900"
+                                  className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-full transition-colors duration-200"
+                                  title="却下"
                                 >
-                                  <X className="w-4 h-4" />
+                                  <X className="w-5 h-5" />
                                 </button>
                               </>
                             )}
