@@ -1011,6 +1011,19 @@ const ReceiptProcessing: React.FC = () => {
           </div>
         )}
 
+
+
+        {/* ヘッダー */}
+        <div className="p-6 max-w-7xl mx-auto space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              レシート処理
+            </h1>
+            <p className="text-text-muted mt-2">
+              アップロードされたレシートをAIが解析し、自動で仕訳データを作成します
+            </p>
+          </div>
+
         {/* アップロードエリア */}
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">レシートをアップロード</h2>
@@ -1114,33 +1127,6 @@ const ReceiptProcessing: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* ヘッダー */}
-        <div className="p-6 max-w-7xl mx-auto space-y-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                レシート処理
-              </h1>
-              <p className="text-text-muted mt-2">
-                アップロードされたレシートをAIが解析し、自動で仕訳データを作成します
-              </p>
-            </div>
-            <button
-              onClick={handleAutoProcess}
-              disabled={isAutoProcessing}
-              className={`px-4 py-2 rounded-lg transition-colors ${isAutoProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/90'}`}
-            >
-              {isAutoProcessing ? (
-                <span className="flex items-center">
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  処理中...
-                </span>
-              ) : (
-                'AI自動処理'
-              )}
-            </button>
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Upload Section */}
