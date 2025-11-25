@@ -841,7 +841,7 @@ const ChatToBook: React.FC = () => {
                 </thead>
                 <tbody className="bg-surface divide-y divide-border">
                   {transactions.map((transaction) => (
-                    <tr key={transaction.id} className={`hover:bg-surface-highlight transition-colors ${transaction.approval_status === 'approved' ? 'opacity-50' : ''}`}>
+                    <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
                       <td className="px-4 py-3 text-sm">
                         <button
                           onClick={() => toggleTransactionSelection(transaction.id)}
@@ -856,72 +856,64 @@ const ChatToBook: React.FC = () => {
                         </button>
                       </td>
                       <td className="px-4 py-3 text-sm text-text-main">
-                        <div className={transaction.approval_status === 'approved' ? 'opacity-50' : ''}>
-                          {editingId === transaction.id ? (
-                            <input
-                              type="date"
-                              value={editData.date || transaction.date}
-                              onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
-                              className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                            />
-                          ) : (
-                            transaction.date
-                          )}
-                        </div>
+                        {editingId === transaction.id ? (
+                          <input
+                            type="date"
+                            value={editData.date || transaction.date}
+                            onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                          />
+                        ) : (
+                          transaction.date
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-text-main max-w-xs">
-                        <div className={transaction.approval_status === 'approved' ? 'opacity-50' : ''}>
-                          {editingId === transaction.id ? (
-                            <input
-                              type="text"
-                              value={editData.description || transaction.description}
-                              onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-                              className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                            />
-                          ) : (
-                            transaction.description
-                          )}
-                        </div>
+                        {editingId === transaction.id ? (
+                          <input
+                            type="text"
+                            value={editData.description || transaction.description}
+                            onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                          />
+                        ) : (
+                          transaction.description
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-text-main">
-                        <div className={transaction.approval_status === 'approved' ? 'opacity-50' : ''}>
-                          {editingId === transaction.id ? (
-                            <input
-                              type="number"
-                              value={editData.amount || transaction.amount}
-                              onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                              className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                            />
-                          ) : (
-                            <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
-                              {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
-                            </span>
-                          )}
-                        </div>
+                        {editingId === transaction.id ? (
+                          <input
+                            type="number"
+                            value={editData.amount || transaction.amount}
+                            onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                          />
+                        ) : (
+                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+                            {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-text-main">
-                        <div className={transaction.approval_status === 'approved' ? 'opacity-50' : ''}>
-                          {editingId === transaction.id ? (
-                            <select
-                              value={editData.category || transaction.category}
-                              onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
-                              className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                            >
-                              <option value="売上">売上</option>
-                              <option value="給与">給与</option>
-                              <option value="交通費">交通費</option>
-                              <option value="食費">食費</option>
-                              <option value="消耗品費">消耗品費</option>
-                              <option value="接待交際費">接待交際費</option>
-                              <option value="通信費">通信費</option>
-                              <option value="水道光熱費">水道光熱費</option>
-                              <option value="雑費">雑費</option>
-                              <option value="未分類">未分類</option>
-                            </select>
-                          ) : (
-                            transaction.category
-                          )}
-                        </div>
+                        {editingId === transaction.id ? (
+                          <select
+                            value={editData.category || transaction.category}
+                            onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                          >
+                            <option value="売上">売上</option>
+                            <option value="給与">給与</option>
+                            <option value="交通費">交通費</option>
+                            <option value="食費">食費</option>
+                            <option value="消耗品費">消耗品費</option>
+                            <option value="接待交際費">接待交際費</option>
+                            <option value="通信費">通信費</option>
+                            <option value="水道光熱費">水道光熱費</option>
+                            <option value="雑費">雑費</option>
+                            <option value="未分類">未分類</option>
+                          </select>
+                        ) : (
+                          transaction.category
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium">
                         {editingId === transaction.id ? (
