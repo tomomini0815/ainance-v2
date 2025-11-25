@@ -363,14 +363,22 @@ const ChatToBook: React.FC = () => {
       // ユーザーIDをログに出力
       console.log('認証されたユーザーID:', user.id);
       
+      // DBから最新の取引データを取得
+      console.log('DBから最新の取引データを取得中...');
+      await fetchTransactions();
+      
+      // DBから取得した最新の取引データを再取得
+      const currentDbTransactions = dbTransactions;
+      console.log('DBから取得した最新の取引データ:', currentDbTransactions);
+      
       // 既存の取引かどうかを判断（IDがUUID形式かどうかで判断）
       const isExistingTransaction = transaction.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(transaction.id) && 
-                                   dbTransactions.some(t => t.id === transaction.id);
+                                   currentDbTransactions.some(t => t.id === transaction.id);
       console.log('既存の取引かどうか:', { 
         isExistingTransaction, 
         transactionId: transaction.id,
-        dbTransactionsCount: dbTransactions.length,
-        dbTransactionIds: dbTransactions.map(t => t.id)
+        dbTransactionsCount: currentDbTransactions.length,
+        dbTransactionIds: currentDbTransactions.map(t => t.id)
       });
       
       if (isExistingTransaction) {
@@ -458,9 +466,17 @@ const ChatToBook: React.FC = () => {
     // ユーザーIDをログに出力
     console.log('認証されたユーザーID:', user.id);
     
+    // DBから最新の取引データを取得
+    console.log('DBから最新の取引データを取得中...');
+    await fetchTransactions();
+    
+    // DBから取得した最新の取引データを再取得
+    const currentDbTransactions = dbTransactions;
+    console.log('DBから取得した最新の取引データ:', currentDbTransactions);
+    
     const selectedItems = transactions.filter(t => selectedTransactions.includes(t.id));
     console.log('bulkRecordTransactions - 選択された取引:', selectedItems);
-    console.log('bulkRecordTransactions - DB取引データ:', dbTransactions);
+    console.log('bulkRecordTransactions - 現在のDB取引データ:', currentDbTransactions);
 
     if (selectedItems.length === 0) {
       alert('記録する取引を選択してください');
@@ -471,11 +487,11 @@ const ChatToBook: React.FC = () => {
       // 既存の取引と新規取引に分類（IDがUUID形式かどうかで判断）
       const existingTransactions = selectedItems.filter(t => 
         t.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.id) &&
-        dbTransactions.some(dbT => dbT.id === t.id)
+        currentDbTransactions.some(dbT => dbT.id === t.id)
       );
       const newTransactions = selectedItems.filter(t => 
         !t.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.id) ||
-        !dbTransactions.some(dbT => dbT.id === t.id)
+        !currentDbTransactions.some(dbT => dbT.id === t.id)
       );
       
       console.log('取引分類結果:', { 
@@ -483,8 +499,8 @@ const ChatToBook: React.FC = () => {
         newCount: newTransactions.length,
         existingTransactions: existingTransactions.map(t => ({id: t.id, item: t.description})),
         newTransactions: newTransactions.map(t => ({id: t.id, item: t.description})),
-        dbTransactionsCount: dbTransactions.length,
-        dbTransactionIds: dbTransactions.map(t => t.id)
+        dbTransactionsCount: currentDbTransactions.length,
+        dbTransactionIds: currentDbTransactions.map(t => t.id)
       });
 
       // 承認処理のPromise
