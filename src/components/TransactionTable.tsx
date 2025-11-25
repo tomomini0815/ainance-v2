@@ -178,7 +178,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-96 overflow-y-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
@@ -190,7 +190,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
           </thead>
           <tbody className="divide-y divide-white/5">
             {latestTransactions.length > 0 ? (
-              latestTransactions.map((transaction) => {
+              latestTransactions.slice(0, 10).map((transaction) => {
                 // amountの型を確実に数値に変換
                 let amount = transaction.amount;
                 if (typeof transaction.amount === 'string') {

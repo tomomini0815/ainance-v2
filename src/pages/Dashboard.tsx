@@ -301,7 +301,7 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-text-main tracking-tight">ダッシュボード</h1>
+          <h1 className="text-2xl font-bold text-text-main tracking-tight">ダッシュボード</h1>
           <p className="text-text-muted mt-1">財務状況の概要と最近の活動</p>
         </div>
 
@@ -324,6 +324,8 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      <QuickActions />
+
       {/* 統計カード */}
       <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow mb-8">
         <div className="grid grid-cols-2 gap-4">
@@ -334,7 +336,7 @@ const Dashboard: React.FC = () => {
                 <FileText className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <div className="text-xl font-bold text-primary mt-1">{stats.total}</div>
+            <div className="text-lg font-bold text-primary mt-1">{stats.total}</div>
           </div>
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
@@ -343,7 +345,7 @@ const Dashboard: React.FC = () => {
                 <TrendingUp className="w-5 h-5 text-green-500" />
               </div>
             </div>
-            <div className="text-xl font-bold text-green-500 mt-1">¥{stats.income.toLocaleString()}</div>
+            <div className="text-lg font-bold text-green-500 mt-1">¥{stats.income.toLocaleString()}</div>
           </div>
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
@@ -352,7 +354,7 @@ const Dashboard: React.FC = () => {
                 <TrendingDown className="w-5 h-5 text-red-500" />
               </div>
             </div>
-            <div className="text-xl font-bold text-red-500 mt-1">¥{stats.expense.toLocaleString()}</div>
+            <div className="text-lg font-bold text-red-500 mt-1">¥{stats.expense.toLocaleString()}</div>
           </div>
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
@@ -361,14 +363,12 @@ const Dashboard: React.FC = () => {
                 <JapaneseYen className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
             </div>
-            <div className={`text-xl font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <div className={`text-lg font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               ¥{stats.balance.toLocaleString()}
             </div>
           </div>
         </div>
       </div>
-
-      <QuickActions />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Suspense fallback={<div className="h-80 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
