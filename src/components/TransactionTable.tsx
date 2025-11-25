@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight, TrendingUp, TrendingDown, Plus, FileText } from 'lucide-react'
 import { useTransactions } from '../hooks/useTransactions'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
+import { useAuth } from '../hooks/useAuth'
 
 interface Transaction {
   id: string | number
@@ -31,7 +32,8 @@ interface TransactionTableProps {
 
 const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpenCreateModal, showCreateButton = true }) => {
   const { currentBusinessType } = useBusinessTypeContext();
-  const { transactions: fetchedTransactions, loading, fetchTransactions } = useTransactions(undefined, currentBusinessType?.business_type);
+  const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+  const { transactions: fetchedTransactions, loading, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
 
   // データの再取得
   useEffect(() => {

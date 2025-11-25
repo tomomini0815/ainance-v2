@@ -18,13 +18,14 @@ import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 const Dashboard: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext();
-  const { transactions, loading, createTransaction, fetchTransactions } = useTransactions(undefined, currentBusinessType?.business_type);
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+  const { transactions, loading, createTransaction, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   console.log('ダッシュボード - currentBusinessType:', currentBusinessType);
   console.log('ダッシュボード - transactions:', transactions);
   console.log('ダッシュボード - loading:', loading);
+  console.log('ダッシュボード - authUser:', authUser);
 
   useEffect(() => {
     const handleOpenModal = () => setShowCreateForm(true);

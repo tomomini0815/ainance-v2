@@ -5,10 +5,12 @@ import { useTransactions } from '../hooks/useTransactions'
 import TransactionTable from '../components/TransactionTable'
 import TransactionForm from '../components/TransactionForm'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
+import { useAuth } from '../hooks/useAuth'
 
 const TransactionHistory: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext()
-  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction, fetchTransactions } = useTransactions(undefined, currentBusinessType?.business_type)
+  const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type)
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<any>(null)
