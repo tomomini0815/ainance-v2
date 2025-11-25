@@ -740,8 +740,8 @@ const TransactionHistory: React.FC = () => {
                           />
                         </td>
                         <td className="px-6 py-4">
-                          <div className={`text-sm font-medium text-text-main ${isApproved ? 'line-through' : ''}`}>{transaction.item}</div>
-                          <div className={`text-sm text-text-muted sm:hidden ${isApproved ? 'line-through' : ''}`}>
+                          <div className="text-sm font-medium text-text-main">{transaction.item}</div>
+                          <div className="text-sm text-text-muted sm:hidden">
                             {new Date(transaction.date).toLocaleDateString('ja-JP', {
                               year: 'numeric',
                               month: 'short',
@@ -752,28 +752,26 @@ const TransactionHistory: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end">
                             {transaction.type === 'income' ?
-                              <TrendingUp className={`w-4 h-4 text-green-500 mr-1 ${isApproved ? 'opacity-60' : ''}`} /> :
-                              <TrendingDown className={`w-4 h-4 text-red-500 mr-1 ${isApproved ? 'opacity-60' : ''}`} />
+                              <TrendingUp className="w-4 h-4 text-green-500 mr-1" /> :
+                              <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
                             }
-                            <span className={`${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'} ${isApproved ? 'line-through opacity-60' : ''}`}>
+                            <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
                               {transaction.type === 'expense' ? '-' : ''}{transaction.amount.toLocaleString()}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted hidden sm:table-cell">
-                          <span className={isApproved ? 'line-through opacity-60' : ''}>
-                            {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </span>
+                          {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${transaction.type === 'income'
                             ? 'bg-green-500/10 text-green-600'
                             : 'bg-red-500/10 text-red-600'
-                            } ${isApproved ? 'opacity-60 line-through' : ''}`}>
+                            }`}>
                             {transaction.category}
                           </span>
                         </td>

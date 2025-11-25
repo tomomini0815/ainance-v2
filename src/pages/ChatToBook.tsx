@@ -841,7 +841,7 @@ const ChatToBook: React.FC = () => {
                 </thead>
                 <tbody className="bg-surface divide-y divide-border">
                   {transactions.map((transaction) => (
-                    <tr key={transaction.id} className={transaction.approval_status === 'approved' ? 'opacity-50' : ''}>
+                    <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
                       <td className="px-4 py-3 text-sm">
                         <button
                           onClick={() => toggleTransactionSelection(transaction.id)}

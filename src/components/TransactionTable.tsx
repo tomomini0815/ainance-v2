@@ -224,13 +224,13 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                 });
 
                 return (
-                  <tr key={transaction.id} className={`hover:bg-white/5 transition-colors group ${isApproved ? 'opacity-50' : ''}`}>
+                  <tr key={transaction.id} className="hover:bg-white/5 transition-colors group">
                     <td className="py-4 px-4">
                       <div className="flex items-center">
                         {getCategoryIcon(transaction.category, amount, isFinalIncome, isFinalExpense)}
                         <div>
-                          <div className={`font-medium text-text-main text-sm group-hover:text-white transition-colors ${isApproved ? 'line-through' : ''}`}>{transaction.item}</div>
-                          <div className={`text-xs text-text-muted sm:hidden mt-0.5 ${isApproved ? 'line-through' : ''}`}>
+                          <div className="font-medium text-text-main text-sm group-hover:text-white transition-colors">{transaction.item}</div>
+                          <div className="text-xs text-text-muted sm:hidden mt-0.5">
                             {new Date(transaction.date).toLocaleDateString('ja-JP', {
                               year: 'numeric',
                               month: 'short',
@@ -243,24 +243,22 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                     <td className="py-4 px-4 text-right font-medium">
                       <div className="flex items-center justify-end">
                         {isFinalIncome ?
-                          <TrendingUp className={`w-4 h-4 text-green-500 mr-1 ${isApproved ? 'opacity-60' : ''}`} /> :
+                          <TrendingUp className="w-4 h-4 text-green-500 mr-1" /> :
                           isFinalExpense ?
-                            <TrendingDown className={`w-4 h-4 text-red-500 mr-1 ${isApproved ? 'opacity-60' : ''}`} /> :
+                            <TrendingDown className="w-4 h-4 text-red-500 mr-1" /> :
                             null
                         }
-                        <span className={`${isFinalIncome ? 'text-green-500' : isFinalExpense ? 'text-red-500' : 'text-text-muted'} ${isApproved ? 'line-through opacity-60' : ''}`}>
+                        <span className={`${isFinalIncome ? 'text-green-500' : isFinalExpense ? 'text-red-500' : 'text-text-muted'}`}>
                           {isFinalIncome ? '' : isFinalExpense ? '-' : ''}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}
                         </span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-sm text-text-muted hidden sm:table-cell">
-                      <span className={isApproved ? 'line-through opacity-60' : ''}>
-                        {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </span>
+                      {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
                     </td>
                     <td className="py-4 px-4 text-center">
                       <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${isFinalIncome ?
@@ -268,7 +266,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                           isFinalExpense ?
                             'bg-red-500/10 text-red-600' :
                             'bg-slate-500/10 text-text-muted'
-                        } ${isApproved ? 'opacity-60 line-through' : ''}`}>
+                        }`}>
                         {transaction.category}
                       </span>
                     </td>
