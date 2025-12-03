@@ -213,7 +213,81 @@ const BusinessAnalysis: React.FC = () => {
 
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
           <h2 className="text-lg font-semibold text-text-main mb-4">部門別業績</h2>
-          <div className="overflow-x-auto">
+          <div className="block md:hidden space-y-4">
+            <div className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+              <div className="flex justify-between items-start mb-2">
+                <div className="font-medium text-text-main">製品A</div>
+                <div className="text-right">
+                  <div className="font-medium text-text-main">¥2,400,000</div>
+                  <div className="text-xs text-text-muted">売上高</div>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm border-t border-border pt-2 mt-2">
+                <div className="flex justify-between">
+                  <span className="text-text-muted">目標比:</span>
+                  <span className="text-green-500 font-medium">120%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">前年比:</span>
+                  <span className="text-green-500 font-medium">+15%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">利益:</span>
+                  <span className="text-text-main font-medium">¥800,000</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+              <div className="flex justify-between items-start mb-2">
+                <div className="font-medium text-text-main">製品B</div>
+                <div className="text-right">
+                  <div className="font-medium text-text-main">¥1,800,000</div>
+                  <div className="text-xs text-text-muted">売上高</div>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm border-t border-border pt-2 mt-2">
+                <div className="flex justify-between">
+                  <span className="text-text-muted">目標比:</span>
+                  <span className="text-green-500 font-medium">90%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">前年比:</span>
+                  <span className="text-red-500 font-medium">-5%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">利益:</span>
+                  <span className="text-text-main font-medium">¥600,000</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+              <div className="flex justify-between items-start mb-2">
+                <div className="font-medium text-text-main">サービス</div>
+                <div className="text-right">
+                  <div className="font-medium text-text-main">¥600,000</div>
+                  <div className="text-xs text-text-muted">売上高</div>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm border-t border-border pt-2 mt-2">
+                <div className="flex justify-between">
+                  <span className="text-text-muted">目標比:</span>
+                  <span className="text-green-500 font-medium">150%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">前年比:</span>
+                  <span className="text-green-500 font-medium">+25%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">利益:</span>
+                  <span className="text-text-main font-medium">¥300,000</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-surface-highlight">
                 <tr>

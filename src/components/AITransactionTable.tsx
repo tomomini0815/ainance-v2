@@ -96,7 +96,46 @@ const AITransactionTable: React.FC<AITransactionTableProps> = ({ aiTransactions,
         </Link>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="block md:hidden space-y-4">
+        {displayedTransactions.length > 0 ? (
+          displayedTransactions.map((transaction) => (
+            <div key={transaction.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+              <div className="flex justify-between items-start mb-2">
+                <div className="font-medium text-text-main text-sm flex items-center">
+                  <Brain className="w-4 h-4 text-purple-400 mr-2" />
+                  {transaction.item}
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-text-main">¥{Math.abs(transaction.amount).toLocaleString()}</div>
+                  <div className="mt-1 flex justify-end">{getStatusIcon(transaction.manual_verified)}</div>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-text-muted">カテゴリ:</span>
+                  <span className="text-text-main">{transaction.ai_category}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-text-muted">信頼度:</span>
+                  <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${getConfidenceColor(transaction.confidence)}`}>
+                    {transaction.confidence}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="py-12 text-center text-text-muted">
+            <div className="w-12 h-12 rounded-full bg-surface-highlight flex items-center justify-center mx-auto mb-3">
+              <Brain className="w-6 h-6 text-slate-600" />
+            </div>
+            <p className="text-sm">AI分析データがありません</p>
+          </div>
+        )}
+      </div>
+
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">

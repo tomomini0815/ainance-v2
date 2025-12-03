@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Upload, FileText, CheckCircle, ArrowRight, Camera, X, RefreshCw, FileImage, Search, Eye, RotateCcw, Check, Save, AlertTriangle } from 'lucide-react';
-import DocumentUpload from '../components/DocumentUpload';
+import { Upload, FileText, ArrowRight, Camera, X, RefreshCw, FileImage, Search, Eye, RotateCcw, Check, Save, AlertTriangle } from 'lucide-react';
 import ReceiptCamera from '../components/ReceiptCamera';
 import ReceiptResultModal from '../components/ReceiptResultModal';
-import { ReceiptData as ParsedReceiptData } from '../utils/ReceiptParser'
-import { saveReceipt, getReceipts, updateReceiptStatus, approveReceiptAndCreateTransaction } from '../services/receiptService'
+import { getReceipts, updateReceiptStatus, approveReceiptAndCreateTransaction } from '../services/receiptService'
 import { useAuth } from '../components/AuthProvider'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
@@ -220,57 +218,7 @@ const ReceiptProcessing: React.FC = () => {
     }
   };
 
-  // 画像前処理機能
-  const preprocessImage = (imageData: string): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
 
-        if (!ctx) {
-          resolve(imageData);
-          return;
-        }
-
-        // キャンバスのサイズを画像に合わせる
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        // 画像をキャンバスに描画
-        ctx.drawImage(img, 0, 0);
-
-        // 画像処理（簡単なコントラスト調整）
-        const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageDataObj.data;
-
-        // コントラストを強調
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-
-          // グレースケール変換
-          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-
-          // コントラスト調整
-          const contrast = 1.2;
-          const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-          const adjusted = factor * (gray - 128) + 128;
-
-          // 0-255の範囲にクリップ
-          data[i] = data[i + 1] = data[i + 2] = Math.max(0, Math.min(255, adjusted));
-        }
-
-        ctx.putImageData(imageDataObj, 0, 0);
-
-        // 処理後の画像データをBase64として返す
-        resolve(canvas.toDataURL('image/jpeg'));
-      };
-
-      img.src = imageData;
-    });
-  };
 
   // テキストからレシート情報を抽出する関数（日本語対応強化版）
   const extractReceiptData = (text: string) => {
@@ -693,10 +641,18 @@ const ReceiptProcessing: React.FC = () => {
     }
   }
 
+
+
   const handleEdit = (receipt: ReceiptData) => {
-    setEditingId(receipt.id)
-    setEditData(receipt)
-  }
+    setEditingId(receipt.id);
+    setEditData({
+      date: receipt.date,
+      merchant: receipt.merchant,
+      amount: receipt.amount,
+      category: receipt.category,
+      description: receipt.description
+    });
+  };
 
   const handleSave = () => {
     if (editingId && editData) {
@@ -769,124 +725,11 @@ const ReceiptProcessing: React.FC = () => {
     await updateReceiptStatus(id, 'rejected');
   }
 
-  // サンプルレシートを追加する関数（テスト用）
-  const addSampleReceipts = () => {
-    const sampleData: ReceiptData[] = [
-      {
-        id: Date.now().toString(),
-        date: '2024-01-15',
-        merchant: 'セブンイレブン',
-        amount: 1320,
-        category: '消耗品費',
-        description: 'コピー用紙',
-        confidence: 95,
-        status: 'pending',
-        taxRate: 10
-      },
-      {
-        id: (Date.now() + 1).toString(),
-        date: '2024-01-14',
-        merchant: 'マクドナルド',
-        amount: 748,
-        category: '接待交際費',
-        description: 'ビッグマックセット',
-        confidence: 92,
-        status: 'pending',
-        taxRate: 10
-      },
-      {
-        id: (Date.now() + 2).toString(),
-        date: '2024-01-13',
-        merchant: 'ローソン',
-        amount: 540,
-        category: '消耗品費',
-        description: '飲料水',
-        confidence: 88,
-        status: 'pending',
-        taxRate: 8
-      }
-    ];
-    setUploadedReceipts(prev => [...sampleData, ...prev]);
-  };
 
-  // サンプル画像でOCRテストを行う関数
-  const testOCROnSampleImage = async () => {
-    try {
-      // サンプルレシートを追加（処理中状態）
-      const newReceipt: ReceiptData = {
-        id: Date.now().toString(),
-        date: new Date().toISOString().split('T')[0],
-        merchant: '処理中...',
-        amount: 0,
-        category: '未分類',
-        description: '解析中...',
-        confidence: 0,
-        status: 'pending'
-      }
-      setUploadedReceipts(prev => [newReceipt, ...prev])
 
-      // サンプル画像URLを使用してOCRテストを実行
-      // 実際のアプリケーションでは、適切なサンプル画像URLに置き換える必要があります
-      const sampleText = `セブンイレブン
-2024/01/15
-レシート番号: 12345
-商品名: コピー用紙 ￥1,200
-消費税: ￥120
-合計: ￥1,320
-      
-マクドナルド
-2024/01/14
-商品名: ビッグマックセット ￥680
-消費税: ￥68
-合計: ￥748`
 
-      // テキストから情報を抽出
-      const extractedData = extractReceiptData(sampleText)
 
-      // レシート情報を更新
-      setUploadedReceipts(prev => prev.map(receipt =>
-        receipt.id === newReceipt.id
-          ? {
-            ...receipt,
-            merchant: extractedData.merchant || '不明',
-            amount: extractedData.amount || 0,
-            description: extractedData.description || 'OCR処理完了',
-            confidence: extractedData.confidence || 80
-          }
-          : receipt
-      ))
-    } catch (error) {
-      console.error('OCRテストエラー:', error)
-    }
-  };
 
-  // レシートスキャナーのスキャン完了ハンドラー
-  const handleScanComplete = (scannedData: ParsedReceiptData) => {
-    // スキャンされたデータを既存のレシート形式に変換
-    const newReceipt: ReceiptData = {
-      id: Date.now().toString(),
-      date: scannedData.date,
-      merchant: scannedData.store_name,
-      amount: scannedData.total_amount,
-      category: scannedData.category || '未分類',
-      description: 'スキャンされたレシート',
-      confidence: Math.round((scannedData.confidence.store_name + scannedData.confidence.date +
-        scannedData.confidence.total_amount + scannedData.confidence.tax_rate) / 4 * 100),
-      status: 'pending',
-      taxRate: scannedData.tax_rate,
-      // AI分析結果を追加
-      aiAnalysis: {
-        category: scannedData.category,
-        expenseType: scannedData.expenseType,
-        confidence: scannedData.aiConfidence,
-        insights: scannedData.insights,
-        items: scannedData.items
-      }
-    };
-
-    // 新しいレシートをリストに追加
-    setUploadedReceipts(prev => [newReceipt, ...prev]);
-  };
 
   // 個々のレシートに対して再試行する関数
   const retryReceiptProcessing = async (receiptId: string) => {
@@ -964,31 +807,7 @@ const ReceiptProcessing: React.FC = () => {
   // カテゴリ一覧の取得
   const categories = Array.from(new Set(uploadedReceipts.map(r => r.category)));
 
-  // AI自動処理機能
-  const [isAutoProcessing, setIsAutoProcessing] = useState(false);
 
-  const handleAutoProcess = async () => {
-    setIsAutoProcessing(true);
-    try {
-      // 保留中のレシートを自動処理
-      const pendingReceipts = uploadedReceipts.filter(r => r.status === 'pending');
-
-      for (const receipt of pendingReceipts) {
-        try {
-          // ここでAI処理を実行
-          // 実際のアプリケーションでは、AIサービスを呼び出して処理を行う
-          await new Promise(resolve => setTimeout(resolve, 1000)); // シミュレーション
-
-          // 処理が成功したら承認状態に変更
-          await handleApprove(receipt.id);
-        } catch (error) {
-          console.error(`レシート ${receipt.id} の自動処理に失敗しました:`, error);
-        }
-      }
-    } finally {
-      setIsAutoProcessing(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -1014,15 +833,12 @@ const ReceiptProcessing: React.FC = () => {
 
 
         {/* ヘッダー */}
-        <div className="p-6 max-w-7xl mx-auto space-y-8">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              レシート処理
-            </h1>
-            <p className="text-text-muted mt-2">
-              アップロードされたレシートをAIが解析し、自動で仕訳データを作成します
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-text-main tracking-tight">レシート処理</h1>
+          <p className="text-text-muted mt-1">アップロードされたレシートをAIが解析し、自動で仕訳データを作成します</p>
+        </div>
+
+        <div className="max-w-7xl mx-auto space-y-8">
 
           {/* アップロードエリア */}
           <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
@@ -1078,21 +894,7 @@ const ReceiptProcessing: React.FC = () => {
               </div>
             )}
 
-            {/* サンプルレシート追加ボタン（開発用） */}
-            <div className="mb-4 flex flex-wrap gap-2">
-              <button
-                onClick={addSampleReceipts}
-                className="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm w-full sm:w-auto"
-              >
-                サンプルレシートを追加（テスト用）
-              </button>
-              <button
-                onClick={testOCROnSampleImage}
-                className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm w-full sm:w-auto"
-              >
-                OCRテストを実行（サンプル画像）
-              </button>
-            </div>
+
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* ファイルアップロード */}
@@ -1177,54 +979,7 @@ const ReceiptProcessing: React.FC = () => {
               </div>
             </div>
 
-            {/* Stats Section */}
-            <div className="space-y-6">
-              <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-text-main mb-4">処理ステータス</h2>
-                <div className="space-y-4">
-                  <div className="p-4 bg-background rounded-xl border border-border">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-text-muted">今月の処理枚数</span>
-                      <span className="text-2xl font-bold text-text-main">45枚</span>
-                    </div>
-                    <div className="w-full bg-surface-highlight rounded-full h-2">
-                      <div className="bg-primary h-2 rounded-full" style={{ width: '75%' }}></div>
-                    </div>
-                  </div>
 
-                  <div className="p-4 bg-background rounded-xl border border-border">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-text-muted">AI認識精度</span>
-                      <span className="text-2xl font-bold text-text-main">98.5%</span>
-                    </div>
-                    <div className="w-full bg-surface-highlight rounded-full h-2">
-                      <div className="bg-secondary h-2 rounded-full" style={{ width: '98.5%' }}></div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-background rounded-xl border border-border">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-text-muted">削減時間</span>
-                      <span className="text-2xl font-bold text-text-main">12.5時間</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-green-500">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>先月比 +2.5時間</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-text-main mb-2">Proプランでさらに便利に</h3>
-                <p className="text-sm text-text-muted mb-4">
-                  月間処理枚数無制限、優先処理、専任サポートなど、ビジネスを加速させる機能をご利用いただけます。
-                </p>
-                <button className="w-full py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25">
-                  プランを確認する
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1654,16 +1409,20 @@ const ReceiptProcessing: React.FC = () => {
                             >
                               <Eye className="w-5 h-5" />
                             </button>
-                            {/* 再試行ボタン（OCR処理に失敗した場合に表示） */}
-                            {receipt.merchant === '解析エラー' && (
-                              <button
-                                onClick={() => retryReceiptProcessing(receipt.id)}
-                                className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-full transition-colors duration-200"
-                                title="再試行"
-                              >
-                                <RotateCcw className="w-5 h-5" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleEdit(receipt)}
+                              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors duration-200"
+                              title="編集"
+                            >
+                              <FileText className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => retryReceiptProcessing(receipt.id)}
+                              className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-full transition-colors duration-200"
+                              title="再解析"
+                            >
+                              <RefreshCw className="w-5 h-5" />
+                            </button>
                             {receipt.status === 'pending' && (
                               <>
                                 <button
@@ -1691,24 +1450,27 @@ const ReceiptProcessing: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        </div >
+
         {/* 結果モーダル */}
-        {showResultModal && extractedData && (
-          <ReceiptResultModal
-            receiptData={extractedData}
-            onClose={() => {
-              setShowResultModal(false);
-              setExtractedData(null);
-            }}
-            onRetake={() => {
-              setShowResultModal(false);
-              setExtractedData(null);
-              setShowCamera(true);
-            }}
-          />
-        )}
-      </main>
-    </div>
+        {
+          showResultModal && extractedData && (
+            <ReceiptResultModal
+              receiptData={extractedData}
+              onClose={() => {
+                setShowResultModal(false);
+                setExtractedData(null);
+              }}
+              onRetake={() => {
+                setShowResultModal(false);
+                setExtractedData(null);
+                setShowCamera(true);
+              }}
+            />
+          )
+        }
+      </main >
+    </div >
   )
 }
 

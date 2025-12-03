@@ -67,13 +67,13 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
 
   const getCategoryIcon = (category: string, amount: number, isFinalIncome?: boolean, isFinalExpense?: boolean) => {
     console.log('getCategoryIcon called with:', { category, amount, isFinalIncome, isFinalExpense });
-    
+
     // isFinalIncomeとisFinalExpenseの両方がtrueの場合、isFinalExpenseを優先
     if (isFinalIncome === true && isFinalExpense === true) {
       console.log('Both isFinalIncome and isFinalExpense are true, prioritizing expense');
       return <TrendingDown className="w-4 h-4 text-red-500 mr-2" />;
     }
-    
+
     // isFinalIncomeまたはisFinalExpenseが指定されている場合、それを優先
     if (isFinalIncome === true) {
       console.log('Returning TrendingUp icon for income');
@@ -90,7 +90,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
     if (typeof amount === 'string') {
       numericAmount = parseFloat(amount);
     }
-    
+
     const isValidAmount = !isNaN(numericAmount) && isFinite(numericAmount);
     const isIncome = isValidAmount && numericAmount > 0;
     const isExpense = isValidAmount && numericAmount < 0;
@@ -178,13 +178,90 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
         </div>
       </div>
 
-      <div className="overflow-x-auto max-h-96 overflow-y-auto">
+      {/* モバイル: カード表示 */}
+      <div className="block md:hidden space-y-3">
+        {latestTransactions.length > 0 ? (
+          latestTransactions.slice(0, 10).map((transaction) => {
+            // amountの型を確実に数値に変換
+            let amount = transaction.amount;
+            if (typeof transaction.amount === 'string') {
+              amount = parseFloat(transaction.amount);
+            } else if (typeof transaction.amount === 'number') {
+              amount = transaction.amount;
+            } else {
+              amount = 0;
+            }
+
+            const isValidAmount = !isNaN(amount) && isFinite(amount);
+            const isExplicitIncome = transaction.type === 'income';
+            const isExplicitExpense = transaction.type === 'expense';
+
+            const isFinalIncome = isExplicitIncome ? true : (isExplicitExpense ? false : (isValidAmount && amount > 0));
+            const isFinalExpense = isExplicitExpense ? true : (isExplicitIncome ? false : (isValidAmount && amount < 0));
+
+            return (
+              <div
+                key={transaction.id}
+                className="bg-surface-highlight rounded-xl p-4 border border-border hover:border-primary/50 transition-all"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start flex-1">
+                    {getCategoryIcon(transaction.category, amount, isFinalIncome, isFinalExpense)}
+                    <div className="flex-1">
+                      <div className="font-medium text-text-main text-sm mb-1">{transaction.item}</div>
+                      <div className="text-xs text-text-muted">
+                        {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right ml-3">
+                    <div className={`font-bold text-base ${isFinalIncome ? 'text-green-500' : isFinalExpense ? 'text-red-500' : 'text-text-muted'}`}>
+                      {isFinalIncome ? '+' : isFinalExpense ? '-' : ''}¥{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${isFinalIncome ?
+                    'bg-green-500/10 text-green-600' :
+                    isFinalExpense ?
+                      'bg-red-500/10 text-red-600' :
+                      'bg-slate-500/10 text-text-muted'
+                    }`}>
+                    {transaction.category}
+                  </span>
+                  {isFinalIncome ? (
+                    <TrendingUp className="w-4 h-4 text-green-500" />
+                  ) : isFinalExpense ? (
+                    <TrendingDown className="w-4 h-4 text-red-500" />
+                  ) : null}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="py-12 text-center">
+            <div className="flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-surface-highlight flex items-center justify-center mb-3">
+                <FileText className="w-6 h-6 text-slate-600" />
+              </div>
+              <p className="text-text-muted text-sm">取引がありません</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* デスクトップ: テーブル表示 */}
+      <div className="hidden md:block overflow-x-auto max-h-96 overflow-y-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wider">項目</th>
               <th className="text-right py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
-              <th className="text-left py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wider hidden sm:table-cell">日付</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wider">日付</th>
               <th className="text-center py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
             </tr>
           </thead>
@@ -213,14 +290,14 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                 const isFinalIncome = isExplicitIncome ? true : (isExplicitExpense ? false : (isValidAmount && amount > 0));
                 const isFinalExpense = isExplicitExpense ? true : (isExplicitIncome ? false : (isValidAmount && amount < 0));
 
-                console.log('Transaction processing:', { 
-                  id: transaction.id, 
-                  amount, 
-                  type: transaction.type, 
-                  isExplicitIncome, 
-                  isExplicitExpense, 
-                  isFinalIncome, 
-                  isFinalExpense 
+                console.log('Transaction processing:', {
+                  id: transaction.id,
+                  amount,
+                  type: transaction.type,
+                  isExplicitIncome,
+                  isExplicitExpense,
+                  isFinalIncome,
+                  isFinalExpense
                 });
 
                 return (
@@ -230,13 +307,6 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                         {getCategoryIcon(transaction.category, amount, isFinalIncome, isFinalExpense)}
                         <div>
                           <div className="font-medium text-text-main text-sm group-hover:text-white transition-colors">{transaction.item}</div>
-                          <div className="text-xs text-text-muted sm:hidden mt-0.5">
-                            {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </div>
                         </div>
                       </div>
                     </td>
@@ -253,7 +323,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                         </span>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-sm text-text-muted hidden sm:table-cell">
+                    <td className="py-4 px-4 text-sm text-text-muted">
                       {new Date(transaction.date).toLocaleDateString('ja-JP', {
                         year: 'numeric',
                         month: 'short',
@@ -262,10 +332,10 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                     </td>
                     <td className="py-4 px-4 text-center">
                       <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${isFinalIncome ?
-                          'bg-green-500/10 text-green-600' :
-                          isFinalExpense ?
-                            'bg-red-500/10 text-red-600' :
-                            'bg-slate-500/10 text-text-muted'
+                        'bg-green-500/10 text-green-600' :
+                        isFinalExpense ?
+                          'bg-red-500/10 text-red-600' :
+                          'bg-slate-500/10 text-text-muted'
                         }`}>
                         {transaction.category}
                       </span>

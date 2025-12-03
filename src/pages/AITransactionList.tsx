@@ -658,7 +658,121 @@ const AITransactionList: React.FC = () => {
 
         {/* AI取引一覧 */}
         <div className="bg-surface rounded-xl shadow-sm border border-border overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="block md:hidden space-y-4 p-4">
+            {filteredAITransactions.length > 0 ? (
+              filteredAITransactions.map((transaction) => {
+                const confidenceBadge = getConfidenceBadge(transaction.confidence)
+                return (
+                  <div key={transaction.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => toggleSelectTransaction(transaction.id)}
+                          className="mr-3"
+                        >
+                          {selectedTransactions.includes(transaction.id) ? (
+                            <CheckSquare className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Square className="w-5 h-5 text-text-muted" />
+                          )}
+                        </button>
+                        <div>
+                          <div className="font-medium text-text-main flex items-center">
+                            {transaction.item}
+                            <div className={`ml-2 w-2 h-2 rounded-full ${confidenceBadge.color}`}></div>
+                          </div>
+                          <div className="text-xs text-text-muted mt-1">
+                            {new Date(transaction.created_at).toLocaleDateString('ja-JP')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium text-text-main text-lg">
+                          ¥{transaction.amount.toLocaleString()}
+                        </div>
+                        <div className="mt-1">
+                          {transaction.manual_verified ? (
+                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              <Check size={10} className="mr-1" />
+                              確認済
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                              <Clock size={10} className="mr-1" />
+                              未確認
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mt-3 pt-3 border-t border-border">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-text-muted">AI分類:</span>
+                        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                          {transaction.ai_category}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-text-muted">信頼度:</span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded-full ${getConfidenceColor(transaction.confidence)}`}>
+                            {transaction.confidence}%
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full text-white ${confidenceBadge.color}`}>
+                            {confidenceBadge.label}
+                          </span>
+                        </div>
+                      </div>
+
+                      {transaction.ai_suggestions && transaction.ai_suggestions.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {transaction.ai_suggestions.slice(0, 3).map((suggestion, idx) => (
+                            <span key={idx} className="inline-flex px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded">
+                              {suggestion}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex justify-end space-x-2 mt-3">
+                        {!transaction.manual_verified ? (
+                          <>
+                            <button
+                              onClick={() => handleVerification(transaction.id, true)}
+                              className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-100"
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleVerification(transaction.id, false)}
+                              className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100"
+                            >
+                              <X size={16} />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleVerification(transaction.id, false)}
+                            className="text-xs text-text-muted hover:text-text-main underline"
+                          >
+                            修正する
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="text-center py-12 text-text-muted">
+                <p>該当する取引が見つかりませんでした</p>
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-surface-highlight">
                 <tr>

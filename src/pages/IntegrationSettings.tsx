@@ -209,8 +209,8 @@ const IntegrationSettings: React.FC = () => {
               <button
                 onClick={() => setActiveTab('integrations')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'integrations'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-text-muted hover:text-text-main'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-main'
                   }`}
               >
                 サービス連携
@@ -218,8 +218,8 @@ const IntegrationSettings: React.FC = () => {
               <button
                 onClick={() => setActiveTab('api')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'api'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-text-muted hover:text-text-main'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-main'
                   }`}
               >
                 API管理
@@ -227,8 +227,8 @@ const IntegrationSettings: React.FC = () => {
               <button
                 onClick={() => setActiveTab('sync')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'sync'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-text-muted hover:text-text-main'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-main'
                   }`}
               >
                 同期履歴
@@ -342,7 +342,66 @@ const IntegrationSettings: React.FC = () => {
                 </button>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* モバイル用カード表示 */}
+              <div className="block md:hidden space-y-4">
+                {apiKeys.map((apiKey) => (
+                  <div key={apiKey.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="font-medium text-text-main">{apiKey.name}</div>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${apiKey.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-surface-highlight text-text-muted'
+                        }`}>
+                        {apiKey.status === 'active' ? 'アクティブ' : '無効'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-text-muted">APIキー:</span>
+                        <div className="flex items-center space-x-2">
+                          <code className="bg-surface-highlight px-2 py-1 rounded text-xs">
+                            {showApiKey[apiKey.id] ? apiKey.key : '••••••••••••••••'}
+                          </code>
+                          <button
+                            onClick={() => toggleApiKeyVisibility(apiKey.id)}
+                            className="text-text-muted hover:text-text-main"
+                          >
+                            {showApiKey[apiKey.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={() => copyApiKey(apiKey.key)}
+                            className="text-text-muted hover:text-text-main"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-text-muted">権限:</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {apiKey.permissions.map((permission, index) => (
+                            <span key={index} className="inline-flex px-2 py-1 text-xs bg-primary/10 text-primary rounded">
+                              {permission}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-text-muted">最終使用:</span>
+                        <span className="text-text-main">{apiKey.lastUsed}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-2 border-t border-border">
+                      <button className="text-sm text-primary hover:text-primary/80 px-2 py-1">編集</button>
+                      <button className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 px-2 py-1">削除</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-surface-highlight">
                     <tr>
@@ -445,7 +504,44 @@ const IntegrationSettings: React.FC = () => {
               </button>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* モバイル用カード表示 */}
+            <div className="block md:hidden space-y-4">
+              {syncHistory.map((sync, index) => (
+                <div key={index} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="font-medium text-text-main">{sync.source}</div>
+                    <div className="flex items-center">
+                      {sync.status === 'success' ? (
+                        <Check className="w-4 h-4 text-green-500 mr-1" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-red-500 mr-1" />
+                      )}
+                      <span className={`text-sm ${sync.status === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                        }`}>
+                        {sync.status === 'success' ? '成功' : 'エラー'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-text-muted">データ種別:</span>
+                      <span className="text-text-main">{sync.type}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-muted">件数:</span>
+                      <span className="text-text-main">{sync.count}件</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-muted">時刻:</span>
+                      <span className="text-text-main">{sync.time}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-surface-highlight">
                   <tr>

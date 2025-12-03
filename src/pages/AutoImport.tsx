@@ -9,7 +9,7 @@ const AutoImport: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { document } = location.state || {};
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
   const [importResults, setImportResults] = useState<any[]>([]);
@@ -67,7 +67,7 @@ const AutoImport: React.FC = () => {
         console.error('テンプレートの取得に失敗しました:', error);
       }
     };
-    
+
     fetchTemplates();
   }, []);
 
@@ -102,7 +102,7 @@ const AutoImport: React.FC = () => {
 
     setIsOcrProcessing(true);
     setOcrProgress(0);
-    
+
     try {
       // OCR処理
       const worker = await createWorker('jpn', 1, {
@@ -112,20 +112,20 @@ const AutoImport: React.FC = () => {
           }
         },
       });
-      
+
       const ocrResults: any[] = [];
-      
+
       for (let i = 0; i < uploadedFiles.length; i++) {
         const file = uploadedFiles[i];
         const { data: { text } } = await worker.recognize(file);
         ocrResults.push({ fileName: file.name, text });
       }
-      
+
       await worker.terminate();
-      
+
       // OCR結果を解析してフィールドに変換
       let parsedResults;
-      
+
       if (selectedTemplate) {
         // テンプレートが選択されている場合、テンプレートを使用してマッピング
         try {
@@ -140,7 +140,7 @@ const AutoImport: React.FC = () => {
         // テンプレートが選択されていない場合、基本的な解析を行う
         parsedResults = parseOcrResultsBasic(ocrResults);
       }
-      
+
       // データ検証
       const validationRules: ValidationRule[] = [
         { field: '事業所得', rule: 'min', value: 0, message: '事業所得は0以上である必要があります' },
@@ -148,19 +148,19 @@ const AutoImport: React.FC = () => {
         { field: '所得金額', rule: 'min', value: 0, message: '所得金額は0以上である必要があります' },
         // 他の検証ルールもここに追加できます
       ];
-      
+
       const validatedResults = validateImportData(parsedResults, validationRules);
-      
+
       // 検証エラーの数をカウント
       const errorCount = validatedResults.filter(result => result.status === 'warning').length;
       setValidationErrors(errorCount);
-      
+
       setIsOcrProcessing(false);
       setIsProcessing(true);
       setProcessingStep(0);
       setImportResults(validatedResults);
       setIsCompleted(false);
-      
+
       // シミュレートされた処理
       const interval = setInterval(() => {
         setProcessingStep(prev => {
@@ -184,14 +184,14 @@ const AutoImport: React.FC = () => {
   const parseOcrResultsBasic = (ocrResults: any[]) => {
     // 実際のアプリケーションでは、OCRで読み取ったテキストを解析して
     // 申告書の各フィールドにマッピングするロジックを実装します
-    
+
     // ここでは簡単な例として、テキストから数値とラベルを抽出します
     const results: any[] = [];
-    
+
     ocrResults.forEach((result, index) => {
       // テキストを解析してフィールドを抽出
       const lines = result.text.split('\n');
-      
+
       lines.forEach((line: string) => {
         // 金額を含む行を検出
         const amountMatch = line.match(/([^\d]*)[:：]?\s*[¥￥]?\s*([\d,]+)[円]?\s*(.*)/);
@@ -202,7 +202,7 @@ const AutoImport: React.FC = () => {
             status: 'success'
           });
         }
-        
+
         // 数値を含む行を検出
         const numberMatch = line.match(/([^\d]*)[:：]?\s*([\d,]+)\s*(.*)/);
         if (numberMatch && !amountMatch) {
@@ -214,7 +214,7 @@ const AutoImport: React.FC = () => {
         }
       });
     });
-    
+
     // ダミーデータを追加（実際のOCR結果がない場合）
     if (results.length === 0) {
       return [
@@ -229,7 +229,7 @@ const AutoImport: React.FC = () => {
         { field: '税額', value: '300,000円', status: 'success' }
       ];
     }
-    
+
     return results;
   };
 
@@ -242,37 +242,37 @@ const AutoImport: React.FC = () => {
     try {
       // 自動取り込みデータを処理
       const savedTransactions = await processAutoImportData(importResults, userId);
-      
+
       // 取引データを申告書形式に変換
       const taxData = convertTransactionToTaxData(savedTransactions, documentDetails.type as 'individual' | 'corporate');
-      
+
       // 申告書データを保存
       await saveTaxDocument(taxData, userId, documentDetails.type as 'individual' | 'corporate', parseInt(documentDetails.year), documentDetails.name);
-      
+
       // インポート履歴を保存
-      await saveImportHistory(userId, 
-        uploadedFiles.map(f => f.name).join(', '), 
-        'success', 
+      await saveImportHistory(userId,
+        uploadedFiles.map(f => f.name).join(', '),
+        'success',
         { results: importResults, errors: validationErrors }
       );
-      
+
       alert('取り込んだデータを保存しました。');
     } catch (error) {
       console.error('データの保存に失敗しました:', error);
-      
+
       // インポート履歴を保存（失敗として）
       if (userId) {
         try {
-          await saveImportHistory(userId, 
-            uploadedFiles.map(f => f.name).join(', '), 
-            'failed', 
+          await saveImportHistory(userId,
+            uploadedFiles.map(f => f.name).join(', '),
+            'failed',
             { error: (error as Error).message }
           );
         } catch (historyError) {
           console.error('インポート履歴の保存に失敗しました:', historyError);
         }
       }
-      
+
       alert('データの保存に失敗しました。');
     }
   };
@@ -293,7 +293,7 @@ const AutoImport: React.FC = () => {
       alert('テンプレートを選択してください。');
       return;
     }
-    
+
     // テンプレートのダウンロードロジックをここに実装
     console.log('テンプレートをダウンロード:', selectedTemplate);
     alert('テンプレートをダウンロードします。');
@@ -313,8 +313,8 @@ const AutoImport: React.FC = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">ファイルアップロード</h2>
-              
-              <div 
+
+              <div
                 className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors"
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -334,7 +334,7 @@ const AutoImport: React.FC = () => {
                   multiple
                 />
               </div>
-              
+
               {uploadedFiles.length > 0 && (
                 <div className="mt-4">
                   <h3 className="text-sm font-medium text-gray-900 mb-2">アップロードされたファイル</h3>
@@ -353,16 +353,15 @@ const AutoImport: React.FC = () => {
                   </ul>
                 </div>
               )}
-              
+
               <div className="mt-6">
                 <button
                   onClick={handleStartImport}
                   disabled={uploadedFiles.length === 0 || isOcrProcessing}
-                  className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                    uploadedFiles.length > 0 && !isOcrProcessing
+                  className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${uploadedFiles.length > 0 && !isOcrProcessing
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'bg-gray-400 cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   {isOcrProcessing ? (
                     <>
@@ -377,7 +376,7 @@ const AutoImport: React.FC = () => {
                   )}
                 </button>
               </div>
-              
+
               {isProcessing && (
                 <div className="mt-6">
                   <div className="text-center py-4">
@@ -388,12 +387,12 @@ const AutoImport: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="mt-6 text-center">
                       <h3 className="text-lg font-medium text-gray-900">{processingSteps[processingStep]}</h3>
                       <div className="mt-4 w-full bg-gray-200 rounded-full h-2.5">
-                        <div 
-                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
                           style={{ width: `${((processingStep + 1) / processingSteps.length) * 100}%` }}
                         ></div>
                       </div>
@@ -404,7 +403,7 @@ const AutoImport: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {isCompleted && (
                 <div>
                   <div className="text-center py-4">
@@ -422,10 +421,43 @@ const AutoImport: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="mt-6">
                     <h4 className="text-md font-medium text-gray-900 mb-3">取り込み結果</h4>
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="block md:hidden space-y-4">
+                      {importResults.map((result, index) => (
+                        <div key={index} className={`p-4 rounded-lg shadow-sm border border-gray-200 ${result.status === 'warning' ? 'bg-yellow-50' : 'bg-white'}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="font-medium text-gray-900">{result.field}</div>
+                            {result.status === 'success' ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                成功
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                要確認
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">値:</span>
+                              <span className="text-gray-900">{result.value}</span>
+                            </div>
+                            {result.message && (
+                              <div className="mt-2 text-xs text-yellow-700 bg-yellow-100 p-2 rounded">
+                                {result.message}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
@@ -463,7 +495,7 @@ const AutoImport: React.FC = () => {
                       </table>
                     </div>
                   </div>
-                  
+
                   <div className="mt-6 flex flex-wrap justify-end space-x-3">
                     <button
                       onClick={handleRetry}
@@ -491,7 +523,7 @@ const AutoImport: React.FC = () => {
               )}
             </div>
           </div>
-          
+
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">書類情報</h2>
@@ -512,7 +544,7 @@ const AutoImport: React.FC = () => {
                 </div>
               </dl>
             </div>
-            
+
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">テンプレート</h2>
               <div className="space-y-3">
@@ -531,18 +563,17 @@ const AutoImport: React.FC = () => {
                 <button
                   onClick={handleDownloadTemplate}
                   disabled={!selectedTemplate}
-                  className={`w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center ${
-                    selectedTemplate
+                  className={`w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center ${selectedTemplate
                       ? 'bg-green-600 text-white hover:bg-green-700'
                       : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   テンプレートをダウンロード
                 </button>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">自動取り込みガイド</h2>
               <ul className="space-y-3 text-sm text-gray-600">
@@ -575,7 +606,7 @@ const AutoImport: React.FC = () => {
                   <span>データは申告書形式に変換され、保存されます</span>
                 </li>
               </ul>
-              
+
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <h3 className="text-md font-medium text-gray-900 mb-2">注意事項</h3>
                 <ul className="space-y-2 text-xs text-gray-500">

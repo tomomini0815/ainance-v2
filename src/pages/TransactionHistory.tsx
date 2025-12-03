@@ -723,7 +723,76 @@ const TransactionHistory: React.FC = () => {
 
         {/* トランザクションテーブル */}
         <div className="bg-surface rounded-xl shadow-sm border border-border overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* モバイル: カード表示 */}
+          <div className="block md:hidden divide-y divide-border">
+            {paginatedTransactions.length > 0 ? (
+              paginatedTransactions.map((transaction) => (
+                <div key={transaction.id} className="p-4 hover:bg-surface-highlight transition-colors">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedTransactions.includes(transaction.id)}
+                        onChange={() => toggleSelectTransaction(transaction.id)}
+                        className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
+                      />
+                      <div>
+                        <div className="font-medium text-text-main">{transaction.item}</div>
+                        <div className="text-xs text-text-muted">
+                          {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-bold ${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
+                        {transaction.type === 'expense' ? '-' : ''}¥{transaction.amount.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-3">
+                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${transaction.type === 'income'
+                      ? 'bg-green-500/10 text-green-600'
+                      : 'bg-red-500/10 text-red-600'
+                      }`}>
+                      {transaction.category}
+                    </span>
+
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => {
+                          setEditingTransaction(transaction)
+                          setShowCreateForm(true)
+                        }}
+                        className="p-1.5 rounded-lg transition-colors text-primary hover:text-primary/80 hover:bg-primary/10"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteTransaction(transaction.id)}
+                        className="p-1.5 rounded-lg transition-colors text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center">
+                <FileText className="w-12 h-12 text-text-muted mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-text-main mb-1">取引が見つかりません</h3>
+                <p className="text-text-muted">条件に一致する取引がありません</p>
+              </div>
+            )}
+          </div>
+
+          {/* デスクトップ: テーブル表示 */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-surface-highlight">
                 <tr>
@@ -747,7 +816,7 @@ const TransactionHistory: React.FC = () => {
                   paginatedTransactions.map((transaction) => {
                     // 承認状態をチェック
                     const isApproved = transaction.approval_status === 'approved';
-                    
+
                     return (
                       <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">

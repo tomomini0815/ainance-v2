@@ -5,7 +5,7 @@ import { ArrowLeft, Download, Upload, FileText, CheckCircle, AlertCircle } from 
 const TaxFilingSupport: React.FC = () => {
   const [businessType, setBusinessType] = useState<'individual' | 'corporate'>('individual');
   const [selectedYear, setSelectedYear] = useState('2024');
-  const [documents, setDocuments] = useState([
+  const [documents] = useState([
     { id: 1, name: '確定申告書A', type: 'individual', status: 'completed', required: true },
     { id: 2, name: '青色申告決算書', type: 'individual', status: 'pending', required: true },
     { id: 3, name: '給与所得者の扶養控除等申告書', type: 'individual', status: 'pending', required: false },
@@ -52,8 +52,8 @@ const TaxFilingSupport: React.FC = () => {
               <button
                 onClick={() => setBusinessType('individual')}
                 className={`px-4 py-2 rounded-md ${businessType === 'individual'
-                    ? 'bg-primary text-white'
-                    : 'bg-surface-highlight text-text-muted hover:bg-border'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface-highlight text-text-muted hover:bg-border'
                   }`}
               >
                 個人事業主
@@ -61,8 +61,8 @@ const TaxFilingSupport: React.FC = () => {
               <button
                 onClick={() => setBusinessType('corporate')}
                 className={`px-4 py-2 rounded-md ${businessType === 'corporate'
-                    ? 'bg-primary text-white'
-                    : 'bg-surface-highlight text-text-muted hover:bg-border'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface-highlight text-text-muted hover:bg-border'
                   }`}
               >
                 法人
@@ -83,7 +83,66 @@ const TaxFilingSupport: React.FC = () => {
             </select>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="block md:hidden space-y-4">
+            {filteredDocuments.map((doc) => (
+              <div key={doc.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="font-medium text-text-main">{doc.name}</div>
+                  <div>
+                    {doc.required ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-600">
+                        必須
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-muted">
+                        任意
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center mb-3">
+                  {doc.status === 'completed' ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-600">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      完了
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-600">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      未完了
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col space-y-2 pt-2 border-t border-border">
+                  <button
+                    onClick={() => handleDownload(doc.id)}
+                    className="flex items-center justify-center px-3 py-2 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    ダウンロード
+                  </button>
+                  <button
+                    onClick={() => handleUpload(doc.id)}
+                    className="flex items-center justify-center px-3 py-2 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    アップロード
+                  </button>
+                  <button
+                    onClick={() => handleAutoImport(doc.id)}
+                    className="flex items-center justify-center px-3 py-2 border border-primary/30 rounded-md text-sm text-primary bg-primary/5 hover:bg-primary/10"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    自動取り込み
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-surface-highlight">
                 <tr>

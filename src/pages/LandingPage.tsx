@@ -201,79 +201,21 @@ const LandingPage: React.FC = () => {
               >
                 <motion.div
                   initial={{ opacity: 0, rotateX: 20, y: 100 }}
-                  animate={{ opacity: 1, rotateX: 5, y: 0 }}
+                  animate={{ opacity: 1, rotateX: 0, y: 0 }}
                   transition={{ delay: 2.5, duration: 1.5, ease: "easeOut" }}
                   className="relative z-10 transform-style-3d group"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/30 to-purple-500/30 rounded-3xl blur-3xl transform translate-y-10 group-hover:blur-2xl transition-all duration-700"></div>
-                  {/* Macbook Pro Mockup */}
-                  <div className="w-full rounded-2xl shadow-2xl border border-[#1e293b] relative z-10 bg-gradient-to-br from-blue-900/20 to-purple-900/20 flex items-center justify-center min-h-[400px] overflow-hidden">
-                    {/* Macbook Pro Screen */}
-                    <div className="w-full h-full bg-black rounded-b-2xl rounded-t-sm overflow-hidden relative">
-                      <img
-                        src="/assets/real_dashboard_desktop.png"
-                        alt="Ainance Dashboard on Macbook Pro"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.parentElement!.innerHTML = '<div class="text-center p-8"><div class="text-4xl mb-4">📊</div><p class="text-gray-400">Dashboard Preview</p></div>';
-                        }}
-                        onLoad={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          console.log('Macbook dashboard image loaded successfully:', target.src);
-                        }}
-                      />
-                      {/* Macbook Pro Notch */}
-                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/3 h-6 bg-black rounded-b-2xl"></div>
-                    </div>
-                    {/* Macbook Pro Bottom */}
-                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-4/5 h-4 bg-gradient-to-r from-gray-800 to-gray-900 rounded-full"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-purple-500/20 rounded-full blur-3xl transform translate-y-10 group-hover:blur-2xl transition-all duration-700"></div>
+
+                  {/* Hero Devices Image */}
+                  <div className="relative z-10 w-full h-[700px] overflow-hidden rounded-2xl">
+                    <img
+                      src="/assets/hero_devices.png"
+                      alt="Ainance Dashboard on MacBook and iPhone"
+                      className="w-full h-full object-cover object-center scale-110 transform group-hover:scale-[1.12] transition-transform duration-700"
+                      style={{ objectPosition: '30% 45%' }}
+                    />
                   </div>
-
-                  {/* Mobile Mockup Overlay */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.6 }}
-                    className="absolute -bottom-16 -right-8 w-[35%] rounded-[2.5rem] shadow-2xl border-[8px] border-[#1e293b] z-20 transform group-hover:translate-y-[-10px] transition-transform duration-700 bg-gradient-to-br from-purple-900/20 to-blue-900/20 flex items-center justify-center aspect-[9/16]"
-                  >
-                    <div className="w-full h-full bg-black rounded-[2rem] overflow-hidden relative">
-                      <img
-                        src="/assets/real_dashboard_mobile.png"
-                        alt="Ainance Mobile Dashboard"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.parentElement!.innerHTML = '<div class="text-center p-4"><div class="text-2xl mb-2">📱</div><p class="text-gray-400 text-xs">Mobile Preview</p></div>';
-                        }}
-                        onLoad={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          console.log('Mobile dashboard image loaded successfully:', target.src);
-                        }}
-                      />
-                      {/* Mobile Notch */}
-                      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-1/3 h-1 bg-black rounded-full"></div>
-                    </div>
-                  </motion.div>
-
-                  {/* Floating Cards */}
-                  <motion.div
-                    animate={{ y: [0, -15, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-12 -right-12 p-6 bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-green-400" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400 uppercase tracking-wider">Growth</p>
-                        <p className="text-2xl font-bold text-white">+128%</p>
-                      </div>
-                    </div>
-                  </motion.div>
                 </motion.div>
               </motion.div>
             </div>
@@ -529,21 +471,18 @@ const LandingPage: React.FC = () => {
                 className="relative order-2 lg:order-1"
               >
                 <div className="relative z-10">
-                  <div className="w-full max-w-md mx-auto rounded-[3rem] shadow-2xl border-[8px] border-[#1e293b] relative z-10 bg-gradient-to-br from-purple-900/20 to-blue-900/20 flex items-center justify-center aspect-[9/16] min-h-[500px]">
-                    <img
-                      src="/assets/real_dashboard_mobile.png"
-                      alt="Mobile App"
-                      className="w-full h-full object-cover rounded-[3rem]"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.parentElement!.innerHTML = '<div class="text-center p-8"><div class="text-4xl mb-4">📱</div><p class="text-gray-400">Mobile App Preview</p></div>';
-                      }}
-                      onLoad={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        console.log('Mobile app image loaded successfully:', target.src);
-                      }}
-                    />
+                  <div className="w-full max-w-md mx-auto rounded-[3rem] shadow-2xl border-[12px] border-gray-900 bg-gray-900 overflow-hidden">
+                    {/* iPhone Screen */}
+                    <div className="relative bg-black aspect-[9/19.5] overflow-hidden">
+                      {/* Dynamic Island */}
+                      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-28 h-8 bg-black rounded-full z-10"></div>
+                      {/* Dashboard Screenshot */}
+                      <img
+                        src="/assets/dashboard_mobile.png"
+                        alt="Ainance Mobile App"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 to-blue-500/30 rounded-[3rem] blur-3xl transform translate-y-10"></div>
                 </div>

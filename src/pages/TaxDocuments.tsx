@@ -123,8 +123,8 @@ const TaxDocuments: React.FC = () => {
                 <button
                   onClick={() => setBusinessType('individual')}
                   className={`flex-1 px-4 py-2 rounded-md ${businessType === 'individual'
-                      ? 'bg-primary text-white'
-                      : 'bg-surface-highlight text-text-muted hover:bg-border'
+                    ? 'bg-primary text-white'
+                    : 'bg-surface-highlight text-text-muted hover:bg-border'
                     }`}
                 >
                   個人事業主
@@ -132,8 +132,8 @@ const TaxDocuments: React.FC = () => {
                 <button
                   onClick={() => setBusinessType('corporate')}
                   className={`flex-1 px-4 py-2 rounded-md ${businessType === 'corporate'
-                      ? 'bg-primary text-white'
-                      : 'bg-surface-highlight text-text-muted hover:bg-border'
+                    ? 'bg-primary text-white'
+                    : 'bg-surface-highlight text-text-muted hover:bg-border'
                     }`}
                 >
                   法人
@@ -165,8 +165,8 @@ const TaxDocuments: React.FC = () => {
                 onClick={handleBulkDownload}
                 disabled={selectedDocuments.length === 0}
                 className={`flex-1 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${selectedDocuments.length > 0
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-surface-highlight text-text-muted cursor-not-allowed'
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-surface-highlight text-text-muted cursor-not-allowed'
                   }`}
               >
                 <Download className="h-4 w-4 inline mr-1" />
@@ -181,104 +181,169 @@ const TaxDocuments: React.FC = () => {
               <p className="mt-4 text-text-muted">データを読み込んでいます...</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border">
-                <thead className="bg-surface-highlight">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider w-12">
-                      <input
-                        type="checkbox"
-                        checked={selectedDocuments.length === taxDocuments.length && taxDocuments.length > 0}
-                        onChange={() => {
-                          if (selectedDocuments.length === taxDocuments.length) {
-                            setSelectedDocuments([]);
-                          } else {
-                            setSelectedDocuments(taxDocuments.map(doc => doc.id));
-                          }
-                        }}
-                        className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
-                      />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">書類名</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">年度</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">作成日</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-surface divide-y divide-border">
-                  {taxDocuments.length > 0 ? (
-                    taxDocuments.map((document) => (
-                      <tr key={document.id} className="hover:bg-surface-highlight">
-                        <td className="px-6 py-4 whitespace-nowrap">
+            <>
+              <div className="block md:hidden space-y-4">
+                {taxDocuments.length > 0 ? (
+                  taxDocuments.map((document) => (
+                    <div key={document.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center">
                           <input
                             type="checkbox"
                             checked={selectedDocuments.includes(document.id)}
                             onChange={() => toggleDocumentSelection(document.id)}
-                            className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
+                            className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background mr-3"
                           />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <FileText className="h-5 w-5 text-text-muted mr-3" />
-                            <div>
-                              <div className="text-sm font-medium text-text-main">{document.document_type}</div>
-                              <div className="text-sm text-text-muted">
-                                {document.business_type === 'individual' ? '個人事業主' : '法人'}
-                              </div>
+                          <div>
+                            <div className="font-medium text-text-main">{document.document_type}</div>
+                            <div className="text-sm text-text-muted">
+                              {document.business_type === 'individual' ? '個人事業主' : '法人'} • {document.year}年分
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
-                          {document.year}年分
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 text-text-muted mr-2" />
-                            {new Date(document.created_at).toLocaleDateString('ja-JP')}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleViewDocument(document)}
-                              className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              表示
-                            </button>
-                            <button
-                              onClick={() => handleDownloadDocument(document)}
-                              className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
-                            >
-                              <Download className="h-4 w-4 mr-1" />
-                              ダウンロード
-                            </button>
-                            <button
-                              onClick={() => toggleFavoriteDocument(document.id)}
-                              className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
-                            >
-                              {favoriteDocuments.includes(document.id) ? (
-                                <HeartOff className="h-4 w-4 mr-1 text-red-500" />
-                              ) : (
-                                <Heart className="h-4 w-4 mr-1" />
-                              )}
-                            </button>
-                          </div>
+                        </div>
+                        <button
+                          onClick={() => toggleFavoriteDocument(document.id)}
+                          className="text-text-muted hover:text-red-500"
+                        >
+                          {favoriteDocuments.includes(document.id) ? (
+                            <HeartOff className="h-5 w-5 text-red-500" />
+                          ) : (
+                            <Heart className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="flex items-center text-sm text-text-muted mb-3 pl-7">
+                        <Calendar className="h-4 w-4 text-text-muted mr-2" />
+                        {new Date(document.created_at).toLocaleDateString('ja-JP')}
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-2 border-t border-border pl-7">
+                        <button
+                          onClick={() => handleViewDocument(document)}
+                          className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          表示
+                        </button>
+                        <button
+                          onClick={() => handleDownloadDocument(document)}
+                          className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          ダウンロード
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-text-muted">
+                    <FileText className="mx-auto h-12 w-12 text-text-muted" />
+                    <h3 className="mt-2 text-sm font-medium text-text-main">申告書が見つかりません</h3>
+                    <p className="mt-1 text-sm text-text-muted">条件に一致する申告書がありません。</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-surface-highlight">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedDocuments.length === taxDocuments.length && taxDocuments.length > 0}
+                          onChange={() => {
+                            if (selectedDocuments.length === taxDocuments.length) {
+                              setSelectedDocuments([]);
+                            } else {
+                              setSelectedDocuments(taxDocuments.map(doc => doc.id));
+                            }
+                          }}
+                          className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
+                        />
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">書類名</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">年度</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">作成日</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-surface divide-y divide-border">
+                    {taxDocuments.length > 0 ? (
+                      taxDocuments.map((document) => (
+                        <tr key={document.id} className="hover:bg-surface-highlight">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selectedDocuments.includes(document.id)}
+                              onChange={() => toggleDocumentSelection(document.id)}
+                              className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <FileText className="h-5 w-5 text-text-muted mr-3" />
+                              <div>
+                                <div className="text-sm font-medium text-text-main">{document.document_type}</div>
+                                <div className="text-sm text-text-muted">
+                                  {document.business_type === 'individual' ? '個人事業主' : '法人'}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
+                            {document.year}年分
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 text-text-muted mr-2" />
+                              {new Date(document.created_at).toLocaleDateString('ja-JP')}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewDocument(document)}
+                                className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                表示
+                              </button>
+                              <button
+                                onClick={() => handleDownloadDocument(document)}
+                                className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
+                              >
+                                <Download className="h-4 w-4 mr-1" />
+                                ダウンロード
+                              </button>
+                              <button
+                                onClick={() => toggleFavoriteDocument(document.id)}
+                                className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight"
+                              >
+                                {favoriteDocuments.includes(document.id) ? (
+                                  <HeartOff className="h-4 w-4 mr-1 text-red-500" />
+                                ) : (
+                                  <Heart className="h-4 w-4 mr-1" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center">
+                          <FileText className="mx-auto h-12 w-12 text-text-muted" />
+                          <h3 className="mt-2 text-sm font-medium text-text-main">申告書が見つかりません</h3>
+                          <p className="mt-1 text-sm text-text-muted">条件に一致する申告書がありません。</p>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center">
-                        <FileText className="mx-auto h-12 w-12 text-text-muted" />
-                        <h3 className="mt-2 text-sm font-medium text-text-main">申告書が見つかりません</h3>
-                        <p className="mt-1 text-sm text-text-muted">条件に一致する申告書がありません。</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 

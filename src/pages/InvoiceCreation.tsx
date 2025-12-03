@@ -548,51 +548,96 @@ const InvoiceCreation: React.FC = () => {
                   </div>
 
                   {/* Items Table */}
-                  <div className="border border-border rounded-xl overflow-x-auto bg-background">
-                    <table className="w-full">
-                      <thead className="bg-surface-highlight">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">品目</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-24">数量</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">単価</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">金額</th>
-                          <th className="px-4 py-3 w-10"></th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {[1, 2].map((i) => (
-                          <tr key={i}>
-                            <td className="px-4 py-3">
-                              <input
-                                type="text"
-                                className="w-full bg-transparent border-none focus:ring-0 text-text-main placeholder-text-muted"
-                                placeholder="品目を入力"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
+                  {/* Items Table */}
+                  <div className="border border-border rounded-xl overflow-hidden bg-background">
+                    <div className="block md:hidden">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="p-4 border-b border-border last:border-b-0 bg-surface">
+                          <div className="mb-3">
+                            <label className="block text-xs font-medium text-text-muted mb-1">品目</label>
+                            <input
+                              type="text"
+                              className="w-full bg-background border border-border rounded px-3 py-2 text-text-main focus:outline-none focus:ring-1 focus:ring-primary"
+                              placeholder="品目を入力"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div>
+                              <label className="block text-xs font-medium text-text-muted mb-1">数量</label>
                               <input
                                 type="number"
-                                className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
+                                className="w-full bg-background border border-border rounded px-3 py-2 text-right text-text-main focus:outline-none focus:ring-1 focus:ring-primary"
                                 placeholder="1"
                               />
-                            </td>
-                            <td className="px-4 py-3">
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-text-muted mb-1">単価</label>
                               <input
                                 type="number"
-                                className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
+                                className="w-full bg-background border border-border rounded px-3 py-2 text-right text-text-main focus:outline-none focus:ring-1 focus:ring-primary"
                                 placeholder="0"
                               />
-                            </td>
-                            <td className="px-4 py-3 text-right text-text-main">¥0</td>
-                            <td className="px-4 py-3 text-center">
-                              <button className="text-text-muted hover:text-red-400 transition-colors">
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <div className="text-sm">
+                              <span className="text-text-muted mr-2">金額:</span>
+                              <span className="font-medium text-text-main">¥0</span>
+                            </div>
+                            <button className="text-text-muted hover:text-red-400 transition-colors p-2">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-surface-highlight">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">品目</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-24">数量</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">単価</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase w-32">金額</th>
+                            <th className="px-4 py-3 w-10"></th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {[1, 2].map((i) => (
+                            <tr key={i}>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="text"
+                                  className="w-full bg-transparent border-none focus:ring-0 text-text-main placeholder-text-muted"
+                                  placeholder="品目を入力"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
+                                  placeholder="1"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
+                                  placeholder="0"
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-right text-text-main">¥0</td>
+                              <td className="px-4 py-3 text-center">
+                                <button className="text-text-muted hover:text-red-400 transition-colors">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                     <div className="p-3 bg-surface-highlight border-t border-border">
                       <button className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1">
                         <Plus className="w-4 h-4" />

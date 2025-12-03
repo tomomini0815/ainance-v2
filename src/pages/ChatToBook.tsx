@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mic, Square, Send, Trash2, Download, Plus, Edit3, Save, CheckCircle, Circle } from 'lucide-react';
+import { ArrowLeft, Mic, Square, Send, Trash2, Edit3, Save, CheckCircle, Circle } from 'lucide-react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessType } from '../hooks/useBusinessType';
 import { useAuth } from '../hooks/useAuth';
@@ -25,21 +25,21 @@ const ChatToBook: React.FC = () => {
   const [editData, setEditData] = useState<Partial<Transaction>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
-  const [approvedTransactions, setApprovedTransactions] = useState<string[]>([]); // 承認された取引のIDを管理
+  // const [approvedTransactions, setApprovedTransactions] = useState<string[]>([]); // 承認された取引のIDを管理
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 選択されたカテゴリを管理
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージを管理
   const recognitionRef = useRef<any>(null);
   const { user } = useAuth();
   const { currentBusinessType } = useBusinessType(user?.id);
   // currentBusinessType?.business_typeを明示的に渡す
-  const { 
-    transactions: dbTransactions, 
-    createTransaction, 
-    updateTransaction, 
-    deleteTransaction, 
+  const {
+    transactions: dbTransactions,
+    createTransaction,
+    updateTransaction,
+    deleteTransaction,
     approveTransaction, // approveTransactionを追加
-    loading, 
-    fetchTransactions 
+    // loading,
+    fetchTransactions
   } = useTransactions(user?.id, currentBusinessType?.business_type);
   const navigate = useNavigate();
 
@@ -76,7 +76,7 @@ const ChatToBook: React.FC = () => {
       console.error('音声認識エラー:', event.error);
       setIsListening(false);
       setErrorMessage(null); // 既存のエラーメッセージをクリア
-      
+
       // ユーザーフレンドリーなエラーメッセージを表示
       let errorMessage = '音声認識中にエラーが発生しました。';
       switch (event.error) {
@@ -99,7 +99,7 @@ const ChatToBook: React.FC = () => {
           errorMessage = '指定された言語はサポートされていません。';
           break;
       }
-      
+
       // エラーメッセージを状態に設定
       setErrorMessage(errorMessage);
     };
@@ -119,21 +119,21 @@ const ChatToBook: React.FC = () => {
 
   // DBから取引データを取得
   useEffect(() => {
-    console.log('ChatToBook - DBから取引データを取得中', { 
+    console.log('ChatToBook - DBから取引データを取得中', {
       dbTransactionsCount: dbTransactions.length,
       dbTransactionIds: dbTransactions.map(t => t.id)
     });
-    
+
     // DBから取得した取引データのみを表示（ローカルの一時データは除外）
     // ただし、一括記録後に再取得されたデータはローカルリストに追加しない
     setTransactions(prev => {
       // DBから取得した取引のIDリスト
       const dbTransactionIds = dbTransactions.map((t: any) => t.id);
-      
+
       // ローカルの一時データ（DBにまだ保存されていないデータ）のみをフィルタリング
       // ただし、一括承認済みのデータは除外する
       const localTempData = prev.filter(t => !dbTransactionIds.includes(t.id));
-      
+
       // DBから取得したデータとローカルの一時データを結合
       // 承認された取引も表示するが、重複を避ける
       const mergedTransactions = [
@@ -150,19 +150,19 @@ const ChatToBook: React.FC = () => {
         })),
         ...localTempData
       ];
-      
+
       // 重複を削除（IDが同じものは除外）
-      const uniqueTransactions = mergedTransactions.filter((transaction, index, self) => 
+      const uniqueTransactions = mergedTransactions.filter((transaction, index, self) =>
         index === self.findIndex(t => t.id === transaction.id)
       );
-      
-      console.log('ChatToBook - 合成された取引データ:', { 
+
+      console.log('ChatToBook - 合成された取引データ:', {
         mergedCount: mergedTransactions.length,
         uniqueCount: uniqueTransactions.length,
         dbTransactionIds,
         localTempDataCount: localTempData.length
       });
-      
+
       return uniqueTransactions;
     });
   }, [dbTransactions]);
@@ -235,7 +235,7 @@ const ChatToBook: React.FC = () => {
       // 支出系（高優先度 - 消耗品費、接待交際費）
       { keywords: ['消耗品', '文具', 'コピー', 'オフィス用品'], category: '消耗品費', type: 'expense', priority: 10 },
       { keywords: ['接待', '会食', '食事', 'ディナー', 'ランチ'], category: '接待交際費', type: 'expense', priority: 9 },
-      
+
       // 支出系（中優先度）
       { keywords: ['交通費', '電車', 'バス', 'タクシー'], category: '旅費交通費', type: 'expense', priority: 7 },
       { keywords: ['食費', 'ランチ', 'ディナー', 'コーヒー'], category: '食費', type: 'expense', priority: 6 },
@@ -310,7 +310,7 @@ const ChatToBook: React.FC = () => {
 
       // UUID v4 を生成する関数
       const generateUUID = () => {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
           const r = Math.random() * 16 | 0,
             v = c == 'x' ? r : (r & 0x3 | 0x8);
           return v.toString(16);
@@ -358,12 +358,12 @@ const ChatToBook: React.FC = () => {
         setTransactions(prev =>
           prev.map(t => t.id === editingId ? { ...t, ...editData } as Transaction : t)
         );
-        
+
         // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
         await fetchTransactions();
-        
+
         console.log('handleSave - dbTransactions:', dbTransactions);
-        
+
         // DBから取得した最新のデータでローカル状態を更新
         setTransactions(prev => {
           const updatedTransactions = [...prev];
@@ -380,7 +380,7 @@ const ChatToBook: React.FC = () => {
           }
           return updatedTransactions;
         });
-        
+
         setEditingId(null);
         setEditData({});
       } catch (error) {
@@ -394,7 +394,7 @@ const ChatToBook: React.FC = () => {
     try {
       // DBから取引を削除
       const result = await deleteTransaction(id);
-      
+
       if (result.error) {
         throw result.error;
       }
@@ -409,82 +409,45 @@ const ChatToBook: React.FC = () => {
     }
   };
 
-  // 取引をDBに保存する関数
-  const saveTransactionToDB = async (transaction: Transaction): Promise<{ id: string; tempId: string } | null> => {
-    console.log('saveTransactionToDB - 取引データ:', transaction);
-    try {
-      // tempIdを保存（ローカルリストから削除する際に使用）
-      const tempId = transaction.id;
-      
-      // Supabaseに保存するデータを準備（idフィールドを除外）
-      const { id, ...transactionData } = transaction;
-      
-      // descriptionから「〇〇円」を削除
-      const cleanedDescription = transactionData.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
-      
-      console.log('saveTransactionToDB - 保存するデータ:', transactionData);
-      
-      // useTransactionsフックのcreateTransaction関数を使用して取引を保存
-      const result = await createTransaction({
-        ...transactionData,
-        item: cleanedDescription,
-        type: transactionData.type,
-        creator: user?.id || '00000000-0000-0000-0000-000000000000'
-      });
-      console.log('saveTransactionToDB - 保存結果:', result);
-      
-      if (result.data) {
-        // 保存成功時にtempIdと新しいIDを返す
-        return { id: result.data.id, tempId };
-      } else {
-        console.error('saveTransactionToDB - 保存失敗:', result.error);
-        return null;
-      }
-    } catch (error) {
-      console.error('saveTransactionToDB - エラー:', error);
-      return null;
-    }
-  };
-
   // 単一の取引を記録（新規作成または承認）
   const recordTransaction = async (transaction: Transaction) => {
     try {
       console.log('recordTransaction - 開始:', transaction);
-      
+
       // ユーザーが認証されているか確認
       if (!user?.id) {
         alert('ユーザーが認証されていません。ログインしてください。');
         console.error('ユーザーが認証されていません。userオブジェクト:', user);
         return;
       }
-      
+
       // ユーザーIDをログに出力
       console.log('認証されたユーザーID:', user.id);
-      
+
       // DBから最新の取引データを取得
       console.log('DBから最新の取引データを取得中...');
       await fetchTransactions();
-      
+
       // DBから取得した最新の取引データを再取得
       const currentDbTransactions = dbTransactions;
       console.log('DBから取得した最新の取引データ:', currentDbTransactions);
-      
+
       // 既存の取引かどうかを判断（IDがUUID形式かどうかで判断）
-      const isExistingTransaction = transaction.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(transaction.id) && 
-                                   currentDbTransactions.some(t => t.id === transaction.id);
-      console.log('既存の取引かどうか:', { 
-        isExistingTransaction, 
+      const isExistingTransaction = transaction.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(transaction.id) &&
+        currentDbTransactions.some(t => t.id === transaction.id);
+      console.log('既存の取引かどうか:', {
+        isExistingTransaction,
         transactionId: transaction.id,
         dbTransactionsCount: currentDbTransactions.length,
         dbTransactionIds: currentDbTransactions.map(t => t.id)
       });
-      
+
       if (isExistingTransaction) {
         console.log('既存取引の承認処理を開始');
         // 既存の取引を承認状態に更新
         const result = await approveTransaction(transaction.id);
         console.log('承認処理結果:', result);
-        
+
         if (result.error) {
           throw result.error;
         }
@@ -500,18 +463,18 @@ const ChatToBook: React.FC = () => {
 
         console.log('recordTransaction - 取引を承認しました');
         alert('取引が正常に承認されました');
-        
+
         // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
         await fetchTransactions();
         console.log('recordTransaction - データ再取得完了');
-        
+
         // ページ全体のデータ再取得をトリガーするカスタムイベントを発火
         window.dispatchEvent(new CustomEvent('transactionRecorded'));
       } else {
         console.log('新規取引作成処理を開始');
         // 新規取引を作成
         const cleanedDescription = transaction.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
-        
+
         const result = await createTransaction({
           item: cleanedDescription,
           amount: transaction.amount,
@@ -522,21 +485,21 @@ const ChatToBook: React.FC = () => {
           approval_status: 'approved' // 作成時に承認状態にする
         });
         console.log('新規取引作成結果:', result);
-        
+
         if (result.error) {
           throw result.error;
         }
-        
+
         // ローカルの一時データを削除
         setTransactions(prev => prev.filter(t => t.id !== transaction.id));
-        
+
         console.log('recordTransaction - 新規取引を作成しました');
         alert('取引が正常に作成されました');
-        
+
         // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
         await fetchTransactions();
         console.log('recordTransaction - データ再取得完了');
-        
+
         // ページ全体のデータ再取得をトリガーするカスタムイベントを発火
         window.dispatchEvent(new CustomEvent('transactionRecorded'));
       }
@@ -560,18 +523,18 @@ const ChatToBook: React.FC = () => {
       console.error('ユーザーが認証されていません。userオブジェクト:', user);
       return;
     }
-    
+
     // ユーザーIDをログに出力
     console.log('認証されたユーザーID:', user.id);
-    
+
     // DBから最新の取引データを取得
     console.log('DBから最新の取引データを取得中...');
     await fetchTransactions();
-    
+
     // DBから取得した最新の取引データを再取得
     const currentDbTransactions = dbTransactions;
     console.log('DBから取得した最新の取引データ:', currentDbTransactions);
-    
+
     const selectedItems = transactions.filter(t => selectedTransactions.includes(t.id));
     console.log('bulkRecordTransactions - 選択された取引:', selectedItems);
     console.log('bulkRecordTransactions - 現在のDB取引データ:', currentDbTransactions);
@@ -583,20 +546,20 @@ const ChatToBook: React.FC = () => {
 
     try {
       // 既存の取引と新規取引に分類（IDがUUID形式かどうかで判断）
-      const existingTransactions = selectedItems.filter(t => 
+      const existingTransactions = selectedItems.filter(t =>
         t.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.id) &&
         currentDbTransactions.some(dbT => dbT.id === t.id)
       );
-      const newTransactions = selectedItems.filter(t => 
+      const newTransactions = selectedItems.filter(t =>
         !t.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.id) ||
         !currentDbTransactions.some(dbT => dbT.id === t.id)
       );
-      
-      console.log('取引分類結果:', { 
-        existingCount: existingTransactions.length, 
+
+      console.log('取引分類結果:', {
+        existingCount: existingTransactions.length,
         newCount: newTransactions.length,
-        existingTransactions: existingTransactions.map(t => ({id: t.id, item: t.description})),
-        newTransactions: newTransactions.map(t => ({id: t.id, item: t.description})),
+        existingTransactions: existingTransactions.map(t => ({ id: t.id, item: t.description })),
+        newTransactions: newTransactions.map(t => ({ id: t.id, item: t.description })),
         dbTransactionsCount: currentDbTransactions.length,
         dbTransactionIds: currentDbTransactions.map(t => t.id)
       });
@@ -606,7 +569,7 @@ const ChatToBook: React.FC = () => {
         console.log('承認処理を実行:', transaction.id);
         return approveTransaction(transaction.id);
       });
-      
+
       // 新規作成処理のPromise
       const createPromises = newTransactions.map(transaction => {
         console.log('新規作成処理を実行:', transaction.id);
@@ -621,23 +584,23 @@ const ChatToBook: React.FC = () => {
           approval_status: 'approved' // 作成時に承認状態にする
         });
       });
-      
+
       // すべての処理を並列実行
       const approveResults = await Promise.allSettled(approvePromises);
       const createResults = await Promise.allSettled(createPromises);
-      
+
       console.log('bulkRecordTransactions - 承認結果:', approveResults);
       console.log('bulkRecordTransactions - 作成結果:', createResults);
-      
+
       const approveSuccessful = approveResults.filter(result => result.status === 'fulfilled').length;
       const createSuccessful = createResults.filter(result => result.status === 'fulfilled').length;
-      
+
       const approveFailed = approveResults.filter(result => result.status === 'rejected').length;
       const createFailed = createResults.filter(result => result.status === 'rejected').length;
-      
+
       const totalSuccessful = approveSuccessful + createSuccessful;
       const totalFailed = approveFailed + createFailed;
-      
+
       // 失敗した取引のエラー情報をコンソールに出力
       approveResults.forEach((result, index) => {
         if (result.status === 'rejected') {
@@ -650,7 +613,7 @@ const ChatToBook: React.FC = () => {
           }
         }
       });
-      
+
       createResults.forEach((result, index) => {
         if (result.status === 'rejected') {
           console.error(`新規取引作成失敗 (${index + 1}):`, result.reason);
@@ -681,14 +644,14 @@ const ChatToBook: React.FC = () => {
         // 新規作成された取引はローカルリストから削除
         return updatedTransactions.filter(t => !newTransactions.some(nt => nt.id === t.id));
       });
-      
+
       // 選択状態をクリア
       setSelectedTransactions([]);
-      
+
       // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
       await fetchTransactions();
       console.log('bulkRecordTransactions - データ再取得完了');
-      
+
       // ページ全体のデータ再取得をトリガーするカスタムイベントを発火
       window.dispatchEvent(new CustomEvent('transactionRecorded'));
       // 承認イベントを発火
@@ -734,7 +697,7 @@ const ChatToBook: React.FC = () => {
       // 成功した取引をローカルリストから削除
       setTransactions(prev => prev.filter(t => !selectedTransactions.includes(t.id)));
       setSelectedTransactions([]);
-      
+
       // データの再取得
       await fetchTransactions();
     } catch (error) {
@@ -761,29 +724,29 @@ const ChatToBook: React.FC = () => {
     }
   };
 
-  const exportTransactions = () => {
-    // 取引データをCSV形式でエクスポート
-    const csvContent = [
-      ['日付', '説明', '金額', 'カテゴリ', 'タイプ'],
-      ...transactions.map(t => [
-        t.date,
-        `"${t.description}"`,
-        t.amount.toString(),
-        t.category,
-        t.type
-      ])
-    ].map(row => row.join(',')).join('\n');
+  // const exportTransactions = () => {
+  //   // 取引データをCSV形式でエクスポート
+  //   const csvContent = [
+  //     ['日付', '説明', '金額', 'カテゴリ', 'タイプ'],
+  //     ...transactions.map(t => [
+  //       t.date,
+  //       `"${t.description}"`,
+  //       t.amount.toString(),
+  //       t.category,
+  //       t.type
+  //     ])
+  //   ].map(row => row.join(',')).join('\n');
 
-    const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `取引データ_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  //   const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
+  //   const url = URL.createObjectURL(blob);
+  //   const link = document.createElement('a');
+  //   link.setAttribute('href', url);
+  //   link.setAttribute('download', `取引データ_${new Date().toISOString().split('T')[0]}.csv`);
+  //   link.style.visibility = 'hidden';
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // };
 
   return (
     <div className="min-h-screen bg-background">
@@ -805,8 +768,8 @@ const ChatToBook: React.FC = () => {
                 <button
                   onClick={isListening ? stopListening : startListening}
                   className={`flex items-center justify-center w-16 h-16 rounded-full ${isListening
-                      ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                      : 'bg-primary hover:bg-primary/90'
+                    ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                    : 'bg-primary hover:bg-primary/90'
                     } text-white transition-colors shadow-lg shadow-primary/25`}
                 >
                   {isListening ? (
@@ -850,21 +813,20 @@ const ChatToBook: React.FC = () => {
                 className="w-full px-3 py-2 bg-background border border-border rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="音声認識されたテキストがここに表示されます..."
               />
-              
+
               {/* カテゴリタグ */}
               <div className="mt-3 flex flex-wrap gap-2">
                 {[
-                  '売上', '給与', '交通費', '食費', '消耗品費', 
+                  '売上', '給与', '交通費', '食費', '消耗品費',
                   '接待交際費', '通信費', '水道光熱費', '雑費', '未分類'
                 ].map((category) => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
-                      selectedCategory === category
-                        ? 'bg-primary/20 border-primary text-primary'
-                        : 'bg-surface-highlight text-text-main border-border hover:bg-surface-hover'
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${selectedCategory === category
+                      ? 'bg-primary/20 border-primary text-primary'
+                      : 'bg-surface-highlight text-text-main border-border hover:bg-surface-hover'
+                      }`}
                   >
                     {category}
                   </button>
@@ -885,8 +847,8 @@ const ChatToBook: React.FC = () => {
                 onClick={() => setTranscript('')}
                 disabled={!transcript.trim()}
                 className={`px-4 py-2 rounded-md transition-colors ${!transcript.trim()
-                    ? 'bg-surface-highlight text-text-muted cursor-not-allowed'
-                    : 'bg-gray-500 text-white hover:bg-gray-600'
+                  ? 'bg-surface-highlight text-text-muted cursor-not-allowed'
+                  : 'bg-gray-500 text-white hover:bg-gray-600'
                   }`}
               >
                 クリア
@@ -895,8 +857,8 @@ const ChatToBook: React.FC = () => {
                 onClick={processTranscript}
                 disabled={!transcript.trim() || isProcessing}
                 className={`flex items-center px-4 py-2 rounded-md transition-colors ${!transcript.trim() || isProcessing
-                    ? 'bg-surface-highlight text-text-muted cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
+                  ? 'bg-surface-highlight text-text-muted cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700'
                   }`}
               >
                 {isProcessing ? (
@@ -993,35 +955,14 @@ const ChatToBook: React.FC = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-surface-highlight">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                    <button
-                      onClick={toggleAllTransactionsSelection}
-                      className="flex items-center"
-                    >
-                      {selectedTransactions.length === transactions.length && transactions.length > 0 ? (
-                        <CheckCircle className="w-4 h-4 text-primary" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-text-muted" />
-                      )}
-                    </button>
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">日付</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">説明</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
-                </tr>
-              </thead>
-              <tbody className="bg-surface divide-y divide-border">
-                {transactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
-                    <td className="px-4 py-3 text-sm">
+            <div className="block md:hidden space-y-4">
+              {transactions.map((transaction) => (
+                <div key={transaction.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center">
                       <button
                         onClick={() => toggleTransactionSelection(transaction.id)}
-                        className="flex items-center"
+                        className="mr-3"
                         disabled={transaction.approval_status === 'approved'}
                       >
                         {selectedTransactions.includes(transaction.id) ? (
@@ -1030,46 +971,51 @@ const ChatToBook: React.FC = () => {
                           <Circle className="w-5 h-5 text-text-muted" />
                         )}
                       </button>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-main">
-                      {editingId === transaction.id ? (
-                        <input
-                          type="date"
-                          value={editData.date || transaction.date}
-                          onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
-                          className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                        />
-                      ) : (
-                        transaction.date
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-main max-w-xs">
-                      {editingId === transaction.id ? (
-                        <input
-                          type="text"
-                          value={editData.description !== undefined ? editData.description : transaction.description}
-                          onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-                          className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                        />
-                      ) : (
-                        transaction.description
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-main">
+                      <div>
+                        <div className="font-medium text-text-main">
+                          {editingId === transaction.id ? (
+                            <input
+                              type="text"
+                              value={editData.description !== undefined ? editData.description : transaction.description}
+                              onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                              className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                            />
+                          ) : (
+                            transaction.description
+                          )}
+                        </div>
+                        <div className="text-sm text-text-muted mt-1">
+                          {editingId === transaction.id ? (
+                            <input
+                              type="date"
+                              value={editData.date || transaction.date}
+                              onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
+                              className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                            />
+                          ) : (
+                            transaction.date
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
                       {editingId === transaction.id ? (
                         <input
                           type="number"
                           value={editData.amount || transaction.amount}
                           onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                          className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                          className="w-24 px-2 py-1 bg-background border border-border rounded text-sm text-text-main text-right"
                         />
                       ) : (
-                        <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+                        <span className={`font-medium ${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
                           {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
                         </span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-main">
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
+                    <div className="text-sm">
                       {editingId === transaction.id ? (
                         <select
                           value={editData.category || transaction.category}
@@ -1088,14 +1034,17 @@ const ChatToBook: React.FC = () => {
                           <option value="未分類">未分類</option>
                         </select>
                       ) : (
-                        transaction.category
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-muted">
+                          {transaction.category}
+                        </span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium">
+                    </div>
+
+                    <div className="flex space-x-2">
                       {editingId === transaction.id ? (
                         <button
                           onClick={handleSave}
-                          className="text-green-500 hover:text-green-600 mr-2"
+                          className="p-2 text-green-500 hover:text-green-600 bg-surface-highlight rounded-full"
                         >
                           <Save className="w-4 h-4" />
                         </button>
@@ -1103,32 +1052,171 @@ const ChatToBook: React.FC = () => {
                         <>
                           <button
                             onClick={() => recordTransaction(transaction)}
-                            className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
+                            className={`p-2 rounded-full bg-surface-highlight ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
                             disabled={transaction.approval_status === 'approved'}
                           >
                             <CheckCircle className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEdit(transaction)}
-                            className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
+                            className={`p-2 rounded-full bg-surface-highlight ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
                             disabled={transaction.approval_status === 'approved'}
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(transaction.id)}
-                            className={transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}
+                            className={`p-2 rounded-full bg-surface-highlight ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}`}
                             disabled={transaction.approval_status === 'approved'}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </>
                       )}
-                    </td>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead className="bg-surface-highlight">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
+                      <button
+                        onClick={toggleAllTransactionsSelection}
+                        className="flex items-center"
+                      >
+                        {selectedTransactions.length === transactions.length && transactions.length > 0 ? (
+                          <CheckCircle className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Circle className="w-4 h-4 text-text-muted" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">日付</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">説明</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-surface divide-y divide-border">
+                  {transactions.map((transaction) => (
+                    <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
+                      <td className="px-4 py-3 text-sm">
+                        <button
+                          onClick={() => toggleTransactionSelection(transaction.id)}
+                          className="flex items-center"
+                          disabled={transaction.approval_status === 'approved'}
+                        >
+                          {selectedTransactions.includes(transaction.id) ? (
+                            <CheckCircle className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Circle className="w-5 h-5 text-text-muted" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-text-main">
+                        {editingId === transaction.id ? (
+                          <input
+                            type="date"
+                            value={editData.date || transaction.date}
+                            onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                          />
+                        ) : (
+                          transaction.date
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-text-main max-w-xs">
+                        {editingId === transaction.id ? (
+                          <input
+                            type="text"
+                            value={editData.description !== undefined ? editData.description : transaction.description}
+                            onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                          />
+                        ) : (
+                          transaction.description
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-text-main">
+                        {editingId === transaction.id ? (
+                          <input
+                            type="number"
+                            value={editData.amount || transaction.amount}
+                            onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                          />
+                        ) : (
+                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+                            {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-text-main">
+                        {editingId === transaction.id ? (
+                          <select
+                            value={editData.category || transaction.category}
+                            onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                          >
+                            <option value="売上">売上</option>
+                            <option value="給与">給与</option>
+                            <option value="交通費">交通費</option>
+                            <option value="食費">食費</option>
+                            <option value="消耗品費">消耗品費</option>
+                            <option value="接待交際費">接待交際費</option>
+                            <option value="通信費">通信費</option>
+                            <option value="水道光熱費">水道光熱費</option>
+                            <option value="雑費">雑費</option>
+                            <option value="未分類">未分類</option>
+                          </select>
+                        ) : (
+                          transaction.category
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {editingId === transaction.id ? (
+                          <button
+                            onClick={handleSave}
+                            className="text-green-500 hover:text-green-600 mr-2"
+                          >
+                            <Save className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => recordTransaction(transaction)}
+                              className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
+                              disabled={transaction.approval_status === 'approved'}
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(transaction)}
+                              className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
+                              disabled={transaction.approval_status === 'approved'}
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(transaction.id)}
+                              className={transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}
+                              disabled={transaction.approval_status === 'approved'}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {transactions.filter(transaction => transaction.approval_status !== 'approved').length === 0 && (
               <div className="text-center py-8 text-text-muted">

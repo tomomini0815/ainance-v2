@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Plus, Edit, Trash2, Save, X, Eye } from 'lucide-react';
 import { getTaxDocumentTemplates, saveTaxDocumentTemplate, deleteTaxDocumentTemplate } from '../services/TaxFilingService';
 
 const TaxDocumentTemplates: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [businessType, setBusinessType] = useState<'individual' | 'corporate'>('individual');
@@ -169,7 +169,7 @@ const TaxDocumentTemplates: React.FC = () => {
     console.log('テンプレートを表示:', template);
   };
 
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  // const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
   return (
     <div className="min-h-screen bg-background">
@@ -189,8 +189,8 @@ const TaxDocumentTemplates: React.FC = () => {
                 <button
                   onClick={() => setBusinessType('individual')}
                   className={`px-4 py-2 rounded-md ${businessType === 'individual'
-                      ? 'bg-primary text-white'
-                      : 'bg-surface-highlight text-text-muted hover:bg-border'
+                    ? 'bg-primary text-white'
+                    : 'bg-surface-highlight text-text-muted hover:bg-border'
                     }`}
                 >
                   個人事業主
@@ -198,8 +198,8 @@ const TaxDocumentTemplates: React.FC = () => {
                 <button
                   onClick={() => setBusinessType('corporate')}
                   className={`px-4 py-2 rounded-md ${businessType === 'corporate'
-                      ? 'bg-primary text-white'
-                      : 'bg-surface-highlight text-text-muted hover:bg-border'
+                    ? 'bg-primary text-white'
+                    : 'bg-surface-highlight text-text-muted hover:bg-border'
                     }`}
                 >
                   法人
@@ -222,76 +222,138 @@ const TaxDocumentTemplates: React.FC = () => {
               <p className="mt-4 text-text-muted">データを読み込んでいます...</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border">
-                <thead className="bg-surface-highlight">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">テンプレート名</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">書類タイプ</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">フィールド数</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-surface divide-y divide-border">
-                  {templates.length > 0 ? (
-                    templates.map((template) => (
-                      <tr key={template.id} className="hover:bg-surface-highlight/50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <FileText className="h-5 w-5 text-text-muted mr-3" />
-                            <div>
-                              <div className="text-sm font-medium text-text-main">{template.name}</div>
-                              <div className="text-sm text-text-muted">
-                                {template.business_type === 'individual' ? '個人事業主' : '法人'}
-                              </div>
+            <>
+              <div className="block md:hidden space-y-4">
+                {templates.length > 0 ? (
+                  templates.map((template) => (
+                    <div key={template.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center">
+                          <FileText className="h-5 w-5 text-text-muted mr-3" />
+                          <div>
+                            <div className="font-medium text-text-main">{template.name}</div>
+                            <div className="text-sm text-text-muted">
+                              {template.business_type === 'individual' ? '個人事業主' : '法人'}
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
-                          {template.document_type}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
-                          {template.fields?.length || 0} フィールド
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleViewTemplate(template)}
-                              className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight hover:text-text-main"
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              表示
-                            </button>
-                            <button
-                              onClick={() => setEditingTemplate({ ...template, businessType: template.business_type })}
-                              className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight hover:text-text-main"
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              編集
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTemplate(template.id)}
-                              className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-red-600 bg-surface hover:bg-red-50 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              削除
-                            </button>
-                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-2 mb-3 text-sm">
+                        <span className="text-text-muted">書類タイプ:</span>
+                        <span className="text-text-main">{template.document_type}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center mb-3 text-sm">
+                        <span className="text-text-muted">フィールド数:</span>
+                        <span className="text-text-main">{template.fields?.length || 0} フィールド</span>
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-3 border-t border-border">
+                        <button
+                          onClick={() => handleViewTemplate(template)}
+                          className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight hover:text-text-main"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          表示
+                        </button>
+                        <button
+                          onClick={() => setEditingTemplate({ ...template, businessType: template.business_type })}
+                          className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight hover:text-text-main"
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          編集
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTemplate(template.id)}
+                          className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-red-600 bg-surface hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          削除
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-text-muted">
+                    <FileText className="mx-auto h-12 w-12 text-text-muted" />
+                    <h3 className="mt-2 text-sm font-medium text-text-main">テンプレートが見つかりません</h3>
+                    <p className="mt-1 text-sm text-text-muted">まだテンプレートが作成されていません。</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-surface-highlight">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">テンプレート名</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">書類タイプ</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">フィールド数</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-surface divide-y divide-border">
+                    {templates.length > 0 ? (
+                      templates.map((template) => (
+                        <tr key={template.id} className="hover:bg-surface-highlight/50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <FileText className="h-5 w-5 text-text-muted mr-3" />
+                              <div>
+                                <div className="text-sm font-medium text-text-main">{template.name}</div>
+                                <div className="text-sm text-text-muted">
+                                  {template.business_type === 'individual' ? '個人事業主' : '法人'}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
+                            {template.document_type}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
+                            {template.fields?.length || 0} フィールド
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewTemplate(template)}
+                                className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight hover:text-text-main"
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                表示
+                              </button>
+                              <button
+                                onClick={() => setEditingTemplate({ ...template, businessType: template.business_type })}
+                                className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight hover:text-text-main"
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                編集
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTemplate(template.id)}
+                                className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-red-600 bg-surface hover:bg-red-50 dark:hover:bg-red-900/20"
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                削除
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-12 text-center">
+                          <FileText className="mx-auto h-12 w-12 text-text-muted" />
+                          <h3 className="mt-2 text-sm font-medium text-text-main">テンプレートが見つかりません</h3>
+                          <p className="mt-1 text-sm text-text-muted">まだテンプレートが作成されていません。</p>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center">
-                        <FileText className="mx-auto h-12 w-12 text-text-muted" />
-                        <h3 className="mt-2 text-sm font-medium text-text-main">テンプレートが見つかりません</h3>
-                        <p className="mt-1 text-sm text-text-muted">まだテンプレートが作成されていません。</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </main>
@@ -337,8 +399,8 @@ const TaxDocumentTemplates: React.FC = () => {
                     <button
                       onClick={() => setNewTemplate({ ...newTemplate, businessType: 'individual' })}
                       className={`px-4 py-2 rounded-md ${newTemplate.businessType === 'individual'
-                          ? 'bg-primary text-white'
-                          : 'bg-surface-highlight text-text-muted hover:bg-border'
+                        ? 'bg-primary text-white'
+                        : 'bg-surface-highlight text-text-muted hover:bg-border'
                         }`}
                     >
                       個人事業主
@@ -346,8 +408,8 @@ const TaxDocumentTemplates: React.FC = () => {
                     <button
                       onClick={() => setNewTemplate({ ...newTemplate, businessType: 'corporate' })}
                       className={`px-4 py-2 rounded-md ${newTemplate.businessType === 'corporate'
-                          ? 'bg-primary text-white'
-                          : 'bg-surface-highlight text-text-muted hover:bg-border'
+                        ? 'bg-primary text-white'
+                        : 'bg-surface-highlight text-text-muted hover:bg-border'
                         }`}
                     >
                       法人
@@ -517,8 +579,8 @@ const TaxDocumentTemplates: React.FC = () => {
                     <button
                       onClick={() => setEditingTemplate({ ...editingTemplate, businessType: 'individual' })}
                       className={`px-4 py-2 rounded-md ${editingTemplate.businessType === 'individual'
-                          ? 'bg-primary text-white'
-                          : 'bg-surface-highlight text-text-muted hover:bg-border'
+                        ? 'bg-primary text-white'
+                        : 'bg-surface-highlight text-text-muted hover:bg-border'
                         }`}
                     >
                       個人事業主
@@ -526,8 +588,8 @@ const TaxDocumentTemplates: React.FC = () => {
                     <button
                       onClick={() => setEditingTemplate({ ...editingTemplate, businessType: 'corporate' })}
                       className={`px-4 py-2 rounded-md ${editingTemplate.businessType === 'corporate'
-                          ? 'bg-primary text-white'
-                          : 'bg-surface-highlight text-text-muted hover:bg-border'
+                        ? 'bg-primary text-white'
+                        : 'bg-surface-highlight text-text-muted hover:bg-border'
                         }`}
                     >
                       法人
