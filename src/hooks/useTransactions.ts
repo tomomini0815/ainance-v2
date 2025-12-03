@@ -150,6 +150,18 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
     try {
       const tableName = getTableName();
       console.log('取引を更新中:', { id, updates, tableName });
+      
+      // creatorが無効な場合はエラーを表示
+      if (updates.creator && updates.creator === '00000000-0000-0000-0000-000000000000') {
+        console.error('無効なcreator IDが検出されました。');
+        return { data: null, error: new Error('無効なユーザーIDです。ログインしていることを確認してください。') };
+      }
+
+      // creatorが既に設定されている場合は更新しない
+      if (updates.creator) {
+        delete updates.creator;
+      }
+
       const { data, error } = await supabase
         .from(tableName)
         .update(updates)

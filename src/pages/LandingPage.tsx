@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Sparkles, Zap, Shield, TrendingUp, Menu, X, Play } from 'lucide-react';
+import { ArrowRight, Sparkles, TrendingUp, Menu, X, Play, Zap, Brain, BarChart3, Clock, CheckCircle2, Smartphone, Globe } from 'lucide-react';
 import { SmoothScroll } from '../components/ui/SmoothScroll';
 import { CustomCursor } from '../components/ui/CustomCursor';
 import { MagneticButton } from '../components/ui/MagneticButton';
@@ -38,11 +38,6 @@ const LandingPage: React.FC = () => {
       clearTimeout(timer);
     };
   }, []);
-
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
-  };
 
   return (
     <SmoothScroll>
@@ -102,14 +97,6 @@ const LandingPage: React.FC = () => {
 
               {/* Desktop Menu */}
               <div className="hidden md:flex items-center space-x-8">
-                {['Features', 'Benefits', 'Pricing'].map((item) => (
-                  <MagneticButton key={item}>
-                    <a href={`#${item.toLowerCase()}`} className="text-sm font-medium text-gray-400 hover:text-white transition-colors relative group overflow-hidden block">
-                      <span className="block group-hover:-translate-y-full transition-transform duration-300">{item}</span>
-                      <span className="absolute top-full left-0 block group-hover:-translate-y-full transition-transform duration-300 text-white">{item}</span>
-                    </a>
-                  </MagneticButton>
-                ))}
                 <MagneticButton onClick={() => navigate('/login')}>
                   <span className="text-sm font-medium text-white px-4 py-2">Login</span>
                 </MagneticButton>
@@ -293,91 +280,237 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Features Bento Grid */}
-        <section id="features" className="py-32 relative bg-[#050b1d]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+
+
+        {/* Features Bento Grid - Enhanced */}
+        <section id="features" className="py-32 relative bg-gradient-to-b from-[#030712] via-[#050b1d] to-[#030712]">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px]" />
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <motion.div
-              initial="hidden"
-              whileInView="visible"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              variants={fadeInUp}
+              transition={{ duration: 0.8 }}
               className="text-center mb-20"
             >
+              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
+                <Sparkles className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-medium text-blue-400 tracking-wide">POWERFUL FEATURES</span>
+              </div>
               <h2 className="text-4xl sm:text-6xl font-bold mb-6 tracking-tighter">
-                Crafted for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Excellence</span>
+                経理業務を革新する
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+                  AI搭載機能
+                </span>
               </h2>
+              <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                最先端のAI技術で、経理業務の効率を劇的に向上させます
+              </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
-              {/* Large Feature */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="md:col-span-2 row-span-2 rounded-[2rem] bg-[#0f172a] border border-white/5 p-10 relative overflow-hidden group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="relative z-10 h-full flex flex-col justify-between">
-                  <div>
-                    <div className="w-14 h-14 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-6">
-                      <Zap className="w-7 h-7 text-blue-400" />
-                    </div>
-                    <h3 className="text-3xl font-bold mb-4">AIによる自動経理処理</h3>
-                    <p className="text-gray-400 text-lg max-w-md">レシートや請求書をAIが自動で処理。99%の高精度で仕分けを行い、入力作業の時間を80%以上削減します。経理の専門知識がなくても簡単に利用可能。</p>
-                  </div>
-                  <div className="mt-8 rounded-xl bg-black/30 border border-white/5 p-4 backdrop-blur-sm transform translate-y-10 group-hover:translate-y-0 transition-transform duration-500">
-                    <div className="flex items-center space-x-4">
-                      <div className="h-2 w-24 bg-gray-700 rounded-full"></div>
-                      <div className="h-2 w-12 bg-blue-500 rounded-full"></div>
-                    </div>
-                    <div className="mt-4 h-32 bg-gradient-to-t from-blue-500/10 to-transparent rounded-lg"></div>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Small Feature 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[320px]">
+              {/* Large Feature 1 - AI Processing */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="rounded-[2rem] bg-[#0f172a] border border-white/5 p-8 relative overflow-hidden group hover:border-purple-500/30 transition-colors"
+                className="md:col-span-2 row-span-2 rounded-[2rem] bg-gradient-to-br from-[#0f172a] to-[#1e293b] border border-white/5 p-10 relative overflow-hidden group hover:border-blue-500/30 transition-all duration-500"
               >
-                <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl group-hover:bg-purple-500/30 transition-colors"></div>
-                <Sparkles className="w-10 h-10 text-purple-400 mb-6" />
-                <h3 className="text-xl font-bold mb-2">スマートなカテゴリ分類</h3>
-                <p className="text-gray-400 text-sm">AIが自動で99以上のカテゴリに支出を分類。税務申告や経営分析に必要な情報をすぐに整理できます。</p>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div>
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+                      <Zap className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <h3 className="text-3xl font-bold mb-3 group-hover:text-blue-400 transition-colors">
+                      AIによる超高速処理
+                    </h3>
+                    <p className="text-gray-400 text-lg leading-relaxed max-w-xl">
+                      レシート・請求書を瞬時に読み取り、自動で仕訳。
+                      <span className="text-white font-semibold"> 99.2%の精度</span>で処理し、
+                      <span className="text-blue-400 font-semibold"> 入力時間を80%削減</span>。
+                      経理の専門知識がなくても、プロ並みの精度で処理できます。
+                    </p>
+                  </div>
+
+                  <div className="mt-6 space-y-2">
+                    <div className="flex items-center space-x-3 text-sm">
+                      <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <span className="text-gray-300">複数フォーマット対応（PDF、画像、スキャン）</span>
+                    </div>
+                    <div className="flex items-center space-x-3 text-sm">
+                      <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <span className="text-gray-300">手書き文字も高精度で認識</span>
+                    </div>
+                    <div className="flex items-center space-x-3 text-sm">
+                      <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <span className="text-gray-300">一括アップロードで大量処理も瞬時に完了</span>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
 
-              {/* Small Feature 2 */}
+              {/* Small Feature 1 - Smart Categorization - Extended */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="rounded-[2rem] bg-[#0f172a] border border-white/5 p-8 relative overflow-hidden group hover:border-green-500/30 transition-colors"
+                className="row-span-2 rounded-[2rem] bg-gradient-to-br from-[#0f172a] to-[#1e293b] border border-white/5 p-8 relative overflow-hidden group hover:border-purple-500/30 transition-colors"
               >
-                <div className="absolute -right-10 -top-10 w-32 h-32 bg-green-500/20 rounded-full blur-2xl group-hover:bg-green-500/30 transition-colors"></div>
-                <Shield className="w-10 h-10 text-green-400 mb-6" />
-                <h3 className="text-xl font-bold mb-2">銀行レベルのセキュリティ</h3>
-                <p className="text-gray-400 text-sm">256ビット暗号化と多重認証により、財務データを徹底的に保護。安心してご利用いただけます。</p>
+                <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl group-hover:bg-purple-500/40 transition-all duration-500" />
+                <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl" />
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div>
+                    <div className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                      <Brain className="w-7 h-7 text-purple-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-4">スマートな自動分類</h3>
+                    <p className="text-gray-400 leading-relaxed mb-6">
+                      AIが支出を<span className="text-purple-400 font-semibold">99以上のカテゴリ</span>に自動分類。
+                      学習機能で使うほど精度が向上します。
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3 text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                      <span className="text-gray-300">勘定科目を自動提案</span>
+                    </div>
+                    <div className="flex items-center space-x-3 text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                      <span className="text-gray-300">税区分も自動判定</span>
+                    </div>
+                    <div className="flex items-center space-x-3 text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                      <span className="text-gray-300">過去の仕訳から学習</span>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
 
-              {/* Medium Feature */}
+              {/* Medium Feature - Real-time Analytics */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
-                className="md:col-span-3 rounded-[2rem] bg-[#0f172a] border border-white/5 p-10 relative overflow-hidden group flex items-center justify-between"
+                className="md:col-span-2 rounded-[2rem] bg-gradient-to-br from-[#0f172a] to-[#1e293b] border border-white/5 p-10 relative overflow-hidden group hover:border-blue-500/30 transition-all duration-500"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-                <div className="max-w-xl relative z-10">
-                  <h3 className="text-3xl font-bold mb-4">リアルタイム経営分析</h3>
-                  <p className="text-gray-400 text-lg">現金流量、支出、利益をリアルタイムで可視化。経営判断に必要な情報を常に最新の状態で提供します。</p>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
+
+                <div className="relative z-10 flex items-center justify-between h-full">
+                  <div className="max-w-xl">
+                    <div className="w-14 h-14 rounded-xl bg-blue-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                      <BarChart3 className="w-7 h-7 text-blue-400" />
+                    </div>
+                    <h3 className="text-3xl font-bold mb-4">リアルタイム経営分析</h3>
+                    <p className="text-gray-400 text-lg leading-relaxed mb-6">
+                      キャッシュフロー、損益、予算進捗を<span className="text-blue-400 font-semibold">リアルタイムで可視化</span>。
+                      経営判断に必要な情報を、いつでもどこでも確認できます。
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <div className="px-4 py-2 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-xs text-gray-400">月次レポート</p>
+                        <p className="text-lg font-bold text-white">自動生成</p>
+                      </div>
+                      <div className="px-4 py-2 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-xs text-gray-400">予測精度</p>
+                        <p className="text-lg font-bold text-green-400">95%+</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hidden lg:block">
+                    <TrendingUp className="w-40 h-40 text-white/5 group-hover:text-blue-500/20 transition-colors duration-500" />
+                  </div>
                 </div>
-                <div className="hidden md:block relative z-10">
-                  <TrendingUp className="w-32 h-32 text-white/5 group-hover:text-white/10 transition-colors" />
+              </motion.div>
+
+              {/* Small Feature 2 - Time Saving */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+                className="rounded-[2rem] bg-[#0f172a] border border-white/5 p-8 relative overflow-hidden group hover:border-orange-500/30 transition-colors"
+              >
+                <div className="absolute -right-10 -top-10 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl group-hover:bg-orange-500/40 transition-all duration-500" />
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <Clock className="w-6 h-6 text-orange-400" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">圧倒的な時短効果</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    月末処理が<span className="text-orange-400 font-semibold">3日→30分</span>に。
+                    空いた時間を本業に集中できます。
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Large Feature 2 - Multi-device */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5 }}
+                className="md:col-span-2 rounded-[2rem] bg-gradient-to-br from-[#0f172a] to-[#1e293b] border border-white/5 p-10 relative overflow-hidden group hover:border-purple-500/30 transition-all duration-500"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 via-transparent to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
+
+                <div className="relative z-10 flex items-center justify-between h-full">
+                  <div className="max-w-xl">
+                    <div className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                      <Smartphone className="w-7 h-7 text-purple-400" />
+                    </div>
+                    <h3 className="text-3xl font-bold mb-4">どこでも、いつでも</h3>
+                    <p className="text-gray-400 text-lg leading-relaxed mb-6">
+                      PC、スマホ、タブレット。すべてのデバイスで<span className="text-purple-400 font-semibold">完全同期</span>。
+                      外出先でもレシート撮影→即座に記帳完了。
+                    </p>
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2 text-sm text-gray-300">
+                        <div className="w-2 h-2 rounded-full bg-green-400" />
+                        <span>iOS / Android</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-sm text-gray-300">
+                        <div className="w-2 h-2 rounded-full bg-blue-400" />
+                        <span>Web / Desktop</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hidden lg:block">
+                    <Globe className="w-32 h-32 text-white/5 group-hover:text-purple-500/20 group-hover:rotate-12 transition-all duration-500" />
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Small Feature 3 - Integration */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.6 }}
+                className="rounded-[2rem] bg-[#0f172a] border border-white/5 p-8 relative overflow-hidden group hover:border-cyan-500/30 transition-colors"
+              >
+                <div className="absolute -right-10 -top-10 w-32 h-32 bg-cyan-500/20 rounded-full blur-2xl group-hover:bg-cyan-500/40 transition-all duration-500" />
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <Sparkles className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">豊富な連携機能</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    銀行・クレカ・会計ソフトと<span className="text-cyan-400 font-semibold">シームレス連携</span>。
+                    データ入力の手間を完全に排除。
+                  </p>
                 </div>
               </motion.div>
             </div>
@@ -430,14 +563,6 @@ const LandingPage: React.FC = () => {
                 <p className="text-xl text-gray-400 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light">
                   直感的なモバイルアプリで、Ainanceのパワーを指先に。出張中でも会議中でも、リアルタイムで経費追跡、取引承認、経営洞察を手に入れることができます。
                 </p>
-                <div className="flex justify-center lg:justify-start space-x-4">
-                  <MagneticButton>
-                    <img src="/assets/app-store.svg" alt="App Store" className="h-12" />
-                  </MagneticButton>
-                  <MagneticButton>
-                    <img src="/assets/google-play.svg" alt="Google Play" className="h-12" />
-                  </MagneticButton>
-                </div>
               </motion.div>
             </div>
           </div>
@@ -481,9 +606,8 @@ const LandingPage: React.FC = () => {
               <span className="font-bold text-gray-400">Ainance</span>
             </div>
             <div className="flex space-x-8 text-sm text-gray-500">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
+              <button onClick={() => navigate('/privacy')} className="hover:text-white transition-colors">Privacy</button>
+              <button onClick={() => navigate('/contact')} className="hover:text-white transition-colors">Contact</button>
             </div>
           </div>
         </footer>

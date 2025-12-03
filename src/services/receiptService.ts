@@ -146,6 +146,16 @@ export const approveReceiptAndCreateTransaction = async (
   try {
     console.log('レシート承認と取引作成を開始:', { receiptId, receipt, businessType, userId });
     
+    // userIdが有効か確認
+    if (!userId) {
+      throw new Error('ユーザーIDが無効です');
+    }
+    
+    // businessTypeが有効か確認
+    if (!businessType) {
+      throw new Error('業態情報が無効です');
+    }
+    
     // 1. レシートステータスを'approved'に更新
     const updatedReceipt = await updateReceiptStatus(receiptId, 'approved');
     if (!updatedReceipt) {
@@ -183,6 +193,8 @@ export const approveReceiptAndCreateTransaction = async (
       : transactionData;
 
     console.log('トランザクションを保存中:', { tableName, transactionPayload });
+    
+    // トランザクションを保存
     const { data: transactionResult, error: transactionError } = await supabase
       .from(tableName)
       .insert([transactionPayload])
@@ -191,6 +203,8 @@ export const approveReceiptAndCreateTransaction = async (
 
     if (transactionError) {
       console.error('トランザクション保存エラー:', transactionError);
+      console.error('テーブル名:', tableName);
+      console.error('ペイロード:', transactionPayload);
       throw new Error(`${tableName}への保存に失敗しました: ${transactionError.message}`);
     }
 

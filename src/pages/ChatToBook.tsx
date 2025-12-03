@@ -26,6 +26,8 @@ const ChatToBook: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
   const [approvedTransactions, setApprovedTransactions] = useState<string[]>([]); // 承認された取引のIDを管理
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 選択されたカテゴリを管理
+  const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージを管理
   const recognitionRef = useRef<any>(null);
   const { user } = useAuth();
   const { currentBusinessType } = useBusinessType(user?.id);
@@ -46,6 +48,8 @@ const ChatToBook: React.FC = () => {
     // Web Speech APIのチェック
     if (!('webkitSpeechRecognition' in window)) {
       console.log('Web Speech API is not supported in this browser.');
+      // エラーメッセージを状態として管理
+      setErrorMessage('音声認識がこのブラウザでサポートされていません。ChromeまたはEdgeをご使用ください。');
       return;
     }
 
@@ -71,6 +75,33 @@ const ChatToBook: React.FC = () => {
     recognition.onerror = (event: any) => {
       console.error('音声認識エラー:', event.error);
       setIsListening(false);
+      setErrorMessage(null); // 既存のエラーメッセージをクリア
+      
+      // ユーザーフレンドリーなエラーメッセージを表示
+      let errorMessage = '音声認識中にエラーが発生しました。';
+      switch (event.error) {
+        case 'no-speech':
+          errorMessage = '音声が検出されませんでした。もう一度お試しください。';
+          break;
+        case 'audio-capture':
+          errorMessage = '音声入力デバイスが見つかりません。';
+          break;
+        case 'not-allowed':
+          errorMessage = '音声認識の使用が許可されていません。ブラウザの設定をご確認ください。';
+          break;
+        case 'service-not-allowed':
+          errorMessage = '音声認識サービスの使用が許可されていません。';
+          break;
+        case 'bad-grammar':
+          errorMessage = '音声認識中に文法エラーが発生しました。';
+          break;
+        case 'language-not-supported':
+          errorMessage = '指定された言語はサポートされていません。';
+          break;
+      }
+      
+      // エラーメッセージを状態に設定
+      setErrorMessage(errorMessage);
     };
 
     recognition.onend = () => {
@@ -136,8 +167,46 @@ const ChatToBook: React.FC = () => {
     });
   }, [dbTransactions]);
 
+  // カスタムイベントリスナーを追加して、取引が記録されたときにデータを再取得
+  useEffect(() => {
+    const handleTransactionRecorded = async () => {
+      console.log('ChatToBook - transactionRecordedイベントを受信');
+      if (currentBusinessType?.id) {
+        // 少し遅延させてからデータを再取得する
+        await new Promise(resolve => setTimeout(resolve, 100));
+        fetchTransactions();
+      }
+    };
+
+    window.addEventListener('transactionRecorded', handleTransactionRecorded);
+
+    return () => {
+      window.removeEventListener('transactionRecorded', handleTransactionRecorded);
+    };
+  }, [currentBusinessType, fetchTransactions]);
+
+  // 承認イベントリスナーを追加して、取引が承認されたときにデータを再取得
+  useEffect(() => {
+    const handleTransactionApproved = async () => {
+      console.log('ChatToBook - transactionApprovedイベントを受信');
+      if (currentBusinessType?.id) {
+        // 少し遅延させてからデータを再取得する
+        await new Promise(resolve => setTimeout(resolve, 100));
+        fetchTransactions();
+      }
+    };
+
+    window.addEventListener('transactionApproved', handleTransactionApproved);
+
+    return () => {
+      window.removeEventListener('transactionApproved', handleTransactionApproved);
+    };
+  }, [currentBusinessType, fetchTransactions]);
+
   const startListening = () => {
     if (recognitionRef.current) {
+      // 音声認識開始時にエラーメッセージをクリア
+      setErrorMessage(null);
       recognitionRef.current.start();
       setIsListening(true);
     }
@@ -152,6 +221,7 @@ const ChatToBook: React.FC = () => {
 
   // 音声テキストから取引情報を抽出
   const extractTransactionData = (text: string) => {
+    console.log('extractTransactionData - text:', text);
     // 金額を抽出（数字に万、千などの単位がつく場合も考慮）
     const amountPattern = /(\d+(?:万)?(?:千)?(?:円)?)/g;
     const amounts = text.match(amountPattern);
@@ -230,6 +300,7 @@ const ChatToBook: React.FC = () => {
   const processTranscript = () => {
     if (!transcript.trim()) return;
 
+    console.log('processTranscript - transcript:', transcript);
     setIsProcessing(true);
 
     // 実際のアプリケーションでは、AIやルールベースの処理で取引情報を抽出
@@ -248,12 +319,16 @@ const ChatToBook: React.FC = () => {
 
       const newTransaction: Transaction = {
         id: generateUUID(),
-        ...transactionData
+        ...transactionData,
+        // 選択されたカテゴリがある場合はそれを使用
+        category: selectedCategory || transactionData.category
       };
 
       setTransactions(prev => [newTransaction, ...prev]);
       // 処理後にテキストをクリアして重複を防ぐ
       setTranscript('');
+      // カテゴリ選択もクリア
+      setSelectedCategory(null);
       setIsProcessing(false);
     }, 1000);
   };
@@ -269,7 +344,7 @@ const ChatToBook: React.FC = () => {
         // DBの取引を更新
         const result = await updateTransaction(editingId, {
           date: editData.date || '',
-          item: editData.description || '',
+          item: editData.description !== undefined ? editData.description : '',
           amount: editData.amount || 0,
           category: editData.category || '未分類',
           type: editData.type || 'expense'
@@ -283,6 +358,29 @@ const ChatToBook: React.FC = () => {
         setTransactions(prev =>
           prev.map(t => t.id === editingId ? { ...t, ...editData } as Transaction : t)
         );
+        
+        // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
+        await fetchTransactions();
+        
+        console.log('handleSave - dbTransactions:', dbTransactions);
+        
+        // DBから取得した最新のデータでローカル状態を更新
+        setTransactions(prev => {
+          const updatedTransactions = [...prev];
+          const index = updatedTransactions.findIndex(t => t.id === editingId);
+          if (index !== -1) {
+            // DBから取得した最新のデータで更新
+            const updatedTransaction = dbTransactions.find(t => t.id === editingId);
+            if (updatedTransaction) {
+              updatedTransactions[index] = {
+                ...updatedTransactions[index],
+                ...updatedTransaction
+              };
+            }
+          }
+          return updatedTransactions;
+        });
+        
         setEditingId(null);
         setEditData({});
       } catch (error) {
@@ -697,8 +795,9 @@ const ChatToBook: React.FC = () => {
           <h1 className="text-2xl font-bold text-text-main">CHAT-TO-BOOK</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* 音声入力セクション */}
+          <div className="lg:col-span-2 bg-surface rounded-xl shadow-sm border border-border p-6">
             <h2 className="text-lg font-semibold text-text-main mb-4">音声入力</h2>
 
             <div className="mb-4">
@@ -717,6 +816,13 @@ const ChatToBook: React.FC = () => {
                   )}
                 </button>
               </div>
+
+              {/* エラーメッセージ表示 */}
+              {errorMessage && (
+                <div className="text-center mb-4">
+                  <p className="text-sm text-red-500">{errorMessage}</p>
+                </div>
+              )}
 
               <div className="text-center mb-4">
                 <p className="text-sm text-text-muted">
@@ -744,6 +850,34 @@ const ChatToBook: React.FC = () => {
                 className="w-full px-3 py-2 bg-background border border-border rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="音声認識されたテキストがここに表示されます..."
               />
+              
+              {/* カテゴリタグ */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  '売上', '給与', '交通費', '食費', '消耗品費', 
+                  '接待交際費', '通信費', '水道光熱費', '雑費', '未分類'
+                ].map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
+                      selectedCategory === category
+                        ? 'bg-primary/20 border-primary text-primary'
+                        : 'bg-surface-highlight text-text-main border-border hover:bg-surface-hover'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+                {selectedCategory && (
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-muted border border-border hover:bg-surface-hover transition-colors"
+                  >
+                    クリア
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end space-x-2">
@@ -780,214 +914,228 @@ const ChatToBook: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
-            <h2 className="text-lg font-semibold text-text-main mb-4">取引一覧</h2>
-
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center space-x-2">
-                <p className="text-sm text-text-muted">
-                  {transactions.length}件の取引
-                </p>
-                {selectedTransactions.length > 0 && (
-                  <span className="text-sm text-primary">
-                    {selectedTransactions.length}件選択中
-                  </span>
-                )}
-              </div>
-              <div className="flex space-x-2">
-                {selectedTransactions.length > 0 && (
-                  <>
-                    <button
-                      onClick={bulkDeleteTransactions}
-                      className="flex items-center px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      一括削除 ({selectedTransactions.length})
-                    </button>
-                    <button
-                      onClick={bulkRecordTransactions}
-                      className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      一括承認 ({selectedTransactions.length})
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-surface-highlight">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                      <button
-                        onClick={toggleAllTransactionsSelection}
-                        className="flex items-center"
-                      >
-                        {selectedTransactions.length === transactions.length && transactions.length > 0 ? (
-                          <CheckCircle className="w-4 h-4 text-primary" />
-                        ) : (
-                          <Circle className="w-4 h-4 text-text-muted" />
-                        )}
-                      </button>
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">日付</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">説明</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-surface divide-y divide-border">
-                  {transactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
-                      <td className="px-4 py-3 text-sm">
-                        <button
-                          onClick={() => toggleTransactionSelection(transaction.id)}
-                          className="flex items-center"
-                          disabled={transaction.approval_status === 'approved'}
-                        >
-                          {selectedTransactions.includes(transaction.id) ? (
-                            <CheckCircle className="w-5 h-5 text-primary" />
-                          ) : (
-                            <Circle className="w-5 h-5 text-text-muted" />
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-text-main">
-                        {editingId === transaction.id ? (
-                          <input
-                            type="date"
-                            value={editData.date || transaction.date}
-                            onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
-                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                          />
-                        ) : (
-                          transaction.date
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-text-main max-w-xs">
-                        {editingId === transaction.id ? (
-                          <input
-                            type="text"
-                            value={editData.description || transaction.description}
-                            onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                          />
-                        ) : (
-                          transaction.description
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-text-main">
-                        {editingId === transaction.id ? (
-                          <input
-                            type="number"
-                            value={editData.amount || transaction.amount}
-                            onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                          />
-                        ) : (
-                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
-                            {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-text-main">
-                        {editingId === transaction.id ? (
-                          <select
-                            value={editData.category || transaction.category}
-                            onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
-                            className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                          >
-                            <option value="売上">売上</option>
-                            <option value="給与">給与</option>
-                            <option value="交通費">交通費</option>
-                            <option value="食費">食費</option>
-                            <option value="消耗品費">消耗品費</option>
-                            <option value="接待交際費">接待交際費</option>
-                            <option value="通信費">通信費</option>
-                            <option value="水道光熱費">水道光熱費</option>
-                            <option value="雑費">雑費</option>
-                            <option value="未分類">未分類</option>
-                          </select>
-                        ) : (
-                          transaction.category
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium">
-                        {editingId === transaction.id ? (
-                          <button
-                            onClick={handleSave}
-                            className="text-green-500 hover:text-green-600 mr-2"
-                          >
-                            <Save className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => recordTransaction(transaction)}
-                              className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
-                              disabled={transaction.approval_status === 'approved'}
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleEdit(transaction)}
-                              className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
-                              disabled={transaction.approval_status === 'approved'}
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(transaction.id)}
-                              className={transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}
-                              disabled={transaction.approval_status === 'approved'}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {transactions.filter(transaction => transaction.approval_status !== 'approved').length === 0 && (
-                <div className="text-center py-8 text-text-muted">
-                  <p>まだ取引がありません</p>
-                  <p className="text-sm mt-2">音声入力で取引を追加してください</p>
+          {/* 使い方セクション */}
+          <div className="bg-surface rounded-xl shadow-sm border border-border p-4">
+            <h2 className="text-md font-semibold text-text-main mb-3">使い方</h2>
+            <div className="space-y-3">
+              <div className="border border-border rounded-lg p-3">
+                <div className="flex items-start">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                    <span className="text-primary font-bold text-xs">1</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-text-main text-sm mb-1">音声入力開始</h3>
+                    <p className="text-xs text-text-muted">マイクボタンをクリックして、取引内容を話してください。</p>
+                  </div>
                 </div>
-              )}
+              </div>
+              <div className="border border-border rounded-lg p-3">
+                <div className="flex items-start">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                    <span className="text-primary font-bold text-xs">2</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-text-main text-sm mb-1">テキスト確認</h3>
+                    <p className="text-xs text-text-muted">認識されたテキストを確認・編集してください。</p>
+                  </div>
+                </div>
+              </div>
+              <div className="border border-border rounded-lg p-3">
+                <div className="flex items-start">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                    <span className="text-primary font-bold text-xs">3</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-text-main text-sm mb-1">取引に変換</h3>
+                    <p className="text-xs text-text-muted">「取引に変換」ボタンをクリックして、取引を登録してください。</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
-          <h2 className="text-lg font-semibold text-text-main mb-4">使い方</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="border border-border rounded-lg p-4">
-              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mb-3">
-                <span className="text-primary font-bold">1</span>
-              </div>
-              <h3 className="font-medium text-text-main mb-2">音声入力開始</h3>
-              <p className="text-sm text-text-muted">マイクボタンをクリックして、取引内容を話してください。</p>
+        {/* 取引一覧セクション */}
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-lg font-semibold text-text-main mb-4">取引一覧</h2>
+
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center space-x-2">
+              <p className="text-sm text-text-muted">
+                {transactions.length}件の取引
+              </p>
+              {selectedTransactions.length > 0 && (
+                <span className="text-sm text-primary">
+                  {selectedTransactions.length}件選択中
+                </span>
+              )}
             </div>
-            <div className="border border-border rounded-lg p-4">
-              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mb-3">
-                <span className="text-primary font-bold">2</span>
-              </div>
-              <h3 className="font-medium text-text-main mb-2">テキスト確認</h3>
-              <p className="text-sm text-text-muted">認識されたテキストを確認・編集してください。</p>
+            <div className="flex space-x-2">
+              {selectedTransactions.length > 0 && (
+                <>
+                  <button
+                    onClick={bulkDeleteTransactions}
+                    className="flex items-center px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    一括削除 ({selectedTransactions.length})
+                  </button>
+                  <button
+                    onClick={bulkRecordTransactions}
+                    className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    一括承認 ({selectedTransactions.length})
+                  </button>
+                </>
+              )}
             </div>
-            <div className="border border-border rounded-lg p-4">
-              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mb-3">
-                <span className="text-primary font-bold">3</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-surface-highlight">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
+                    <button
+                      onClick={toggleAllTransactionsSelection}
+                      className="flex items-center"
+                    >
+                      {selectedTransactions.length === transactions.length && transactions.length > 0 ? (
+                        <CheckCircle className="w-4 h-4 text-primary" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-text-muted" />
+                      )}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">日付</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">説明</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
+                </tr>
+              </thead>
+              <tbody className="bg-surface divide-y divide-border">
+                {transactions.map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
+                    <td className="px-4 py-3 text-sm">
+                      <button
+                        onClick={() => toggleTransactionSelection(transaction.id)}
+                        className="flex items-center"
+                        disabled={transaction.approval_status === 'approved'}
+                      >
+                        {selectedTransactions.includes(transaction.id) ? (
+                          <CheckCircle className="w-5 h-5 text-primary" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-text-muted" />
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-main">
+                      {editingId === transaction.id ? (
+                        <input
+                          type="date"
+                          value={editData.date || transaction.date}
+                          onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
+                          className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                        />
+                      ) : (
+                        transaction.date
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-main max-w-xs">
+                      {editingId === transaction.id ? (
+                        <input
+                          type="text"
+                          value={editData.description !== undefined ? editData.description : transaction.description}
+                          onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                          className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                        />
+                      ) : (
+                        transaction.description
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-main">
+                      {editingId === transaction.id ? (
+                        <input
+                          type="number"
+                          value={editData.amount || transaction.amount}
+                          onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                          className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                        />
+                      ) : (
+                        <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+                          {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text-main">
+                      {editingId === transaction.id ? (
+                        <select
+                          value={editData.category || transaction.category}
+                          onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+                          className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
+                        >
+                          <option value="売上">売上</option>
+                          <option value="給与">給与</option>
+                          <option value="交通費">交通費</option>
+                          <option value="食費">食費</option>
+                          <option value="消耗品費">消耗品費</option>
+                          <option value="接待交際費">接待交際費</option>
+                          <option value="通信費">通信費</option>
+                          <option value="水道光熱費">水道光熱費</option>
+                          <option value="雑費">雑費</option>
+                          <option value="未分類">未分類</option>
+                        </select>
+                      ) : (
+                        transaction.category
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium">
+                      {editingId === transaction.id ? (
+                        <button
+                          onClick={handleSave}
+                          className="text-green-500 hover:text-green-600 mr-2"
+                        >
+                          <Save className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => recordTransaction(transaction)}
+                            className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
+                            disabled={transaction.approval_status === 'approved'}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(transaction)}
+                            className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
+                            disabled={transaction.approval_status === 'approved'}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(transaction.id)}
+                            className={transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}
+                            disabled={transaction.approval_status === 'approved'}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {transactions.filter(transaction => transaction.approval_status !== 'approved').length === 0 && (
+              <div className="text-center py-8 text-text-muted">
+                <p>まだ取引がありません</p>
+                <p className="text-sm mt-2">音声入力で取引を追加してください</p>
               </div>
-              <h3 className="font-medium text-text-main mb-2">取引に変換</h3>
-              <p className="text-sm text-text-muted">「取引に変換」ボタンをクリックして、取引を登録してください。</p>
-            </div>
+            )}
           </div>
         </div>
       </main>

@@ -43,8 +43,10 @@ const TransactionHistory: React.FC = () => {
 
   // カスタムイベントリスナーを追加して、取引が記録されたときにデータを再取得
   useEffect(() => {
-    const handleTransactionRecorded = () => {
+    const handleTransactionRecorded = async () => {
       if (currentBusinessType?.id) {
+        // 少し遅延させてからデータを再取得する
+        await new Promise(resolve => setTimeout(resolve, 100));
         fetchTransactions();
       }
     };
@@ -58,9 +60,11 @@ const TransactionHistory: React.FC = () => {
 
   // 承認イベントリスナーを追加して、取引が承認されたときにデータを再取得
   useEffect(() => {
-    const handleTransactionApproved = () => {
+    const handleTransactionApproved = async () => {
       console.log('transactionApprovedイベントを受信');
       if (currentBusinessType?.id) {
+        // 少し遅延させてからデータを再取得する
+        await new Promise(resolve => setTimeout(resolve, 100));
         fetchTransactions();
       }
     };
@@ -312,17 +316,33 @@ const TransactionHistory: React.FC = () => {
   const handleUpdateTransaction = async (transactionData: any) => {
     if (!editingTransaction) return
     try {
-      await updateTransaction(editingTransaction.id, transactionData)
+      // 既存のcreator IDを維持する
+      const updatedTransactionData = {
+        ...transactionData,
+        creator: editingTransaction.creator
+      };
+
+      const result = await updateTransaction(editingTransaction.id, updatedTransactionData)
+
+      if (result.error) {
+        throw result.error;
+      }
 
       // データの再取得
+      // 少し遅延させてからデータを再取得する
+      await new Promise(resolve => setTimeout(resolve, 100));
       await fetchTransactions();
 
       // カスタムイベントを発火して他のコンポーネントでデータを再取得
+      // 少し遅延させてからカスタムイベントを発火する
+      await new Promise(resolve => setTimeout(resolve, 100));
       window.dispatchEvent(new CustomEvent('transactionRecorded'));
 
       setEditingTransaction(null)
-    } catch (error) {
+      alert('取引が正常に更新されました');
+    } catch (error: any) {
       console.error('取引の更新に失敗:', error)
+      alert(`取引の更新に失敗しました: ${error.message || '不明なエラーが発生しました'}`);
     }
   }
 
@@ -736,7 +756,6 @@ const TransactionHistory: React.FC = () => {
                             checked={selectedTransactions.includes(transaction.id)}
                             onChange={() => toggleSelectTransaction(transaction.id)}
                             className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
-                            disabled={isApproved}
                           />
                         </td>
                         <td className="px-6 py-4">
@@ -782,15 +801,13 @@ const TransactionHistory: React.FC = () => {
                                 setEditingTransaction(transaction)
                                 setShowCreateForm(true)
                               }}
-                              className={`p-2 rounded-lg transition-colors ${isApproved ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80 hover:bg-primary/10'}`}
-                              disabled={isApproved}
+                              className="p-2 rounded-lg transition-colors text-primary hover:text-primary/80 hover:bg-primary/10"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => deleteTransaction(transaction.id)}
-                              className={`p-2 rounded-lg transition-colors ${isApproved ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600 hover:bg-red-500/10'}`}
-                              disabled={isApproved}
+                              className="p-2 rounded-lg transition-colors text-red-500 hover:text-red-600 hover:bg-red-500/10"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

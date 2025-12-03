@@ -25,6 +25,8 @@ const AITransactionList = React.lazy(() => import('./pages/AITransactionList'));
 const TaxFilingSupport = React.lazy(() => import('./pages/TaxFilingSupport'));
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
+const Privacy = React.lazy(() => import('./pages/Privacy'));
+const Contact = React.lazy(() => import('./pages/Contact'));
 
 // プリロード関数
 const preloadRoute = (importFunc: () => Promise<any>) => {
@@ -155,6 +157,10 @@ function App() {
                   }
                 />
               </Route>
+
+              {/* Public Pages */}
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/contact" element={<Contact />} />
 
               {/* デフォルトルート */}
               <Route path="/" element={<LandingPage />} />

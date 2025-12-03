@@ -161,6 +161,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     
     console.log('creator IDを設定:', creator);
 
+    // creatorが無効な場合はエラーを表示して処理を中断
+    if (creator === '00000000-0000-0000-0000-000000000000') {
+      console.error('無効なユーザーIDです。ログインしていることを確認してください。');
+      alert('ユーザー情報が取得できません。ログインしていることを確認してください。');
+      return;
+    }
+
     const newRecent = [formData, ...recentTransactions].slice(0, 5)
     setRecentTransactions(newRecent)
     localStorage.setItem('recentTransactions', JSON.stringify(newRecent))

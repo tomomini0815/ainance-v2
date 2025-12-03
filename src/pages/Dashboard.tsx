@@ -51,9 +51,11 @@ const Dashboard: React.FC = () => {
 
   // カスタムイベントリスナーを追加して、取引が記録されたときにデータを再取得
   useEffect(() => {
-    const handleTransactionRecorded = () => {
+    const handleTransactionRecorded = async () => {
       console.log('ダッシュボード - transactionRecordedイベントを受信');
       if (currentBusinessType?.id) {
+        // 少し遅延させてからデータを再取得する
+        await new Promise(resolve => setTimeout(resolve, 100));
         fetchTransactions();
       }
     };
@@ -67,9 +69,11 @@ const Dashboard: React.FC = () => {
 
   // 承認イベントリスナーを追加して、取引が承認されたときにデータを再取得
   useEffect(() => {
-    const handleTransactionApproved = () => {
+    const handleTransactionApproved = async () => {
       console.log('ダッシュボード - transactionApprovedイベントを受信');
       if (currentBusinessType?.id) {
+        // 少し遅延させてからデータを再取得する
+        await new Promise(resolve => setTimeout(resolve, 100));
         fetchTransactions();
       }
     };
@@ -129,7 +133,7 @@ const Dashboard: React.FC = () => {
       if (t.type === 'income') {
         return true;
       }
-      
+
       // typeが'expense'の場合は除外
       if (t.type === 'expense') {
         return false;
@@ -147,7 +151,7 @@ const Dashboard: React.FC = () => {
       if (t.type === 'expense') {
         return true;
       }
-      
+
       // typeが'income'の場合は除外
       if (t.type === 'income') {
         return false;
@@ -309,7 +313,7 @@ const Dashboard: React.FC = () => {
           <button
             onClick={downloadCSV}
             disabled={transactions.length === 0}
-            className={`btn-secondary flex-1 sm:flex-none flex items-center justify-center ${transactions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`btn-ghost flex-1 sm:flex-none flex items-center justify-center ${transactions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Download className="w-4 h-4 mr-2" />
             CSV出力
@@ -326,8 +330,8 @@ const Dashboard: React.FC = () => {
 
       <QuickActions />
 
-      {/* 統計カード */}
-      <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow mb-8">
+      {/* 統計カード - 一旦非表示 */}
+      {/* <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow mb-8">
         <div className="grid grid-cols-2 gap-4">
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
@@ -368,7 +372,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Suspense fallback={<div className="h-80 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>

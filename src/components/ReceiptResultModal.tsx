@@ -77,6 +77,14 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
             const businessType = currentBusinessType?.business_type || 'individual';
             console.log('レシート保存を開始:', { user, businessType, editedData, selectedCategory });
 
+            // ユーザーIDの検証
+            if (!user.id) {
+                throw new Error('ユーザーIDが無効です');
+            }
+
+            console.log('ユーザー認証情報:', user);
+            console.log('現在の業態:', currentBusinessType);
+
             // レシートデータを作成（IDはデータベースで自動生成）
             // user.idを使用するように修正
             const receiptToSave = {
