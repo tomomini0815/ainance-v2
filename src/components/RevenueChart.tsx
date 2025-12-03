@@ -175,8 +175,8 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         position: 'top' as const,
         labels: {
           usePointStyle: true,
-          boxWidth: 12, // w-3 (12px) に合わせる
-          boxHeight: 12, // h-3 (12px) に合わせる
+          boxWidth: 9, // 12pxと6pxの中間
+          boxHeight: 9, // 12pxと6pxの中間
           padding: 20,
           color: '#94a3b8', // Slate 400
           font: {

@@ -120,7 +120,7 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
             <div key={label} className="flex items-center justify-between group p-2 rounded-lg hover:bg-surface-highlight transition-colors">
               <div className="flex items-center">
                 <div
-                  className="w-3 h-3 rounded-full mr-3 shadow-sm"
+                  className="w-[9px] h-[9px] rounded-full mr-3 shadow-sm"
                   style={{ backgroundColor: backgroundColors[index] }}
                 ></div>
                 <span className="text-sm text-text-secondary group-hover:text-text-main transition-colors">{label}</span>
