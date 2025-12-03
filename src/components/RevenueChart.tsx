@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { Line } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -27,58 +27,98 @@ interface RevenueChartProps {
   transactions: any[];
 }
 
+type Period = 'monthly' | 'quarterly' | 'yearly';
+
 const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
-  const calculateMonthlyData = () => {
-    const monthlyData: { [key: string]: { revenue: number; expense: number } } = {};
+  const [period, setPeriod] = useState<Period>('monthly');
 
-    const months = [];
+  const chartData = useMemo(() => {
+    const data: { [key: string]: { revenue: number; expense: number } } = {};
+    let labels: string[] = [];
+
     const now = new Date();
-    const startYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
-    const startMonth = now.getMonth() >= 2 ? 2 : 2;
+    const currentYear = now.getFullYear();
 
-    for (let i = 0; i < 12; i++) {
-      const year = startMonth + i <= 11 ? startYear : startYear + 1;
-      const month = (startMonth + i) % 12;
-      const date = new Date(year, month, 1);
-      const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
-      months.push(monthKey);
-      monthlyData[monthKey] = { revenue: 0, expense: 0 };
+    if (period === 'monthly') {
+      // 過去12ヶ月
+      const startYear = now.getMonth() >= 11 ? currentYear : currentYear - 1;
+      const startMonth = now.getMonth() >= 11 ? 0 : now.getMonth() + 1;
+
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(startYear, startMonth + i, 1);
+        const key = `${d.getFullYear()}年${d.getMonth() + 1}月`;
+        labels.push(key);
+        data[key] = { revenue: 0, expense: 0 };
+      }
+    } else if (period === 'quarterly') {
+      // 過去4四半期 (例: 2024 Q1, 2024 Q2...)
+      // 現在の四半期を含めて過去4つ
+      const currentQ = Math.floor(now.getMonth() / 3) + 1;
+
+      for (let i = 3; i >= 0; i--) {
+        let y = currentYear;
+        let q = currentQ - i;
+        if (q <= 0) {
+          y -= 1;
+          q += 4;
+        }
+        const key = `${y}年 Q${q}`;
+        labels.push(key);
+        data[key] = { revenue: 0, expense: 0 };
+      }
+    } else if (period === 'yearly') {
+      // 過去5年
+      for (let i = 4; i >= 0; i--) {
+        const y = currentYear - i;
+        const key = `${y}年`;
+        labels.push(key);
+        data[key] = { revenue: 0, expense: 0 };
+      }
     }
 
+    // トランザクション集計
     transactions.forEach(transaction => {
       const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
       const date = new Date(transaction.date);
-      const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+      const tYear = date.getFullYear();
+      const tMonth = date.getMonth() + 1;
+      let key = '';
 
-      if (monthlyData[monthKey]) {
-        // typeプロパティを確認して、収益と支出を正しく分類
+      if (period === 'monthly') {
+        key = `${tYear}年${tMonth}月`;
+      } else if (period === 'quarterly') {
+        const q = Math.ceil(tMonth / 3);
+        key = `${tYear}年 Q${q}`;
+      } else if (period === 'yearly') {
+        key = `${tYear}年`;
+      }
+
+      if (data[key]) {
         if (transaction.type === 'income') {
-          monthlyData[monthKey].revenue += Math.abs(amount);
+          data[key].revenue += Math.abs(amount);
         } else if (transaction.type === 'expense') {
-          monthlyData[monthKey].expense += Math.abs(amount);
-        }
-        // typeが指定されていない場合は従来のロジックを使用
-        else if (amount > 0) {
-          monthlyData[monthKey].revenue += amount;
+          data[key].expense += Math.abs(amount);
+        } else if (amount > 0) {
+          data[key].revenue += amount;
         } else if (amount < 0) {
-          monthlyData[monthKey].expense += Math.abs(amount);
+          data[key].expense += Math.abs(amount);
         }
       }
     });
 
-    const profitData = months.map(month =>
-      monthlyData[month].revenue - monthlyData[month].expense
-    );
+    const revenueData = labels.map(label => data[label].revenue);
+    const expenseData = labels.map(label => data[label].expense);
+    const profitData = labels.map(label => data[label].revenue - data[label].expense);
 
     return {
-      labels: months,
-      revenue: months.map(month => monthlyData[month].revenue),
-      expense: months.map(month => monthlyData[month].expense),
+      labels,
+      revenue: revenueData,
+      expense: expenseData,
       profit: profitData
     };
-  };
+  }, [transactions, period]);
 
-  const { labels, revenue, expense, profit } = calculateMonthlyData();
+  const { labels, revenue, expense, profit } = chartData;
 
   const totalRevenue = revenue.reduce((sum, amount) => sum + amount, 0);
   const totalExpense = expense.reduce((sum, amount) => sum + amount, 0);
@@ -135,6 +175,8 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         position: 'top' as const,
         labels: {
           usePointStyle: true,
+          boxWidth: 12, // w-3 (12px) に合わせる
+          boxHeight: 12, // h-3 (12px) に合わせる
           padding: 20,
           color: '#94a3b8', // Slate 400
           font: {
@@ -206,30 +248,42 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+    <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-text-main">収益・支出・利益推移</h3>
         <div className="flex space-x-1 bg-surface-highlight/50 rounded-lg p-1">
-          <button className="text-xs bg-primary/20 text-primary px-3 py-1.5 rounded-md font-medium transition-colors">月次</button>
-          <button className="text-xs text-text-muted hover:text-text-main px-3 py-1.5 rounded-md transition-colors">四半期</button>
-          <button className="text-xs text-text-muted hover:text-text-main px-3 py-1.5 rounded-md transition-colors">年次</button>
+          <button
+            onClick={() => setPeriod('monthly')}
+            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'monthly' ? 'bg-primary/20 text-primary' : 'text-text-muted hover:text-text-main'}`}
+          >
+            月次
+          </button>
+          <button
+            onClick={() => setPeriod('quarterly')}
+            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'quarterly' ? 'bg-primary/20 text-primary' : 'text-text-muted hover:text-text-main'}`}
+          >
+            四半期
+          </button>
+          <button
+            onClick={() => setPeriod('yearly')}
+            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'yearly' ? 'bg-primary/20 text-primary' : 'text-text-muted hover:text-text-main'}`}
+          >
+            年次
+          </button>
         </div>
       </div>
 
-      <div className="chart-container h-72 w-full">
+      <div className="chart-container h-72 w-full flex-shrink-0">
         <Line data={data} options={options} />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 flex-1 min-h-0">
         <div className="card-metric border-l-[#06b6d4] bg-surface p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <svg className="w-4 h-4 text-[#06b6d4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
-            <p className="text-xs text-text-muted font-medium">総収益</p>
-            <p className="text-xs text-success flex items-center gap-1 ml-auto">
-              <span>↑</span> 12.5% vs 先月
-            </p>
+            <p className="text-xs text-text-muted font-medium">総収益 ({period === 'monthly' ? '過去1年' : period === 'quarterly' ? '過去1年' : '過去5年'})</p>
           </div>
           <p className="text-lg font-bold text-text-main truncate" title={`¥${totalRevenue.toLocaleString()}`}>¥{totalRevenue.toLocaleString()}</p>
         </div>
@@ -238,10 +292,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
             <svg className="w-4 h-4 text-[#f472b6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
             </svg>
-            <p className="text-xs text-text-muted font-medium">総支出</p>
-            <p className="text-xs text-error flex items-center gap-1 ml-auto">
-              <span>↓</span> 3.2% vs 先月
-            </p>
+            <p className="text-xs text-text-muted font-medium">総支出 ({period === 'monthly' ? '過去1年' : period === 'quarterly' ? '過去1年' : '過去5年'})</p>
           </div>
           <p className="text-lg font-bold text-text-main truncate" title={`¥${totalExpense.toLocaleString()}`}>¥{totalExpense.toLocaleString()}</p>
         </div>
@@ -250,10 +301,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
             <svg className="w-4 h-4 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-xs text-text-muted font-medium">純利益</p>
-            <p className="text-xs text-success flex items-center gap-1 ml-auto">
-              <span>↑</span> 8.7% vs 先月
-            </p>
+            <p className="text-xs text-text-muted font-medium">純利益 ({period === 'monthly' ? '過去1年' : period === 'quarterly' ? '過去1年' : '過去5年'})</p>
           </div>
           <p className="text-lg font-bold text-text-main truncate" title={`¥${totalProfit.toLocaleString()}`}>¥{totalProfit.toLocaleString()}</p>
         </div>

@@ -98,13 +98,13 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+    <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-text-main">支出カテゴリ</h3>
         <button className="text-sm text-primary hover:text-primary/80 transition-colors">詳細を見る</button>
       </div>
 
-      <div className="chart-container h-64 w-full relative">
+      <div className="chart-container h-64 w-full relative flex-shrink-0">
         <Doughnut data={data} options={options} />
         {/* Center Text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -113,9 +113,9 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
         </div>
       </div>
 
-      <div className="mt-6">
-        <h4 className="font-medium text-text-secondary mb-3 text-sm">カテゴリ別支出内訳</h4>
-        <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="mt-6 flex-1 min-h-0 flex flex-col">
+        <h4 className="font-medium text-text-secondary mb-3 text-sm flex-shrink-0">カテゴリ別支出内訳</h4>
+        <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
           {labels.map((label, index) => (
             <div key={label} className="flex items-center justify-between group p-2 rounded-lg hover:bg-surface-highlight transition-colors">
               <div className="flex items-center">
@@ -125,7 +125,10 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
                 ></div>
                 <span className="text-sm text-text-secondary group-hover:text-text-main transition-colors">{label}</span>
               </div>
-              <span className="text-sm font-bold text-text-main">¥{amountData[index].toLocaleString()}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-text-muted bg-surface-highlight px-2 py-1 rounded-full">{percentageData[index]}%</span>
+                <span className="text-sm font-bold text-text-main">¥{amountData[index].toLocaleString()}</span>
+              </div>
             </div>
           ))}
         </div>
