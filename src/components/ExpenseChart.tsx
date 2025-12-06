@@ -45,17 +45,18 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
   const percentageData = Object.values(percentages);
   const amountData = Object.values(categoryTotals);
 
+  // Ainanceのグラデーションから始まり、青系を中心に展開
   const colorPalette = [
-    '#6366f1', // Indigo 500
-    '#8b5cf6', // Violet 500
-    '#a855f7', // Purple 500
-    '#d946ef', // Fuchsia 500
-    '#ec4899', // Pink 500
-    '#f43f5e', // Rose 500
-    '#06b6d4', // Cyan 500
-    '#0ea5e9', // Sky 500
+    '#6366f1', // Indigo 500 (Primary)
+    '#8b5cf6', // Violet 500 (Secondary)
     '#3b82f6', // Blue 500
-    '#64748b', // Slate 500
+    '#0ea5e9', // Sky 500
+    '#06b6d4', // Cyan 500
+    '#14b8a6', // Teal 500
+    '#f59e0b', // Amber 500
+    '#f97316', // Orange 500
+    '#ef4444', // Red 500
+    '#ec4899', // Pink 500
   ];
 
   const backgroundColors = labels.map((_, index) => colorPalette[index % colorPalette.length]);

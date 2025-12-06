@@ -478,7 +478,7 @@ const LandingPage: React.FC = () => {
                       <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-28 h-8 bg-black rounded-full z-10"></div>
                       {/* Dashboard Screenshot */}
                       <img
-                        src="/assets/dashboard_mobile.png"
+                        src="/assets/dashboard_mobile_new.png"
                         alt="Ainance Mobile App"
                         className="w-full h-full object-cover"
                       />

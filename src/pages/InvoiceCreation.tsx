@@ -130,80 +130,126 @@ const InvoiceCreation: React.FC = () => {
 
       // 一時的なプレビュー要素を作成
       const tempContainer = document.createElement('div')
-      tempContainer.style.position = 'absolute'
+      tempContainer.style.position = 'fixed' // absoluteからfixedに変更して画面外配置を確実に
       tempContainer.style.left = '-9999px'
+      tempContainer.style.top = '0'
       tempContainer.style.width = '210mm' // A4サイズ
       tempContainer.style.minHeight = '297mm'
       tempContainer.style.padding = '20px'
-      tempContainer.style.backgroundColor = 'white'
+      tempContainer.style.backgroundColor = '#ffffff' // 白背景
+      tempContainer.style.color = '#000000' // 黒文字を強制
       tempContainer.style.fontFamily = "'Noto Sans JP', 'Meiryo', 'Hiragino Kaku Gothic ProN', sans-serif"
       tempContainer.style.boxSizing = 'border-box'
+      tempContainer.style.zIndex = '-1'
 
       // プレビュー内容を構築
       tempContainer.innerHTML = `
-        <div style="text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px;">
-          ${documentType === 'invoice' ? '請求書' : '見積書'}
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-          <div>
-            <div style="font-weight: bold; margin-bottom: 10px;">発行日: ${invoiceDate || '未設定'}</div>
-            <div style="font-weight: bold;">${documentType === 'invoice' ? '支払期限' : '有効期限'}: ${documentType === 'invoice' ? (dueDate || '未設定') : (estimateExpiryDate || '未設定')}</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-          <div>
-            <div style="font-weight: bold; margin-bottom: 10px;">請求者:</div>
-            <div>デザイン会社</div>
-            <div>〒100-0001 東京都千代田区千代田1-1-1</div>
-            <div>TEL: 03-1234-5678</div>
-            <div>Email: info@design-company.co.jp</div>
+        <div style="font-family: sans-serif; color: #000;">
+          <div style="text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 40px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+            ${documentType === 'invoice' ? '請求書' : '見積書'}
           </div>
           
-          <div>
-            <div style="font-weight: bold; margin-bottom: 10px;">請求先:</div>
-            <div>${customer.name || '未選択'}</div>
-            <div>${customer.address || ''}</div>
-            <div>TEL: ${customer.phone || ''}</div>
-            <div>Email: ${customer.email || ''}</div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
+            <div style="width: 48%;">
+              <div style="font-size: 18px; font-weight: bold; border-bottom: 2px solid #333; margin-bottom: 10px; padding-bottom: 5px;">
+                ${customer.name || '（取引先未設定）'} 御中
+              </div>
+              <div style="font-size: 14px; line-height: 1.6;">
+                ${customer.address ? `<div>${customer.address}</div>` : ''}
+                ${customer.phone ? `<div>TEL: ${customer.phone}</div>` : ''}
+                ${customer.email ? `<div>Email: ${customer.email}</div>` : ''}
+              </div>
+            </div>
+            
+            <div style="width: 48%; text-align: right;">
+              <div style="margin-bottom: 5px;">発行日: ${invoiceDate || '未設定'}</div>
+              <div style="margin-bottom: 5px;">${documentType === 'invoice' ? '支払期限' : '有効期限'}: ${documentType === 'invoice' ? (dueDate || '未設定') : (estimateExpiryDate || '未設定')}</div>
+              <div style="margin-bottom: 5px;">請求書番号: T${Date.now().toString().slice(-13)}</div>
+              
+              <div style="margin-top: 20px; font-size: 14px; line-height: 1.6;">
+                <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">株式会社Ainance</div>
+                <div>〒100-0001</div>
+                <div>東京都千代田区千代田1-1-1</div>
+                <div>TEL: 03-1234-5678</div>
+                <div>Email: info@ainance.co.jp</div>
+                <div>登録番号: T1234567890123</div>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        ${documentType === 'invoice' && bankAccount.bankName ? `
-        <div style="margin-bottom: 30px;">
-          <div style="font-weight: bold; margin-bottom: 10px;">振込先:</div>
-          <div>${bankAccount.bankName} ${bankAccount.branchName}</div>
-          <div>${bankAccount.accountType} ${bankAccount.accountNumber}</div>
-          <div>口座名義: ${bankAccount.accountHolder}</div>
-        </div>
-        ` : ''}
-        
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-          <thead>
-            <tr style="background-color: #1ABC9C; color: white;">
-              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">商品・サービス</th>
-              <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">数量</th>
-              <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">単価</th>
-              <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">金額</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.map(item => `
-              <tr>
-                <td style="padding: 10px; border: 1px solid #ddd;">${item.description || '未設定'}</td>
-                <td style="padding: 10px; text-align: right; border: 1px solid #ddd;">${item.quantity}</td>
-                <td style="padding: 10px; text-align: right; border: 1px solid #ddd;">¥${item.unitPrice.toLocaleString()}</td>
-                <td style="padding: 10px; text-align: right; border: 1px solid #ddd;">¥${item.amount.toLocaleString()}</td>
+          
+          <div style="margin-bottom: 20px; font-size: 16px;">
+            件名: ${document.querySelector('input[placeholder="〇〇開発案件 3月分ご請求"]')?.getAttribute('value') || (document.querySelector('input[placeholder="〇〇開発案件 3月分ご請求"]') as HTMLInputElement)?.value || ''}
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+            <thead>
+              <tr style="background-color: #f3f4f6; color: #000;">
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; width: 50%;">品目</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; width: 10%;">数量</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; width: 20%;">単価</th>
+                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd; width: 20%;">金額</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div style="text-align: right;">
-          <div style="margin-bottom: 5px;">小計: ¥${subtotal.toLocaleString()}</div>
-          <div style="margin-bottom: 5px;">消費税(10%): ¥${taxAmount.toLocaleString()}</div>
-          <div style="font-size: 18px; font-weight: bold;">合計: ¥${totalAmount.toLocaleString()}</div>
+            </thead>
+            <tbody>
+              ${items.map((item, index) => `
+                <tr style="border-bottom: 1px solid #eee;">
+                  <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.description || '（品目なし）'}</td>
+                  <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">${item.quantity}</td>
+                  <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥${item.unitPrice.toLocaleString()}</td>
+                  <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">¥${item.amount.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div style="display: flex; justify-content: flex-end;">
+            <div style="width: 40%;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+                <span>小計</span>
+                <span>¥${subtotal.toLocaleString()}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+                <span>消費税 (10%)</span>
+                <span>¥${taxAmount.toLocaleString()}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; margin-top: 10px;">
+                <span>合計</span>
+                <span>¥${totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+          
+          ${documentType === 'invoice' && bankAccount.bankName ? `
+          <div style="margin-top: 40px; border-top: 1px solid #ddd; padding-top: 20px;">
+            <div style="font-weight: bold; margin-bottom: 10px; font-size: 16px;">お振込先</div>
+            <div style="background-color: #f9fafb; padding: 15px; border-radius: 4px;">
+              <div style="display: flex; gap: 20px; margin-bottom: 5px;">
+                <span style="font-weight: bold;">銀行名:</span>
+                <span>${bankAccount.bankName}</span>
+              </div>
+              <div style="display: flex; gap: 20px; margin-bottom: 5px;">
+                <span style="font-weight: bold;">支店名:</span>
+                <span>${bankAccount.branchName}</span>
+              </div>
+              <div style="display: flex; gap: 20px; margin-bottom: 5px;">
+                <span style="font-weight: bold;">口座種別:</span>
+                <span>${bankAccount.accountType}</span>
+              </div>
+              <div style="display: flex; gap: 20px; margin-bottom: 5px;">
+                <span style="font-weight: bold;">口座番号:</span>
+                <span>${bankAccount.accountNumber}</span>
+              </div>
+              <div style="display: flex; gap: 20px;">
+                <span style="font-weight: bold;">口座名義:</span>
+                <span>${bankAccount.accountHolder}</span>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+          
+          <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #666;">
+            ※ 本書に関するご質問等がございましたら、上記連絡先までお問い合わせください。
+          </div>
         </div>
       `
 
@@ -213,7 +259,8 @@ const InvoiceCreation: React.FC = () => {
       const canvas = await html2canvas(tempContainer, {
         scale: 2, // 品質向上のためスケールを上げる
         useCORS: true,
-        logging: false
+        logging: false,
+        backgroundColor: '#ffffff' // 背景色を白に強制
       })
 
       // 一時要素を削除
@@ -231,8 +278,8 @@ const InvoiceCreation: React.FC = () => {
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
       heightLeft -= pageHeight
 
-      // 複数ページ対応（ただし最後のページがほぼ空の場合は追加しない）
-      while (heightLeft >= 20) { // 20mm未満の場合は空ページとみなす
+      // 複数ページ対応
+      while (heightLeft >= 20) {
         position = heightLeft - imgHeight
         pdf.addPage()
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
@@ -523,11 +570,15 @@ const InvoiceCreation: React.FC = () => {
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-text-muted mb-2">取引先</label>
-                      <input
-                        type="text"
-                        className="w-full bg-background border border-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        placeholder="株式会社〇〇"
-                      />
+                      <button
+                        onClick={() => setShowCustomerModal(true)}
+                        className="w-full bg-background border border-border rounded-lg px-4 py-2 text-left text-text-main hover:bg-surface-highlight focus:outline-none focus:ring-2 focus:ring-primary/50 flex items-center justify-between"
+                      >
+                        <span className={customer.name ? 'text-text-main' : 'text-text-muted'}>
+                          {customer.name || '取引先を選択'}
+                        </span>
+                        <User className="w-4 h-4 text-text-muted" />
+                      </button>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-text-muted mb-2">請求日</label>
@@ -547,16 +598,31 @@ const InvoiceCreation: React.FC = () => {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-text-muted mb-2">振込先</label>
+                    <button
+                      onClick={() => setShowBankAccountModal(true)}
+                      className="w-full bg-background border border-border rounded-lg px-4 py-2 text-left text-text-main hover:bg-surface-highlight focus:outline-none focus:ring-2 focus:ring-primary/50 flex items-center justify-between"
+                    >
+                      <span className={bankAccount.bankName ? 'text-text-main' : 'text-text-muted'}>
+                        {bankAccount.bankName ? `${bankAccount.bankName} ${bankAccount.branchName} ${bankAccount.accountType} ${bankAccount.accountNumber}` : '振込先を選択'}
+                      </span>
+                      <Banknote className="w-4 h-4 text-text-muted" />
+                    </button>
+                  </div>
+
                   {/* Items Table */}
                   {/* Items Table */}
                   <div className="border border-border rounded-xl overflow-hidden bg-background">
                     <div className="block md:hidden">
-                      {[1, 2].map((i) => (
-                        <div key={i} className="p-4 border-b border-border last:border-b-0 bg-surface">
+                      {items.map((item) => (
+                        <div key={item.id} className="p-4 border-b border-border last:border-b-0 bg-surface">
                           <div className="mb-3">
                             <label className="block text-xs font-medium text-text-muted mb-1">品目</label>
                             <input
                               type="text"
+                              value={item.description}
+                              onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                               className="w-full bg-background border border-border rounded px-3 py-2 text-text-main focus:outline-none focus:ring-1 focus:ring-primary"
                               placeholder="品目を入力"
                             />
@@ -566,6 +632,8 @@ const InvoiceCreation: React.FC = () => {
                               <label className="block text-xs font-medium text-text-muted mb-1">数量</label>
                               <input
                                 type="number"
+                                value={item.quantity}
+                                onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
                                 className="w-full bg-background border border-border rounded px-3 py-2 text-right text-text-main focus:outline-none focus:ring-1 focus:ring-primary"
                                 placeholder="1"
                               />
@@ -574,6 +642,8 @@ const InvoiceCreation: React.FC = () => {
                               <label className="block text-xs font-medium text-text-muted mb-1">単価</label>
                               <input
                                 type="number"
+                                value={item.unitPrice}
+                                onChange={(e) => updateItem(item.id, 'unitPrice', Number(e.target.value))}
                                 className="w-full bg-background border border-border rounded px-3 py-2 text-right text-text-main focus:outline-none focus:ring-1 focus:ring-primary"
                                 placeholder="0"
                               />
@@ -582,9 +652,12 @@ const InvoiceCreation: React.FC = () => {
                           <div className="flex justify-between items-center">
                             <div className="text-sm">
                               <span className="text-text-muted mr-2">金額:</span>
-                              <span className="font-medium text-text-main">¥0</span>
+                              <span className="font-medium text-text-main">¥{item.amount.toLocaleString()}</span>
                             </div>
-                            <button className="text-text-muted hover:text-red-400 transition-colors p-2">
+                            <button
+                              onClick={() => removeItem(item.id)}
+                              className="text-text-muted hover:text-red-400 transition-colors p-2"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -604,11 +677,13 @@ const InvoiceCreation: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                          {[1, 2].map((i) => (
-                            <tr key={i}>
+                          {items.map((item) => (
+                            <tr key={item.id}>
                               <td className="px-4 py-3">
                                 <input
                                   type="text"
+                                  value={item.description}
+                                  onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                                   className="w-full bg-transparent border-none focus:ring-0 text-text-main placeholder-text-muted"
                                   placeholder="品目を入力"
                                 />
@@ -616,6 +691,8 @@ const InvoiceCreation: React.FC = () => {
                               <td className="px-4 py-3">
                                 <input
                                   type="number"
+                                  value={item.quantity}
+                                  onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
                                   className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
                                   placeholder="1"
                                 />
@@ -623,13 +700,18 @@ const InvoiceCreation: React.FC = () => {
                               <td className="px-4 py-3">
                                 <input
                                   type="number"
+                                  value={item.unitPrice}
+                                  onChange={(e) => updateItem(item.id, 'unitPrice', Number(e.target.value))}
                                   className="w-full bg-transparent border-none focus:ring-0 text-right text-text-main"
                                   placeholder="0"
                                 />
                               </td>
-                              <td className="px-4 py-3 text-right text-text-main">¥0</td>
+                              <td className="px-4 py-3 text-right text-text-main">¥{item.amount.toLocaleString()}</td>
                               <td className="px-4 py-3 text-center">
-                                <button className="text-text-muted hover:text-red-400 transition-colors">
+                                <button
+                                  onClick={() => removeItem(item.id)}
+                                  className="text-text-muted hover:text-red-400 transition-colors"
+                                >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
                               </td>
@@ -639,7 +721,10 @@ const InvoiceCreation: React.FC = () => {
                       </table>
                     </div>
                     <div className="p-3 bg-surface-highlight border-t border-border">
-                      <button className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1">
+                      <button
+                        onClick={addItem}
+                        className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                      >
                         <Plus className="w-4 h-4" />
                         行を追加
                       </button>
@@ -650,15 +735,15 @@ const InvoiceCreation: React.FC = () => {
                     <div className="w-64 space-y-3">
                       <div className="flex justify-between text-text-muted">
                         <span>小計</span>
-                        <span>¥0</span>
+                        <span>¥{subtotal.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-text-muted">
                         <span>消費税 (10%)</span>
-                        <span>¥0</span>
+                        <span>¥{taxAmount.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-lg font-bold text-text-main pt-3 border-t border-border">
                         <span>合計</span>
-                        <span>¥0</span>
+                        <span>¥{totalAmount.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -736,7 +821,8 @@ const InvoiceCreation: React.FC = () => {
                     .map(customer => (
                       <div
                         key={customer.id}
-                        className="p-3 border border-border rounded-md hover:bg-background cursor-pointer bg-background"
+                        onClick={() => selectCustomer(customer)}
+                        className="p-3 border border-border rounded-md hover:bg-background cursor-pointer bg-background hover:bg-surface-highlight transition-colors"
                       >
                         <p className="font-medium text-text-main">{customer.name}</p>
                         <p className="text-sm text-text-muted">{customer.email}</p>
@@ -779,7 +865,8 @@ const InvoiceCreation: React.FC = () => {
                   {bankAccounts.map(account => (
                     <div
                       key={account.id}
-                      className="p-3 border border-border rounded-md hover:bg-background cursor-pointer bg-background"
+                      onClick={() => selectBankAccount(account)}
+                      className="p-3 border border-border rounded-md hover:bg-background cursor-pointer bg-background hover:bg-surface-highlight transition-colors"
                     >
                       <p className="font-medium text-text-main">{account.bankName} {account.branchName}</p>
                       <p className="text-sm text-text-muted">{account.accountType} {account.accountNumber}</p>
