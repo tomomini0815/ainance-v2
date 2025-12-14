@@ -910,6 +910,12 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                         <ExternalLink className="w-4 h-4" />
                         確定申告書等作成コーナーを開く
                     </a>
+                    <Link
+                        to="/tax-filing-guide"
+                        className="inline-flex items-center gap-2 px-4 py-2 ml-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
+                    >
+                        📖 詳しい申告ガイドを見る
+                    </Link>
                 </div>
 
                 {/* 注意事項 */}
