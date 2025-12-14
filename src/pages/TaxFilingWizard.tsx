@@ -128,35 +128,174 @@ const TaxFilingWizard: React.FC = () => {
         }
     };
 
-    // PDF生成（簡易版）
+    // PDF生成（簡易版）- ダウンロードとプレビューを同時に実行
     const generatePDF = () => {
-        // 実際の実装ではjsPDFなどを使用
+        // 申告書の内容を作成
         const content = `
-確定申告書（${fiscalYear}年度）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+           確定申告書（${fiscalYear}年度）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+申告方法: ${hasBlueReturn ? '青色申告' : '白色申告'}
+作成日時: ${new Date().toLocaleString('ja-JP')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 【収支内訳】
-売上高: ${formatCurrency(taxData.totalRevenue)}
-経費合計: ${formatCurrency(taxData.totalExpenses)}
-事業所得: ${formatCurrency(taxData.netIncome)}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+売上高:     ${formatCurrency(taxData.totalRevenue)}
+経費合計:   ${formatCurrency(taxData.totalExpenses)}
+──────────────────────────────────────────────────
+事業所得:   ${formatCurrency(taxData.netIncome)}
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 【控除内訳】
-${deductions.filter(d => d.isApplicable).map(d => `${d.name}: ${formatCurrency(d.amount)}`).join('\n')}
-控除合計: ${formatCurrency(taxData.totalDeductions)}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: ${formatCurrency(d.amount)}`).join('\n')}
+──────────────────────────────────────────────────
+控除合計:   ${formatCurrency(taxData.totalDeductions)}
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 【税額計算】
-課税所得: ${formatCurrency(taxData.taxableIncome)}
-所得税額: ${formatCurrency(taxData.estimatedTax)}
-    `.trim();
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+課税所得:   ${formatCurrency(taxData.taxableIncome)}
+──────────────────────────────────────────────────
+所得税額:   ${formatCurrency(taxData.estimatedTax)}
 
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+※この書類はAinanceで生成された概算資料です。
+  正式な確定申告は国税庁のe-Taxでお手続きください。
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`.trim();
+
+        // Blobを作成（UTF-8 BOM付きで日本語文字化け防止）
+        const blob = new Blob(['\ufeff' + content], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
+
+        // ダウンロードリンクを作成
         const link = document.createElement('a');
         link.href = url;
         link.download = `確定申告書_${fiscalYear}年度.txt`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+
+        // 新しいタブでプレビューを開く
+        const previewWindow = window.open('', '_blank');
+        if (previewWindow) {
+            previewWindow.document.write(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>確定申告書プレビュー - ${fiscalYear}年度</title>
+    <style>
+        body {
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            padding: 40px;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            color: #60a5fa;
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #9ca3af;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+        pre {
+            background: rgba(0,0,0,0.3);
+            padding: 24px;
+            border-radius: 12px;
+            font-family: 'SFMono-Regular', 'Consolas', 'Menlo', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 32px;
+        }
+        button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .print-btn {
+            background: #3b82f6;
+            color: white;
+        }
+        .print-btn:hover {
+            background: #2563eb;
+        }
+        .close-btn {
+            background: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .close-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            .container {
+                background: white;
+                box-shadow: none;
+            }
+            pre {
+                background: #f5f5f5;
+            }
+            .actions {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 確定申告書プレビュー</h1>
+        <p class="subtitle">${fiscalYear}年度 | ${hasBlueReturn ? '青色申告' : '白色申告'} | 作成日: ${new Date().toLocaleDateString('ja-JP')}</p>
+        <pre>${content}</pre>
+        <div class="actions">
+            <button class="print-btn" onclick="window.print()">🖨️ 印刷する</button>
+            <button class="close-btn" onclick="window.close()">✕ 閉じる</button>
+        </div>
+    </div>
+</body>
+</html>
+            `);
+            previewWindow.document.close();
+        }
+
+        // メモリ解放（少し遅延させて確実にダウンロードを完了させる）
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
 
     // 進捗バー
