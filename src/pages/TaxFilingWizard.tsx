@@ -7,7 +7,6 @@ import {
     CheckCircle,
     Calculator,
     FileText,
-    HelpCircle,
     Sparkles,
     Download,
     ChevronRight,
@@ -16,12 +15,14 @@ import {
     Plus,
     Trash2,
     RefreshCw,
+    Copy,
+    FileCode,
+    ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 import {
-    TaxFilingData,
     Deduction,
     calculateTaxFilingData,
     generateInitialDeductions,
@@ -30,6 +31,12 @@ import {
     formatCurrency,
     formatPercentage,
 } from '../services/TaxFilingService';
+import {
+    generateBlueReturnXTX,
+    generateIncomeStatementXML,
+    downloadXTXFile,
+    TaxFilingInfo,
+} from '../services/eTaxExportService';
 
 // ステップ定義
 const WIZARD_STEPS = [
@@ -651,84 +658,275 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
         </div>
     );
 
-    // ステップ5: 申告書作成
-    const Step5CreateDocument = () => (
-        <div className="space-y-6">
-            <div>
-                <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-primary" />
-                    確定申告書の作成
-                </h3>
-                <p className="text-text-muted mb-6">
-                    入力内容を確認して、確定申告書をダウンロードしてください。
-                </p>
-            </div>
+    // XTX/XMLファイル生成
+    const generateXTXFile = () => {
+        const taxInfo: TaxFilingInfo = {
+            fiscalYear,
+            filingType: hasBlueReturn ? 'blue' : 'white',
+            revenue: taxData.totalRevenue,
+            expenses: taxData.totalExpenses,
+            netIncome: taxData.netIncome,
+            expensesByCategory: taxData.expensesByCategory,
+            deductions: deductions.filter(d => d.isApplicable).map(d => ({
+                type: d.type,
+                name: d.name,
+                amount: d.amount
+            })),
+            totalDeductions: taxData.totalDeductions,
+            taxableIncome: taxData.taxableIncome,
+            estimatedTax: taxData.estimatedTax,
+        };
 
-            {/* 最終確認 */}
-            <div className="bg-surface border border-border rounded-xl divide-y divide-border">
-                <div className="p-4 flex justify-between">
-                    <span className="text-text-muted">申告年度</span>
-                    <span className="font-medium text-text-main">{fiscalYear}年度</span>
-                </div>
-                <div className="p-4 flex justify-between">
-                    <span className="text-text-muted">申告方法</span>
-                    <span className="font-medium text-text-main">{hasBlueReturn ? '青色申告' : '白色申告'}</span>
-                </div>
-                <div className="p-4 flex justify-between">
-                    <span className="text-text-muted">売上高</span>
-                    <span className="font-medium text-success">{formatCurrency(taxData.totalRevenue)}</span>
-                </div>
-                <div className="p-4 flex justify-between">
-                    <span className="text-text-muted">経費合計</span>
-                    <span className="font-medium text-error">{formatCurrency(taxData.totalExpenses)}</span>
-                </div>
-                <div className="p-4 flex justify-between">
-                    <span className="text-text-muted">事業所得</span>
-                    <span className="font-medium text-text-main">{formatCurrency(taxData.netIncome)}</span>
-                </div>
-                <div className="p-4 flex justify-between">
-                    <span className="text-text-muted">控除合計</span>
-                    <span className="font-medium text-primary">{formatCurrency(taxData.totalDeductions)}</span>
-                </div>
-                <div className="p-4 flex justify-between bg-primary-light">
-                    <span className="font-medium text-text-main">予想所得税額</span>
-                    <span className="font-bold text-primary text-lg">{formatCurrency(taxData.estimatedTax)}</span>
-                </div>
-            </div>
+        const xml = hasBlueReturn
+            ? generateBlueReturnXTX(taxInfo)
+            : generateIncomeStatementXML(taxInfo);
 
-            {/* ダウンロードボタン */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button
-                    onClick={generatePDF}
-                    className="btn-primary py-4"
-                >
-                    <Download className="w-5 h-5" />
-                    申告書をダウンロード
-                </button>
-                <a
-                    href="https://www.keisan.nta.go.jp/kyoutu/ky/smsp/top"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-outline py-4 text-center"
-                >
-                    <FileText className="w-5 h-5" />
-                    e-Taxで申告する
-                </a>
-            </div>
+        const filename = hasBlueReturn
+            ? `青色申告決算書_${fiscalYear}年度.xtx`
+            : `収支内訳書_${fiscalYear}年度.xml`;
 
-            <div className="bg-info-light border border-info/20 rounded-lg p-4 flex items-start gap-3">
-                <HelpCircle className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
-                <div>
-                    <p className="text-sm text-text-main font-medium">次のステップ</p>
-                    <ol className="text-sm text-text-muted mt-2 space-y-1 list-decimal list-inside">
-                        <li>ダウンロードした申告書の内容を確認</li>
-                        <li>国税庁のe-Taxサイトで電子申告、または税務署に郵送</li>
-                        <li>納税（3月15日まで）</li>
-                    </ol>
-                </div>
-            </div>
+        downloadXTXFile(xml, filename);
+
+        // プレビューも開く
+        const previewWindow = window.open('', '_blank');
+        if (previewWindow) {
+            previewWindow.document.write(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>e-Tax用ファイルプレビュー - ${fiscalYear}年度</title>
+    <style>
+        body { font-family: 'Hiragino Sans', sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 40px; margin: 0; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: #60a5fa; text-align: center; }
+        .info { background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.3); padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+        pre { background: #0d1117; padding: 20px; border-radius: 8px; overflow-x: auto; font-size: 12px; line-height: 1.6; }
+        .actions { display: flex; gap: 16px; justify-content: center; margin-top: 24px; }
+        button { padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; }
+        .primary { background: #3b82f6; color: white; }
+        .secondary { background: rgba(255,255,255,0.1); color: #e0e0e0; border: 1px solid rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 ${hasBlueReturn ? '青色申告決算書' : '収支内訳書'}（${fiscalYear}年度）</h1>
+        <div class="info">
+            <p>⚠️ <strong>このXMLファイルは参考資料です。</strong></p>
+            <p>正式な確定申告は、国税庁の確定申告書等作成コーナーをご利用ください。XMLデータは入力の参考にお使いいただけます。</p>
         </div>
-    );
+        <pre>${xml.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+        <div class="actions">
+            <button class="secondary" onclick="window.close()">✕ 閉じる</button>
+        </div>
+    </div>
+</body>
+</html>
+            `);
+            previewWindow.document.close();
+        }
+    };
+
+    // ステップ5: 申告書作成
+    const Step5CreateDocument = () => {
+        const [copiedField, setCopiedField] = useState<string | null>(null);
+
+        const handleCopy = async (value: string | number, fieldName: string) => {
+            try {
+                await navigator.clipboard.writeText(String(value).replace(/[¥,]/g, ''));
+                setCopiedField(fieldName);
+                setTimeout(() => setCopiedField(null), 2000);
+            } catch (err) {
+                console.error('コピーに失敗しました:', err);
+            }
+        };
+
+        return (
+            <div className="space-y-6">
+                <div>
+                    <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-primary" />
+                        確定申告書の作成
+                    </h3>
+                    <p className="text-text-muted mb-2">
+                        入力内容を確認して、書類を作成してください。
+                    </p>
+                    <p className="text-xs text-text-muted">
+                        💡 各項目の右側のコピーボタンで、e-Tax入力時にそのまま貼り付けできます
+                    </p>
+                </div>
+
+                {/* データ確認（コピー機能付き） */}
+                <div className="bg-surface border border-border rounded-xl divide-y divide-border">
+                    {/* 申告年度 */}
+                    <div className="p-4 flex justify-between items-center">
+                        <span className="text-text-muted">申告年度</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-text-main">{fiscalYear}年度</span>
+                        </div>
+                    </div>
+                    {/* 申告方法 */}
+                    <div className="p-4 flex justify-between items-center">
+                        <span className="text-text-muted">申告方法</span>
+                        <span className="font-medium text-text-main">{hasBlueReturn ? '青色申告' : '白色申告'}</span>
+                    </div>
+                    {/* 売上高 */}
+                    <div className="p-4 flex justify-between items-center">
+                        <span className="text-text-muted">売上高</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-success">{formatCurrency(taxData.totalRevenue)}</span>
+                            <button
+                                onClick={() => handleCopy(taxData.totalRevenue, 'revenue')}
+                                className={`p-1.5 rounded transition-colors ${copiedField === 'revenue' ? 'bg-success text-white' : 'hover:bg-surface-highlight text-text-muted'}`}
+                                title="コピー"
+                            >
+                                {copiedField === 'revenue' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+                    {/* 経費合計 */}
+                    <div className="p-4 flex justify-between items-center">
+                        <span className="text-text-muted">経費合計</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-error">{formatCurrency(taxData.totalExpenses)}</span>
+                            <button
+                                onClick={() => handleCopy(taxData.totalExpenses, 'expenses')}
+                                className={`p-1.5 rounded transition-colors ${copiedField === 'expenses' ? 'bg-success text-white' : 'hover:bg-surface-highlight text-text-muted'}`}
+                                title="コピー"
+                            >
+                                {copiedField === 'expenses' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+                    {/* 事業所得 */}
+                    <div className="p-4 flex justify-between items-center">
+                        <span className="text-text-muted">事業所得</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-text-main">{formatCurrency(taxData.netIncome)}</span>
+                            <button
+                                onClick={() => handleCopy(taxData.netIncome, 'netIncome')}
+                                className={`p-1.5 rounded transition-colors ${copiedField === 'netIncome' ? 'bg-success text-white' : 'hover:bg-surface-highlight text-text-muted'}`}
+                                title="コピー"
+                            >
+                                {copiedField === 'netIncome' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+                    {/* 控除合計 */}
+                    <div className="p-4 flex justify-between items-center">
+                        <span className="text-text-muted">控除合計</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-primary">{formatCurrency(taxData.totalDeductions)}</span>
+                            <button
+                                onClick={() => handleCopy(taxData.totalDeductions, 'deductions')}
+                                className={`p-1.5 rounded transition-colors ${copiedField === 'deductions' ? 'bg-success text-white' : 'hover:bg-surface-highlight text-text-muted'}`}
+                                title="コピー"
+                            >
+                                {copiedField === 'deductions' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+                    {/* 課税所得 */}
+                    <div className="p-4 flex justify-between items-center">
+                        <span className="text-text-muted">課税所得</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-text-main">{formatCurrency(taxData.taxableIncome)}</span>
+                            <button
+                                onClick={() => handleCopy(taxData.taxableIncome, 'taxableIncome')}
+                                className={`p-1.5 rounded transition-colors ${copiedField === 'taxableIncome' ? 'bg-success text-white' : 'hover:bg-surface-highlight text-text-muted'}`}
+                                title="コピー"
+                            >
+                                {copiedField === 'taxableIncome' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+                    {/* 予想所得税額 */}
+                    <div className="p-4 flex justify-between items-center bg-primary-light">
+                        <span className="font-medium text-text-main">予想所得税額</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-bold text-primary text-lg">{formatCurrency(taxData.estimatedTax)}</span>
+                            <button
+                                onClick={() => handleCopy(taxData.estimatedTax, 'tax')}
+                                className={`p-1.5 rounded transition-colors ${copiedField === 'tax' ? 'bg-success text-white' : 'hover:bg-primary/20 text-primary'}`}
+                                title="コピー"
+                            >
+                                {copiedField === 'tax' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ダウンロードオプション */}
+                <div className="space-y-4">
+                    <h4 className="text-md font-medium text-text-main">📥 ダウンロード</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button
+                            onClick={generatePDF}
+                            className="btn-primary py-4 flex items-center justify-center gap-2"
+                        >
+                            <Download className="w-5 h-5" />
+                            申告書プレビュー
+                        </button>
+                        <button
+                            onClick={generateXTXFile}
+                            className="btn-outline py-4 flex items-center justify-center gap-2 border-2 border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                        >
+                            <FileCode className="w-5 h-5" />
+                            e-Tax用XMLファイル
+                        </button>
+                    </div>
+                </div>
+
+                {/* e-Tax申告ガイド */}
+                <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20 rounded-xl p-5">
+                    <h4 className="text-md font-medium text-text-main mb-3 flex items-center gap-2">
+                        <ExternalLink className="w-5 h-5 text-blue-500" />
+                        e-Taxで直接申告する
+                    </h4>
+                    <ol className="text-sm text-text-muted space-y-2 mb-4">
+                        <li className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                            上のコピーボタンで各数値をコピー
+                        </li>
+                        <li className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
+                            確定申告書等作成コーナーにアクセス
+                        </li>
+                        <li className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
+                            コピーした数値を貼り付けて入力
+                        </li>
+                        <li className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">4</span>
+                            マイナンバーカードで電子署名 → 送信完了！
+                        </li>
+                    </ol>
+                    <a
+                        href="https://www.keisan.nta.go.jp/kyoutu/ky/smsp/top"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                    >
+                        <ExternalLink className="w-4 h-4" />
+                        確定申告書等作成コーナーを開く
+                    </a>
+                </div>
+
+                {/* 注意事項 */}
+                <div className="bg-warning-light border border-warning/20 rounded-lg p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm text-text-main font-medium">ご注意ください</p>
+                        <ul className="text-sm text-text-muted mt-2 space-y-1 list-disc list-inside">
+                            <li>この計算は概算です。正確な税額は税務署にご確認ください</li>
+                            <li>確定申告の期限は翌年3月15日です（例：2025年度分は2026年3月15日まで）</li>
+                            <li>青色申告特別控除65万円の適用には電子申告が必要です</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     // ステップコンテンツを取得
     const renderStepContent = () => {
