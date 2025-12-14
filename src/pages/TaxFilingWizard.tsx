@@ -1037,6 +1037,59 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                             )}
                         </div>
                     </div>
+
+                    {/* 公式テンプレートダウンロード（法人向け） */}
+                    {currentBusinessType?.business_type === 'corporation' && (
+                        <div className="bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 rounded-xl p-4">
+                            <h5 className="text-sm font-medium text-text-main mb-3 flex items-center gap-2">
+                                📋 公式テンプレートダウンロード
+                            </h5>
+                            <p className="text-xs text-text-muted mb-3">
+                                国税庁の正式な法人税申告書テンプレート（PDF）をダウンロードできます
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a
+                                    href="https://www.nta.go.jp/taxes/tetsuzuki/shinsei/annai/hojin/shinkoku/itiran2024/pdf/01_01.pdf"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    別表一（一）
+                                </a>
+                                <a
+                                    href="https://www.nta.go.jp/taxes/tetsuzuki/shinsei/annai/hojin/shinkoku/itiran2024/pdf/01_02.pdf"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    別表一（二）
+                                </a>
+                                <a
+                                    href="https://www.nta.go.jp/taxes/tetsuzuki/shinsei/annai/hojin/shinkoku/itiran2024/pdf/04.pdf"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-3 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    別表四
+                                </a>
+                                <a
+                                    href="https://www.nta.go.jp/taxes/tetsuzuki/shinsei/annai/hojin/shinkoku/itiran2024/01.htm"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-3 border border-indigo-400 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    全ての別表一覧
+                                </a>
+                            </div>
+                            <p className="text-xs text-text-muted mt-3">
+                                ※ 令和6年4月1日以後終了事業年度分
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* e-Tax申告ガイド */}
