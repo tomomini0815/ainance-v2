@@ -123,58 +123,54 @@ export async function generateCorporateTaxPDF(data: JpTaxFormData): Promise<Uint
   const { regular, bold } = await loadJapaneseFont(pdfDoc);
   const { width, height } = page.getSize();
   
+  // 紺色をメインカラーに
   const colors = {
-    primary: rgb(0.4, 0.2, 0.6),
+    primary: rgb(0.1, 0.2, 0.4),    // 紺色
+    secondary: rgb(0.15, 0.3, 0.5), // 濃い青
     text: rgb(0.1, 0.1, 0.1),
-    muted: rgb(0.4, 0.4, 0.4),
-    line: rgb(0.7, 0.7, 0.7),
-    highlight: rgb(0.95, 0.95, 1),
-    red: rgb(0.8, 0.2, 0.2),
+    muted: rgb(0.45, 0.45, 0.45),
+    line: rgb(0.6, 0.6, 0.6),
+    headerBg: rgb(0.92, 0.94, 0.98),
+    highlight: rgb(0.94, 0.96, 1),
+    green: rgb(0.15, 0.55, 0.25),
+    red: rgb(0.75, 0.2, 0.2),
+    lightGreen: rgb(0.88, 0.96, 0.88),
+    lightRed: rgb(1, 0.93, 0.93),
   };
   
-  const drawText = (text: string, x: number, y: number, options: { size?: number; font?: PDFFont; color?: typeof colors.text } = {}) => {
-    page.drawText(text, {
-      x,
-      y,
-      size: options.size || 10,
-      font: options.font || regular,
-      color: options.color || colors.text,
-    });
+  // 行の高さ設定
+  const ROW_HEIGHT = 18;
+  const SECTION_TITLE_HEIGHT = 24;
+  
+  const draw = {
+    text: (text: string, x: number, y: number, options: { size?: number; font?: PDFFont; color?: typeof colors.text } = {}) => {
+      page.drawText(text, { x, y, size: options.size || 10, font: options.font || regular, color: options.color || colors.text });
+    },
+    line: (x1: number, y1: number, x2: number, y2: number, thickness = 0.5) => {
+      page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color: colors.line });
+    },
+    rect: (x: number, y: number, w: number, h: number, color: typeof colors.highlight) => {
+      page.drawRectangle({ x, y, width: w, height: h, color });
+    },
   };
   
-  const drawLine = (x1: number, y1: number, x2: number, y2: number, thickness = 0.5) => {
-    page.drawLine({
-      start: { x: x1, y: y1 },
-      end: { x: x2, y: y2 },
-      thickness,
-      color: colors.line,
-    });
-  };
+  // ===== ヘッダー（紺色） =====
+  draw.rect(0, height - 60, width, 60, colors.primary);
+  draw.text('法 人 税 申 告 書', 190, height - 38, { size: 24, font: bold, color: rgb(1, 1, 1) });
+  draw.text('（参考資料）', 390, height - 38, { size: 12, color: rgb(0.8, 0.85, 0.9) });
   
-  const drawRect = (x: number, y: number, w: number, h: number, color: typeof colors.highlight) => {
-    page.drawRectangle({ x, y, width: w, height: h, color });
-  };
-  
-  // ヘッダー
-  drawRect(0, height - 60, width, 60, colors.primary);
-  drawText('法人税申告書', 50, height - 40, { size: 18, font: bold, color: rgb(1, 1, 1) });
-  drawText('（参考資料）', 180, height - 40, { size: 12, font: regular, color: rgb(0.9, 0.9, 0.9) });
-  
-  let y = height - 85;
-  
-  // 会社情報
-  drawText(`会社名: ${data.companyName || '―'}`, 50, y, { size: 12, font: bold });
+  let y = height - 78;
+  draw.text(`${data.companyName || '会社名'}`, 50, y, { size: 13, font: bold });
+  draw.text(`${data.fiscalYear}年度（${getJapaneseYear(data.fiscalYear)}度）`, 300, y, { size: 11 });
+  draw.text(`作成日: ${new Date().toLocaleDateString('ja-JP')}`, 450, y, { size: 9, color: colors.muted });
   y -= 20;
-  drawText(`事業年度: ${data.fiscalYear}年度（${getJapaneseYear(data.fiscalYear)}度）`, 50, y, { size: 10 });
-  drawText(`作成日: ${new Date().toLocaleDateString('ja-JP')}`, 400, y, { size: 9, color: colors.muted });
-  y -= 30;
+  draw.line(40, y, 555, y, 1.5);
+  y -= 15;
   
-  drawLine(50, y, 545, y, 1);
-  y -= 25;
-  
-  // セクション1: 法人情報
-  drawText('第1部　法人情報', 50, y, { size: 12, font: bold, color: colors.primary });
-  y -= 25;
+  // ===== セクション1: 法人情報 =====
+  draw.rect(40, y - SECTION_TITLE_HEIGHT, 515, SECTION_TITLE_HEIGHT, colors.secondary);
+  draw.text('第1部　法人情報', 50, y - 17, { size: 12, font: bold, color: rgb(1, 1, 1) });
+  y -= SECTION_TITLE_HEIGHT + 8;
   
   const infoRows = [
     ['会社名（商号）', data.companyName || '―'],
@@ -184,38 +180,52 @@ export async function generateCorporateTaxPDF(data: JpTaxFormData): Promise<Uint
     ['資本金', data.capital ? `${formatCurrency(data.capital)}円` : '―'],
   ];
   
-  infoRows.forEach(([label, value]) => {
-    drawLine(50, y - 5, 545, y - 5);
-    drawText(label, 60, y);
-    drawText(value, 200, y);
-    y -= 20;
+  infoRows.forEach(([label, value], idx) => {
+    const isAlt = idx % 2 === 0;
+    if (isAlt) {
+      draw.rect(40, y - ROW_HEIGHT, 515, ROW_HEIGHT, colors.highlight);
+    }
+    draw.line(40, y - ROW_HEIGHT, 555, y - ROW_HEIGHT);
+    draw.text(label, 55, y - ROW_HEIGHT + 5, { size: 10 });
+    draw.text(value, 200, y - ROW_HEIGHT + 5, { size: 10 });
+    y -= ROW_HEIGHT;
   });
   y -= 15;
   
-  // セクション2: 損益
-  drawText('第2部　損益の計算', 50, y, { size: 12, font: bold, color: colors.primary });
-  y -= 25;
+  // ===== セクション2: 損益の計算 =====
+  draw.rect(40, y - SECTION_TITLE_HEIGHT, 515, SECTION_TITLE_HEIGHT, colors.secondary);
+  draw.text('第2部　損益の計算', 50, y - 17, { size: 12, font: bold, color: rgb(1, 1, 1) });
+  y -= SECTION_TITLE_HEIGHT + 8;
   
-  drawRect(50, y - 5, 495, 20, colors.highlight);
-  drawLine(50, y - 5, 545, y - 5);
-  drawText('売上高', 60, y);
-  drawText(`${formatCurrency(data.revenue)}円`, 450, y);
-  y -= 20;
+  // 売上高
+  draw.rect(40, y - ROW_HEIGHT - 2, 515, ROW_HEIGHT + 2, colors.highlight);
+  draw.line(40, y - ROW_HEIGHT - 2, 555, y - ROW_HEIGHT - 2);
+  draw.text('売上高', 55, y - ROW_HEIGHT + 3, { size: 11 });
+  draw.text(`${formatCurrency(data.revenue)}円`, 450, y - ROW_HEIGHT + 3, { size: 11 });
+  y -= ROW_HEIGHT + 4;
   
-  drawLine(50, y - 5, 545, y - 5);
-  drawText('売上原価・経費合計', 60, y);
-  drawText(`${formatCurrency(data.expenses)}円`, 450, y);
-  y -= 20;
+  // 経費
+  draw.line(40, y - ROW_HEIGHT, 555, y - ROW_HEIGHT);
+  draw.text('売上原価・経費合計', 55, y - ROW_HEIGHT + 5, { size: 10 });
+  draw.text(`${formatCurrency(data.expenses)}円`, 450, y - ROW_HEIGHT + 5, { size: 10 });
+  y -= ROW_HEIGHT + 2;
   
-  drawRect(50, y - 5, 495, 20, rgb(0.95, 1, 0.95));
-  drawLine(50, y - 5, 545, y - 5);
-  drawText('当期純利益', 60, y, { font: bold });
-  drawText(`${formatCurrency(data.netIncome)}円`, 450, y, { font: bold });
-  y -= 35;
+  // 当期純利益
+  draw.rect(40, y - ROW_HEIGHT - 4, 515, ROW_HEIGHT + 4, colors.lightGreen);
+  draw.line(40, y - ROW_HEIGHT - 4, 555, y - ROW_HEIGHT - 4, 1);
+  draw.line(40, y, 555, y, 1);
+  draw.text('当期純利益', 55, y - ROW_HEIGHT + 1, { size: 12, font: bold });
+  draw.text(`${formatCurrency(data.netIncome)}円`, 440, y - ROW_HEIGHT + 1, { 
+    size: 12, 
+    font: bold, 
+    color: data.netIncome >= 0 ? colors.green : colors.red 
+  });
+  y -= ROW_HEIGHT + 20;
   
-  // セクション3: 税額計算
-  drawText('第3部　税額の計算', 50, y, { size: 12, font: bold, color: colors.primary });
-  y -= 25;
+  // ===== セクション3: 税額の計算 =====
+  draw.rect(40, y - SECTION_TITLE_HEIGHT, 515, SECTION_TITLE_HEIGHT, colors.secondary);
+  draw.text('第3部　税額の計算', 50, y - 17, { size: 12, font: bold, color: rgb(1, 1, 1) });
+  y -= SECTION_TITLE_HEIGHT + 8;
   
   const taxableIncome = data.taxableIncome;
   const corporateTaxRate = taxableIncome <= 8000000 ? 0.15 : 0.232;
@@ -225,30 +235,36 @@ export async function generateCorporateTaxPDF(data: JpTaxFormData): Promise<Uint
   const totalTax = corporateTax + localCorporateTax + businessTax;
   
   const taxRows = [
-    ['課税所得金額', `${formatCurrency(taxableIncome)}円`],
-    [`法人税額（税率${(corporateTaxRate * 100).toFixed(1)}%）`, `${formatCurrency(corporateTax)}円`],
-    ['地方法人税（10.3%）', `${formatCurrency(localCorporateTax)}円`],
-    ['事業税（概算7%）', `${formatCurrency(businessTax)}円`],
+    { label: '課税所得金額', value: `${formatCurrency(taxableIncome)}円`, highlight: true },
+    { label: `法人税額（税率${(corporateTaxRate * 100).toFixed(1)}%）`, value: `${formatCurrency(corporateTax)}円` },
+    { label: '地方法人税（10.3%）', value: `${formatCurrency(localCorporateTax)}円` },
+    { label: '事業税（概算7%）', value: `${formatCurrency(businessTax)}円` },
   ];
   
-  taxRows.forEach(([label, value]) => {
-    drawLine(50, y - 5, 545, y - 5);
-    drawText(label, 60, y);
-    drawText(value, 450, y);
-    y -= 20;
+  taxRows.forEach((row, idx) => {
+    if (row.highlight) {
+      draw.rect(40, y - ROW_HEIGHT, 515, ROW_HEIGHT, colors.highlight);
+    } else if (idx % 2 === 1) {
+      draw.rect(40, y - ROW_HEIGHT, 515, ROW_HEIGHT, rgb(0.98, 0.98, 0.98));
+    }
+    draw.line(40, y - ROW_HEIGHT, 555, y - ROW_HEIGHT);
+    draw.text(row.label, 55, y - ROW_HEIGHT + 5, { size: 10 });
+    draw.text(row.value, 450, y - ROW_HEIGHT + 5, { size: 10 });
+    y -= ROW_HEIGHT;
   });
+  y -= 8;
   
-  // 合計
-  drawRect(50, y - 8, 495, 28, rgb(1, 0.95, 0.95));
-  drawLine(50, y - 8, 545, y - 8, 1);
-  drawLine(50, y + 20, 545, y + 20, 1);
-  drawText('税額合計（概算）', 60, y + 3, { font: bold });
-  drawText(`${formatCurrency(totalTax)}円`, 450, y + 3, { font: bold, color: colors.red });
+  // 税額合計
+  draw.rect(40, y - ROW_HEIGHT - 8, 515, ROW_HEIGHT + 8, colors.lightRed);
+  draw.line(40, y - ROW_HEIGHT - 8, 555, y - ROW_HEIGHT - 8, 1.5);
+  draw.line(40, y, 555, y, 1.5);
+  draw.text('税額合計（概算）', 55, y - ROW_HEIGHT - 1, { size: 13, font: bold });
+  draw.text(`${formatCurrency(totalTax)}円`, 430, y - ROW_HEIGHT - 1, { size: 13, font: bold, color: colors.red });
   
-  // フッター
-  drawLine(50, 60, 545, 60);
-  drawText('※ この書類はAinanceで作成した参考資料です。', 50, 45, { size: 8, color: colors.muted });
-  drawText('※ 正式な申告には税理士への相談またはe-Taxをご利用ください。', 50, 33, { size: 8, color: colors.muted });
+  // ===== フッター =====
+  draw.line(40, 75, 555, 75);
+  draw.text('※ この書類はAinanceで作成した参考資料です。', 45, 58, { size: 9, color: colors.muted });
+  draw.text('※ 正式な申告には税理士への相談またはe-Taxをご利用ください。', 45, 44, { size: 9, color: colors.muted });
   
   return pdfDoc.save();
 }
@@ -263,12 +279,12 @@ export async function generateFinancialStatementPDF(data: JpTaxFormData): Promis
   const { width, height } = page.getSize();
   
   const colors = {
-    primary: rgb(0.3, 0.2, 0.5),
-    secondary: rgb(0.2, 0.35, 0.55),
+    primary: rgb(0.1, 0.2, 0.4),    // 紺色（法人税申告書と統一）
+    secondary: rgb(0.15, 0.3, 0.5), // 濃い青
     text: rgb(0.1, 0.1, 0.1),
     muted: rgb(0.45, 0.45, 0.45),
     line: rgb(0.6, 0.6, 0.6),
-    headerBg: rgb(0.92, 0.92, 0.96),
+    headerBg: rgb(0.92, 0.94, 0.98),
     highlight: rgb(0.94, 0.96, 1),
     green: rgb(0.15, 0.55, 0.25),
     red: rgb(0.75, 0.2, 0.2),
