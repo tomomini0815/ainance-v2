@@ -265,11 +265,28 @@ const TaxFilingSupport: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center mb-6">
-          <Link to="/dashboard" className="mr-4">
-            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
-          </Link>
-          <h1 className="text-2xl font-bold text-text-main">申告サポート</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Link to="/dashboard" className="mr-4">
+              <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
+            </Link>
+            <h1 className="text-2xl font-bold text-text-main">申告サポート</h1>
+          </div>
+          <div className="flex gap-3">
+            <Link
+              to="/tax-filing-guide"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+            >
+              📖 申告ガイド
+            </Link>
+            <Link
+              to="/tax-filing-wizard"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+            >
+              <FileText className="w-4 h-4" />
+              確定申告ウィザード
+            </Link>
+          </div>
         </div>
 
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
