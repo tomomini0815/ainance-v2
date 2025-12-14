@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, TrendingDown, JapaneseYen, Calendar, Filter, Download, AlertCircle, Loader2, Sparkles, CheckCircle, AlertTriangle, Info, Target, RefreshCw } from 'lucide-react';
 import { useTransactions } from '../hooks/useTransactions';
@@ -554,6 +554,13 @@ const BusinessAnalysis: React.FC = () => {
           transactionCount={filteredTransactions.length}
           period={period === 'yearly' ? `${year}年` : `${year}年${month}月`}
         />
+
+        {/* ビジネス成長アドバイスセクション */}
+        <BusinessGrowthAdviceSection
+          businessType={businessType}
+          totals={totals}
+          transactionCount={filteredTransactions.length}
+        />
       </main>
     </div>
   );
@@ -754,6 +761,241 @@ const AIAdviceSection: React.FC<{
               </div>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ビジネス成長アドバイスセクションコンポーネント
+const BusinessGrowthAdviceSection: React.FC<{
+  businessType: string;
+  totals: { revenue: number; expense: number; profit: number };
+  transactionCount: number;
+}> = ({ businessType, totals, transactionCount }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // 取引データがない場合は表示しない
+  if (transactionCount === 0) {
+    return null;
+  }
+
+  // 個人事業主向け: 法人化アドバイス
+  const incorporationAdvice = {
+    title: '法人化のメリット・検討ポイント',
+    description: '事業規模の拡大に伴い、法人化を検討してみませんか？',
+    benefits: [
+      {
+        title: '税制面のメリット',
+        items: [
+          '法人税率は最大23.2%（個人の最高税率45%より低い）',
+          '役員報酬として給与所得控除が使える',
+          '退職金の損金算入が可能',
+          '家族を役員にして所得分散が可能',
+        ]
+      },
+      {
+        title: '社会的信用の向上',
+        items: [
+          '取引先への信用力アップ',
+          '金融機関からの融資を受けやすい',
+          '採用活動で有利になる',
+        ]
+      },
+      {
+        title: '事業継続性',
+        items: [
+          '法人は永続的に存続可能',
+          '事業承継がスムーズ',
+          '有限責任で個人資産を保護',
+        ]
+      }
+    ],
+    considerations: [
+      { label: '法人化の目安年収', value: '所得が800万円〜1,000万円を超える場合' },
+      { label: '設立費用', value: '約25万円〜30万円（株式会社の場合）' },
+      { label: '維持費用', value: '税理士費用・社会保険料など年間50万円〜' },
+      { label: '法人住民税', value: '赤字でも最低7万円/年が必要' },
+    ],
+    checkPoints: [
+      '年間利益が500万円以上ある',
+      '今後さらに事業を拡大したい',
+      '社会的信用を高めたい',
+      '従業員を雇用する予定がある',
+      '事業を長期的に継続したい',
+    ]
+  };
+
+  // 法人向け: 新規法人設立アドバイス
+  const multiCompanyAdvice = {
+    title: '新規法人設立のメリット・検討ポイント',
+    description: '事業の多角化やリスク分散のために、新たな法人設立を検討してみませんか？',
+    benefits: [
+      {
+        title: '節税効果',
+        items: [
+          '法人ごとに800万円までの軽減税率を適用',
+          '中小企業の特例を複数活用',
+          '消費税の免税事業者の特例を活用',
+          '交際費の損金算入枠を複数確保',
+        ]
+      },
+      {
+        title: 'リスク分散',
+        items: [
+          '事業ごとの責任を分離',
+          '一つの事業が不調でも他に影響しにくい',
+          '事業売却がしやすい',
+        ]
+      },
+      {
+        title: '経営の効率化',
+        items: [
+          '事業別の収益管理がしやすい',
+          '意思決定の迅速化',
+          '事業特性に合った運営が可能',
+        ]
+      }
+    ],
+    considerations: [
+      { label: '持株会社の活用', value: 'グループ全体の経営を効率化' },
+      { label: '設立費用', value: '約25万円〜30万円/法人' },
+      { label: '管理コスト', value: '法人ごとに決算・申告が必要' },
+      { label: '注意点', value: '税務調査でグループ間取引が注目される' },
+    ],
+    checkPoints: [
+      '新しい事業分野への進出を検討している',
+      '現在の事業と異なるリスクプロファイルの事業がある',
+      '将来的に事業の一部を売却する可能性がある',
+      '消費税の免税期間を活用したい',
+      '複数の拠点や地域で事業を展開したい',
+    ]
+  };
+
+  const advice = businessType === 'individual' ? incorporationAdvice : multiCompanyAdvice;
+  const iconColor = businessType === 'individual' ? 'text-indigo-500' : 'text-emerald-500';
+  const bgGradient = businessType === 'individual'
+    ? 'from-indigo-500/10 to-purple-500/10 border-indigo-500/20'
+    : 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20';
+
+  return (
+    <div className={`mt-6 bg-gradient-to-br ${bgGradient} rounded-xl shadow-sm border p-6`}>
+      {/* ヘッダー */}
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center">
+          <Target className={`w-6 h-6 ${iconColor} mr-2`} />
+          <div>
+            <h2 className="text-lg font-semibold text-text-main">{advice.title}</h2>
+            <p className="text-sm text-text-muted">{advice.description}</p>
+          </div>
+        </div>
+        <button className="p-2 hover:bg-surface-highlight rounded-lg transition-colors">
+          {isExpanded ? (
+            <ArrowLeft className="w-5 h-5 text-text-muted rotate-90" />
+          ) : (
+            <ArrowLeft className="w-5 h-5 text-text-muted -rotate-90" />
+          )}
+        </button>
+      </div>
+
+      {/* 展開コンテンツ */}
+      {isExpanded && (
+        <div className="mt-6 space-y-6">
+          {/* 現在の業績サマリー */}
+          <div className="bg-surface/50 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-text-muted mb-3">📊 あなたの現在の業績</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-text-muted">年間売上</p>
+                <p className="text-lg font-bold text-text-main">
+                  {formatCurrency(totals.revenue)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">年間経費</p>
+                <p className="text-lg font-bold text-text-main">
+                  {formatCurrency(totals.expense)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">年間利益</p>
+                <p className={`text-lg font-bold ${totals.profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {formatCurrency(totals.profit)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* メリット */}
+          <div>
+            <h3 className="text-md font-medium text-text-main mb-3">✨ 主なメリット</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {advice.benefits.map((benefit, index) => (
+                <div key={index} className="bg-surface/50 rounded-lg p-4 border border-border">
+                  <h4 className="font-medium text-text-main mb-2">{benefit.title}</h4>
+                  <ul className="space-y-1">
+                    {benefit.items.map((item, i) => (
+                      <li key={i} className="text-xs text-text-muted flex items-start">
+                        <span className="text-primary mr-1">•</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 検討ポイント */}
+          <div>
+            <h3 className="text-md font-medium text-text-main mb-3">📋 検討すべきポイント</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {advice.considerations.map((item, index) => (
+                <div key={index} className="bg-surface/50 rounded-lg p-3 border border-border">
+                  <p className="text-xs text-text-muted">{item.label}</p>
+                  <p className="text-sm font-medium text-text-main mt-1">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* チェックリスト */}
+          <div className="bg-surface/50 rounded-lg p-4 border border-border">
+            <h3 className="text-md font-medium text-text-main mb-3">
+              ✅ {businessType === 'individual' ? '法人化の検討チェックリスト' : '新規法人設立の検討チェックリスト'}
+            </h3>
+            <p className="text-sm text-text-muted mb-3">
+              以下の項目に複数当てはまる場合は、{businessType === 'individual' ? '法人化' : '新規法人設立'}を検討してみましょう。
+            </p>
+            <div className="space-y-2">
+              {advice.checkPoints.map((point, index) => (
+                <label key={index} className="flex items-center text-sm text-text-main cursor-pointer hover:bg-surface-highlight p-2 rounded-lg transition-colors">
+                  <input type="checkbox" className="w-4 h-4 text-primary rounded mr-3" />
+                  {point}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 次のステップ */}
+          <div className="bg-primary-light border border-primary/20 rounded-lg p-4">
+            <h3 className="text-md font-medium text-text-main mb-2">🚀 次のステップ</h3>
+            <p className="text-sm text-text-muted mb-3">
+              {businessType === 'individual'
+                ? '法人化をご検討の場合は、まず税理士にご相談ください。適切なタイミングと手続きをアドバイスしてもらえます。'
+                : '新規法人の設立をご検討の場合は、税理士や司法書士にご相談ください。グループ経営の税務最適化をアドバイスしてもらえます。'
+              }
+            </p>
+            <Link
+              to="/contact"
+              className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
+            >
+              専門家に相談する
+            </Link>
+          </div>
         </div>
       )}
     </div>
