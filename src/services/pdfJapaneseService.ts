@@ -254,257 +254,255 @@ export async function generateCorporateTaxPDF(data: JpTaxFormData): Promise<Uint
 }
 
 /**
- * 決算報告書（損益計算書・貸借対照表）PDFを生成（日本語）
+ * 決算報告書（財務三表：損益計算書・貸借対照表・キャッシュフロー計算書）PDFを生成（日本語・1枚にまとめ）
  */
 export async function generateFinancialStatementPDF(data: JpTaxFormData): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
-  
-  // ===== ページ1: 損益計算書 =====
-  const page1 = pdfDoc.addPage([595.28, 841.89]);
+  const page = pdfDoc.addPage([595.28, 841.89]); // A4
   const { regular, bold } = await loadJapaneseFont(pdfDoc);
-  const { width, height } = page1.getSize();
+  const { width, height } = page.getSize();
   
   const colors = {
     primary: rgb(0.4, 0.2, 0.6),
+    secondary: rgb(0.2, 0.4, 0.6),
     text: rgb(0.1, 0.1, 0.1),
     muted: rgb(0.4, 0.4, 0.4),
     line: rgb(0.5, 0.5, 0.5),
     highlight: rgb(0.95, 0.95, 1),
     green: rgb(0.2, 0.6, 0.3),
     red: rgb(0.8, 0.2, 0.2),
+    lightGreen: rgb(0.9, 1, 0.9),
+    lightRed: rgb(1, 0.95, 0.95),
+    lightBlue: rgb(0.9, 0.95, 1),
   };
   
-  // ページ1ヘルパー
-  const draw1 = {
+  const draw = {
     text: (text: string, x: number, y: number, options: { size?: number; font?: PDFFont; color?: typeof colors.text } = {}) => {
-      page1.drawText(text, { x, y, size: options.size || 10, font: options.font || regular, color: options.color || colors.text });
+      page.drawText(text, { x, y, size: options.size || 8, font: options.font || regular, color: options.color || colors.text });
     },
     line: (x1: number, y1: number, x2: number, y2: number, thickness = 0.5) => {
-      page1.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color: colors.line });
+      page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color: colors.line });
     },
     rect: (x: number, y: number, w: number, h: number, color: typeof colors.highlight) => {
-      page1.drawRectangle({ x, y, width: w, height: h, color });
+      page.drawRectangle({ x, y, width: w, height: h, color });
     },
   };
   
-  // P/L ヘッダー
-  draw1.rect(0, height - 60, width, 60, colors.primary);
-  draw1.text('損 益 計 算 書', 220, height - 40, { size: 20, font: bold, color: rgb(1, 1, 1) });
+  // ===== ヘッダー =====
+  draw.rect(0, height - 45, width, 45, colors.primary);
+  draw.text('決 算 報 告 書（財務三表）', 180, height - 30, { size: 16, font: bold, color: rgb(1, 1, 1) });
   
-  let y = height - 85;
-  draw1.text(`${data.companyName || '会社名'}`, 50, y, { size: 12, font: bold });
-  draw1.text(`${data.fiscalYear}年度（${getJapaneseYear(data.fiscalYear)}度）`, 350, y, { size: 10 });
+  let y = height - 60;
+  draw.text(`${data.companyName || '会社名'}`, 50, y, { size: 10, font: bold });
+  draw.text(`${data.fiscalYear}年度（${getJapaneseYear(data.fiscalYear)}度）`, 300, y, { size: 9 });
+  draw.text(`作成日: ${new Date().toLocaleDateString('ja-JP')}`, 450, y, { size: 7, color: colors.muted });
   y -= 15;
-  draw1.text(`自　${data.fiscalYear}年4月1日　至　${data.fiscalYear + 1}年3月31日`, 350, y, { size: 9, color: colors.muted });
-  y -= 20;
-  
-  draw1.line(50, y, 545, y, 1);
-  y -= 5;
-  
-  // テーブルヘッダー
-  draw1.rect(50, y - 18, 495, 18, rgb(0.9, 0.9, 0.9));
-  draw1.line(50, y, 545, y);
-  draw1.line(50, y - 18, 545, y - 18);
-  draw1.text('勘定科目', 60, y - 13, { font: bold, size: 9 });
-  draw1.text('金額（円）', 470, y - 13, { font: bold, size: 9 });
-  y -= 23;
-  
-  // 売上高
-  draw1.rect(50, y - 15, 495, 15, colors.highlight);
-  draw1.line(50, y - 15, 545, y - 15);
-  draw1.text('【売上高】', 55, y - 11, { font: bold, size: 10 });
-  y -= 18;
-  
-  draw1.line(50, y - 15, 545, y - 15);
-  draw1.text('　売上高', 60, y - 11);
-  draw1.text(formatCurrency(data.revenue), 450, y - 11);
-  y -= 18;
-  
-  draw1.rect(50, y - 15, 495, 15, rgb(0.98, 0.98, 0.98));
-  draw1.line(50, y - 15, 545, y - 15);
-  draw1.text('売上高合計', 70, y - 11, { font: bold });
-  draw1.text(formatCurrency(data.revenue), 450, y - 11, { font: bold });
-  y -= 23;
-  
-  // 経費
-  draw1.rect(50, y - 15, 495, 15, colors.highlight);
-  draw1.line(50, y - 15, 545, y - 15);
-  draw1.text('【販売費及び一般管理費】', 55, y - 11, { font: bold, size: 10 });
-  y -= 18;
-  
-  // 経費内訳
-  let totalExpenses = 0;
-  data.expensesByCategory.forEach((exp, index) => {
-    const category = EXPENSE_CATEGORIES_JP[exp.category] || exp.category || '雑費';
-    const isAlt = index % 2 === 0;
-    if (isAlt) {
-      draw1.rect(50, y - 15, 495, 15, rgb(0.98, 0.98, 0.98));
-    }
-    draw1.line(50, y - 15, 545, y - 15);
-    draw1.text(`　${category}`, 60, y - 11, { size: 9 });
-    draw1.text(formatCurrency(exp.amount), 450, y - 11, { size: 9 });
-    totalExpenses += exp.amount;
-    y -= 15;
-    
-    if (y < 150) return; // ページ下限
-  });
-  
-  draw1.rect(50, y - 15, 495, 15, rgb(0.95, 0.95, 0.95));
-  draw1.line(50, y - 15, 545, y - 15);
-  draw1.text('販管費合計', 70, y - 11, { font: bold });
-  draw1.text(formatCurrency(data.expenses), 450, y - 11, { font: bold });
-  y -= 25;
-  
-  // 営業利益
-  const operatingIncome = data.revenue - data.expenses;
-  draw1.rect(50, y - 20, 495, 20, rgb(0.95, 1, 0.95));
-  draw1.line(50, y - 20, 545, y - 20, 1);
-  draw1.line(50, y, 545, y, 1);
-  draw1.text('営業利益', 60, y - 14, { font: bold, size: 11 });
-  draw1.text(formatCurrency(operatingIncome), 440, y - 14, { font: bold, size: 11, color: operatingIncome >= 0 ? colors.green : colors.red });
-  y -= 35;
-  
-  // 当期純利益
-  draw1.rect(50, y - 22, 495, 22, rgb(0.9, 0.95, 1));
-  draw1.line(50, y - 22, 545, y - 22, 1.5);
-  draw1.line(50, y, 545, y, 1.5);
-  draw1.text('当期純利益', 60, y - 15, { font: bold, size: 12 });
-  draw1.text(`${formatCurrency(data.netIncome)}円`, 430, y - 15, { font: bold, size: 12, color: data.netIncome >= 0 ? colors.green : colors.red });
-  
-  // P/Lフッター
-  draw1.line(50, 55, 545, 55);
-  draw1.text('※ この書類はAinanceで作成した参考資料です。', 50, 40, { size: 8, color: colors.muted });
-  
-  // ===== ページ2: 貸借対照表 =====
-  const page2 = pdfDoc.addPage([595.28, 841.89]);
-  
-  const draw2 = {
-    text: (text: string, x: number, y: number, options: { size?: number; font?: PDFFont; color?: typeof colors.text } = {}) => {
-      page2.drawText(text, { x, y, size: options.size || 10, font: options.font || regular, color: options.color || colors.text });
-    },
-    line: (x1: number, y1: number, x2: number, y2: number, thickness = 0.5) => {
-      page2.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color: colors.line });
-    },
-    rect: (x: number, y: number, w: number, h: number, color: typeof colors.highlight) => {
-      page2.drawRectangle({ x, y, width: w, height: h, color });
-    },
-  };
-  
-  // B/S ヘッダー
-  draw2.rect(0, height - 60, width, 60, colors.primary);
-  draw2.text('貸 借 対 照 表', 220, height - 40, { size: 20, font: bold, color: rgb(1, 1, 1) });
-  
-  y = height - 85;
-  draw2.text(`${data.companyName || '会社名'}`, 50, y, { size: 12, font: bold });
-  draw2.text(`${data.fiscalYear + 1}年3月31日現在`, 400, y, { size: 10 });
-  y -= 25;
-  
-  draw2.line(50, y, 545, y, 1);
+  draw.line(50, y, 545, y, 1);
   y -= 10;
   
-  // 簡易的なB/S（実際の資産・負債データがないため概算）
-  const estimatedAssets = Math.floor(data.revenue * 0.5);
+  // ===== 計算用データ =====
+  const operatingIncome = data.revenue - data.expenses;
+  // 概算B/Sデータ
   const estimatedCash = Math.floor(data.revenue * 0.2);
   const estimatedReceivables = Math.floor(data.revenue * 0.15);
-  const estimatedFixedAssets = Math.floor(data.revenue * 0.15);
-  const estimatedLiabilities = Math.floor(data.expenses * 0.3);
+  const estimatedInventory = Math.floor(data.revenue * 0.1);
+  const estimatedFixedAssets = Math.floor(data.revenue * 0.2);
+  const totalAssets = estimatedCash + estimatedReceivables + estimatedInventory + estimatedFixedAssets;
   const estimatedPayables = Math.floor(data.expenses * 0.2);
-  const estimatedLoans = Math.floor(data.expenses * 0.1);
-  const estimatedEquity = estimatedAssets - estimatedLiabilities;
+  const estimatedLoans = Math.floor(data.expenses * 0.15);
+  const totalLiabilities = estimatedPayables + estimatedLoans;
   const estimatedCapital = data.capital || 1000000;
-  const estimatedRetainedEarnings = estimatedEquity - estimatedCapital + data.netIncome;
+  const retainedEarnings = totalAssets - totalLiabilities - estimatedCapital;
+  // 概算C/Fデータ
+  const operatingCF = data.netIncome + Math.floor(data.expenses * 0.1); // 減価償却費を加算
+  const investingCF = -Math.floor(data.revenue * 0.05); // 設備投資
+  const financingCF = -Math.floor(estimatedLoans * 0.1); // 借入返済
+  const netCashChange = operatingCF + investingCF + financingCF;
   
-  // 左側：資産の部
-  const leftX = 50;
-  const rightX = 300;
-  const colWidth = 240;
+  // ===== セクション1: 損益計算書 =====
+  const section1Top = y;
+  draw.rect(50, y - 12, 200, 12, colors.secondary);
+  draw.text('損益計算書（P/L）', 55, y - 9, { size: 9, font: bold, color: rgb(1, 1, 1) });
+  y -= 18;
   
-  // 資産の部ヘッダー
-  draw2.rect(leftX, y - 18, colWidth, 18, rgb(0.85, 0.9, 0.95));
-  draw2.line(leftX, y, leftX + colWidth, y);
-  draw2.line(leftX, y - 18, leftX + colWidth, y - 18);
-  draw2.text('【資産の部】', leftX + 5, y - 13, { font: bold, size: 10 });
+  // P/L項目（コンパクト）
+  const plItems = [
+    { label: '売上高', value: data.revenue, highlight: true },
+    { label: '売上原価', value: Math.floor(data.expenses * 0.4), highlight: false },
+    { label: '売上総利益', value: data.revenue - Math.floor(data.expenses * 0.4), highlight: false },
+    { label: '販売費及び一般管理費', value: Math.floor(data.expenses * 0.6), highlight: false },
+    { label: '営業利益', value: operatingIncome, highlight: true, color: operatingIncome >= 0 ? colors.green : colors.red },
+    { label: '営業外収益', value: Math.floor(data.revenue * 0.01), highlight: false },
+    { label: '営業外費用', value: Math.floor(data.expenses * 0.02), highlight: false },
+    { label: '経常利益', value: operatingIncome + Math.floor(data.revenue * 0.01) - Math.floor(data.expenses * 0.02), highlight: false },
+    { label: '当期純利益', value: data.netIncome, highlight: true, bold: true, color: data.netIncome >= 0 ? colors.green : colors.red },
+  ];
   
-  // 負債・純資産の部ヘッダー
-  draw2.rect(rightX, y - 18, colWidth + 5, 18, rgb(0.95, 0.9, 0.85));
-  draw2.line(rightX, y, rightX + colWidth + 5, y);
-  draw2.line(rightX, y - 18, rightX + colWidth + 5, y - 18);
-  draw2.text('【負債・純資産の部】', rightX + 5, y - 13, { font: bold, size: 10 });
+  plItems.forEach(item => {
+    if (item.highlight) {
+      draw.rect(50, y - 11, 200, 11, item.bold ? colors.lightGreen : colors.highlight);
+    }
+    draw.line(50, y - 11, 250, y - 11);
+    draw.text(item.label, 55, y - 8, { size: 7, font: item.bold ? bold : regular });
+    draw.text(`${formatCurrency(item.value)}`, 190, y - 8, { size: 7, font: item.bold ? bold : regular, color: item.color || colors.text });
+    y -= 11;
+  });
   
-  y -= 23;
+  // ===== セクション2: 貸借対照表 =====
+  y = section1Top;
+  const bsX = 265;
+  draw.rect(bsX, y - 12, 280, 12, colors.secondary);
+  draw.text('貸借対照表（B/S）', bsX + 5, y - 9, { size: 9, font: bold, color: rgb(1, 1, 1) });
+  y -= 18;
+  
+  // B/S 左右分割
+  const leftColX = bsX;
+  const rightColX = bsX + 140;
+  const colWidth = 135;
+  
+  // 資産ヘッダー
+  draw.rect(leftColX, y - 10, colWidth, 10, rgb(0.85, 0.9, 0.95));
+  draw.text('【資産の部】', leftColX + 3, y - 8, { size: 7, font: bold });
+  // 負債・純資産ヘッダー
+  draw.rect(rightColX, y - 10, colWidth + 5, 10, rgb(0.95, 0.9, 0.85));
+  draw.text('【負債・純資産の部】', rightColX + 3, y - 8, { size: 7, font: bold });
+  y -= 12;
   
   // 資産項目
   const assetItems = [
-    { label: '流動資産', items: [
-      { name: '現金及び預金', value: estimatedCash },
-      { name: '売掛金', value: estimatedReceivables },
-    ]},
-    { label: '固定資産', items: [
-      { name: '有形固定資産', value: estimatedFixedAssets },
-    ]},
+    { label: '流動資産', isHeader: true },
+    { label: '　現金及び預金', value: estimatedCash },
+    { label: '　売掛金', value: estimatedReceivables },
+    { label: '　棚卸資産', value: estimatedInventory },
+    { label: '固定資産', isHeader: true },
+    { label: '　有形固定資産', value: estimatedFixedAssets },
+    { label: '資産合計', value: totalAssets, isTotal: true },
   ];
   
   // 負債・純資産項目
   const liabilityItems = [
-    { label: '流動負債', items: [
-      { name: '買掛金', value: estimatedPayables },
-      { name: '短期借入金', value: estimatedLoans },
-    ]},
-    { label: '純資産', items: [
-      { name: '資本金', value: estimatedCapital },
-      { name: '繰越利益剰余金', value: estimatedRetainedEarnings },
-    ]},
+    { label: '流動負債', isHeader: true },
+    { label: '　買掛金', value: estimatedPayables },
+    { label: '　短期借入金', value: estimatedLoans },
+    { label: '純資産の部', isHeader: true },
+    { label: '　資本金', value: estimatedCapital },
+    { label: '　繰越利益剰余金', value: retainedEarnings },
+    { label: '負債・純資産合計', value: totalAssets, isTotal: true },
   ];
   
   let assetY = y;
   let liabilityY = y;
   
-  // 資産を描画
-  assetItems.forEach(section => {
-    draw2.rect(leftX, assetY - 15, colWidth, 15, colors.highlight);
-    draw2.line(leftX, assetY - 15, leftX + colWidth, assetY - 15);
-    draw2.text(section.label, leftX + 5, assetY - 11, { font: bold, size: 9 });
-    assetY -= 18;
-    
-    section.items.forEach(item => {
-      draw2.line(leftX, assetY - 15, leftX + colWidth, assetY - 15);
-      draw2.text(`　${item.name}`, leftX + 5, assetY - 11, { size: 9 });
-      draw2.text(formatCurrency(item.value), leftX + 160, assetY - 11, { size: 9 });
-      assetY -= 15;
-    });
+  assetItems.forEach(item => {
+    if (item.isTotal) {
+      draw.rect(leftColX, assetY - 10, colWidth, 10, colors.lightGreen);
+    } else if (item.isHeader) {
+      draw.rect(leftColX, assetY - 10, colWidth, 10, colors.highlight);
+    }
+    draw.line(leftColX, assetY - 10, leftColX + colWidth, assetY - 10);
+    draw.text(item.label, leftColX + 3, assetY - 8, { size: 6, font: item.isHeader || item.isTotal ? bold : regular });
+    if (item.value !== undefined) {
+      draw.text(formatCurrency(item.value), leftColX + 85, assetY - 8, { size: 6, font: item.isTotal ? bold : regular });
+    }
+    assetY -= 10;
   });
   
-  // 資産合計
-  draw2.rect(leftX, assetY - 18, colWidth, 18, rgb(0.9, 0.95, 0.9));
-  draw2.line(leftX, assetY - 18, leftX + colWidth, assetY - 18, 1);
-  draw2.text('資産合計', leftX + 5, assetY - 13, { font: bold, size: 10 });
-  draw2.text(formatCurrency(estimatedAssets), leftX + 160, assetY - 13, { font: bold, size: 10 });
-  
-  // 負債・純資産を描画
-  liabilityItems.forEach(section => {
-    draw2.rect(rightX, liabilityY - 15, colWidth + 5, 15, colors.highlight);
-    draw2.line(rightX, liabilityY - 15, rightX + colWidth + 5, liabilityY - 15);
-    draw2.text(section.label, rightX + 5, liabilityY - 11, { font: bold, size: 9 });
-    liabilityY -= 18;
-    
-    section.items.forEach(item => {
-      draw2.line(rightX, liabilityY - 15, rightX + colWidth + 5, liabilityY - 15);
-      draw2.text(`　${item.name}`, rightX + 5, liabilityY - 11, { size: 9 });
-      draw2.text(formatCurrency(item.value), rightX + 165, liabilityY - 11, { size: 9 });
-      liabilityY -= 15;
-    });
+  liabilityItems.forEach(item => {
+    if (item.isTotal) {
+      draw.rect(rightColX, liabilityY - 10, colWidth + 5, 10, colors.lightGreen);
+    } else if (item.isHeader) {
+      draw.rect(rightColX, liabilityY - 10, colWidth + 5, 10, colors.highlight);
+    }
+    draw.line(rightColX, liabilityY - 10, rightColX + colWidth + 5, liabilityY - 10);
+    draw.text(item.label, rightColX + 3, liabilityY - 8, { size: 6, font: item.isHeader || item.isTotal ? bold : regular });
+    if (item.value !== undefined) {
+      draw.text(formatCurrency(item.value), rightColX + 90, liabilityY - 8, { size: 6, font: item.isTotal ? bold : regular });
+    }
+    liabilityY -= 10;
   });
   
-  // 負債・純資産合計
-  draw2.rect(rightX, liabilityY - 18, colWidth + 5, 18, rgb(0.9, 0.95, 0.9));
-  draw2.line(rightX, liabilityY - 18, rightX + colWidth + 5, liabilityY - 18, 1);
-  draw2.text('負債・純資産合計', rightX + 5, liabilityY - 13, { font: bold, size: 10 });
-  draw2.text(formatCurrency(estimatedAssets), rightX + 165, liabilityY - 13, { font: bold, size: 10 });
+  // ===== セクション3: キャッシュフロー計算書 =====
+  y = Math.min(assetY, liabilityY) - 15;
+  draw.rect(50, y - 12, width - 100, 12, colors.secondary);
+  draw.text('キャッシュ・フロー計算書（C/F）', 55, y - 9, { size: 9, font: bold, color: rgb(1, 1, 1) });
+  y -= 18;
   
-  // B/Sフッター
-  draw2.line(50, 80, 545, 80);
-  draw2.text('※ この貸借対照表は売上・経費データから概算で作成しています。', 50, 65, { size: 8, color: colors.muted });
-  draw2.text('※ 正確な財務諸表の作成には、実際の資産・負債データが必要です。', 50, 53, { size: 8, color: colors.muted });
+  // C/F 3列レイアウト
+  const cfColWidth = 160;
+  const cfItems = [
+    {
+      title: '営業活動によるCF',
+      items: [
+        { label: '税引前当期純利益', value: data.netIncome },
+        { label: '減価償却費', value: Math.floor(data.expenses * 0.1) },
+        { label: '売上債権の増減', value: -Math.floor(estimatedReceivables * 0.1) },
+        { label: '仕入債務の増減', value: Math.floor(estimatedPayables * 0.1) },
+      ],
+      total: operatingCF,
+      color: operatingCF >= 0 ? colors.green : colors.red,
+    },
+    {
+      title: '投資活動によるCF',
+      items: [
+        { label: '固定資産の取得', value: investingCF },
+      ],
+      total: investingCF,
+      color: investingCF >= 0 ? colors.green : colors.red,
+    },
+    {
+      title: '財務活動によるCF',
+      items: [
+        { label: '借入金の返済', value: financingCF },
+      ],
+      total: financingCF,
+      color: financingCF >= 0 ? colors.green : colors.red,
+    },
+  ];
+  
+  cfItems.forEach((section, idx) => {
+    const colX = 50 + idx * cfColWidth + idx * 10;
+    let cfY = y;
+    
+    // セクションヘッダー
+    draw.rect(colX, cfY - 10, cfColWidth, 10, colors.highlight);
+    draw.line(colX, cfY - 10, colX + cfColWidth, cfY - 10);
+    draw.text(section.title, colX + 3, cfY - 8, { size: 7, font: bold });
+    cfY -= 12;
+    
+    // 項目
+    section.items.forEach(item => {
+      draw.line(colX, cfY - 9, colX + cfColWidth, cfY - 9);
+      draw.text(item.label, colX + 3, cfY - 7, { size: 6 });
+      draw.text(formatCurrency(item.value), colX + 105, cfY - 7, { size: 6 });
+      cfY -= 9;
+    });
+    
+    // 小計
+    draw.rect(colX, cfY - 10, cfColWidth, 10, colors.lightBlue);
+    draw.line(colX, cfY - 10, colX + cfColWidth, cfY - 10, 1);
+    draw.text('小計', colX + 3, cfY - 8, { size: 7, font: bold });
+    draw.text(formatCurrency(section.total), colX + 105, cfY - 8, { size: 7, font: bold, color: section.color });
+  });
+  
+  // 現金増減合計
+  y = y - 60;
+  draw.rect(50, y - 14, width - 100, 14, colors.lightGreen);
+  draw.line(50, y - 14, 545, y - 14, 1);
+  draw.line(50, y, 545, y, 1);
+  draw.text('現金及び現金同等物の増減額', 55, y - 10, { size: 9, font: bold });
+  draw.text(`${formatCurrency(netCashChange)}円`, 430, y - 10, { size: 9, font: bold, color: netCashChange >= 0 ? colors.green : colors.red });
+  
+  // 期末残高
+  y -= 18;
+  draw.line(50, y - 5, 545, y - 5);
+  draw.text('現金及び現金同等物の期末残高', 55, y - 2, { size: 8 });
+  draw.text(`${formatCurrency(estimatedCash + netCashChange)}円`, 430, y - 2, { size: 8, font: bold });
+  
+  // ===== フッター =====
+  draw.line(50, 60, 545, 60);
+  draw.text('※ この決算報告書はAinanceで作成した参考資料です。', 50, 48, { size: 7, color: colors.muted });
+  draw.text('※ 貸借対照表・キャッシュフロー計算書は売上・経費データから概算で作成しています。', 50, 38, { size: 7, color: colors.muted });
+  draw.text('※ 正確な財務諸表の作成には、税理士への相談をお勧めします。', 50, 28, { size: 7, color: colors.muted });
   
   return pdfDoc.save();
 }
