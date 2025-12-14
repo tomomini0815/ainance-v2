@@ -4,6 +4,9 @@ import Tesseract from 'tesseract.js';
 import ReceiptCamera from '../components/ReceiptCamera';
 import ReceiptResultModal from '../components/ReceiptResultModal';
 import { ReceiptParser } from '../utils/ReceiptParser';
+import { analyzeReceiptWithAI, isAIEnabled } from '../services/geminiAIService';
+import { AIStatusBadge } from '../components/AIStatusComponents';
+
 
 interface ExtractedReceiptData {
     merchant: string;
@@ -20,12 +23,14 @@ const QuickReceiptScan: React.FC = () => {
     const [extractedData, setExtractedData] = useState<ExtractedReceiptData | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusMessage, setStatusMessage] = useState('処理中...');
+    const [usedAI, setUsedAI] = useState(false);
 
     const handleCapture = async (imageBlob: Blob) => {
         console.log('📸 handleCapture called with imageBlob:', imageBlob);
         setShowCamera(false);
         setIsProcessing(true);
         setStatusMessage('画像を解析中...');
+        setUsedAI(false);
 
         try {
             const imageUrl = URL.createObjectURL(imageBlob);
@@ -53,36 +58,79 @@ const QuickReceiptScan: React.FC = () => {
                 console.log('✅ OCR完了:', ocrText.substring(0, 100) + '...');
             } catch (ocrError) {
                 console.warn('⚠️ OCR処理に失敗しましたが、手動入力を続行します:', ocrError);
-                // OCR失敗時も続行
             }
 
             URL.revokeObjectURL(imageUrl);
-            setStatusMessage('データを抽出中...');
 
-            // データ抽出
-            const parser = new ReceiptParser();
-            // OCRテキストが空でもパースを実行（デフォルト値を返すはず）
-            const parsed = parser.parseReceipt(ocrText || '');
+            // AI分析を試行
+            let finalData: ExtractedReceiptData;
 
-            console.log('📊 パース結果:', parsed);
+            if (ocrText && isAIEnabled()) {
+                setStatusMessage('🤖 AI分析中...');
+                console.log('🤖 Gemini AIで分析を開始...');
 
-            const extractedData = {
-                merchant: parsed.store_name || '',
-                date: parsed.date || new Date().toISOString().split('T')[0],
-                amount: parsed.total_amount || 0,
-                category: '雑費', // デフォルト
-                taxRate: parsed.tax_rate || 0,
-                confidence: ocrText ? 80 : 0, // OCR成功なら80、失敗なら0
-            };
+                try {
+                    const aiResult = await analyzeReceiptWithAI(ocrText);
 
-            console.log('📦 設定するextractedData:', extractedData);
-            setExtractedData(extractedData);
+                    if (aiResult) {
+                        console.log('🤖 AI分析成功:', aiResult);
+                        setUsedAI(true);
+
+                        finalData = {
+                            merchant: aiResult.storeName || '',
+                            date: aiResult.date || new Date().toISOString().split('T')[0],
+                            amount: aiResult.totalAmount || 0,
+                            category: aiResult.classification?.accountTitle || aiResult.storeCategory || '雑費',
+                            taxRate: 10,
+                            confidence: Math.round((aiResult.classification?.confidence || 0.8) * 100),
+                        };
+
+                        console.log('🤖 AI抽出データ:', finalData);
+                    } else {
+                        throw new Error('AI分析結果が空です');
+                    }
+                } catch (aiError) {
+                    console.warn('⚠️ AI分析に失敗、ルールベースにフォールバック:', aiError);
+                    setStatusMessage('📋 データを抽出中...');
+
+                    // ルールベースにフォールバック
+                    const parser = new ReceiptParser();
+                    const parsed = parser.parseReceipt(ocrText);
+
+                    finalData = {
+                        merchant: parsed.store_name || '',
+                        date: parsed.date || new Date().toISOString().split('T')[0],
+                        amount: parsed.total_amount || 0,
+                        category: '雑費',
+                        taxRate: parsed.tax_rate || 10,
+                        confidence: 70,
+                    };
+                }
+            } else {
+                // AI未設定またはOCRテキストなしの場合
+                setStatusMessage('📋 データを抽出中...');
+                const parser = new ReceiptParser();
+                const parsed = parser.parseReceipt(ocrText || '');
+
+                console.log('📊 パース結果:', parsed);
+
+                finalData = {
+                    merchant: parsed.store_name || '',
+                    date: parsed.date || new Date().toISOString().split('T')[0],
+                    amount: parsed.total_amount || 0,
+                    category: '雑費',
+                    taxRate: parsed.tax_rate || 10,
+                    confidence: ocrText ? 70 : 0,
+                };
+            }
+
+            console.log('📦 設定するextractedData:', finalData);
+            setExtractedData(finalData);
 
             console.log('🚀 setShowResultModalをtrueに設定');
             setShowResultModal(true);
         } catch (error: any) {
             console.error('💥 処理エラー:', error);
-            // 致命的なエラーの場合でも、手動入力のためにモーダルを表示
             const errorData = {
                 merchant: '',
                 date: new Date().toISOString().split('T')[0],
@@ -91,7 +139,7 @@ const QuickReceiptScan: React.FC = () => {
                 taxRate: 10,
                 confidence: 0,
             };
-            
+
             console.log('❌ エラー時のextractedData:', errorData);
             setExtractedData(errorData);
             setShowResultModal(true);
@@ -129,9 +177,7 @@ const QuickReceiptScan: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <div className="px-3 py-1.5 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full">
-                                <span className="text-xs font-semibold text-green-700">AI搭載</span>
-                            </div>
+                            <AIStatusBadge />
                         </div>
                     </div>
                 </div>

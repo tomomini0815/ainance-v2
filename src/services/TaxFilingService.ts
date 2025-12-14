@@ -1,384 +1,276 @@
-import { supabase } from '../lib/supabaseClient';
+/**
+ * 確定申告サポートサービス
+ * 取引データから確定申告に必要な情報を計算・生成
+ */
 
-// 申告書データの型定義
-export interface TaxDocument {
-  id: string;
-  userId: string;
-  businessType: 'individual' | 'corporate';
-  year: number;
-  documentType: string;
-  data: any;
-  createdAt: string;
+// 確定申告の基本データ型
+export interface TaxFilingData {
+  // 基本情報
+  fiscalYear: number;
+  businessType: 'individual' | 'corporation';
+  
+  // 収支データ
+  totalRevenue: number;
+  totalExpenses: number;
+  netIncome: number;
+  
+  // 経費内訳
+  expensesByCategory: {
+    category: string;
+    amount: number;
+    percentage: number;
+  }[];
+  
+  // 控除情報
+  deductions: Deduction[];
+  totalDeductions: number;
+  
+  // 税額計算
+  taxableIncome: number;
+  estimatedTax: number;
+  
+  // ステータス
+  status: 'draft' | 'in_progress' | 'ready' | 'submitted';
 }
 
-// 申告書テンプレートフィールドの型定義
-export interface TaxDocumentTemplateField {
+export interface Deduction {
   id: string;
+  type: string;
   name: string;
-  type: 'text' | 'number' | 'date' | 'currency' | 'boolean';
-  required: boolean;
-  defaultValue?: string;
-  description?: string;
+  amount: number;
+  description: string;
+  isApplicable: boolean;
+  documents?: string[];
 }
 
-// 申告書テンプレートの型定義
-export interface TaxDocumentTemplate {
-  id: string;
-  name: string;
-  businessType: 'individual' | 'corporate';
-  documentType: string;
-  fields: TaxDocumentTemplateField[];
-  createdAt: string;
-}
+// 所得税の税率表（2024年度）
+const TAX_BRACKETS = [
+  { min: 0, max: 1950000, rate: 0.05, deduction: 0 },
+  { min: 1950000, max: 3300000, rate: 0.10, deduction: 97500 },
+  { min: 3300000, max: 6950000, rate: 0.20, deduction: 427500 },
+  { min: 6950000, max: 9000000, rate: 0.23, deduction: 636000 },
+  { min: 9000000, max: 18000000, rate: 0.33, deduction: 1536000 },
+  { min: 18000000, max: 40000000, rate: 0.40, deduction: 2796000 },
+  { min: 40000000, max: Infinity, rate: 0.45, deduction: 4796000 },
+];
 
-// 自動取り込みデータの型定義
-export interface AutoImportData {
-  field: string;
-  value: string;
-  status: 'success' | 'warning' | 'error';
-  message?: string; // 検証メッセージ
-}
+// 青色申告特別控除
+const BLUE_RETURN_DEDUCTION = 650000;
 
-// データ検証ルールの型定義
-export interface ValidationRule {
-  field: string;
-  rule: 'required' | 'min' | 'max' | 'pattern' | 'custom';
-  value?: any;
-  message: string;
-  validator?: (value: any) => boolean; // カスタムバリデータ
-}
+// 基礎控除（2024年度）
+const BASIC_DEDUCTION = 480000;
 
-// 取引データを申告書形式に変換
-export const convertTransactionToTaxData = (transactions: any[], businessType: 'individual' | 'corporate') => {
-  // 事業所得の計算
-  const businessIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-  
-  // 必要経費の計算
-  const necessaryExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-  
-  // 所得金額の計算
-  const incomeAmount = businessIncome - necessaryExpenses;
-  
-  // 法人税の計算（簡略化した計算）
-  const corporateTax = businessType === 'corporate' ? incomeAmount * 0.23 : 0;
-  
-  // 所得税の計算（簡略化した計算）
-  const incomeTax = businessType === 'individual' ? incomeAmount * 0.05 : 0;
-  
+// 利用可能な控除一覧
+export const AVAILABLE_DEDUCTIONS: Omit<Deduction, 'id' | 'amount' | 'isApplicable'>[] = [
+  {
+    type: 'basic',
+    name: '基礎控除',
+    description: '全ての納税者が受けられる控除（48万円）',
+    documents: [],
+  },
+  {
+    type: 'blue_return',
+    name: '青色申告特別控除',
+    description: '青色申告者が受けられる控除（最大65万円）',
+    documents: ['青色申告承認申請書'],
+  },
+  {
+    type: 'medical',
+    name: '医療費控除',
+    description: '年間10万円を超える医療費の控除',
+    documents: ['医療費の領収書', '医療費控除の明細書'],
+  },
+  {
+    type: 'social_insurance',
+    name: '社会保険料控除',
+    description: '国民健康保険、国民年金などの控除',
+    documents: ['社会保険料控除証明書'],
+  },
+  {
+    type: 'small_business_mutual',
+    name: '小規模企業共済等掛金控除',
+    description: '小規模企業共済やiDeCoの掛金控除',
+    documents: ['掛金払込証明書'],
+  },
+  {
+    type: 'life_insurance',
+    name: '生命保険料控除',
+    description: '生命保険料の控除（最大12万円）',
+    documents: ['生命保険料控除証明書'],
+  },
+  {
+    type: 'earthquake_insurance',
+    name: '地震保険料控除',
+    description: '地震保険料の控除（最大5万円）',
+    documents: ['地震保険料控除証明書'],
+  },
+  {
+    type: 'spouse',
+    name: '配偶者控除',
+    description: '配偶者の所得に応じた控除',
+    documents: [],
+  },
+  {
+    type: 'dependent',
+    name: '扶養控除',
+    description: '扶養親族に応じた控除',
+    documents: [],
+  },
+  {
+    type: 'furusato',
+    name: 'ふるさと納税（寄附金控除）',
+    description: 'ふるさと納税による寄附金控除',
+    documents: ['寄附金受領証明書'],
+  },
+  {
+    type: 'housing_loan',
+    name: '住宅ローン控除',
+    description: '住宅ローンの年末残高に応じた控除',
+    documents: ['住宅借入金等特別控除証明書', '年末残高証明書'],
+  },
+];
+
+// 取引データから確定申告データを計算
+export const calculateTaxFilingData = (
+  transactions: any[],
+  fiscalYear: number,
+  businessType: 'individual' | 'corporation' = 'individual',
+  deductions: Deduction[] = []
+): TaxFilingData => {
+  // 該当年度の取引をフィルター
+  const yearTransactions = transactions.filter(t => {
+    const date = new Date(t.date);
+    return date.getFullYear() === fiscalYear;
+  });
+
+  // 収入と経費を集計
+  const incomeTransactions = yearTransactions.filter(t => t.type === 'income');
+  const expenseTransactions = yearTransactions.filter(t => t.type === 'expense');
+
+  const totalRevenue = incomeTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  const netIncome = totalRevenue - totalExpenses;
+
+  // カテゴリ別経費集計
+  const expensesByCategory = Object.entries(
+    expenseTransactions.reduce((acc: Record<string, number>, t) => {
+      const category = t.category || '未分類';
+      acc[category] = (acc[category] || 0) + Math.abs(Number(t.amount) || 0);
+      return acc;
+    }, {})
+  ).map(([category, amount]) => ({
+    category,
+    amount: amount as number,
+    percentage: totalExpenses > 0 ? ((amount as number) / totalExpenses) * 100 : 0,
+  })).sort((a, b) => b.amount - a.amount);
+
+  // 控除合計
+  const totalDeductions = deductions
+    .filter(d => d.isApplicable)
+    .reduce((sum, d) => sum + d.amount, 0);
+
+  // 課税所得
+  const taxableIncome = Math.max(0, netIncome - totalDeductions);
+
+  // 所得税計算
+  const estimatedTax = calculateIncomeTax(taxableIncome);
+
   return {
-    businessIncome,
-    necessaryExpenses,
-    incomeAmount,
-    corporateTax,
-    incomeTax,
-    transactions: transactions.map(t => ({
-      id: t.id,
-      item: t.item,
-      amount: t.amount,
-      date: t.date,
-      category: t.category,
-      type: t.type
-    }))
+    fiscalYear,
+    businessType,
+    totalRevenue,
+    totalExpenses,
+    netIncome,
+    expensesByCategory,
+    deductions,
+    totalDeductions,
+    taxableIncome,
+    estimatedTax,
+    status: 'draft',
   };
 };
 
-// 申告書データを保存
-export const saveTaxDocument = async (taxData: any, userId: string, businessType: 'individual' | 'corporate', year: number, documentType: string) => {
-  const { data, error } = await supabase
-    .from('tax_documents')
-    .insert([
-      {
-        user_id: userId,
-        business_type: businessType,
-        year: year,
-        document_type: documentType,
-        data: taxData,
-        created_at: new Date().toISOString()
-      }
-    ]);
-  
-  if (error) {
-    throw new Error(`申告書データの保存に失敗しました: ${error.message}`);
-  }
-  
-  return data;
-};
-
-// 申告書データを取得
-export const getTaxDocuments = async (userId: string, businessType: 'individual' | 'corporate', year: number) => {
-  const { data, error } = await supabase
-    .from('tax_documents')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('business_type', businessType)
-    .eq('year', year)
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    throw new Error(`申告書データの取得に失敗しました: ${error.message}`);
-  }
-  
-  return data;
-};
-
-// 申告書テンプレートを取得
-export const getTaxDocumentTemplates = async (businessType: 'individual' | 'corporate') => {
-  const { data, error } = await supabase
-    .from('tax_document_templates')
-    .select('*')
-    .eq('business_type', businessType)
-    .order('name');
-  
-  if (error) {
-    throw new Error(`申告書テンプレートの取得に失敗しました: ${error.message}`);
-  }
-  
-  return data;
-};
-
-// 特定の申告書テンプレートを取得
-export const getTaxDocumentTemplateById = async (templateId: string) => {
-  const { data, error } = await supabase
-    .from('tax_document_templates')
-    .select('*')
-    .eq('id', templateId)
-    .single();
-  
-  if (error) {
-    throw new Error(`申告書テンプレートの取得に失敗しました: ${error.message}`);
-  }
-  
-  return data;
-};
-
-// 申告書テンプレートを保存
-export const saveTaxDocumentTemplate = async (template: Omit<TaxDocumentTemplate, 'id' | 'createdAt'>) => {
-  const { data, error } = await supabase
-    .from('tax_document_templates')
-    .insert([
-      {
-        ...template,
-        created_at: new Date().toISOString()
-      }
-    ]);
-  
-  if (error) {
-    throw new Error(`申告書テンプレートの保存に失敗しました: ${error.message}`);
-  }
-  
-  return data;
-};
-
-// 申告書テンプレートを削除
-export const deleteTaxDocumentTemplate = async (templateId: string) => {
-  const { data, error } = await supabase
-    .from('tax_document_templates')
-    .delete()
-    .eq('id', templateId);
-  
-  if (error) {
-    throw new Error(`申告書テンプレートの削除に失敗しました: ${error.message}`);
-  }
-  
-  return data;
-};
-
-// OCR結果をテンプレートフィールドにマッピング
-export const mapOcrResultsToTemplate = (ocrResults: any[], template: TaxDocumentTemplate) => {
-  const mappedData: AutoImportData[] = [];
-  
-  // テンプレートの各フィールドに対してマッピングを試行
-  template.fields.forEach(field => {
-    // OCR結果から該当するフィールドを検索
-    const matchingResult = ocrResults.find(result => 
-      result.text.toLowerCase().includes(field.name.toLowerCase()) ||
-      result.text.toLowerCase().includes(field.description?.toLowerCase() || '')
-    );
-    
-    if (matchingResult) {
-      // フィールドが見つかった場合
-      mappedData.push({
-        field: field.name,
-        value: extractValueFromText(matchingResult.text, field.type),
-        status: 'success'
-      });
-    } else if (field.required) {
-      // 必須フィールドが見つからなかった場合
-      mappedData.push({
-        field: field.name,
-        value: field.defaultValue || '',
-        status: 'warning',
-        message: '必須フィールドが見つかりませんでした'
-      });
-    } else if (field.defaultValue) {
-      // デフォルト値がある場合
-      mappedData.push({
-        field: field.name,
-        value: field.defaultValue,
-        status: 'success'
-      });
-    }
-  });
-  
-  return mappedData;
-};
-
-// テキストから値を抽出するヘルパー関数
-const extractValueFromText = (text: string, fieldType: string) => {
-  switch (fieldType) {
-    case 'number':
-    case 'currency':
-      // 数値または通貨を抽出
-      const numberMatch = text.match(/[\d,]+\.?\d*/);
-      return numberMatch ? numberMatch[0] : '';
-    case 'date':
-      // 日付を抽出
-      const dateMatch = text.match(/\d{4}[年\/\-\.]?\d{1,2}[月\/\-\.]?\d{1,2}/);
-      return dateMatch ? dateMatch[0] : '';
-    case 'boolean':
-      // 真偽値を抽出
-      return text.toLowerCase().includes('はい') || text.toLowerCase().includes('yes') ? 'true' : 'false';
-    default:
-      // テキストの場合、フィールド名以降のテキストを返す
-      return text;
-  }
-};
-
-// データを検証する関数
-export const validateImportData = (data: AutoImportData[], rules: ValidationRule[]): AutoImportData[] => {
-  return data.map(item => {
-    // このフィールドに対する検証ルールを取得
-    const fieldRules = rules.filter(rule => rule.field === item.field);
-    
-    // 各ルールを適用
-    for (const rule of fieldRules) {
-      let isValid = true;
-      let message = rule.message;
-      
-      switch (rule.rule) {
-        case 'required':
-          if (!item.value || item.value.toString().trim() === '') {
-            isValid = false;
-            message = message || `${item.field}は必須項目です`;
-          }
-          break;
-        case 'min':
-          if (typeof rule.value === 'number' && parseFloat(item.value) < rule.value) {
-            isValid = false;
-            message = message || `${item.field}は${rule.value}以上である必要があります`;
-          }
-          break;
-        case 'max':
-          if (typeof rule.value === 'number' && parseFloat(item.value) > rule.value) {
-            isValid = false;
-            message = message || `${item.field}は${rule.value}以下である必要があります`;
-          }
-          break;
-        case 'pattern':
-          if (rule.value instanceof RegExp && !rule.value.test(item.value)) {
-            isValid = false;
-            message = message || `${item.field}の形式が正しくありません`;
-          }
-          break;
-        case 'custom':
-          if (rule.validator && !rule.validator(item.value)) {
-            isValid = false;
-            message = message || `${item.field}の値がカスタムルールに合いません`;
-          }
-          break;
-      }
-      
-      // 検証に失敗した場合
-      if (!isValid) {
-        return {
-          ...item,
-          status: item.status === 'success' ? 'warning' : item.status, // 成功ステータスのみを警告に変更
-          message: item.message ? `${item.message}, ${message}` : message
-        };
-      }
-    }
-    
-    // 検証に成功した場合
-    return item;
-  });
-};
-
-// 自動取り込みデータを処理
-export const processAutoImportData = async (importResults: AutoImportData[], userId: string) => {
-  // 成功したデータのみを抽出
-  const successfulData = importResults.filter(result => result.status === 'success');
-  
-  // データを取引履歴に変換
-  const transactions = successfulData.map((data, index) => ({
-    id: `${userId}-${Date.now()}-${index}`,
-    item: data.field,
-    amount: parseFloat(data.value.replace(/[^0-9.-]+/g, "")) || 0,
-    date: new Date().toISOString().split('T')[0],
-    category: '自動取り込み',
-    type: parseFloat(data.value.replace(/[^0-9.-]+/g, "")) >= 0 ? 'income' : 'expense',
-    description: `自動取り込みデータ: ${data.field}`,
-    creator: userId,
-    created_at: new Date().toISOString()
-  }));
-  
-  // 取引履歴に保存
-  const savedTransactions = [];
-  for (const transaction of transactions) {
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert([transaction]);
-      
-      if (error) {
-        console.error(`取引データの保存に失敗しました: ${error.message}`);
-      } else {
-        savedTransactions.push(data);
-      }
-    } catch (error) {
-      console.error(`取引データの保存中にエラーが発生しました: ${error}`);
+// 所得税を計算
+export const calculateIncomeTax = (taxableIncome: number): number => {
+  for (const bracket of TAX_BRACKETS) {
+    if (taxableIncome <= bracket.max) {
+      return Math.floor(taxableIncome * bracket.rate - bracket.deduction);
     }
   }
-  
-  return savedTransactions;
+  return 0;
 };
 
-// インポート履歴を保存
-export const saveImportHistory = async (userId: string, fileName: string, status: 'success' | 'failed', details: any) => {
-  const { data, error } = await supabase
-    .from('import_history')
-    .insert([
-      {
-        user_id: userId,
-        file_name: fileName,
-        status: status,
-        details: details,
-        created_at: new Date().toISOString()
-      }
-    ]);
-  
-  if (error) {
-    throw new Error(`インポート履歴の保存に失敗しました: ${error.message}`);
+// 初期控除を生成
+export const generateInitialDeductions = (
+  hasBlueReturn: boolean = true
+): Deduction[] => {
+  const deductions: Deduction[] = [
+    {
+      id: 'basic',
+      type: 'basic',
+      name: '基礎控除',
+      amount: BASIC_DEDUCTION,
+      description: '全ての納税者が受けられる控除',
+      isApplicable: true,
+    },
+  ];
+
+  if (hasBlueReturn) {
+    deductions.push({
+      id: 'blue_return',
+      type: 'blue_return',
+      name: '青色申告特別控除',
+      amount: BLUE_RETURN_DEDUCTION,
+      description: '電子申告で最大65万円控除',
+      isApplicable: true,
+    });
   }
-  
-  return data;
+
+  return deductions;
 };
 
-// インポート履歴を取得
-export const getImportHistory = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('import_history')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(50); // 最新50件のみ取得
+// AIによる控除提案を取得
+export const getAIDeductionSuggestions = async (
+  taxData: TaxFilingData,
+  _userAnswers?: Record<string, any>
+): Promise<{ suggestions: string[]; estimatedSavings: number }> => {
+  // デフォルトの提案を返す（AIは別途対応）
+  const suggestions: string[] = [];
   
-  if (error) {
-    throw new Error(`インポート履歴の取得に失敗しました: ${error.message}`);
+  // 青色申告の提案
+  if (!taxData.deductions.find(d => d.type === 'blue_return')) {
+    suggestions.push('青色申告特別控除（65万円）の適用をご検討ください');
   }
   
-  return data;
+  // 経費が少ない場合
+  if (taxData.totalRevenue > 0 && taxData.totalExpenses / taxData.totalRevenue < 0.3) {
+    suggestions.push('経費率が低めです。経費として計上できる支出がないか確認してみましょう');
+  }
+  
+  // 課税所得に応じた提案
+  if (taxData.taxableIncome > 3300000) {
+    suggestions.push('小規模企業共済やiDeCoへの加入で節税効果が期待できます');
+  }
+  
+  suggestions.push('ふるさと納税で節税しながら地域貢献ができます');
+  suggestions.push('経費の領収書は7年間保管が必要です');
+  
+  return {
+    suggestions,
+    estimatedSavings: Math.round(taxData.estimatedTax * 0.1),
+  };
+};
+
+// 金額をフォーマット
+export const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('ja-JP', {
+    style: 'currency',
+    currency: 'JPY',
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+// パーセンテージをフォーマット
+export const formatPercentage = (value: number): string => {
+  return `${value.toFixed(1)}%`;
 };

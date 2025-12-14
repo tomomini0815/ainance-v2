@@ -45,37 +45,56 @@ export const useSupabaseTransactions = () => {
   const [loading, setLoading] = useState(false)
 
   // 両方のデータを同時に取得する関数
-  const fetchAllData = useCallback(() => {
+  const fetchAllData = useCallback(async () => {
     setLoading(true)
     
-    // トランザクションデータの取得
-    supabase
-      .from('transactions')
-      .select('*')
-      .order('date', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error(`取引履歴の取得に失敗しました: ${error.message}`)
-          setTransactions([])
-        } else {
-          setTransactions(data || [])
-        }
-      })
+    try {
+      // タイムアウト付きでデータを取得
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('データ取得がタイムアウトしました')), 10000)
+      )
 
-    // AIトランザクションデータの取得
-    supabase
-      .from('ai_transactions')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error(`AI取引履歴の取得に失敗しました: ${error.message}`)
-          setAiTransactions([])
-        } else {
-          setAiTransactions(data || [])
-        }
-        setLoading(false)
-      })
+      // 両方のクエリを並列で実行
+      const transactionsPromise = supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false })
+
+      const aiTransactionsPromise = supabase
+        .from('ai_transactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      // タイムアウトとクエリをレース
+      const [transactionsResult, aiTransactionsResult] = await Promise.race([
+        Promise.all([transactionsPromise, aiTransactionsPromise]),
+        timeoutPromise.then(() => { throw new Error('タイムアウト') })
+      ]) as [any, any]
+
+      // トランザクションデータの処理
+      if (transactionsResult.error) {
+        console.error(`取引履歴の取得に失敗しました: ${transactionsResult.error.message}`)
+        setTransactions([])
+      } else {
+        setTransactions(transactionsResult.data || [])
+      }
+
+      // AIトランザクションデータの処理
+      if (aiTransactionsResult.error) {
+        console.error(`AI取引履歴の取得に失敗しました: ${aiTransactionsResult.error.message}`)
+        setAiTransactions([])
+      } else {
+        setAiTransactions(aiTransactionsResult.data || [])
+      }
+    } catch (error: any) {
+      console.error('データ取得中にエラーが発生しました:', error.message)
+      // エラー時は空配列を設定して読み込み状態を解除
+      setTransactions([])
+      setAiTransactions([])
+    } finally {
+      // 必ずloading状態を解除
+      setLoading(false)
+    }
   }, [])
 
   // 新しいトランザクションの作成

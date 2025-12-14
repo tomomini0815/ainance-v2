@@ -23,10 +23,12 @@ const IntegrationSettings = React.lazy(() => import('./pages/IntegrationSettings
 const TransactionHistory = React.lazy(() => import('./pages/TransactionHistory'));
 const AITransactionList = React.lazy(() => import('./pages/AITransactionList'));
 const TaxFilingSupport = React.lazy(() => import('./pages/TaxFilingSupport'));
+const TaxFilingWizard = React.lazy(() => import('./pages/TaxFilingWizard'));
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
 const Privacy = React.lazy(() => import('./pages/Privacy'));
 const Contact = React.lazy(() => import('./pages/Contact'));
+const Signup = React.lazy(() => import('./pages/Signup'));
 
 // プリロード関数
 const preloadRoute = (importFunc: () => Promise<any>) => {
@@ -57,6 +59,7 @@ function App() {
             <Routes>
               {/* パブリックルート */}
               <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
 
               {/* 保護されたルート - Layoutでラップ */}
               <Route element={<Layout />}>
@@ -145,6 +148,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <TaxFilingSupport />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/tax-filing-wizard"
+                  element={
+                    <ProtectedRoute>
+                      <TaxFilingWizard />
                     </ProtectedRoute>
                   }
                 />

@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-    Home, Receipt, FileText, BarChart3, MessageSquare, Users,
+    Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles,
     Settings, LogOut, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -35,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { path: '/invoice-creation', label: '請求書', icon: FileText },
         { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
         { path: '/chat-to-book', label: 'CHAT-TO-BOOK', icon: MessageSquare },
-        { path: '/business-conversion', label: '申告サポート', icon: Users },
+        { path: '/tax-filing-wizard', label: '確定申告', icon: Sparkles },
     ];
 
     const handleSignOut = async () => {
@@ -80,11 +80,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {/* Header / Logo Area */}
                     <div className={`flex items-center h-16 mb-6 ${isExpanded ? 'justify-between' : 'justify-center'}`}>
                         {isExpanded ? (
-                            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                                Ainance
-                            </h1>
+                            <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center shadow-lg shadow-primary/30">
+                                    <span className="text-white font-bold text-lg">A</span>
+                                </div>
+                                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                                    Ainance
+                                </h1>
+                            </div>
                         ) : (
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary" />
+                            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center shadow-lg shadow-primary/30">
+                                <span className="text-white font-bold text-lg">A</span>
+                            </div>
                         )}
 
                         {/* Mobile Close Button */}

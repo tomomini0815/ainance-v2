@@ -452,146 +452,66 @@ const BusinessConversion: React.FC = () => {
   };
 
   // 政府の公式ウェブサイトからテンプレートをダウンロードする関数
-  const downloadTemplateFromGovernment = async () => {
-    try {
-      alert('政府の公式ウェブサイトからテンプレートをダウンロードします。しばらくお待ちください...');
-
-      // 実際の政府ウェブサイトURL（例：国税庁の確定申告書ダウンロードページ）
-      // 注意: 直接フェッチするとCORSエラーになる可能性があるため、実際のアプリケーションではサーバーサイドで処理する必要があります
-      const governmentUrl = 'https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1150.htm';
-
-      // CORS対策として、プロキシサーバーを使用するか、サーバーサイドで処理することを推奨
-      // ここでは簡易的なエラーハンドリングを実装
-      try {
-        // フェッチAPIを使用して政府ウェブサイトからデータを取得
-        const response = await fetch(governmentUrl);
-
-        if (!response.ok) {
-          throw new Error(`政府ウェブサイトからのダウンロードに失敗しました: ${response.status} ${response.statusText}`);
-        }
-
-        // レスポンスからテキストを取得
-        const htmlContent = await response.text();
-
-        // HTMLコンテンツからPDFリンクを抽出（簡易的な実装）
-        const pdfLinks = extractPDFFromHTML(htmlContent);
-
-        if (pdfLinks.length > 0) {
-          // 最初のPDFリンクをダウンロード
-          const pdfUrl = pdfLinks[0];
-          const pdfResponse = await fetch(pdfUrl);
-
-          if (!pdfResponse.ok) {
-            throw new Error(`PDFのダウンロードに失敗しました: ${pdfResponse.status} ${pdfResponse.statusText}`);
-          }
-
-          // PDFデータをBlobとして取得
-          const pdfBlob = await pdfResponse.blob();
-
-          // ファイル名を生成
-          const fileName = `政府テンプレート_${new Date().toISOString().split('T')[0]}.pdf`;
-
-          // ダウンロードリンクを作成してクリック
-          const url = URL.createObjectURL(pdfBlob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-
-          // ダウンロードしたテンプレートを書類リストに追加
-          const newTemplate: TaxDocument = {
-            id: Date.now().toString(),
-            title: `政府テンプレート_${new Date().toISOString().split('T')[0]}`,
-            description: '政府の公式ウェブサイトからダウンロードしたテンプレート',
-            deadline: new Date().toISOString().split('T')[0],
-            status: 'not_started',
-            required: false,
-            data_imported: false,
-            template_url: pdfUrl,
-            content: `政府ウェブサイトからダウンロードしたテンプレート: ${pdfUrl}`,
-            versions: [
-              {
-                id: '1',
-                version: 1,
-                content: `初期バージョン: ${pdfUrl}`,
-                createdAt: new Date().toISOString(),
-                createdBy: '政府ウェブサイト'
-              }
-            ],
-            tags: ['政府', 'テンプレート'],
-            comments: []
-          };
-
-          setTaxDocuments(prev => [newTemplate, ...prev]);
-
-          alert('政府の公式ウェブサイトからテンプレートをダウンロードしました');
-        } else {
-          // PDFリンクが見つからない場合の代替処理
-          alert('政府ウェブサイトからPDFリンクが見つかりませんでした。代替処理としてサンプルテンプレートを作成します。');
-
-          // サンプルテンプレートを作成
-          const sampleTemplate: TaxDocument = {
-            id: Date.now().toString(),
-            title: `政府テンプレート_${new Date().toISOString().split('T')[0]}`,
-            description: '政府ウェブサイトからダウンロードしたテンプレート（サンプル）',
-            deadline: new Date().toISOString().split('T')[0],
-            status: 'not_started',
-            required: false,
-            data_imported: false,
-            template_url: governmentUrl,
-            content: `これは政府ウェブサイトのテンプレートのサンプルです。実際のテンプレートは ${governmentUrl} からダウンロードしてください。`,
-            versions: [
-              {
-                id: '1',
-                version: 1,
-                content: `これは政府ウェブサイトのテンプレートのサンプルです。実際のテンプレートは ${governmentUrl} からダウンロードしてください。`,
-                createdAt: new Date().toISOString(),
-                createdBy: '政府ウェブサイト'
-              }
-            ],
-            tags: ['政府', 'テンプレート', 'サンプル'],
-            comments: []
-          };
-
-          setTaxDocuments(prev => [sampleTemplate, ...prev]);
-        }
-      } catch (fetchError) {
-        // CORSエラーなどネットワークエラーの場合の代替処理
-        console.error('政府ウェブサイトからのテンプレートダウンロードエラー:', fetchError);
-        alert(`政府ウェブサイトからの直接ダウンロードに失敗しました。代替処理としてサンプルテンプレートを作成します。エラー: ${fetchError instanceof Error ? fetchError.message : '不明なエラー'}`);
-
-        // サンプルテンプレートを作成
-        const sampleTemplate: TaxDocument = {
-          id: Date.now().toString(),
-          title: `政府テンプレート_${new Date().toISOString().split('T')[0]}`,
-          description: '政府ウェブサイトからダウンロードしたテンプレート（サンプル）',
-          deadline: new Date().toISOString().split('T')[0],
-          status: 'not_started',
-          required: false,
-          data_imported: false,
-          template_url: governmentUrl,
-          content: `これは政府ウェブサイトのテンプレートのサンプルです。実際のテンプレートは ${governmentUrl} からダウンロードしてください。`,
-          versions: [
-            {
-              id: '1',
-              version: 1,
-              content: `これは政府ウェブサイトのテンプレートのサンプルです。実際のテンプレートは ${governmentUrl} からダウンロードしてください。`,
-              createdAt: new Date().toISOString(),
-              createdBy: '政府ウェブサイト'
-            }
-          ],
-          tags: ['政府', 'テンプレート', 'サンプル'],
-          comments: []
-        };
-
-        setTaxDocuments(prev => [sampleTemplate, ...prev]);
+  const downloadTemplateFromGovernment = () => {
+    // 国税庁の公式ダウンロードページURL
+    const governmentUrls = {
+      individual: {
+        name: '確定申告書等作成コーナー',
+        url: 'https://www.keisan.nta.go.jp/kyoutu/ky/smsp/top',
+        description: '個人事業主向け確定申告書を作成できます'
+      },
+      corporation: {
+        name: '法人税申告書等ダウンロード',
+        url: 'https://www.nta.go.jp/taxes/tetsuzuki/shinsei/annai/hojin/mokuji.htm',
+        description: '法人税の各種申告書様式をダウンロードできます'
+      },
+      etax: {
+        name: 'e-Tax（電子申告）',
+        url: 'https://www.e-tax.nta.go.jp/',
+        description: '電子申告・納税システム'
       }
-    } catch (error) {
-      console.error('政府ウェブサイトからのテンプレートダウンロードエラー:', error);
-      alert(`テンプレートのダウンロードに失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    };
+
+    const businessType = currentBusinessType.business_type === 'individual' ? 'individual' : 'corporation';
+    const targetUrl = governmentUrls[businessType];
+
+    // 確認ダイアログを表示
+    const confirmed = window.confirm(
+      `国税庁の公式ウェブサイトを開きます。\n\n` +
+      `📄 ${targetUrl.name}\n` +
+      `${targetUrl.description}\n\n` +
+      `「OK」をクリックすると新しいタブで開きます。`
+    );
+
+    if (confirmed) {
+      // 新しいタブで国税庁のページを開く
+      window.open(targetUrl.url, '_blank', 'noopener,noreferrer');
+
+      // 書類リストにリンク情報を追加
+      const newTemplate: TaxDocument = {
+        id: Date.now().toString(),
+        title: `${targetUrl.name}`,
+        description: targetUrl.description,
+        deadline: new Date().toISOString().split('T')[0],
+        status: 'not_started',
+        required: false,
+        data_imported: false,
+        template_url: targetUrl.url,
+        content: `国税庁公式サイト: ${targetUrl.url}`,
+        versions: [
+          {
+            id: '1',
+            version: 1,
+            content: `リンク: ${targetUrl.url}`,
+            createdAt: new Date().toISOString(),
+            createdBy: '国税庁'
+          }
+        ],
+        tags: ['政府', 'テンプレート', '公式'],
+        comments: []
+      };
+
+      setTaxDocuments(prev => [newTemplate, ...prev]);
     }
   };
 
@@ -1010,8 +930,8 @@ const BusinessConversion: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <span className={`px-2 py-1 rounded-full text-xs ${document.status === 'not_started' ? 'bg-surface-highlight text-text-muted' :
-                            document.status === 'in_progress' ? 'bg-yellow-500/10 text-yellow-600' :
-                              'bg-green-500/10 text-green-600'
+                          document.status === 'in_progress' ? 'bg-yellow-500/10 text-yellow-600' :
+                            'bg-green-500/10 text-green-600'
                           }`}>
                           {document.status === 'not_started' ? '未開始' :
                             document.status === 'in_progress' ? '進行中' : '完了'}

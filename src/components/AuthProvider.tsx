@@ -11,8 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<any>;
   signUp: (name: string, email: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
-  // Firebase関連の関数を一時的に無効化しました
-  // signInWithGoogle: () => Promise<any>;
+  signInWithGoogle: () => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -42,17 +41,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Supabaseセッション状態の監視
   useEffect(() => {
+    console.log('🔐 AuthProvider: セッション監視を開始');
+
     // 初期セッションの取得
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('🔐 AuthProvider: 初期セッション取得', {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        email: session?.user?.email,
+        error
+      });
       setUser(session?.user || null)
-      setLoading(false) // セッション取得後にloadingをfalseに設定
+      setLoading(false)
+    }).catch((error) => {
+      console.error('🔐 AuthProvider: セッション取得エラー', error);
+      setUser(null)
+      setLoading(false)
     })
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔐 AuthProvider: 認証状態変更', {
+        event,
+        hasSession: !!session,
+        userId: session?.user?.id,
+        email: session?.user?.email
+      });
       setUser(session?.user || null)
-      setLoading(false) // 認証状態変更時にloadingをfalseに設定
+      setLoading(false)
     })
 
     return () => {
@@ -67,7 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email,
         password,
       })
-      
+
       if (error) throw error
       setUser(data.user)
       return data
@@ -88,7 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
       })
-      
+
       if (error) throw error
       setUser(data.user)
       return data
@@ -98,38 +115,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   const signOut = async () => {
-    setLoading(true) // ログアウト処理開始時にloadingをtrueに設定
+    setLoading(true)
     try {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       setUser(null)
     } finally {
-      setLoading(false) // ログアウト処理終了時にloadingをfalseに設定
+      setLoading(false)
     }
   }
 
-  // Firebase関連の関数を一時的に無効化しました
-  // const signInWithGoogle = async () => {
-  //   try {
-  //     const result = await signInWithPopup(auth, googleProvider);
-  //     const user = result.user;
-  //     return user;
-  //   } catch (error) {
-  //     console.error("Googleサインインエラー:", error);
-  //     throw error;
-  //   }
-  // };
+  // Supabase OAuth - Googleログイン
+  const signInWithGoogle = async () => {
+    setLoading(true)
+    console.log('🔐 AuthProvider: Googleログイン開始');
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      console.log('🔐 AuthProvider: リダイレクトURL:', redirectUrl);
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      })
+
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Googleサインインエラー:', error)
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const value = useMemo(() => ({
     user: user,
     isAuthenticated: !!user,
-    loading, // 実際のloadingステートを使用
+    loading,
     signIn,
     signUp,
     signOut,
-    // Firebase関連の関数を一時的に無効化しました
-    // signInWithGoogle,
-  }), [user, loading]) // userとloadingを依存配列に追加
+    signInWithGoogle,
+  }), [user, loading])
 
   return (
     <AuthContext.Provider value={value}>

@@ -1,4 +1,3 @@
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -17,16 +16,19 @@ export default {
           DEFAULT: "var(--primary)",
           hover: "var(--primary-hover)",
           light: "var(--primary-light)",
+          dark: "var(--primary-dark)",
         },
         secondary: {
           DEFAULT: "var(--secondary)",
           hover: "var(--secondary-hover)",
           light: "var(--secondary-light)",
+          dark: "var(--secondary-dark)",
         },
         accent: {
           DEFAULT: "var(--accent)",
           hover: "var(--accent-hover)",
           light: "var(--accent-light)",
+          dark: "var(--accent-dark)",
         },
         text: {
           main: "var(--text-main)",
@@ -41,84 +43,81 @@ export default {
         success: {
           DEFAULT: "var(--success)",
           light: "var(--success-light)",
+          dark: "var(--success-dark)",
         },
         warning: {
           DEFAULT: "var(--warning)",
           light: "var(--warning-light)",
+          dark: "var(--warning-dark)",
         },
         error: {
           DEFAULT: "var(--error)",
           light: "var(--error-light)",
+          dark: "var(--error-dark)",
         },
         info: {
           DEFAULT: "var(--info)",
           light: "var(--info-light)",
+          dark: "var(--info-dark)",
         },
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
+        sans: ["Inter", "Noto Sans JP", "sans-serif"],
+      },
+      borderRadius: {
+        'sm': 'var(--radius-sm)',
+        DEFAULT: 'var(--radius)',
+        'md': 'var(--radius-md)',
+        'lg': 'var(--radius-lg)',
+        'xl': 'var(--radius-xl)',
       },
       boxShadow: {
+        'xs': 'var(--shadow-xs)',
         'sm': 'var(--shadow-sm)',
-        'DEFAULT': 'var(--shadow)',
+        DEFAULT: 'var(--shadow)',
         'md': 'var(--shadow-md)',
         'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
+        'glow-primary': 'var(--glow-primary)',
+        'glow-success': 'var(--glow-success)',
+        'glow-error': 'var(--glow-error)',
+      },
+      transitionDuration: {
+        'fast': '150ms',
+        DEFAULT: '200ms',
+        'slow': '300ms',
+      },
+      animation: {
+        'modal-in': 'modal-in 0.2s ease-out',
+        'fade-in': 'fade-in 0.3s ease-out',
+        'slide-up': 'slide-up 0.3s ease-out',
+        'slide-down': 'slide-down 0.3s ease-out',
+        'scale-in': 'scale-in 0.2s ease-out',
+      },
+      keyframes: {
+        'modal-in': {
+          '0%': { opacity: '0', transform: 'scale(0.95) translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'slide-up': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'slide-down': {
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'scale-in': {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
       },
     },
   },
   darkMode: 'class',
-  plugins: [
-    function ({ addComponents }) {
-      addComponents({
-        '.btn-primary': {
-          '@apply px-4 py-2 bg-primary text-white rounded-lg font-medium shadow-sm hover:bg-primary-hover hover:shadow-md transition-all duration-200 active:scale-95': {},
-        },
-        '.btn-secondary': {
-          '@apply px-4 py-2 bg-surface border-2 border-primary text-primary rounded-lg font-medium hover:bg-primary-light transition-all duration-200': {},
-        },
-        '.btn-tertiary': {
-          '@apply px-4 py-2 bg-transparent text-text-secondary rounded-lg font-medium hover:bg-surface-highlight transition-all duration-200': {},
-        },
-        '.btn-danger': {
-          '@apply px-4 py-2 bg-error text-white rounded-lg font-medium shadow-sm transition-all duration-200 active:scale-95': {},
-        },
-        '.btn-success': {
-          '@apply px-4 py-2 bg-success text-white rounded-lg font-medium shadow-sm transition-all duration-200 active:scale-95': {},
-        },
-        '.input-base': {
-          '@apply w-full px-4 py-2.5 bg-surface border border-border rounded-lg text-text-main placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all': {},
-        },
-        '.input-error': {
-          '@apply border-error focus:ring-error': {},
-        },
-        '.input-success': {
-          '@apply border-success focus:ring-success': {},
-        },
-        '.badge-base': {
-          '@apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium': {},
-        },
-        '.badge-success': {
-          '@apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-success-light text-success': {},
-        },
-        '.badge-warning': {
-          '@apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-warning-light text-warning': {},
-        },
-        '.badge-error': {
-          '@apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-error-light text-error': {},
-        },
-        '.badge-info': {
-          '@apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-info-light text-info': {},
-        },
-        '.card-base': {
-          '@apply bg-surface rounded-xl shadow-sm': {},
-        },
-        '.card-interactive': {
-          '@apply bg-surface rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer hover:-translate-y-1': {},
-        },
-        '.card-metric': {
-          '@apply bg-surface rounded-xl shadow-sm p-6 border-l-4 hover:shadow-lg transition-shadow': {},
-        },
-      });
-    },
-  ],
+  plugins: [],
 }

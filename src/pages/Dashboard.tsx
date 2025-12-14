@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import QuickActions from '../components/QuickActions'
 import { useTransactions } from '../hooks/useTransactions'
 import { useAuth } from '../hooks/useAuth'
-import { Download, Plus, X, FileText, TrendingUp, TrendingDown, JapaneseYen, ChevronRight } from 'lucide-react'
+import { Download, Plus, X, FileText, TrendingUp, TrendingDown, JapaneseYen, ChevronRight, Sparkles } from 'lucide-react'
+import { AIStatusBadge } from '../components/AIStatusComponents'
+import { isAIEnabled } from '../services/geminiAIService'
 
 // Lazy load heavy components
 const RevenueChart = React.lazy(() => import('../components/RevenueChart'));
@@ -394,25 +396,47 @@ const Dashboard: React.FC = () => {
         <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
           <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-text-main">AI推奨取引</h3>
-              <div className="flex items-center space-x-3">
-                <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="flex items-center gap-3">
+                <Sparkles className={`w-5 h-5 ${isAIEnabled() ? 'text-purple-500' : 'text-gray-400'}`} />
+                <h3 className="text-lg font-semibold text-text-main">AI分析</h3>
               </div>
+              <AIStatusBadge />
             </div>
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 mr-3"></div>
-                    <div>
-                      <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                      <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    </div>
+
+            {isAIEnabled() ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-xl border border-purple-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-sm font-medium text-text-main">AI分析 有効</span>
                   </div>
-                  <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <p className="text-sm text-text-muted">
+                    レシートスキャン時にGemini AIが自動で勘定科目を分類します。
+                  </p>
                 </div>
-              ))}
-            </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="text-xs text-text-muted mb-1">高精度分類</div>
+                    <div className="text-sm font-semibold text-text-main">95%+</div>
+                  </div>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="text-xs text-text-muted mb-1">処理時間</div>
+                    <div className="text-sm font-semibold text-text-main">〜3秒</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                  <p className="text-sm text-text-muted">
+                    AIを有効にするとレシートの自動分類精度が向上します。
+                  </p>
+                </div>
+                <div className="text-xs text-text-muted">
+                  .envファイルにGemini API Keyを設定してください
+                </div>
+              </div>
+            )}
           </div>
         </Suspense>
       </div>

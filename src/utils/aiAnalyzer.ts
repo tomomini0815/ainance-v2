@@ -1,9 +1,15 @@
 /**
  * AI分析ユーティリティ
  * レシートデータの高度な分析・分類・提案を行う
+ * 
+ * Gemini AI APIが設定されている場合は実際のAIを使用
+ * 設定されていない場合はルールベースの分析にフォールバック
  */
 
 import { ReceiptData, ReceiptItem } from './ReceiptParser';
+import { classifyExpenseWithAI, isAIEnabled } from '../services/geminiAIService';
+
+
 
 export interface ExpenseCategory {
     id: string;
@@ -185,7 +191,63 @@ export class AIAnalyzer {
     }
 
     /**
-     * 高度なカテゴリ分類
+     * 高度なカテゴリ分類（AI優先、ルールベースフォールバック）
+     * Gemini AIが利用可能な場合は実際のAIで分類
+     * そうでない場合はキーワードマッチングで分類
+     */
+    async classifyExpenseAsync(receiptData: ReceiptData): Promise<{
+        category: ExpenseCategory;
+        confidence: number;
+        reasoning: string;
+        usedAI: boolean;
+    }> {
+        console.log('カテゴリ分類を開始:', receiptData.store_name);
+
+        // Gemini AIが利用可能か確認
+        if (isAIEnabled()) {
+            console.log('🤖 Gemini AIを使用して分類します...');
+            try {
+                const aiResult = await classifyExpenseWithAI(
+                    receiptData.store_name,
+                    receiptData.total_amount,
+                    receiptData.raw_text?.substring(0, 500)
+                );
+
+                if (aiResult) {
+                    // AIの結果をExpenseCategoryに変換
+                    const category: ExpenseCategory = {
+                        id: aiResult.category.toLowerCase().replace(/\s+/g, '_'),
+                        name: aiResult.category,
+                        accountTitle: aiResult.accountTitle,
+                        taxDeductible: aiResult.taxDeductible,
+                        keywords: []
+                    };
+
+                    console.log(`🤖 AI分類結果: ${category.name} (信頼度: ${(aiResult.confidence * 100).toFixed(1)}%)`);
+
+                    return {
+                        category,
+                        confidence: aiResult.confidence,
+                        reasoning: `🤖 AI分析: ${aiResult.reasoning}`,
+                        usedAI: true
+                    };
+                }
+            } catch (error) {
+                console.warn('AI分類に失敗、ルールベースにフォールバック:', error);
+            }
+        }
+
+        // ルールベースのフォールバック
+        console.log('📋 ルールベースで分類します...');
+        const result = this.classifyExpense(receiptData);
+        return {
+            ...result,
+            usedAI: false
+        };
+    }
+
+    /**
+     * 高度なカテゴリ分類（同期版 - ルールベースのみ）
      * 店舗名とアイテムから最適な勘定科目を提案
      */
     classifyExpense(receiptData: ReceiptData): {
@@ -193,7 +255,7 @@ export class AIAnalyzer {
         confidence: number;
         reasoning: string;
     } {
-        console.log('カテゴリ分類を開始:', receiptData.store_name);
+        console.log('📋 ルールベース分類を開始:', receiptData.store_name);
 
         const storeName = receiptData.store_name.toLowerCase();
         const items = receiptData.items || [];
@@ -244,7 +306,7 @@ export class AIAnalyzer {
 
         const confidence = Math.min(bestScore / 20, 1.0); // 0-1にスケーリング
 
-        console.log(`分類結果: ${bestMatch.name} (信頼度: ${(confidence * 100).toFixed(1)}%)`);
+        console.log(`📋 分類結果: ${bestMatch.name} (信頼度: ${(confidence * 100).toFixed(1)}%)`);
 
         return {
             category: bestMatch,
@@ -252,6 +314,7 @@ export class AIAnalyzer {
             reasoning
         };
     }
+
 
     /**
      * 経費精算提案
