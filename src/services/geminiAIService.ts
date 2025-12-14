@@ -5,12 +5,12 @@
 
 // Gemini API設定
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-// 利用可能なモデル（優先順位順）
+// 利用可能なモデル（優先順位順）- 2024年12月時点の最新モデル
 const GEMINI_MODELS = [
-  'gemini-1.5-flash-latest',
-  'gemini-1.5-pro-latest', 
-  'gemini-pro',
-  'gemini-1.0-pro'
+  'gemini-2.0-flash',        // 最新の高速モデル
+  'gemini-2.0-flash-lite',   // 軽量版
+  'gemini-1.5-flash',        // 旧バージョン（フォールバック）
+  'gemini-1.5-pro',          // 高性能版
 ];
 
 // デフォルトのAPI URL
