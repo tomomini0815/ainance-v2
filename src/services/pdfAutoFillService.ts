@@ -109,13 +109,20 @@ const CATEGORY_TO_ACCOUNT_MAP: { [key: string]: string } = {
 };
 
 export interface TaxFormData {
-  // 申告者情報
+  // 申告者情報（個人）
   name?: string;
   furigana?: string;
   address?: string;
   phone?: string;
   birthDate?: { year: number; month: number; day: number };
   tradeName?: string; // 屋号
+  
+  // 法人情報
+  companyName?: string;           // 会社名
+  representativeName?: string;    // 代表者名
+  corporateNumber?: string;       // 法人番号
+  capital?: number;               // 資本金
+  businessType?: 'individual' | 'corporation';
   
   // 収支データ
   revenue: number;
@@ -125,7 +132,7 @@ export interface TaxFormData {
   // 経費内訳
   expensesByCategory: { category: string; amount: number }[];
   
-  // 控除
+  // 控除（個人用）
   deductions: {
     socialInsurance?: number;
     smallBusinessMutual?: number;
@@ -135,6 +142,17 @@ export interface TaxFormData {
     dependents?: number;
     basic?: number;
     blueReturn?: number;
+  };
+  
+  // 法人用追加項目
+  corporateTax?: {
+    taxableIncome?: number;       // 課税所得
+    corporateTaxAmount?: number;  // 法人税額
+    localCorporateTax?: number;   // 地方法人税
+    prefecturalTax?: number;      // 都道府県民税
+    municipalTax?: number;        // 市町村民税
+    businessTax?: number;         // 事業税
+    totalTax?: number;            // 税金合計
   };
   
   // 税額
@@ -306,9 +324,18 @@ export async function fillBlueReturnForm(
  * テンプレート読み込みに失敗した場合は白紙から生成
  */
 export async function generateFilledTaxForm(
-  formType: 'tax_return_b' | 'blue_return',
+  formType: 'tax_return_b' | 'blue_return' | 'corporate_tax' | 'financial_statement',
   data: TaxFormData
 ): Promise<{ pdfBytes: Uint8Array; filename: string }> {
+  // 法人向けは常にフォールバック（自作PDF）を使用
+  if (formType === 'corporate_tax' || formType === 'financial_statement') {
+    const pdfBytes = await generateFallbackPDF(formType, data);
+    const filename = formType === 'corporate_tax'
+      ? `法人税申告書_${data.fiscalYear}年度_入力済み.pdf`
+      : `決算報告書_${data.fiscalYear}年度_入力済み.pdf`;
+    return { pdfBytes, filename };
+  }
+
   const templatePath = formType === 'tax_return_b'
     ? '/templates/tax_return_r05.pdf'
     : '/templates/blue_return_r05.pdf';
@@ -344,7 +371,7 @@ export async function generateFilledTaxForm(
  * 確定申告書のレイアウトを再現
  */
 async function generateFallbackPDF(
-  formType: 'tax_return_b' | 'blue_return',
+  formType: 'tax_return_b' | 'blue_return' | 'corporate_tax' | 'financial_statement',
   data: TaxFormData
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
@@ -362,6 +389,7 @@ async function generateFallbackPDF(
   // 色定義
   const colors = {
     primary: rgb(0.2, 0.4, 0.8),
+    corporate: rgb(0.4, 0.2, 0.6), // 法人用 紫
     header: rgb(0.15, 0.15, 0.15),
     text: rgb(0.1, 0.1, 0.1),
     muted: rgb(0.4, 0.4, 0.4),
@@ -370,6 +398,11 @@ async function generateFallbackPDF(
     red: rgb(0.8, 0.2, 0.2),
     green: rgb(0.2, 0.6, 0.3),
   };
+  
+  // 法人向けはプライマリーカラーを変更
+  const headerColor = (formType === 'corporate_tax' || formType === 'financial_statement') 
+    ? colors.corporate 
+    : colors.primary;
   
   // ヘルパー関数
   const drawText = (text: string, x: number, y: number, options: { size?: number; font?: typeof font; color?: typeof colors.text; align?: 'left' | 'right' } = {}) => {
@@ -417,28 +450,158 @@ async function generateFallbackPDF(
   // ===================
   // ヘッダー
   // ===================
-  const title = formType === 'tax_return_b' 
-    ? `Kakutei Shinkokusho B (Tax Return Form B)`
-    : `Aoiro Shinkoku Kessansho (Blue Return Statement)`;
+  const titles: Record<typeof formType, string> = {
+    'tax_return_b': 'Kakutei Shinkokusho B (Tax Return Form B)',
+    'blue_return': 'Aoiro Shinkoku Kessansho (Blue Return Statement)',
+    'corporate_tax': 'Houjinzei Shinkokusho (Corporate Tax Return)',
+    'financial_statement': 'Kessan Houkokusho (Financial Statement)',
+  };
   
   // タイトル背景
-  drawRect(0, height - 60, width, 60, colors.primary);
-  drawText(title, 50, height - 40, { size: 14, font: boldFont, color: rgb(1, 1, 1) });
+  drawRect(0, height - 60, width, 60, headerColor);
+  drawText(titles[formType], 50, height - 40, { size: 14, font: boldFont, color: rgb(1, 1, 1) });
   
   // 年度・日付情報
   let y = height - 85;
-  drawText(`Fiscal Year: ${data.fiscalYear} (Reiwa ${data.fiscalYear - 2018})`, 50, y, { size: 11 });
+  
+  if (formType === 'corporate_tax' || formType === 'financial_statement') {
+    if (data.companyName) {
+      drawText(`Company: ${data.companyName}`, 50, y, { size: 11, font: boldFont });
+    }
+    y -= 20;
+    drawText(`Fiscal Year: ${data.fiscalYear}`, 50, y, { size: 10 });
+    if (data.representativeName) {
+      drawText(`Representative: ${data.representativeName}`, 300, y, { size: 10 });
+    }
+  } else {
+    drawText(`Fiscal Year: ${data.fiscalYear} (Reiwa ${data.fiscalYear - 2018})`, 50, y, { size: 11 });
+  }
   drawText(`Generated: ${new Date().toLocaleDateString('ja-JP')}`, 400, y, { size: 9, color: colors.muted });
   
   y -= 30;
   drawLine(50, y, 545, y, 1);
   y -= 25;
   
-  if (formType === 'tax_return_b') {
-    // ===================
-    // 確定申告書B
-    // ===================
+  // ===================
+  // 法人税申告書
+  // ===================
+  if (formType === 'corporate_tax') {
+    // 会社情報
+    drawText('SECTION 1: Houjin Joho (Corporate Information)', 50, y, { size: 12, font: boldFont, color: headerColor });
+    y -= 25;
     
+    if (data.companyName) drawTableRow('Company Name (Kaisha Mei)', data.companyName, y);
+    y -= 20;
+    if (data.corporateNumber) drawTableRow('Corporate Number (Houjin Bangou)', data.corporateNumber, y);
+    y -= 20;
+    if (data.capital) drawTableRow('Capital (Shihonkin)', formatNumber(data.capital) + ' JPY', y);
+    y -= 20;
+    if (data.address) drawTableRow('Address (Juusho)', data.address, y);
+    y -= 30;
+    
+    // 損益
+    drawText('SECTION 2: Son\'eki Keisan (Profit & Loss)', 50, y, { size: 12, font: boldFont, color: headerColor });
+    y -= 25;
+    
+    drawTableRow('Revenue (Uriage)', formatNumber(data.revenue) + ' JPY', y, true);
+    y -= 20;
+    drawTableRow('Expenses (Keihi)', formatNumber(data.expenses) + ' JPY', y);
+    y -= 20;
+    drawTableRow('Net Income (Junrieki)', formatNumber(data.netIncome) + ' JPY', y, true);
+    y -= 35;
+    
+    // 税額計算
+    drawText('SECTION 3: Zeigaku Keisan (Tax Calculation)', 50, y, { size: 12, font: boldFont, color: headerColor });
+    y -= 25;
+    
+    const taxableIncome = data.corporateTax?.taxableIncome || data.taxableIncome;
+    drawTableRow('Taxable Income (Kazei Shotoku)', formatNumber(taxableIncome) + ' JPY', y);
+    y -= 20;
+    
+    // 法人税率（中小企業: 15%/23.2%）
+    const corporateTaxRate = taxableIncome <= 8000000 ? 0.15 : 0.232;
+    const corporateTaxAmount = data.corporateTax?.corporateTaxAmount || Math.floor(taxableIncome * corporateTaxRate);
+    drawTableRow('Corporate Tax Rate', `${(corporateTaxRate * 100).toFixed(1)}%`, y);
+    y -= 20;
+    
+    drawTableRow('Corporate Tax (Houjinzei)', formatNumber(corporateTaxAmount) + ' JPY', y);
+    y -= 20;
+    
+    // 地方法人税 (10.3%)
+    const localCorporateTax = data.corporateTax?.localCorporateTax || Math.floor(corporateTaxAmount * 0.103);
+    drawTableRow('Local Corporate Tax (Chihou Houjinzei)', formatNumber(localCorporateTax) + ' JPY', y);
+    y -= 20;
+    
+    // 事業税 (概算 7%)
+    const businessTax = data.corporateTax?.businessTax || Math.floor(taxableIncome * 0.07);
+    drawTableRow('Business Tax (Jigyouzei)', formatNumber(businessTax) + ' JPY', y);
+    y -= 25;
+    
+    // 合計
+    const totalTax = data.corporateTax?.totalTax || (corporateTaxAmount + localCorporateTax + businessTax);
+    drawRect(50, y - 8, 495, 30, rgb(1, 0.95, 0.95));
+    drawLine(50, y - 8, 545, y - 8, 1);
+    drawLine(50, y + 22, 545, y + 22, 1);
+    drawText('Total Tax (Zeigaku Goukei) - ESTIMATED', 60, y + 5, { font: boldFont });
+    drawText(formatNumber(totalTax) + ' JPY', 530, y + 5, { align: 'right', font: boldFont, color: colors.red });
+    
+  // ===================
+  // 決算報告書
+  // ===================
+  } else if (formType === 'financial_statement') {
+    // 損益計算書（P/L）
+    drawText('SECTION 1: Son\'eki Keisansho (P/L Statement)', 50, y, { size: 12, font: boldFont, color: headerColor });
+    y -= 25;
+    
+    drawRect(50, y - 5, 495, 18, rgb(0.9, 0.9, 0.9));
+    drawLine(50, y - 5, 545, y - 5);
+    drawLine(50, y + 13, 545, y + 13);
+    drawText('Item', 60, y, { font: boldFont, size: 9 });
+    drawText('Amount', 530, y, { align: 'right', font: boldFont, size: 9 });
+    y -= 22;
+    
+    drawTableRow('Sales Revenue (Uriage Takadaka)', formatNumber(data.revenue) + ' JPY', y, true);
+    y -= 20;
+    
+    // 経費内訳
+    data.expensesByCategory.forEach((exp, index) => {
+      const account = CATEGORY_TO_ACCOUNT_MAP[exp.category] || exp.category;
+      const isAlt = index % 2 === 0;
+      if (isAlt) {
+        drawRect(50, y - 5, 495, 18, rgb(0.98, 0.98, 0.98));
+      }
+      drawLine(50, y - 5, 545, y - 5);
+      drawText(account, 70, y, { size: 9 });
+      drawText(formatNumber(exp.amount) + ' JPY', 530, y, { align: 'right', size: 9 });
+      y -= 18;
+    });
+    
+    y -= 5;
+    drawTableRow('Total Expenses (Keihi Goukei)', formatNumber(data.expenses) + ' JPY', y);
+    y -= 25;
+    
+    // 営業利益
+    drawRect(50, y - 8, 495, 26, rgb(0.95, 1, 0.95));
+    drawLine(50, y - 8, 545, y - 8, 1);
+    drawLine(50, y + 18, 545, y + 18, 1);
+    drawText('Operating Income (Eigyo Rieki)', 60, y + 2, { font: boldFont });
+    drawText(formatNumber(data.netIncome) + ' JPY', 530, y + 2, { align: 'right', font: boldFont, color: data.netIncome >= 0 ? colors.green : colors.red });
+    y -= 45;
+    
+    // 簡易貸借対照表
+    drawText('SECTION 2: Taisyaku Taishouhyo (Balance Sheet Summary)', 50, y, { size: 12, font: boldFont, color: headerColor });
+    y -= 25;
+    
+    drawTableRow('Assets (Shisan) - Estimated', formatNumber(data.revenue * 0.4) + ' JPY', y);
+    y -= 20;
+    drawTableRow('Liabilities (Fusai) - Estimated', formatNumber(data.expenses * 0.3) + ' JPY', y);
+    y -= 20;
+    drawTableRow('Equity (Junshisan) - Estimated', formatNumber((data.revenue * 0.4) - (data.expenses * 0.3)) + ' JPY', y, true);
+    
+  // ===================
+  // 確定申告書B（個人）
+  // ===================
+  } else if (formType === 'tax_return_b') {
     // セクション1: 収入金額等
     drawText('SECTION 1: Shuunyu Kingaku (Income)', 50, y, { size: 12, font: boldFont, color: colors.primary });
     y -= 25;
@@ -500,11 +663,10 @@ async function generateFallbackPDF(
     drawText('Shotokuzei (Income Tax) - ESTIMATED', 60, y + 5, { font: boldFont });
     drawText(formatNumber(data.estimatedTax) + ' JPY', 530, y + 5, { align: 'right', font: boldFont, color: colors.red });
     
+  // ===================
+  // 青色申告決算書
+  // ===================
   } else {
-    // ===================
-    // 青色申告決算書
-    // ===================
-    
     // セクション1: 売上
     drawText('SECTION 1: Uriage (Revenue)', 50, y, { size: 12, font: boldFont, color: colors.primary });
     y -= 25;
@@ -570,9 +732,16 @@ async function generateFallbackPDF(
   // フッター
   // ===================
   drawLine(50, 60, 545, 60);
-  drawText('* This document is generated by Ainance for reference purposes only.', 50, 45, { size: 7, color: colors.muted });
-  drawText('* For official tax filing, please use the National Tax Agency e-Tax system.', 50, 35, { size: 7, color: colors.muted });
-  drawText('* Visit: https://www.keisan.nta.go.jp/', 50, 25, { size: 7, color: colors.primary });
+  
+  if (formType === 'corporate_tax' || formType === 'financial_statement') {
+    drawText('* This document is generated by Ainance for reference purposes only.', 50, 45, { size: 7, color: colors.muted });
+    drawText('* For official corporate tax filing, please consult a certified tax accountant or use e-Tax.', 50, 35, { size: 7, color: colors.muted });
+    drawText('* Visit: https://www.e-tax.nta.go.jp/', 50, 25, { size: 7, color: headerColor });
+  } else {
+    drawText('* This document is generated by Ainance for reference purposes only.', 50, 45, { size: 7, color: colors.muted });
+    drawText('* For official tax filing, please use the National Tax Agency e-Tax system.', 50, 35, { size: 7, color: colors.muted });
+    drawText('* Visit: https://www.keisan.nta.go.jp/', 50, 25, { size: 7, color: colors.primary });
+  }
   
   return pdfDoc.save();
 }

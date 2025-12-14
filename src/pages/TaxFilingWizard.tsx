@@ -890,69 +890,142 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                             ✨ テンプレート自動転記（NEW!）
                         </h5>
                         <p className="text-xs text-text-muted mb-3">
-                            国税庁の申告書テンプレートにAinanceのデータを自動入力したPDFを生成します
+                            {currentBusinessType?.business_type === 'corporation'
+                                ? '法人税申告書・決算報告書にAinanceのデータを自動入力したPDFを生成します'
+                                : '国税庁の申告書テンプレートにAinanceのデータを自動入力したPDFを生成します'}
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        const formData: TaxFormData = {
-                                            revenue: taxData.totalRevenue,
-                                            expenses: taxData.totalExpenses,
-                                            netIncome: taxData.netIncome,
-                                            expensesByCategory: taxData.expensesByCategory,
-                                            deductions: {
-                                                basic: deductions.find(d => d.type === 'basic')?.amount || 480000,
-                                                blueReturn: hasBlueReturn ? 650000 : 0,
-                                            },
-                                            taxableIncome: taxData.taxableIncome,
-                                            estimatedTax: taxData.estimatedTax,
-                                            fiscalYear,
-                                            isBlueReturn: hasBlueReturn,
-                                        };
-                                        const { pdfBytes, filename } = await generateFilledTaxForm('tax_return_b', formData);
-                                        downloadPDF(pdfBytes, filename);
-                                        previewPDF(pdfBytes);
-                                    } catch (err) {
-                                        console.error('PDF生成エラー:', err);
-                                        alert('PDF生成に失敗しました。テンプレートファイルを確認してください。');
-                                    }
-                                }}
-                                className="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                            >
-                                <FileText className="w-4 h-4" />
-                                確定申告書B
-                            </button>
-                            {hasBlueReturn && (
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            const formData: TaxFormData = {
-                                                revenue: taxData.totalRevenue,
-                                                expenses: taxData.totalExpenses,
-                                                netIncome: taxData.netIncome,
-                                                expensesByCategory: taxData.expensesByCategory,
-                                                deductions: {
-                                                    blueReturn: 650000,
-                                                },
-                                                taxableIncome: taxData.taxableIncome,
-                                                estimatedTax: taxData.estimatedTax,
-                                                fiscalYear,
-                                                isBlueReturn: true,
-                                            };
-                                            const { pdfBytes, filename } = await generateFilledTaxForm('blue_return', formData);
-                                            downloadPDF(pdfBytes, filename);
-                                            previewPDF(pdfBytes);
-                                        } catch (err) {
-                                            console.error('PDF生成エラー:', err);
-                                            alert('PDF生成に失敗しました。テンプレートファイルを確認してください。');
-                                        }
-                                    }}
-                                    className="px-4 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                                >
-                                    <FileText className="w-4 h-4" />
-                                    青色申告決算書
-                                </button>
+                            {/* 個人向けボタン */}
+                            {currentBusinessType?.business_type !== 'corporation' && (
+                                <>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const formData: TaxFormData = {
+                                                    revenue: taxData.totalRevenue,
+                                                    expenses: taxData.totalExpenses,
+                                                    netIncome: taxData.netIncome,
+                                                    expensesByCategory: taxData.expensesByCategory,
+                                                    deductions: {
+                                                        basic: deductions.find(d => d.type === 'basic')?.amount || 480000,
+                                                        blueReturn: hasBlueReturn ? 650000 : 0,
+                                                    },
+                                                    taxableIncome: taxData.taxableIncome,
+                                                    estimatedTax: taxData.estimatedTax,
+                                                    fiscalYear,
+                                                    isBlueReturn: hasBlueReturn,
+                                                };
+                                                const { pdfBytes, filename } = await generateFilledTaxForm('tax_return_b', formData);
+                                                downloadPDF(pdfBytes, filename);
+                                                previewPDF(pdfBytes);
+                                            } catch (err) {
+                                                console.error('PDF生成エラー:', err);
+                                                alert('PDF生成に失敗しました。テンプレートファイルを確認してください。');
+                                            }
+                                        }}
+                                        className="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        確定申告書B
+                                    </button>
+                                    {hasBlueReturn && (
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const formData: TaxFormData = {
+                                                        revenue: taxData.totalRevenue,
+                                                        expenses: taxData.totalExpenses,
+                                                        netIncome: taxData.netIncome,
+                                                        expensesByCategory: taxData.expensesByCategory,
+                                                        deductions: {
+                                                            blueReturn: 650000,
+                                                        },
+                                                        taxableIncome: taxData.taxableIncome,
+                                                        estimatedTax: taxData.estimatedTax,
+                                                        fiscalYear,
+                                                        isBlueReturn: true,
+                                                    };
+                                                    const { pdfBytes, filename } = await generateFilledTaxForm('blue_return', formData);
+                                                    downloadPDF(pdfBytes, filename);
+                                                    previewPDF(pdfBytes);
+                                                } catch (err) {
+                                                    console.error('PDF生成エラー:', err);
+                                                    alert('PDF生成に失敗しました。テンプレートファイルを確認してください。');
+                                                }
+                                            }}
+                                            className="px-4 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                        >
+                                            <FileText className="w-4 h-4" />
+                                            青色申告決算書
+                                        </button>
+                                    )}
+                                </>
+                            )}
+
+                            {/* 法人向けボタン */}
+                            {currentBusinessType?.business_type === 'corporation' && (
+                                <>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const formData: TaxFormData = {
+                                                    revenue: taxData.totalRevenue,
+                                                    expenses: taxData.totalExpenses,
+                                                    netIncome: taxData.netIncome,
+                                                    expensesByCategory: taxData.expensesByCategory,
+                                                    deductions: {},
+                                                    taxableIncome: taxData.taxableIncome,
+                                                    estimatedTax: taxData.estimatedTax,
+                                                    fiscalYear,
+                                                    isBlueReturn: false,
+                                                    businessType: 'corporation',
+                                                    companyName: currentBusinessType?.company_name || '株式会社',
+                                                    representativeName: currentBusinessType?.representative_name || '',
+                                                };
+                                                const { pdfBytes, filename } = await generateFilledTaxForm('corporate_tax', formData);
+                                                downloadPDF(pdfBytes, filename);
+                                                previewPDF(pdfBytes);
+                                            } catch (err) {
+                                                console.error('PDF生成エラー:', err);
+                                                alert('PDF生成に失敗しました。');
+                                            }
+                                        }}
+                                        className="px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        法人税申告書
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const formData: TaxFormData = {
+                                                    revenue: taxData.totalRevenue,
+                                                    expenses: taxData.totalExpenses,
+                                                    netIncome: taxData.netIncome,
+                                                    expensesByCategory: taxData.expensesByCategory,
+                                                    deductions: {},
+                                                    taxableIncome: taxData.taxableIncome,
+                                                    estimatedTax: taxData.estimatedTax,
+                                                    fiscalYear,
+                                                    isBlueReturn: false,
+                                                    businessType: 'corporation',
+                                                    companyName: currentBusinessType?.company_name || '株式会社',
+                                                    representativeName: currentBusinessType?.representative_name || '',
+                                                };
+                                                const { pdfBytes, filename } = await generateFilledTaxForm('financial_statement', formData);
+                                                downloadPDF(pdfBytes, filename);
+                                                previewPDF(pdfBytes);
+                                            } catch (err) {
+                                                console.error('PDF生成エラー:', err);
+                                                alert('PDF生成に失敗しました。');
+                                            }
+                                        }}
+                                        className="px-4 py-3 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        決算報告書
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
