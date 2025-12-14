@@ -327,9 +327,12 @@ export async function generateBusinessAdvice(
   }
 ): Promise<BusinessAdvice | null> {
   if (!GEMINI_API_KEY) {
-    console.warn('Gemini API Keyが設定されていません。');
-    return null;
+    console.error('❌ Gemini API Key が設定されていません。.env ファイルを確認してください。');
+    console.error('   現在のキー値:', GEMINI_API_KEY ? '(設定済み)' : '(空)');
+    throw new Error('API Keyが設定されていません。.envファイルにVITE_GEMINI_API_KEYを設定してください。');
   }
+
+  console.log('🔑 Gemini API Key:', GEMINI_API_KEY.substring(0, 10) + '...');
 
   const prompt = `あなたは日本の中小企業向け経営コンサルタントです。以下の財務データを分析し、実用的なアドバイスを提供してください。
 
@@ -371,6 +374,8 @@ ${data.topIncomeCategories.map(c => `- ${c.category}: ¥${c.amount.toLocaleStrin
 注意: 日本の中小企業や個人事業主向けに、実行可能で具体的なアドバイスを提供してください。`;
 
   // 複数のモデルでフォールバック
+  let lastError: Error | null = null;
+  
   for (const model of GEMINI_MODELS) {
     try {
       console.log(`🤖 Gemini AI: モデル「${model}」でアドバイス生成を試行中...`);
@@ -400,8 +405,18 @@ ${data.topIncomeCategories.map(c => `- ${c.category}: ¥${c.amount.toLocaleStrin
       console.log(`🤖 Gemini API レスポンスステータス (${model}):`, response.status);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.warn(`モデル「${model}」がエラー:`, response.status, errorText);
+        const errorData = await response.json().catch(() => ({}));
+        console.error(`❌ モデル「${model}」がエラー:`, response.status, errorData);
+        
+        // APIキーのエラーかどうかを判定
+        if (response.status === 400 || response.status === 401 || response.status === 403) {
+          const errorMessage = errorData?.error?.message || 'API認証エラー';
+          console.error('❌ API認証エラー:', errorMessage);
+          lastError = new Error(`API認証エラー: ${errorMessage}`);
+          // 認証エラーの場合は他のモデルを試しても無駄なのでループを抜ける
+          break;
+        }
+        
         // 次のモデルを試す
         continue;
       }
@@ -429,11 +444,17 @@ ${data.topIncomeCategories.map(c => `- ${c.category}: ¥${c.amount.toLocaleStrin
       
       return advice;
     } catch (error: any) {
-      console.warn(`モデル「${model}」でエラー:`, error.message);
+      console.error(`❌ モデル「${model}」でエラー:`, error.message);
+      lastError = error;
       // 次のモデルを試す
     }
   }
   
-  console.error('すべてのモデルでアドバイス生成に失敗しました');
-  return null;
+  console.error('❌ すべてのモデルでアドバイス生成に失敗しました');
+  
+  if (lastError) {
+    throw lastError;
+  }
+  
+  throw new Error('AIアドバイスの生成に失敗しました。しばらくしてから再度お試しください。');
 }

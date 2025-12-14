@@ -594,11 +594,15 @@ const AIAdviceSection: React.FC<{
 
       if (result) {
         setAdvice(result);
+        setError(null);
       } else {
-        setError('アドバイスの生成に失敗しました');
+        setError('アドバイスの生成に失敗しました。しばらくしてから再度お試しください。');
       }
-    } catch (err) {
-      setError('アドバイスの生成中にエラーが発生しました');
+    } catch (err: any) {
+      console.error('AIアドバイス取得エラー:', err);
+      // エラーメッセージを詳細に表示
+      const errorMessage = err?.message || 'アドバイスの生成中にエラーが発生しました';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
