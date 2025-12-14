@@ -38,11 +38,16 @@ import {
     TaxFilingInfo,
 } from '../services/eTaxExportService';
 import {
-    generateFilledTaxForm,
     downloadPDF,
     previewPDF,
-    TaxFormData,
 } from '../services/pdfAutoFillService';
+import {
+    generateCorporateTaxPDF,
+    generateFinancialStatementPDF,
+    generateTaxReturnBPDF,
+    generateBlueReturnPDF,
+    JpTaxFormData,
+} from '../services/pdfJapaneseService';
 
 // ステップ定義
 const WIZARD_STEPS = [
@@ -887,12 +892,12 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                     {/* 自動転記PDF */}
                     <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-4">
                         <h5 className="text-sm font-medium text-text-main mb-3 flex items-center gap-2">
-                            ✨ テンプレート自動転記（NEW!）
+                            ✨ 日本語PDF自動生成（NEW!）
                         </h5>
                         <p className="text-xs text-text-muted mb-3">
                             {currentBusinessType?.business_type === 'corporation'
-                                ? '法人税申告書・決算報告書にAinanceのデータを自動入力したPDFを生成します'
-                                : '国税庁の申告書テンプレートにAinanceのデータを自動入力したPDFを生成します'}
+                                ? '法人税申告書・決算報告書（損益計算書+貸借対照表）を日本語PDFで生成'
+                                : '確定申告書B・青色申告決算書を日本語PDFで生成します'}
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {/* 個人向けボタン */}
@@ -901,7 +906,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const formData: TaxFormData = {
+                                                const formData: JpTaxFormData = {
                                                     revenue: taxData.totalRevenue,
                                                     expenses: taxData.totalExpenses,
                                                     netIncome: taxData.netIncome,
@@ -909,18 +914,20 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                                     deductions: {
                                                         basic: deductions.find(d => d.type === 'basic')?.amount || 480000,
                                                         blueReturn: hasBlueReturn ? 650000 : 0,
+                                                        socialInsurance: deductions.find(d => d.type === 'socialInsurance')?.amount,
                                                     },
                                                     taxableIncome: taxData.taxableIncome,
                                                     estimatedTax: taxData.estimatedTax,
                                                     fiscalYear,
                                                     isBlueReturn: hasBlueReturn,
                                                 };
-                                                const { pdfBytes, filename } = await generateFilledTaxForm('tax_return_b', formData);
+                                                const pdfBytes = await generateTaxReturnBPDF(formData);
+                                                const filename = `確定申告書B_${fiscalYear}年度.pdf`;
                                                 downloadPDF(pdfBytes, filename);
                                                 previewPDF(pdfBytes);
                                             } catch (err) {
                                                 console.error('PDF生成エラー:', err);
-                                                alert('PDF生成に失敗しました。テンプレートファイルを確認してください。');
+                                                alert('PDF生成に失敗しました。フォントファイルを確認してください。');
                                             }
                                         }}
                                         className="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
@@ -932,7 +939,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                         <button
                                             onClick={async () => {
                                                 try {
-                                                    const formData: TaxFormData = {
+                                                    const formData: JpTaxFormData = {
                                                         revenue: taxData.totalRevenue,
                                                         expenses: taxData.totalExpenses,
                                                         netIncome: taxData.netIncome,
@@ -945,12 +952,13 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                                         fiscalYear,
                                                         isBlueReturn: true,
                                                     };
-                                                    const { pdfBytes, filename } = await generateFilledTaxForm('blue_return', formData);
+                                                    const pdfBytes = await generateBlueReturnPDF(formData);
+                                                    const filename = `青色申告決算書_${fiscalYear}年度.pdf`;
                                                     downloadPDF(pdfBytes, filename);
                                                     previewPDF(pdfBytes);
                                                 } catch (err) {
                                                     console.error('PDF生成エラー:', err);
-                                                    alert('PDF生成に失敗しました。テンプレートファイルを確認してください。');
+                                                    alert('PDF生成に失敗しました。フォントファイルを確認してください。');
                                                 }
                                             }}
                                             className="px-4 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
@@ -968,26 +976,26 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const formData: TaxFormData = {
+                                                const formData: JpTaxFormData = {
                                                     revenue: taxData.totalRevenue,
                                                     expenses: taxData.totalExpenses,
                                                     netIncome: taxData.netIncome,
                                                     expensesByCategory: taxData.expensesByCategory,
-                                                    deductions: {},
                                                     taxableIncome: taxData.taxableIncome,
                                                     estimatedTax: taxData.estimatedTax,
                                                     fiscalYear,
-                                                    isBlueReturn: false,
                                                     businessType: 'corporation',
-                                                    companyName: currentBusinessType?.company_name || '株式会社',
+                                                    companyName: currentBusinessType?.company_name || '会社名',
                                                     representativeName: currentBusinessType?.representative_name || '',
+                                                    address: currentBusinessType?.address || '',
                                                 };
-                                                const { pdfBytes, filename } = await generateFilledTaxForm('corporate_tax', formData);
+                                                const pdfBytes = await generateCorporateTaxPDF(formData);
+                                                const filename = `法人税申告書_${fiscalYear}年度.pdf`;
                                                 downloadPDF(pdfBytes, filename);
                                                 previewPDF(pdfBytes);
                                             } catch (err) {
                                                 console.error('PDF生成エラー:', err);
-                                                alert('PDF生成に失敗しました。');
+                                                alert('PDF生成に失敗しました。フォントファイルを確認してください。');
                                             }
                                         }}
                                         className="px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
@@ -998,26 +1006,26 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const formData: TaxFormData = {
+                                                const formData: JpTaxFormData = {
                                                     revenue: taxData.totalRevenue,
                                                     expenses: taxData.totalExpenses,
                                                     netIncome: taxData.netIncome,
                                                     expensesByCategory: taxData.expensesByCategory,
-                                                    deductions: {},
                                                     taxableIncome: taxData.taxableIncome,
                                                     estimatedTax: taxData.estimatedTax,
                                                     fiscalYear,
-                                                    isBlueReturn: false,
                                                     businessType: 'corporation',
-                                                    companyName: currentBusinessType?.company_name || '株式会社',
+                                                    companyName: currentBusinessType?.company_name || '会社名',
                                                     representativeName: currentBusinessType?.representative_name || '',
+                                                    capital: 1000000, // TODO: 実際の資本金を取得
                                                 };
-                                                const { pdfBytes, filename } = await generateFilledTaxForm('financial_statement', formData);
+                                                const pdfBytes = await generateFinancialStatementPDF(formData);
+                                                const filename = `決算報告書_${fiscalYear}年度.pdf`;
                                                 downloadPDF(pdfBytes, filename);
                                                 previewPDF(pdfBytes);
                                             } catch (err) {
                                                 console.error('PDF生成エラー:', err);
-                                                alert('PDF生成に失敗しました。');
+                                                alert('PDF生成に失敗しました。フォントファイルを確認してください。');
                                             }
                                         }}
                                         className="px-4 py-3 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors text-sm font-medium flex items-center justify-center gap-2"
