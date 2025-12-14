@@ -43,7 +43,7 @@ export interface Deduction {
   documents?: string[];
 }
 
-// 所得税の税率表（2024年度）
+// 所得税の税率表（2024/2025年度）
 const TAX_BRACKETS = [
   { min: 0, max: 1950000, rate: 0.05, deduction: 0 },
   { min: 1950000, max: 3300000, rate: 0.10, deduction: 97500 },
@@ -57,7 +57,7 @@ const TAX_BRACKETS = [
 // 青色申告特別控除
 const BLUE_RETURN_DEDUCTION = 650000;
 
-// 基礎控除（2024年度）
+// 基礎控除（2024/2025年度）
 const BASIC_DEDUCTION = 480000;
 
 // 利用可能な控除一覧

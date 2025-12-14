@@ -50,7 +50,9 @@ const TaxFilingWizard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     // フォームデータ
-    const [fiscalYear, setFiscalYear] = useState(new Date().getFullYear() - 1);
+    // デフォルトは前年度だが、現在進行中の年度も選択可能
+    const currentYear = new Date().getFullYear();
+    const [fiscalYear, setFiscalYear] = useState(currentYear - 1);
     const [hasBlueReturn, setHasBlueReturn] = useState(true);
     const [deductions, setDeductions] = useState<Deduction[]>([]);
     const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
@@ -213,14 +215,13 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name}: ${formatCurrency(d
                         onChange={(e) => setFiscalYear(Number(e.target.value))}
                         className="input-base"
                     >
-                        {[...Array(5)].map((_, i) => {
-                            const year = new Date().getFullYear() - 1 - i;
-                            return (
-                                <option key={year} value={year}>
-                                    {year}年度（{year}年1月〜12月）
-                                </option>
-                            );
-                        })}
+                        {/* 現在年度（進行中）と過去4年分を表示 */}
+                        {[currentYear, ...Array.from({ length: 4 }, (_, i) => currentYear - 1 - i)].map((year) => (
+                            <option key={year} value={year}>
+                                {year}年度（{year}年1月〜12月）
+                                {year === currentYear && ' ※進行中'}
+                            </option>
+                        ))}
                     </select>
                 </div>
 

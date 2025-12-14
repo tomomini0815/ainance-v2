@@ -5,8 +5,9 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 
 const TaxFilingSupport: React.FC = () => {
+  const currentYear = new Date().getFullYear();
   const [businessType, setBusinessType] = useState<'individual' | 'corporate'>('individual');
-  const [selectedYear, setSelectedYear] = useState('2024');
+  const [selectedYear, setSelectedYear] = useState(String(currentYear));
   const [isGenerating, setIsGenerating] = useState(false);
   const [documents] = useState([
     { id: 1, name: '確定申告書B（第一表）', type: 'individual', status: 'completed', required: true, description: '所得税の申告に使用します。' },
@@ -17,7 +18,8 @@ const TaxFilingSupport: React.FC = () => {
     { id: 6, name: '勘定科目内訳明細書', type: 'corporate', status: 'pending', required: false, description: '各勘定科目の詳細を記載します。' },
   ]);
 
-  const years = ['2024', '2023', '2022', '2021'];
+  // 現在年度と過去4年分を動的に生成
+  const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4].map(String);
 
   const filteredDocuments = documents.filter(doc =>
     doc.type === businessType && (businessType === 'individual' || businessType === 'corporate')
