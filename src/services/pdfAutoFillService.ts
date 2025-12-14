@@ -84,28 +84,28 @@ const BLUE_RETURN_FIELDS = {
   氏名: { x: 100, y: 690, width: 150 },
 };
 
-// Ainanceのカテゴリを確定申告の勘定科目にマッピング
+// Ainanceのカテゴリを確定申告の勘定科目にマッピング（英語版：PDF用）
 const CATEGORY_TO_ACCOUNT_MAP: { [key: string]: string } = {
-  '交通費': '旅費交通費',
-  '旅費交通費': '旅費交通費',
-  '通信費': '通信費',
-  '水道光熱費': '水道光熱費',
-  '消耗品費': '消耗品費',
-  '接待交際費': '接待交際費',
-  '広告宣伝費': '広告宣伝費',
-  '地代家賃': '地代家賃',
-  '外注費': '外注工賃',
-  '給与': '給料賃金',
-  '雑費': '雑費',
-  '減価償却費': '減価償却費',
-  '修繕費': '修繕費',
-  '保険料': '損害保険料',
-  '福利厚生費': '福利厚生費',
-  '支払利息': '支払利息',
-  '租税公課': '租税公課',
-  '荷造運賃': '荷造運賃',
-  'その他': '雑費',
-  '未分類': '雑費',
+  '交通費': 'Travel & Transportation',
+  '旅費交通費': 'Travel & Transportation',
+  '通信費': 'Communication',
+  '水道光熱費': 'Utilities',
+  '消耗品費': 'Supplies',
+  '接待交際費': 'Entertainment',
+  '広告宣伝費': 'Advertising',
+  '地代家賃': 'Rent',
+  '外注費': 'Outsourcing',
+  '給与': 'Salaries',
+  '雑費': 'Miscellaneous',
+  '減価償却費': 'Depreciation',
+  '修繕費': 'Repairs',
+  '保険料': 'Insurance',
+  '福利厚生費': 'Benefits',
+  '支払利息': 'Interest',
+  '租税公課': 'Taxes & Dues',
+  '荷造運賃': 'Shipping',
+  'その他': 'Other',
+  '未分類': 'Uncategorized',
 };
 
 export interface TaxFormData {
@@ -381,9 +381,26 @@ async function generateFallbackPDF(
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const { width, height } = page.getSize();
   
+  // 日本語をASCII互換に変換（pdf-libの標準フォントは日本語未対応）
+  const safeText = (text: string | undefined): string => {
+    if (!text) return '';
+    // 非ASCII文字が含まれているかチェック
+    // eslint-disable-next-line no-control-regex
+    if (/[^\x00-\x7F]/.test(text)) {
+      // 日本語の会社名などは英語プレースホルダーに変換
+      if (text.includes('株式会社') || text.includes('合同会社')) {
+        return '[Corporation]';
+      }
+      // 一般的な日本語はプレースホルダーに
+      return '[See Ainance App]';
+    }
+    return text;
+  };
+  
   const formatNumber = (num: number) => {
     if (num === 0) return '0';
-    return num.toLocaleString('ja-JP');
+    // 数字をカンマ区切りで表示（標準ASCII数字のみ使用）
+    return num.toLocaleString('en-US');
   };
   
   // 色定義
@@ -466,12 +483,12 @@ async function generateFallbackPDF(
   
   if (formType === 'corporate_tax' || formType === 'financial_statement') {
     if (data.companyName) {
-      drawText(`Company: ${data.companyName}`, 50, y, { size: 11, font: boldFont });
+      drawText(`Company: ${safeText(data.companyName)}`, 50, y, { size: 11, font: boldFont });
     }
     y -= 20;
     drawText(`Fiscal Year: ${data.fiscalYear}`, 50, y, { size: 10 });
     if (data.representativeName) {
-      drawText(`Representative: ${data.representativeName}`, 300, y, { size: 10 });
+      drawText(`Representative: ${safeText(data.representativeName)}`, 300, y, { size: 10 });
     }
   } else {
     drawText(`Fiscal Year: ${data.fiscalYear} (Reiwa ${data.fiscalYear - 2018})`, 50, y, { size: 11 });
@@ -490,13 +507,13 @@ async function generateFallbackPDF(
     drawText('SECTION 1: Houjin Joho (Corporate Information)', 50, y, { size: 12, font: boldFont, color: headerColor });
     y -= 25;
     
-    if (data.companyName) drawTableRow('Company Name (Kaisha Mei)', data.companyName, y);
+    if (data.companyName) drawTableRow('Company Name (Kaisha Mei)', safeText(data.companyName), y);
     y -= 20;
-    if (data.corporateNumber) drawTableRow('Corporate Number (Houjin Bangou)', data.corporateNumber, y);
+    if (data.corporateNumber) drawTableRow('Corporate Number (Houjin Bangou)', safeText(data.corporateNumber), y);
     y -= 20;
     if (data.capital) drawTableRow('Capital (Shihonkin)', formatNumber(data.capital) + ' JPY', y);
     y -= 20;
-    if (data.address) drawTableRow('Address (Juusho)', data.address, y);
+    if (data.address) drawTableRow('Address (Juusho)', safeText(data.address), y);
     y -= 30;
     
     // 損益
@@ -565,7 +582,7 @@ async function generateFallbackPDF(
     
     // 経費内訳
     data.expensesByCategory.forEach((exp, index) => {
-      const account = CATEGORY_TO_ACCOUNT_MAP[exp.category] || exp.category;
+      const account = CATEGORY_TO_ACCOUNT_MAP[exp.category] || 'Other';
       const isAlt = index % 2 === 0;
       if (isAlt) {
         drawRect(50, y - 5, 495, 18, rgb(0.98, 0.98, 0.98));
@@ -689,7 +706,7 @@ async function generateFallbackPDF(
     
     // 経費内訳
     data.expensesByCategory.forEach((exp, index) => {
-      const account = CATEGORY_TO_ACCOUNT_MAP[exp.category] || exp.category;
+      const account = CATEGORY_TO_ACCOUNT_MAP[exp.category] || 'Other';
       const isAlt = index % 2 === 0;
       if (isAlt) {
         drawRect(50, y - 5, 495, 18, rgb(0.98, 0.98, 0.98));
