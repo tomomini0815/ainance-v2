@@ -1135,11 +1135,11 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                 </div>
 
                 {/* 注意事項 */}
-                <div className="bg-warning-light border border-warning/20 rounded-lg p-4 flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                <div className="bg-slate-800/30 border border-slate-600/30 rounded-xl p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-sm text-text-main font-medium">ご注意ください</p>
-                        <ul className="text-sm text-text-muted mt-2 space-y-1 list-disc list-inside">
+                        <p className="text-sm text-slate-300 font-medium">ご注意ください</p>
+                        <ul className="text-xs text-slate-400 mt-2 space-y-1 list-disc list-inside">
                             <li>この計算は概算です。正確な税額は税務署にご確認ください</li>
                             <li>確定申告の期限は翌年3月15日です（例：2025年度分は2026年3月15日まで）</li>
                             <li>青色申告特別控除65万円の適用には電子申告が必要です</li>
