@@ -25,7 +25,7 @@ const AITransactionList = React.lazy(() => import('./pages/AITransactionList'));
 const SubsidyMatching = React.lazy(() => import('./pages/SubsidyMatching'));
 const TaxFilingWizard = React.lazy(() => import('./pages/TaxFilingWizard'));
 const TaxFilingGuidePage = React.lazy(() => import('./pages/TaxFilingGuidePage'));
-const CorporateTaxFilingPage = React.lazy(() => import('./pages/CorporateTaxFilingPage.tsx'));
+const CorporateTaxFilingPage = React.lazy(() => import('./pages/CorporateTaxFilingPage'));
 
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
