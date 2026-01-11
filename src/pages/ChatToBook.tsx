@@ -341,10 +341,12 @@ const ChatToBook: React.FC = () => {
   const handleSave = async () => {
     if (editingId && editData) {
       try {
-        // DBの取引を更新
+        // DBの取引を更新（descriptionとitemの両方を更新）
+        const updatedItem = editData.description !== undefined ? editData.description : '';
         const result = await updateTransaction(editingId, {
           date: editData.date || '',
-          item: editData.description !== undefined ? editData.description : '',
+          item: updatedItem,
+          description: updatedItem,  // descriptionフィールドも同じ値で更新
           amount: editData.amount || 0,
           category: editData.category || '未分類',
           type: editData.type || 'expense'
@@ -354,35 +356,30 @@ const ChatToBook: React.FC = () => {
           throw result.error;
         }
 
-        // ローカル状態も更新
+        // ローカル状態を更新（descriptionフィールドも更新）
         setTransactions(prev =>
-          prev.map(t => t.id === editingId ? { ...t, ...editData } as Transaction : t)
+          prev.map(t => {
+            if (t.id === editingId) {
+              return {
+                ...t,
+                ...editData,
+                description: updatedItem  // descriptionも一緒に更新
+              } as Transaction;
+            }
+            return t;
+          })
         );
 
         // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
         await fetchTransactions();
 
-        console.log('handleSave - dbTransactions:', dbTransactions);
-
-        // DBから取得した最新のデータでローカル状態を更新
-        setTransactions(prev => {
-          const updatedTransactions = [...prev];
-          const index = updatedTransactions.findIndex(t => t.id === editingId);
-          if (index !== -1) {
-            // DBから取得した最新のデータで更新
-            const updatedTransaction = dbTransactions.find(t => t.id === editingId);
-            if (updatedTransaction) {
-              updatedTransactions[index] = {
-                ...updatedTransactions[index],
-                ...updatedTransaction
-              };
-            }
-          }
-          return updatedTransactions;
-        });
+        // カスタムイベントを発行して他のコンポーネントに通知
+        window.dispatchEvent(new CustomEvent('transactionRecorded'));
 
         setEditingId(null);
         setEditData({});
+
+        console.log('取引の編集を保存しました:', { id: editingId, description: updatedItem });
       } catch (error) {
         console.error('取引の更新に失敗しました:', error);
         alert('取引の更新に失敗しました: ' + (error as Error).message);
@@ -1135,7 +1132,10 @@ const ChatToBook: React.FC = () => {
                           <input
                             type="text"
                             value={editData.description !== undefined ? editData.description : transaction.description}
-                            onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                            onChange={(e) => {
+                              console.log('説明入力変更:', e.target.value, 'editData:', editData);
+                              setEditData(prev => ({ ...prev, description: e.target.value }));
+                            }}
                             className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                           />
                         ) : (
