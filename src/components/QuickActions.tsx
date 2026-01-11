@@ -41,10 +41,10 @@ const QuickActions: React.FC = () => {
       borderColor: 'border-amber-500/30'
     },
     {
-      title: '申告サポート',
-      description: '税務申告の準備',
-      icon: BookOpen,
-      link: '/tax-filing-support',
+      title: '補助金マッチング',
+      description: 'AI補助金提案',
+      icon: LinkIcon,
+      link: '/subsidy-matching',
       color: 'bg-rose-500/20',
       iconColor: 'text-rose-500',
       borderColor: 'border-rose-500/30'

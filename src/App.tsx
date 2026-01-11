@@ -22,9 +22,10 @@ const BusinessConversion = React.lazy(() => import('./pages/BusinessConversion')
 const IntegrationSettings = React.lazy(() => import('./pages/IntegrationSettings'));
 const TransactionHistory = React.lazy(() => import('./pages/TransactionHistory'));
 const AITransactionList = React.lazy(() => import('./pages/AITransactionList'));
-const TaxFilingSupport = React.lazy(() => import('./pages/TaxFilingSupport'));
+const SubsidyMatching = React.lazy(() => import('./pages/SubsidyMatching'));
 const TaxFilingWizard = React.lazy(() => import('./pages/TaxFilingWizard'));
 const TaxFilingGuidePage = React.lazy(() => import('./pages/TaxFilingGuidePage'));
+const CorporateTaxFilingPage = React.lazy(() => import('./pages/CorporateTaxFilingPage'));
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
 const Privacy = React.lazy(() => import('./pages/Privacy'));
@@ -145,10 +146,10 @@ function App() {
                   }
                 />
                 <Route
-                  path="/tax-filing-support"
+                  path="/subsidy-matching"
                   element={
                     <ProtectedRoute>
-                      <TaxFilingSupport />
+                      <SubsidyMatching />
                     </ProtectedRoute>
                   }
                 />
@@ -165,6 +166,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <TaxFilingGuidePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/corporate-tax"
+                  element={
+                    <ProtectedRoute>
+                      <CorporateTaxFilingPage />
                     </ProtectedRoute>
                   }
                 />

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles,
@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const location = useLocation();
     const { signOut } = useAuth();
     // ローカルストレージから現在のビジネスタイプを取得
-    const [currentBusinessType] = useLocalStorage<any>(`businessType_${userId}`, null);
+    const [_currentBusinessType] = useLocalStorage<any>(`businessType_${userId}`, null);
 
     const isActive = (path: string) => location.pathname === path;
 
@@ -35,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { path: '/invoice-creation', label: '請求書', icon: FileText },
         { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
         { path: '/chat-to-book', label: 'CHAT-TO-BOOK', icon: MessageSquare },
+        { path: '/subsidy-matching', label: '補助金', icon: Sparkles },
         { path: '/tax-filing-wizard', label: '確定申告', icon: Sparkles },
     ];
 
