@@ -25,7 +25,8 @@ const AITransactionList = React.lazy(() => import('./pages/AITransactionList'));
 const SubsidyMatching = React.lazy(() => import('./pages/SubsidyMatching'));
 const TaxFilingWizard = React.lazy(() => import('./pages/TaxFilingWizard'));
 const TaxFilingGuidePage = React.lazy(() => import('./pages/TaxFilingGuidePage'));
-const CorporateTaxFilingPage = React.lazy(() => import('./pages/CorporateTaxFilingPage'));
+const CorporateTaxFilingPage = React.lazy(() => import('./pages/CorporateTaxFilingPage.tsx'));
+
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
 const Privacy = React.lazy(() => import('./pages/Privacy'));
@@ -177,6 +178,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="/database-test"
                   element={
