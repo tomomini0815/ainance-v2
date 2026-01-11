@@ -1173,10 +1173,18 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* ヘッダー */}
                 <div className="mb-8">
-                    <Link to="/dashboard" className="flex items-center text-primary hover:text-primary-hover mb-4">
-                        <ArrowLeft className="h-5 w-5 mr-2" />
-                        ダッシュボードに戻る
-                    </Link>
+                    <div className="flex items-center justify-between mb-4">
+                        <Link to="/dashboard" className="flex items-center text-primary hover:text-primary-hover">
+                            <ArrowLeft className="h-5 w-5 mr-2" />
+                            ダッシュボードに戻る
+                        </Link>
+                        <Link
+                            to="/tax-filing-guide"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+                        >
+                            📖 申告ガイド
+                        </Link>
+                    </div>
                     <h1 className="text-3xl font-bold text-text-main mb-2">確定申告サポート</h1>
                     <p className="text-text-muted">
                         5つのステップで簡単に確定申告を完了できます
