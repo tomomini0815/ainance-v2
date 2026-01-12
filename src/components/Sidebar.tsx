@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles,
     Settings, LogOut, ChevronLeft, ChevronRight, X
@@ -23,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     userId
 }) => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { signOut } = useAuth();
     // ローカルストレージから現在のビジネスタイプを取得
     const [_currentBusinessType] = useLocalStorage<any>(`businessType_${userId}`, null);
@@ -42,6 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const handleSignOut = async () => {
         try {
             await signOut();
+            navigate('/');
         } catch (error) {
             console.error('ログアウトエラー:', error);
         }
