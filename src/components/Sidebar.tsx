@@ -84,17 +84,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className={`flex items-center h-16 mb-6 ${isExpanded ? 'justify-between' : 'justify-center'}`}>
                         {isExpanded ? (
                             <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center shadow-lg shadow-primary/30">
-                                    <span className="text-white font-bold text-lg">A</span>
-                                </div>
+                                <img src="/ainance-logo.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
                                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                                     Ainance
                                 </h1>
                             </div>
                         ) : (
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center shadow-lg shadow-primary/30">
-                                <span className="text-white font-bold text-lg">A</span>
-                            </div>
+                            <img src="/ainance-logo.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
                         )}
 
                         {/* Mobile Close Button */}

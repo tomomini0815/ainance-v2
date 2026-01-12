@@ -78,7 +78,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         <div className="flex justify-between items-center h-full">
           {/* Left: Logo (Mobile only) */}
           <div className="md:hidden flex items-center gap-2">
-            <Link to="/dashboard" className="flex items-center">
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <img src="/ainance-logo.png" alt="Ainance" className="w-8 h-8 object-contain" />
               <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Ainance</h1>
             </Link>
           </div>

@@ -129,9 +129,7 @@ const LandingPage: React.FC = () => {
           <div className="max-w-[1400px] mx-auto px-6 flex justify-between items-center">
             <MagneticButton className="cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
+                <img src="/ainance-logo.png" alt="Ainance Logo" className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
                 <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Ainance</span>
               </div>
             </MagneticButton>
@@ -425,9 +423,7 @@ const LandingPage: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-center gap-8">
               {/* Logo */}
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-emerald-500 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
+                <img src="/ainance-logo.png" alt="Ainance Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
                 <span className="font-bold text-white">Ainance</span>
               </div>
 
@@ -445,10 +441,10 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
           </div>
-        </footer>
+        </footer >
 
-      </div>
-    </SmoothScroll>
+      </div >
+    </SmoothScroll >
   );
 };
 
