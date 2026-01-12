@@ -83,7 +83,12 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       if (error) throw error;
 
       console.log('取引データ取得成功:', { count: data?.length, data, tableName });
-      setTransactions(data || []);
+      // DBのitemフィールドをdescriptionにマッピング（UIとの互換性のため）
+      const transactionsWithDescription = (data || []).map((t: Transaction) => ({
+        ...t,
+        description: t.description || t.item  // descriptionがなければitemをdescriptionとして使用
+      }));
+      setTransactions(transactionsWithDescription);
       setLoading(false);
     } catch (error) {
       console.error(`取引データの取得に失敗しました: ${error}`);

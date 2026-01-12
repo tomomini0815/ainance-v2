@@ -339,6 +339,7 @@ const TransactionHistory: React.FC = () => {
       window.dispatchEvent(new CustomEvent('transactionRecorded'));
 
       setEditingTransaction(null)
+      setShowCreateForm(false)
       alert('取引が正常に更新されました');
     } catch (error: any) {
       console.error('取引の更新に失敗:', error)
@@ -838,15 +839,9 @@ const TransactionHistory: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end">
-                            {transaction.type === 'income' ?
-                              <TrendingUp className="w-4 h-4 text-green-500 mr-1" /> :
-                              <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                            }
-                            <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
-                              {transaction.type === 'expense' ? '-' : ''}{transaction.amount.toLocaleString()}
-                            </span>
-                          </div>
+                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+                            {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted hidden sm:table-cell">
                           {new Date(transaction.date).toLocaleDateString('ja-JP', {

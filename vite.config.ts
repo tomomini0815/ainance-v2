@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    base: mode === 'production' ? '/ainance-v2/' : '/',
+    base: '/',
     plugins: [react()],
     build,
     esbuild,

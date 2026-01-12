@@ -65,8 +65,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
 
   const categoryOptions = useMemo(() => {
     const accountCategories = [
-      '接待交際費', '消耗品費', '修繕費', '保険料', '支払手数料', '新聞図書費', 
-      '外注費', '租税公課', '水道光熱費', '通信費', '地代家賃', '旅費交通費', 
+      '接待交際費', '消耗品費', '修繕費', '保険料', '支払手数料', '新聞図書費',
+      '外注費', '租税公課', '水道光熱費', '通信費', '地代家賃', '旅費交通費',
       '広告宣伝費', '雑費', '業務委託収入'
     ]
 
@@ -140,9 +140,31 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     console.log('取引フォーム送信開始:', formData);
 
+    // 編集モードの場合、creatorの検証をスキップ
+    // 親コンポーネントが既存のcreatorを維持する
+    if (transaction) {
+      console.log('編集モード: creatorの検証をスキップ');
+
+      const newRecent = [formData, ...recentTransactions].slice(0, 5)
+      setRecentTransactions(newRecent)
+      localStorage.setItem('recentTransactions', JSON.stringify(newRecent))
+
+      // typeプロパティが設定されていない場合、amountの正負で判断
+      const transactionData = { ...formData };
+      if (!transactionData.type) {
+        const amount = typeof transactionData.amount === 'string' ? parseFloat(transactionData.amount) : transactionData.amount;
+        transactionData.type = amount > 0 ? 'income' : 'expense';
+        console.log('typeプロパティを自動設定:', transactionData.type);
+      }
+
+      onSubmit(transactionData)
+      return;
+    }
+
+    // 新規作成モードの場合のみ、creatorを検証
     const storedUser = localStorage.getItem('user')
     let creator = '00000000-0000-0000-0000-000000000000'
     if (storedUser) {
@@ -158,7 +180,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         console.error('ユーザー情報の解析に失敗しました:', error)
       }
     }
-    
+
     console.log('creator IDを設定:', creator);
 
     // creatorが無効な場合はエラーを表示して処理を中断
