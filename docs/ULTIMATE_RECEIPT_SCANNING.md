@@ -226,7 +226,7 @@ Suica ¥1,320
 #### 4. 環境変数設定
 ```bash
 # .envファイルを作成・編集
-VITE_GOOGLE_VISION_API_KEY=AIzaSy...（あなたのAPIキー）
+VITE_GOOGLE_VISION_API_KEY=YOUR_GOOGLE_VISION_API_KEY
 ```
 
 #### 5. アプリを再起動
