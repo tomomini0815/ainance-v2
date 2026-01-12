@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Sparkles, Menu, X, Play, Zap, Brain, BarChart3, ShieldCheck, FileText, MessageSquare, Receipt, TrendingUp, Check, ChevronRight, Star } from 'lucide-react';
+import { ArrowRight, Sparkles, Menu, X, Play, Zap, Brain, BarChart3, FileText, MessageSquare, Receipt, TrendingUp, Check, ChevronRight } from 'lucide-react';
 import { SmoothScroll } from '../components/ui/SmoothScroll';
 import { CustomCursor } from '../components/ui/CustomCursor';
 import { MagneticButton } from '../components/ui/MagneticButton';
@@ -37,13 +37,13 @@ const LandingPage: React.FC = () => {
   // 認証チェック中はローディング画面を表示
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#030014] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="relative w-16 h-16 mx-auto">
             <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20"></div>
             <div className="absolute inset-0 rounded-full border-2 border-t-indigo-500 animate-spin"></div>
           </div>
-          <p className="mt-6 text-gray-400 font-medium">読み込み中...</p>
+          <p className="mt-6 text-slate-400 font-medium">読み込み中...</p>
         </div>
       </div>
     );
@@ -52,13 +52,13 @@ const LandingPage: React.FC = () => {
   // 認証済みの場合（リダイレクト待ち）
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#030014] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="relative w-16 h-16 mx-auto">
             <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20"></div>
             <div className="absolute inset-0 rounded-full border-2 border-t-indigo-500 animate-spin"></div>
           </div>
-          <p className="mt-6 text-gray-400 font-medium">ダッシュボードへ移動中...</p>
+          <p className="mt-6 text-slate-400 font-medium">ダッシュボードへ移動中...</p>
         </div>
       </div>
     );
@@ -69,9 +69,9 @@ const LandingPage: React.FC = () => {
       icon: Receipt,
       title: 'スマートレシート処理',
       description: 'レシートを撮影するだけ。AIが瞬時に金額・日付・品目を読み取り、自動で仕訳を作成。手入力の手間を99%削減。',
-      color: 'from-violet-500 to-purple-600',
-      bgColor: 'bg-violet-500/10',
-      iconColor: 'text-violet-400',
+      color: 'from-indigo-500 to-blue-600',
+      bgColor: 'bg-indigo-500/10',
+      iconColor: 'text-indigo-400',
     },
     {
       icon: MessageSquare,
@@ -93,9 +93,9 @@ const LandingPage: React.FC = () => {
       icon: TrendingUp,
       title: 'AI経営分析',
       description: '収支・キャッシュフローをリアルタイム可視化。AIがあなたのビジネスに最適なアドバイスを提案。',
-      color: 'from-orange-500 to-amber-600',
-      bgColor: 'bg-orange-500/10',
-      iconColor: 'text-orange-400',
+      color: 'from-amber-500 to-orange-600',
+      bgColor: 'bg-amber-500/10',
+      iconColor: 'text-amber-400',
     },
   ];
 
@@ -108,53 +108,50 @@ const LandingPage: React.FC = () => {
 
   return (
     <SmoothScroll>
-      <div className="min-h-screen bg-[#030014] text-white selection:bg-indigo-500/30 overflow-x-hidden font-sans">
+      <div className="min-h-screen bg-slate-950 text-white selection:bg-indigo-500/30 overflow-x-hidden font-sans">
         <CustomCursor />
 
-        {/* Animated Background */}
+        {/* Animated Background - Indigo/Blue/Emerald theme */}
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-          {/* Primary gradient orb */}
-          <div className="absolute top-[-30%] left-1/2 -translate-x-1/2 w-[1200px] h-[800px] bg-gradient-to-b from-indigo-600/30 via-purple-600/20 to-transparent blur-[120px] rounded-full animate-pulse" style={{ animationDuration: '8s' }}></div>
+          {/* Primary gradient orb - Indigo */}
+          <div className="absolute top-[-30%] left-1/2 -translate-x-1/2 w-[1200px] h-[800px] bg-gradient-to-b from-indigo-600/25 via-blue-600/15 to-transparent blur-[120px] rounded-full animate-pulse" style={{ animationDuration: '8s' }}></div>
 
-          {/* Secondary orbs */}
-          <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-600/15 blur-[100px] rounded-full"></div>
-          <div className="absolute top-[40%] left-[-10%] w-[400px] h-[400px] bg-purple-600/10 blur-[80px] rounded-full"></div>
+          {/* Secondary orbs - Emerald/Teal */}
+          <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-emerald-600/10 blur-[100px] rounded-full"></div>
+          <div className="absolute top-[40%] left-[-10%] w-[400px] h-[400px] bg-blue-600/10 blur-[80px] rounded-full"></div>
 
           {/* Grid pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_80%)]"></div>
-
-          {/* Noise texture */}
-          <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }}></div>
         </div>
 
         {/* Navigation */}
-        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#030014]/80 backdrop-blur-2xl border-b border-white/5 py-4' : 'bg-transparent py-6'}`}>
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-slate-950/80 backdrop-blur-2xl border-b border-white/5 py-4' : 'bg-transparent py-6'}`}>
           <div className="max-w-[1400px] mx-auto px-6 flex justify-between items-center">
             <MagneticButton className="cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Ainance</span>
+                <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Ainance</span>
               </div>
             </MagneticButton>
 
             <div className="hidden md:flex items-center space-x-1">
               {['機能', '使い方', 'サポート'].map((item) => (
-                <button key={item} className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+                <button key={item} className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
                   {item}
                 </button>
               ))}
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
-              <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-400 hover:text-white transition-colors px-4 py-2">
+              <button onClick={() => navigate('/login')} className="text-sm font-medium text-slate-400 hover:text-white transition-colors px-4 py-2">
                 ログイン
               </button>
               <MagneticButton onClick={() => navigate('/signup')}>
-                <div className="group relative px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full font-medium text-sm text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 overflow-hidden">
+                <div className="group relative px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full font-medium text-sm text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 overflow-hidden">
                   <span className="relative z-10">無料で始める</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
               </MagneticButton>
             </div>
@@ -173,15 +170,15 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="md:hidden absolute top-full left-0 right-0 bg-[#030014]/95 backdrop-blur-xl border-b border-white/5 p-6"
+              className="md:hidden absolute top-full left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-b border-white/5 p-6"
             >
               <div className="flex flex-col space-y-4">
                 {['機能', '使い方', 'サポート'].map((item) => (
-                  <button key={item} className="text-left py-2 text-gray-300 hover:text-white transition-colors">{item}</button>
+                  <button key={item} className="text-left py-2 text-slate-300 hover:text-white transition-colors">{item}</button>
                 ))}
                 <hr className="border-white/10" />
-                <button onClick={() => navigate('/login')} className="py-2 text-gray-300 hover:text-white transition-colors text-left">ログイン</button>
-                <button onClick={() => navigate('/signup')} className="py-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full font-medium text-white">無料で始める</button>
+                <button onClick={() => navigate('/login')} className="py-2 text-slate-300 hover:text-white transition-colors text-left">ログイン</button>
+                <button onClick={() => navigate('/signup')} className="py-3 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full font-medium text-white">無料で始める</button>
               </div>
             </motion.div>
           )}
@@ -198,11 +195,11 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-full mb-8 backdrop-blur-sm"
+              className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-indigo-500/10 to-emerald-500/10 border border-indigo-500/20 rounded-full mb-8 backdrop-blur-sm"
             >
               <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
               <span className="text-sm font-medium text-indigo-300">次世代AI経理プラットフォーム</span>
             </motion.div>
@@ -214,11 +211,11 @@ const LandingPage: React.FC = () => {
               transition={{ delay: 0.3, duration: 0.8 }}
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-8"
             >
-              <span className="bg-gradient-to-b from-white via-white to-gray-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-b from-white via-white to-slate-400 bg-clip-text text-transparent">
                 経理を、
               </span>
               <br />
-              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-400 via-blue-400 to-emerald-400 bg-clip-text text-transparent">
                 もっとシンプルに。
               </span>
             </motion.h1>
@@ -228,7 +225,7 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed"
+              className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed"
             >
               レシート処理から請求書作成、経営分析まで。
               <br className="hidden sm:block" />
@@ -244,11 +241,11 @@ const LandingPage: React.FC = () => {
             >
               <button
                 onClick={() => navigate('/signup')}
-                className="group relative w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full font-semibold text-lg text-white shadow-2xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all duration-300 flex items-center justify-center space-x-2 overflow-hidden"
+                className="group relative w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full font-semibold text-lg text-white shadow-2xl shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 flex items-center justify-center space-x-2 overflow-hidden"
               >
                 <span className="relative z-10">無料で始める</span>
                 <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
               <button className="group w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 text-white rounded-full font-semibold text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center space-x-2 backdrop-blur-sm">
                 <Play className="w-5 h-5 fill-current" />
@@ -264,7 +261,7 @@ const LandingPage: React.FC = () => {
               className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-3"
             >
               {benefits.slice(0, 3).map((benefit, index) => (
-                <div key={index} className="flex items-center space-x-2 text-sm text-gray-500">
+                <div key={index} className="flex items-center space-x-2 text-sm text-slate-500">
                   <Check className="w-4 h-4 text-emerald-500" />
                   <span>{benefit}</span>
                 </div>
@@ -281,27 +278,27 @@ const LandingPage: React.FC = () => {
             className="mt-16 sm:mt-24 max-w-[1200px] mx-auto relative z-10"
           >
             <div className="relative">
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 blur-[80px] rounded-full transform scale-110"></div>
+              {/* Glow effect - Indigo/Emerald */}
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/15 via-blue-500/15 to-emerald-500/15 blur-[80px] rounded-full transform scale-110"></div>
 
               {/* Browser frame */}
-              <div className="relative bg-[#0a0a0a] rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-black/50">
+              <div className="relative bg-slate-900 rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-black/50">
                 {/* Browser header */}
-                <div className="flex items-center space-x-2 px-4 py-3 bg-[#0f0f0f] border-b border-white/5">
+                <div className="flex items-center space-x-2 px-4 py-3 bg-slate-900/80 border-b border-white/5">
                   <div className="flex space-x-2">
                     <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
                     <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
                   </div>
                   <div className="flex-1 flex justify-center">
-                    <div className="px-4 py-1.5 bg-[#1a1a1a] rounded-lg text-xs text-gray-500 font-mono">
+                    <div className="px-4 py-1.5 bg-slate-800 rounded-lg text-xs text-slate-500 font-mono">
                       ainance.jp/dashboard
                     </div>
                   </div>
                 </div>
 
                 {/* Dashboard content */}
-                <div className="aspect-[16/9] bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex items-center justify-center">
+                <div className="aspect-[16/9] bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
                   <img
                     src="/assets/hero_devices_v4.png"
                     alt="Ainance Dashboard"
@@ -335,14 +332,14 @@ const LandingPage: React.FC = () => {
               >
                 経理業務を、
                 <br className="sm:hidden" />
-                <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">まるごとサポート。</span>
+                <span className="bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">まるごとサポート。</span>
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="text-gray-400 max-w-2xl mx-auto text-lg"
+                className="text-slate-400 max-w-2xl mx-auto text-lg"
               >
                 面倒な手作業はAIにおまかせ。
                 あなたは本業に集中できます。
@@ -370,7 +367,7 @@ const LandingPage: React.FC = () => {
 
                   {/* Content */}
                   <h3 className="text-xl sm:text-2xl font-bold mb-3 text-white group-hover:text-white transition-colors">{feature.title}</h3>
-                  <p className="text-gray-400 leading-relaxed">{feature.description}</p>
+                  <p className="text-slate-400 leading-relaxed">{feature.description}</p>
 
                   {/* Learn more link */}
                   <div className="mt-6 flex items-center text-sm font-medium text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -385,8 +382,8 @@ const LandingPage: React.FC = () => {
 
         {/* CTA Section */}
         <section className="py-24 sm:py-32 px-6 relative overflow-hidden">
-          {/* Background decorations */}
-          <div className="absolute inset-0 bg-gradient-to-b from-indigo-600/5 via-purple-600/5 to-transparent"></div>
+          {/* Background decorations - Indigo/Emerald */}
+          <div className="absolute inset-0 bg-gradient-to-b from-indigo-600/5 via-blue-600/5 to-transparent"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-indigo-600/10 blur-[120px] rounded-full"></div>
 
           <motion.div
@@ -395,47 +392,47 @@ const LandingPage: React.FC = () => {
             viewport={{ once: true }}
             className="relative z-10 max-w-3xl mx-auto text-center"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 mb-8 shadow-lg shadow-indigo-500/30">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-500 mb-8 shadow-lg shadow-indigo-500/30">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
               さあ、始めましょう。
             </h2>
-            <p className="text-xl text-gray-400 mb-10 max-w-xl mx-auto">
+            <p className="text-xl text-slate-400 mb-10 max-w-xl mx-auto">
               今すぐ無料で登録して、Ainanceの全ての機能をお試しください。
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 onClick={() => navigate('/signup')}
-                className="group relative w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full font-bold text-lg text-white shadow-2xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all duration-300 overflow-hidden"
+                className="group relative w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full font-bold text-lg text-white shadow-2xl shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 overflow-hidden"
               >
                 <span className="relative z-10">無料で始める</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
             </div>
 
-            <p className="mt-6 text-sm text-gray-500">
+            <p className="mt-6 text-sm text-slate-500">
               クレジットカードの登録は不要です
             </p>
           </motion.div>
         </section>
 
         {/* Footer */}
-        <footer className="py-12 border-t border-white/5 bg-[#030014]">
+        <footer className="py-12 border-t border-white/5 bg-slate-950">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="flex flex-col md:flex-row justify-between items-center gap-8">
               {/* Logo */}
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-emerald-500 flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <span className="font-bold text-white">Ainance</span>
               </div>
 
               {/* Links */}
-              <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+              <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
                 <a href="#" className="hover:text-white transition-colors">プライバシーポリシー</a>
                 <a href="#" className="hover:text-white transition-colors">利用規約</a>
                 <a href="#" className="hover:text-white transition-colors">お問い合わせ</a>
@@ -443,7 +440,7 @@ const LandingPage: React.FC = () => {
               </div>
 
               {/* Copyright */}
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-slate-600">
                 © 2025 Ainance. All rights reserved.
               </div>
             </div>
