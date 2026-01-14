@@ -130,7 +130,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true)
     console.log('🔐 AuthProvider: Googleログイン開始');
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      // 現在のURL（origin + pathname）をリダイレクト先として設定
+      // クエリパラメータやハッシュは除外する
+      let redirectUrl = window.location.origin + window.location.pathname;
+
+      // 末尾がスラッシュでない場合は追加（ルートパスの整合性のため）
+      if (!redirectUrl.endsWith('/')) {
+        redirectUrl += '/';
+      }
+
       console.log('🔐 AuthProvider: リダイレクトURL:', redirectUrl);
 
       const { data, error } = await supabase.auth.signInWithOAuth({

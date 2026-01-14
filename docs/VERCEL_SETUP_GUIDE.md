@@ -80,7 +80,7 @@
    | ホスト名 | (空欄のまま) |
    | TYPE | A |
    | TTL | 3600 |
-   | VALUE | `76.76.21.21` |
+   | VALUE | `216.198.79.1` (またはVercel画面の表示値) |
 
    「追加」をクリック
 
@@ -90,7 +90,7 @@
    | ホスト名 | www |
    | TYPE | CNAME |
    | TTL | 3600 |
-   | VALUE | `cname.vercel-dns.com` |
+   | VALUE | Vercel画面の値をコピー (例: `...vercel-dns.com`) |
 
    「追加」をクリック
 
