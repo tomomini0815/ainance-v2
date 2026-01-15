@@ -474,81 +474,48 @@ const InvoiceCreation: React.FC = () => {
     <div className="min-h-screen bg-background p-2 sm:p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* ヘッダー */}
-        <div className="flex items-center justify-start mb-4 sm:mb-6">
-          <Link to="/dashboard" className="flex items-center text-primary hover:text-primary/90 transition-colors mr-4" title="ダッシュボードに戻る">
-            <ArrowLeft size={20} />
+        {/* ヘッダー */}
+        <div className="flex items-center mb-6">
+          <Link to="/dashboard" className="mr-4">
+            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
           </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-text-main">
-            {documentType === 'invoice' ? '請求書作成' : '見積書作成'}
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold text-text-main">
+              {documentType === 'invoice' ? '請求書作成' : '見積書作成'}
+            </h1>
+            <p className="text-text-muted">請求書や見積書を簡単に作成・管理できます</p>
+          </div>
         </div>
 
         {/* 文書タイプ切り替え */}
-        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 border border-border">
-          <div className="flex flex-wrap gap-2 sm:gap-4">
-            <button
-              onClick={() => setDocumentType('invoice')}
-              className={`flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-colors text-sm sm:text-base ${documentType === 'invoice'
-                ? 'bg-primary text-white'
-                : 'border border-border text-text-muted hover:bg-surface-highlight'
-                }`}
-            >
-              <FileText className="mr-1 sm:mr-2" size={16} />
-              <span className="whitespace-nowrap">請求書</span>
-            </button>
-            <button
-              onClick={() => setDocumentType('estimate')}
-              className={`flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-colors text-sm sm:text-base ${documentType === 'estimate'
-                ? 'bg-primary text-white'
-                : 'border border-border text-text-muted hover:bg-surface-highlight'
-                }`}
-            >
-              <FileSpreadsheet className="mr-1 sm:mr-2" size={16} />
-              <span className="whitespace-nowrap">見積書</span>
-            </button>
+        <div className="bg-surface rounded-xl shadow-sm border border-border mb-6 overflow-hidden">
+          <div>
+            <nav className="flex space-x-8 px-6">
+              <button
+                onClick={() => setDocumentType('invoice')}
+                className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-all ${documentType === 'invoice'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-main'
+                  }`}
+              >
+                <FileText className="mr-2" size={18} />
+                <span>請求書</span>
+              </button>
+              <button
+                onClick={() => setDocumentType('estimate')}
+                className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-all ${documentType === 'estimate'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-main'
+                  }`}
+              >
+                <FileSpreadsheet className="mr-2" size={18} />
+                <span>見積書</span>
+              </button>
+            </nav>
           </div>
         </div>
 
-        {/* アクションボタン */}
-        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 border border-border">
-          <div className="flex flex-wrap gap-2 sm:gap-4 justify-end">
-            {/* プレビュー（優先度低） */}
-            <button
-              onClick={generatePDFPreview}
-              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-border text-text-muted rounded-lg hover:bg-surface-highlight transition-colors text-sm sm:text-base"
-            >
-              <Eye className="mr-1 sm:mr-2" size={16} />
-              <span className="whitespace-nowrap">プレビュー</span>
-            </button>
 
-            {/* 保存（中） */}
-            <button
-              onClick={savePDF}
-              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors text-sm sm:text-base"
-            >
-              <Save className="mr-1 sm:mr-2" size={16} />
-              <span className="whitespace-nowrap">保存</span>
-            </button>
-
-            {/* PDFダウンロード（中） */}
-            <button
-              onClick={downloadPDF}
-              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors text-sm sm:text-base"
-            >
-              <Download className="mr-1 sm:mr-2" size={16} />
-              <span className="whitespace-nowrap">PDF</span>
-            </button>
-
-            {/* 送信（高） */}
-            <button
-              onClick={sendInvoice}
-              className="flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm sm:text-base font-semibold shadow-lg shadow-primary/25"
-            >
-              <Send className="mr-1 sm:mr-2" size={16} />
-              <span className="whitespace-nowrap">送信</span>
-            </button>
-          </div>
-        </div>
 
         {/* 請求書フォーム */}
         <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6">
@@ -756,17 +723,33 @@ const InvoiceCreation: React.FC = () => {
               <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-text-main mb-4">アクション</h3>
                 <div className="space-y-3">
-                  <button className="w-full btn-primary transition-colors shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
-                    <Send className="w-4 h-4" />
-                    メールで送信
+                  <button
+                    onClick={generatePDFPreview}
+                    className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    プレビュー
                   </button>
-                  <button className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2">
-                    <Download className="w-4 h-4" />
-                    PDFダウンロード
-                  </button>
-                  <button className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2">
+                  <button
+                    onClick={savePDF}
+                    className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
+                  >
                     <Save className="w-4 h-4" />
-                    下書き保存
+                    保存
+                  </button>
+                  <button
+                    onClick={downloadPDF}
+                    className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    PDF
+                  </button>
+                  <button
+                    onClick={sendInvoice}
+                    className="w-full btn-primary transition-colors shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    送信
                   </button>
                 </div>
               </div>

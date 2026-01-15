@@ -117,11 +117,11 @@ const SubsidyMatching: React.FC = () => {
                 {/* ヘッダー */}
                 <div className="flex items-center mb-6">
                     <Link to="/dashboard" className="mr-4">
-                        <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main transition-colors" />
+                        <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold text-text-main">補助金マッチング</h1>
-                        <p className="text-text-muted mt-1">あなたに最適な補助金をAIが提案</p>
+                        <p className="text-text-muted">あなたに最適な補助金をAIが提案</p>
                     </div>
                 </div>
 

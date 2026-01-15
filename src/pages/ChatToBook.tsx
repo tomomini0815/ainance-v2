@@ -752,7 +752,10 @@ const ChatToBook: React.FC = () => {
           <Link to="/dashboard" className="mr-4">
             <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
           </Link>
-          <h1 className="text-2xl font-bold text-text-main">CHAT-TO-BOOK</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-text-main">CHAT-TO-BOOK</h1>
+            <p className="text-text-muted">音声やチャットで簡単に取引を記録できます</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

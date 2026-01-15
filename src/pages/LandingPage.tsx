@@ -129,7 +129,7 @@ const LandingPage: React.FC = () => {
           <div className="max-w-[1400px] mx-auto px-6 flex justify-between items-center">
             <MagneticButton className="cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <div className="flex items-center space-x-3">
-                <img src="/ainance-logo.png" alt="Ainance Logo" className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+                <img src="/ainance-logo-header.png" alt="Ainance Logo" className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
                 <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Ainance</span>
               </div>
             </MagneticButton>
@@ -423,7 +423,7 @@ const LandingPage: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-center gap-8">
               {/* Logo */}
               <div className="flex items-center space-x-3">
-                <img src="/ainance-logo.png" alt="Ainance Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+                <img src="/ainance-logo-header.png" alt="Ainance Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
                 <span className="font-bold text-white">Ainance</span>
               </div>
 

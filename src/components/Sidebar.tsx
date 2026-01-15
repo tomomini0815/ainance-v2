@@ -34,10 +34,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         { path: '/dashboard', label: 'ダッシュボード', icon: Home },
         { path: '/receipt-processing', label: 'レシート', icon: Receipt },
         { path: '/invoice-creation', label: '請求書', icon: FileText },
-        { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
         { path: '/chat-to-book', label: 'CHAT-TO-BOOK', icon: MessageSquare },
         { path: '/subsidy-matching', label: '補助金', icon: Sparkles },
-        { path: '/tax-filing-wizard', label: '確定申告', icon: Sparkles },
+        { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
+        { path: '/tax-filing-wizard', label: '確定申告サポート', icon: Sparkles },
     ];
 
     const handleSignOut = async () => {
@@ -84,13 +84,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className={`flex items-center h-16 mb-6 ${isExpanded ? 'justify-between' : 'justify-center'}`}>
                         {isExpanded ? (
                             <div className="flex items-center space-x-3">
-                                <img src="/ainance-logo.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+                                <img src="/ainance-logo-header.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
                                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                                     Ainance
                                 </h1>
                             </div>
                         ) : (
-                            <img src="/ainance-logo.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+                            <img src="/ainance-logo-header.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
                         )}
 
                         {/* Mobile Close Button */}

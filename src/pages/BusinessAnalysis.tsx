@@ -262,7 +262,10 @@ const BusinessAnalysis: React.FC = () => {
           <Link to="/dashboard" className="mr-4">
             <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
           </Link>
-          <h1 className="text-2xl font-bold text-text-main">経営分析</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-text-main">経営分析</h1>
+            <p className="text-text-muted">売上・経費の推移や予実管理を行い、経営判断をサポートします</p>
+          </div>
         </div>
 
         {/* データがない場合の表示 */}

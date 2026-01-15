@@ -1,5 +1,6 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import './App.css'
 
 // Components
@@ -58,6 +59,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <BusinessTypeProvider>
+          <Toaster position="top-right" />
           <React.Suspense fallback={<PageLoader />}>
             <Routes>
               {/* パブリックルート */}
