@@ -1,0 +1,384 @@
+/**
+ * 法人税計算サービス
+ * 法人税・地方法人税・住民税・事業税の計算ロジック
+ */
+
+// 法人税の税率（2024/2025年度）
+const CORPORATE_TAX_RATES = {
+  // 中小法人（資本金1億円以下）
+  smallBusiness: {
+    lowerRate: 0.15,      // 年800万円以下の部分
+    upperRate: 0.232,     // 年800万円超の部分
+    threshold: 8000000,   // 800万円
+  },
+  // 普通法人（資本金1億円超）
+  largeBusiness: {
+    rate: 0.232,          // 一律23.2%
+  },
+};
+
+// 地方法人税率
+const LOCAL_CORPORATE_TAX_RATE = 0.103; // 法人税額の10.3%
+
+// 法人住民税率（標準税率）
+const CORPORATE_INHABITANT_TAX = {
+  prefectural: 0.01,      // 都道府県民税（法人税割）
+  municipal: 0.06,        // 市町村民税（法人税割）
+  perCapitaLevy: 70000,   // 均等割（年額・資本金1千万円以下）
+};
+
+// 法人事業税率（外形標準課税対象外の中小法人）
+const BUSINESS_TAX_RATES = {
+  income400: 0.035,       // 年400万円以下
+  income800: 0.052,       // 年400万円超800万円以下
+  incomeOver: 0.070,      // 年800万円超
+};
+
+// 法人基本情報の型
+export interface CorporateInfo {
+  companyName: string;
+  representativeName: string;
+  corporateNumber?: string;
+  address?: string;
+  capital: number;            // 資本金
+  fiscalYearStart: string;    // 事業年度開始日
+  fiscalYearEnd: string;      // 事業年度終了日
+  fiscalYear: number;         // 対象年度
+  employeeCount?: number;     // 従業員数
+}
+
+// 決算データの型
+export interface FinancialData {
+  // 損益計算書
+  revenue: number;            // 売上高
+  costOfSales: number;        // 売上原価
+  grossProfit: number;        // 売上総利益
+  operatingExpenses: number;  // 販管費
+  operatingIncome: number;    // 営業利益
+  nonOperatingIncome: number; // 営業外収益
+  nonOperatingExpenses: number; // 営業外費用
+  ordinaryIncome: number;     // 経常利益
+  extraordinaryIncome: number; // 特別利益
+  extraordinaryLoss: number;  // 特別損失
+  incomeBeforeTax: number;    // 税引前当期純利益
+  
+  // 貸借対照表（簡易版）
+  totalAssets: number;        // 総資産
+  totalLiabilities: number;   // 負債合計
+  netAssets: number;          // 純資産
+  cash: number;               // 現金・預金
+  accountsReceivable: number; // 売掛金
+  inventory: number;          // 棚卸資産
+  fixedAssets: number;        // 固定資産
+  accountsPayable: number;    // 買掛金
+  shortTermLoans: number;     // 短期借入金
+  longTermLoans: number;      // 長期借入金
+  
+  // 経費内訳
+  expensesByCategory: {
+    category: string;
+    amount: number;
+  }[];
+}
+
+// 法人税計算結果の型
+export interface CorporateTaxResult {
+  // 課税所得
+  taxableIncome: number;
+  
+  // 法人税
+  corporateTax: number;
+  corporateTaxBreakdown: {
+    lowerBracket: number;   // 800万円以下の部分
+    upperBracket: number;   // 800万円超の部分
+  };
+  
+  // 地方法人税
+  localCorporateTax: number;
+  
+  // 法人住民税
+  corporateInhabitantTax: number;
+  prefecturalTax: number;
+  municipalTax: number;
+  perCapitaLevy: number;
+  
+  // 法人事業税
+  businessTax: number;
+  
+  // 税金合計
+  totalTax: number;
+  
+  // 当期純利益
+  netIncome: number;
+  
+  // 実効税率
+  effectiveTaxRate: number;
+}
+
+// 消費税計算結果の型
+export interface ConsumptionTaxResult {
+  taxableRevenue: number;     // 課税売上
+  taxExemptRevenue: number;   // 非課税売上
+  taxablePurchases: number;   // 課税仕入
+  outputTax: number;          // 売上に係る消費税
+  inputTax: number;           // 仕入に係る消費税
+  netConsumptionTax: number;  // 納付消費税額
+  localConsumptionTax: number; // 地方消費税
+  totalConsumptionTax: number; // 消費税等合計
+}
+
+/**
+ * 法人税を計算
+ */
+export function calculateCorporateTax(
+  taxableIncome: number,
+  capital: number
+): { tax: number; breakdown: { lowerBracket: number; upperBracket: number } } {
+  const isSmallBusiness = capital <= 100000000; // 資本金1億円以下
+  
+  if (isSmallBusiness) {
+    const { lowerRate, upperRate, threshold } = CORPORATE_TAX_RATES.smallBusiness;
+    
+    if (taxableIncome <= threshold) {
+      return {
+        tax: Math.floor(taxableIncome * lowerRate),
+        breakdown: {
+          lowerBracket: Math.floor(taxableIncome * lowerRate),
+          upperBracket: 0,
+        },
+      };
+    } else {
+      const lowerPart = Math.floor(threshold * lowerRate);
+      const upperPart = Math.floor((taxableIncome - threshold) * upperRate);
+      return {
+        tax: lowerPart + upperPart,
+        breakdown: {
+          lowerBracket: lowerPart,
+          upperBracket: upperPart,
+        },
+      };
+    }
+  } else {
+    const tax = Math.floor(taxableIncome * CORPORATE_TAX_RATES.largeBusiness.rate);
+    return {
+      tax,
+      breakdown: {
+        lowerBracket: 0,
+        upperBracket: tax,
+      },
+    };
+  }
+}
+
+/**
+ * 地方法人税を計算
+ */
+export function calculateLocalCorporateTax(corporateTax: number): number {
+  return Math.floor(corporateTax * LOCAL_CORPORATE_TAX_RATE);
+}
+
+/**
+ * 法人住民税を計算
+ */
+export function calculateCorporateInhabitantTax(corporateTax: number): {
+  prefecturalTax: number;
+  municipalTax: number;
+  perCapitaLevy: number;
+  total: number;
+} {
+  const prefecturalTax = Math.floor(corporateTax * CORPORATE_INHABITANT_TAX.prefectural);
+  const municipalTax = Math.floor(corporateTax * CORPORATE_INHABITANT_TAX.municipal);
+  const perCapitaLevy = CORPORATE_INHABITANT_TAX.perCapitaLevy;
+  
+  return {
+    prefecturalTax,
+    municipalTax,
+    perCapitaLevy,
+    total: prefecturalTax + municipalTax + perCapitaLevy,
+  };
+}
+
+/**
+ * 法人事業税を計算
+ */
+export function calculateBusinessTax(taxableIncome: number): number {
+  if (taxableIncome <= 0) return 0;
+  
+  let tax = 0;
+  
+  if (taxableIncome <= 4000000) {
+    tax = Math.floor(taxableIncome * BUSINESS_TAX_RATES.income400);
+  } else if (taxableIncome <= 8000000) {
+    tax = Math.floor(4000000 * BUSINESS_TAX_RATES.income400);
+    tax += Math.floor((taxableIncome - 4000000) * BUSINESS_TAX_RATES.income800);
+  } else {
+    tax = Math.floor(4000000 * BUSINESS_TAX_RATES.income400);
+    tax += Math.floor(4000000 * BUSINESS_TAX_RATES.income800);
+    tax += Math.floor((taxableIncome - 8000000) * BUSINESS_TAX_RATES.incomeOver);
+  }
+  
+  return tax;
+}
+
+/**
+ * 全ての法人税等を計算
+ */
+export function calculateAllCorporateTaxes(
+  financialData: FinancialData,
+  corporateInfo: CorporateInfo
+): CorporateTaxResult {
+  // 課税所得（税引前利益から計算。実際はより複雑な調整が必要）
+  const taxableIncome = Math.max(0, financialData.incomeBeforeTax);
+  
+  // 法人税
+  const corporateTaxResult = calculateCorporateTax(taxableIncome, corporateInfo.capital);
+  
+  // 地方法人税
+  const localCorporateTax = calculateLocalCorporateTax(corporateTaxResult.tax);
+  
+  // 法人住民税
+  const inhabitantTax = calculateCorporateInhabitantTax(corporateTaxResult.tax);
+  
+  // 法人事業税
+  const businessTax = calculateBusinessTax(taxableIncome);
+  
+  // 税金合計
+  const totalTax = corporateTaxResult.tax + localCorporateTax + inhabitantTax.total + businessTax;
+  
+  // 当期純利益
+  const netIncome = financialData.incomeBeforeTax - totalTax;
+  
+  // 実効税率
+  const effectiveTaxRate = taxableIncome > 0 ? totalTax / taxableIncome : 0;
+  
+  return {
+    taxableIncome,
+    corporateTax: corporateTaxResult.tax,
+    corporateTaxBreakdown: corporateTaxResult.breakdown,
+    localCorporateTax,
+    corporateInhabitantTax: inhabitantTax.total,
+    prefecturalTax: inhabitantTax.prefecturalTax,
+    municipalTax: inhabitantTax.municipalTax,
+    perCapitaLevy: inhabitantTax.perCapitaLevy,
+    businessTax,
+    totalTax,
+    netIncome,
+    effectiveTaxRate,
+  };
+}
+
+/**
+ * 消費税を計算（簡易課税を想定）
+ */
+export function calculateConsumptionTax(
+  taxableRevenue: number,
+  taxablePurchases: number
+): ConsumptionTaxResult {
+  const TAX_RATE = 0.10;
+  const LOCAL_TAX_RATIO = 22 / 78; // 地方消費税の割合
+  
+  // 売上に係る消費税
+  const outputTax = Math.floor(taxableRevenue * TAX_RATE / (1 + TAX_RATE));
+  
+  // 仕入に係る消費税
+  const inputTax = Math.floor(taxablePurchases * TAX_RATE / (1 + TAX_RATE));
+  
+  // 納付消費税額（国税分）
+  const netConsumptionTax = Math.max(0, outputTax - inputTax);
+  
+  // 地方消費税
+  const localConsumptionTax = Math.floor(netConsumptionTax * LOCAL_TAX_RATIO);
+  
+  return {
+    taxableRevenue,
+    taxExemptRevenue: 0,
+    taxablePurchases,
+    outputTax,
+    inputTax,
+    netConsumptionTax,
+    localConsumptionTax,
+    totalConsumptionTax: netConsumptionTax + localConsumptionTax,
+  };
+}
+
+/**
+ * 取引データから決算データを生成
+ */
+export function generateFinancialDataFromTransactions(
+  transactions: any[],
+  fiscalYear: number
+): FinancialData {
+  // 該当年度の取引をフィルター
+  const yearTransactions = transactions.filter(t => {
+    const date = new Date(t.date);
+    return date.getFullYear() === fiscalYear;
+  });
+
+  // 収入と経費を集計
+  const incomeTransactions = yearTransactions.filter(t => t.type === 'income');
+  const expenseTransactions = yearTransactions.filter(t => t.type === 'expense');
+
+  const revenue = incomeTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+
+  // カテゴリ別経費集計
+  const expensesByCategory = Object.entries(
+    expenseTransactions.reduce((acc: Record<string, number>, t) => {
+      const category = t.category || '未分類';
+      acc[category] = (acc[category] || 0) + Math.abs(Number(t.amount) || 0);
+      return acc;
+    }, {})
+  ).map(([category, amount]) => ({
+    category,
+    amount: amount as number,
+  })).sort((a, b) => b.amount - a.amount);
+
+  // 簡易的な損益計算書データを生成
+  const grossProfit = revenue;
+  const operatingIncome = grossProfit - totalExpenses;
+  const ordinaryIncome = operatingIncome;
+  const incomeBeforeTax = ordinaryIncome;
+
+  return {
+    revenue,
+    costOfSales: 0,
+    grossProfit,
+    operatingExpenses: totalExpenses,
+    operatingIncome,
+    nonOperatingIncome: 0,
+    nonOperatingExpenses: 0,
+    ordinaryIncome,
+    extraordinaryIncome: 0,
+    extraordinaryLoss: 0,
+    incomeBeforeTax,
+    totalAssets: revenue,
+    totalLiabilities: 0,
+    netAssets: revenue,
+    cash: revenue,
+    accountsReceivable: 0,
+    inventory: 0,
+    fixedAssets: 0,
+    accountsPayable: 0,
+    shortTermLoans: 0,
+    longTermLoans: 0,
+    expensesByCategory,
+  };
+}
+
+/**
+ * 金額をフォーマット
+ */
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('ja-JP', {
+    style: 'currency',
+    currency: 'JPY',
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+/**
+ * パーセンテージをフォーマット
+ */
+export function formatPercentage(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}

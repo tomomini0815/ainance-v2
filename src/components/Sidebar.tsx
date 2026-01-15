@@ -2,10 +2,10 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles,
-    Settings, LogOut, ChevronLeft, ChevronRight, X
+    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -25,8 +25,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     const location = useLocation();
     const navigate = useNavigate();
     const { signOut } = useAuth();
-    // ローカルストレージから現在のビジネスタイプを取得
-    const [_currentBusinessType] = useLocalStorage<any>(`businessType_${userId}`, null);
+    // BusinessTypeContextから現在のビジネスタイプを取得
+    const { currentBusinessType } = useBusinessTypeContext();
+
+    // 法人かどうかを判定
+    const isCorporation = currentBusinessType?.business_type === 'corporation';
 
     const isActive = (path: string) => location.pathname === path;
 
@@ -35,9 +38,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         { path: '/chat-to-book', label: 'CHAT-TO-BOOK', icon: MessageSquare },
         { path: '/receipt-processing', label: 'レシート', icon: Receipt },
         { path: '/invoice-creation', label: '請求書', icon: FileText },
+        { path: '/csv-import', label: 'CSVインポート', icon: Upload },
         { path: '/subsidy-matching', label: '補助金', icon: Sparkles },
         { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
-        { path: '/tax-filing-wizard', label: '確定申告サポート', icon: Sparkles },
+        // 法人の場合は法人税申告サポート、個人の場合は確定申告サポート
+        {
+            path: isCorporation ? '/corporate-tax' : '/tax-filing-wizard',
+            label: isCorporation ? '法人税申告サポート' : '確定申告サポート',
+            icon: Sparkles
+        },
     ];
 
     const handleSignOut = async () => {

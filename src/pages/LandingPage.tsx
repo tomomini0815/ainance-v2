@@ -151,11 +151,15 @@ const LandingPage: React.FC = () => {
             </MagneticButton>
 
             <div className="hidden md:flex items-center space-x-1">
-              {['機能', '使い方', 'サポート'].map((item) => (
-                <button key={item} className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
-                  {item}
-                </button>
-              ))}
+              <button onClick={() => navigate('/features')} className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+                機能
+              </button>
+              <button onClick={() => navigate('/how-to-use')} className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+                使い方
+              </button>
+              <button onClick={() => navigate('/support')} className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+                サポート
+              </button>
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
@@ -187,9 +191,9 @@ const LandingPage: React.FC = () => {
               className="md:hidden absolute top-full left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-b border-white/5 p-6"
             >
               <div className="flex flex-col space-y-4">
-                {['機能', '使い方', 'サポート'].map((item) => (
-                  <button key={item} className="text-left py-2 text-slate-300 hover:text-white transition-colors">{item}</button>
-                ))}
+                <button onClick={() => navigate('/features')} className="text-left py-2 text-slate-300 hover:text-white transition-colors">機能</button>
+                <button onClick={() => navigate('/how-to-use')} className="text-left py-2 text-slate-300 hover:text-white transition-colors">使い方</button>
+                <button onClick={() => navigate('/support')} className="text-left py-2 text-slate-300 hover:text-white transition-colors">サポート</button>
                 <hr className="border-white/10" />
                 <button onClick={() => navigate('/login')} className="py-2 text-slate-300 hover:text-white transition-colors text-left">ログイン</button>
                 <button onClick={() => navigate('/signup')} className="py-3 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full font-medium text-white">無料で始める</button>
