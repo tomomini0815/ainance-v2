@@ -32,9 +32,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     const navItems = [
         { path: '/dashboard', label: 'ダッシュボード', icon: Home },
+        { path: '/chat-to-book', label: 'CHAT-TO-BOOK', icon: MessageSquare },
         { path: '/receipt-processing', label: 'レシート', icon: Receipt },
         { path: '/invoice-creation', label: '請求書', icon: FileText },
-        { path: '/chat-to-book', label: 'CHAT-TO-BOOK', icon: MessageSquare },
         { path: '/subsidy-matching', label: '補助金', icon: Sparkles },
         { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
         { path: '/tax-filing-wizard', label: '確定申告サポート', icon: Sparkles },

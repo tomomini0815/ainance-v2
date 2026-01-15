@@ -218,8 +218,7 @@ const Privacy: React.FC = () => {
 
                 {/* Footer Info */}
                 <div className="mt-16 pt-8 border-t border-white/5 text-center text-sm text-gray-500">
-                    <p>株式会社Ainance</p>
-                    <p className="mt-2">〒100-0001 東京都千代田区千代田1-1-1</p>
+
                     <p className="mt-2">個人情報保護管理者：プライバシー保護室</p>
                 </div>
             </div>

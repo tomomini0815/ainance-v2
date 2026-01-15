@@ -32,10 +32,10 @@ const TaxFilingSupport: React.FC = () => {
     income: 7700000,
     deductions: 1500000,
     taxAmount: 850000,
-    companyName: '株式会社Ainance',
-    representative: '山田 太郎',
-    address: '東京都千代田区千代田1-1-1',
-    phone: '03-1234-5678'
+    companyName: '',
+    representative: '',
+    address: '',
+    phone: ''
   };
 
   const generateTaxDocument = async (documentName: string) => {

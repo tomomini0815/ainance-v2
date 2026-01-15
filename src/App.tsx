@@ -31,7 +31,9 @@ const CorporateTaxFilingPage = React.lazy(() => import('./pages/CorporateTaxFili
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
 const Privacy = React.lazy(() => import('./pages/Privacy'));
+const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
 const Contact = React.lazy(() => import('./pages/Contact'));
+const LegalNotice = React.lazy(() => import('./pages/LegalNotice'));
 const Signup = React.lazy(() => import('./pages/Signup'));
 
 // プリロード関数
@@ -193,7 +195,9 @@ function App() {
 
               {/* Public Pages */}
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<TermsOfService />} />
               <Route path="/contact" element={<Contact />} />
+              {/* <Route path="/legal" element={<LegalNotice />} /> */}
 
               {/* デフォルトルート */}
               <Route path="/" element={<LandingPage />} />

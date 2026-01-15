@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Sparkles, Menu, X, Play, Zap, Brain, BarChart3, FileText, MessageSquare, Receipt, TrendingUp, Check, ChevronRight } from 'lucide-react';
+import { ArrowRight, Sparkles, Menu, X, Play, FileText, MessageSquare, Receipt, TrendingUp, Check, ChevronRight, Calculator } from 'lucide-react';
 import { SmoothScroll } from '../components/ui/SmoothScroll';
 import { CustomCursor } from '../components/ui/CustomCursor';
 import { MagneticButton } from '../components/ui/MagneticButton';
@@ -67,35 +67,51 @@ const LandingPage: React.FC = () => {
   const features = [
     {
       icon: Receipt,
-      title: 'スマートレシート処理',
-      description: 'レシートを撮影するだけ。AIが瞬時に金額・日付・品目を読み取り、自動で仕訳を作成。手入力の手間を99%削減。',
+      title: 'AIレシート読取',
+      description: 'スマホで撮影するだけで、日付・金額・支払先をAIが自動認識。面倒な手入力を99%削減し、CSV出力も可能です。',
       color: 'from-indigo-500 to-blue-600',
       bgColor: 'bg-indigo-500/10',
       iconColor: 'text-indigo-400',
     },
     {
       icon: MessageSquare,
-      title: 'チャット経理',
-      description: '「今日のランチ代1,200円」と話しかけるだけ。音声やテキストで自然に取引を記録できます。',
+      title: '音声・チャット経理',
+      description: '「タクシー代 1500円」と話しかけるだけで記帳完了。LINE感覚で、移動中や隙間時間にサクッと経理処理ができます。',
       color: 'from-emerald-500 to-teal-600',
       bgColor: 'bg-emerald-500/10',
       iconColor: 'text-emerald-400',
     },
     {
+      icon: Calculator,
+      title: '確定申告サポート',
+      description: '質問に答えるだけのウィザード形式で、青色・白色申告書類を自動作成。控除の計算からe-Tax用データ出力まで対応。',
+      color: 'from-purple-500 to-pink-600',
+      bgColor: 'bg-purple-500/10',
+      iconColor: 'text-purple-400',
+    },
+    {
       icon: FileText,
-      title: 'ワンクリック請求書',
-      description: 'プロフェッショナルな請求書をテンプレートから簡単作成。PDF出力からメール送付まで完全自動化。',
+      title: '請求書・見積書作成',
+      description: 'インボイス制度対応の請求書・見積書をワンクリックで作成。PDF変換機能も標準搭載し、業務時間を大幅短縮。',
       color: 'from-blue-500 to-cyan-600',
       bgColor: 'bg-blue-500/10',
       iconColor: 'text-blue-400',
     },
     {
       icon: TrendingUp,
-      title: 'AI経営分析',
-      description: '収支・キャッシュフローをリアルタイム可視化。AIがあなたのビジネスに最適なアドバイスを提案。',
+      title: '経営分析ダッシュボード',
+      description: '売上・経費・利益の推移をリアルタイムでグラフ化。月ごとの収支状況を一目で把握し、データに基づいた経営判断を。',
       color: 'from-amber-500 to-orange-600',
       bgColor: 'bg-amber-500/10',
       iconColor: 'text-amber-400',
+    },
+    {
+      icon: Sparkles,
+      title: '補助金マッチング',
+      description: 'あなたの事業プロフィールに基づき、受給可能な補助金・助成金をAIが提案。申請に必要な情報の整理もサポート。',
+      color: 'from-rose-500 to-red-600',
+      bgColor: 'bg-rose-500/10',
+      iconColor: 'text-rose-400',
     },
   ];
 
@@ -345,7 +361,7 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* Features Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {features.map((feature, index) => (
                 <motion.div
                   key={feature.title}
@@ -429,10 +445,10 @@ const LandingPage: React.FC = () => {
 
               {/* Links */}
               <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
-                <a href="#" className="hover:text-white transition-colors">プライバシーポリシー</a>
-                <a href="#" className="hover:text-white transition-colors">利用規約</a>
-                <a href="#" className="hover:text-white transition-colors">お問い合わせ</a>
-                <a href="#" className="hover:text-white transition-colors">特定商取引法に基づく表記</a>
+                <Link to="/privacy" className="hover:text-white transition-colors">プライバシーポリシー</Link>
+                <Link to="/terms" className="hover:text-white transition-colors">利用規約</Link>
+                <Link to="/contact" className="hover:text-white transition-colors">お問い合わせ</Link>
+                {/* <Link to="/legal" className="hover:text-white transition-colors">特定商取引法に基づく表記</Link> */}
               </div>
 
               {/* Copyright */}

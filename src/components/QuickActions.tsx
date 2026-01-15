@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, BarChart2, Camera, Calculator, BookOpen, Link as LinkIcon } from 'lucide-react';
+import { FileText, BarChart2, Camera, Calculator, Link as LinkIcon, Sparkles } from 'lucide-react';
 
 const QuickActions: React.FC = () => {
   const actions = [
@@ -50,10 +50,10 @@ const QuickActions: React.FC = () => {
       borderColor: 'border-rose-500/30'
     },
     {
-      title: '連携設定',
-      description: '外部サービス連携',
-      icon: LinkIcon,
-      link: '/integration-settings',
+      title: '確定申告サポート',
+      description: 'AIで確定申告をサポート',
+      icon: Sparkles,
+      link: '/tax-filing-wizard',
       color: 'bg-indigo-500/20',
       iconColor: 'text-indigo-500',
       borderColor: 'border-indigo-500/30'
