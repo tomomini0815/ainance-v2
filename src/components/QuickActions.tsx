@@ -50,6 +50,15 @@ const QuickActions: React.FC = () => {
       borderColor: 'border-rose-500/30'
     },
     {
+      title: '駆け込み確定申告',
+      description: '1日で書類完成',
+      icon: Sparkles,
+      link: '/quick-tax-filing',
+      color: 'bg-orange-500/20',
+      iconColor: 'text-orange-500',
+      borderColor: 'border-orange-500/30'
+    },
+    {
       title: '確定申告サポート',
       description: 'AIで確定申告をサポート',
       icon: Sparkles,
@@ -61,7 +70,7 @@ const QuickActions: React.FC = () => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-8">
       {actions.map((action, index) => (
         <Link
           key={index}

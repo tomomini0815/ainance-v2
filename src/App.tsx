@@ -29,6 +29,7 @@ const TaxFilingGuidePage = React.lazy(() => import('./pages/TaxFilingGuidePage')
 const CorporateTaxFilingPage = React.lazy(() => import('./pages/CorporateTaxFilingPage'));
 const CorporateTaxGuidePage = React.lazy(() => import('./pages/CorporateTaxGuidePage'));
 const CSVImportPage = React.lazy(() => import('./pages/CSVImportPage'));
+const QuickTaxFilingPage = React.lazy(() => import('./pages/QuickTaxFilingPage'));
 
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
@@ -260,6 +261,15 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <CSVImportPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/quick-tax-filing"
+                  element={
+                    <ProtectedRoute>
+                      <QuickTaxFilingPage />
                     </ProtectedRoute>
                   }
                 />

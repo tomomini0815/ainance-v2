@@ -297,40 +297,77 @@ const ChatToBook: React.FC = () => {
     };
   };
 
-  const processTranscript = () => {
+  const processTranscript = async () => {
     if (!transcript.trim()) return;
 
     console.log('processTranscript - transcript:', transcript);
     setIsProcessing(true);
 
-    // 実際のアプリケーションでは、AIやルールベースの処理で取引情報を抽出
-    // ここでは簡略化のためにクライアント側で処理
-    setTimeout(() => {
+    try {
+      // ユーザーが認証されているか確認
+      if (!user?.id) {
+        alert('ユーザーが認証されていません。ログインしてください。');
+        console.error('ユーザーが認証されていません。userオブジェクト:', user);
+        setIsProcessing(false);
+        return;
+      }
+
+      // 実際のアプリケーションでは、AIやルールベースの処理で取引情報を抽出
+      // ここでは簡略化のためにクライアント側で処理
       const transactionData = extractTransactionData(transcript);
 
-      // UUID v4 を生成する関数
-      const generateUUID = () => {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-          const r = Math.random() * 16 | 0,
-            v = c == 'x' ? r : (r & 0x3 | 0x8);
-          return v.toString(16);
-        });
-      };
+      // 金額から数字部分を除去した説明文を作成
+      const cleanedDescription = transactionData.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
 
-      const newTransaction: Transaction = {
-        id: generateUUID(),
-        ...transactionData,
-        // 選択されたカテゴリがある場合はそれを使用
-        category: selectedCategory || transactionData.category
-      };
+      console.log('processTranscript - データベースに保存中:', {
+        item: cleanedDescription,
+        amount: transactionData.amount,
+        date: transactionData.date,
+        category: selectedCategory || transactionData.category,
+        type: transactionData.type
+      });
 
-      setTransactions(prev => [newTransaction, ...prev]);
+      // データベースに直接保存
+      const result = await createTransaction({
+        item: cleanedDescription,
+        amount: transactionData.amount,
+        date: transactionData.date,
+        category: selectedCategory || transactionData.category,
+        type: transactionData.type,
+        creator: user.id,
+        approval_status: 'approved' // 作成時に承認状態にする
+      });
+
+      console.log('processTranscript - 保存結果:', result);
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // 保存成功後、データを再取得
+      await fetchTransactions();
+
+      // カスタムイベントを発行して他のコンポーネントに通知
+      window.dispatchEvent(new CustomEvent('transactionRecorded'));
+
+      console.log('processTranscript - 取引をデータベースに保存しました');
+
       // 処理後にテキストをクリアして重複を防ぐ
       setTranscript('');
       // カテゴリ選択もクリア
       setSelectedCategory(null);
       setIsProcessing(false);
-    }, 1000);
+    } catch (error) {
+      console.error('取引の保存に失敗しました:', error);
+      // 認証エラーの場合、ログインページにリダイレクト
+      if ((error as Error).message.includes('認証セッションが切れました')) {
+        alert('認証セッションが切れました。ログインページにリダイレクトします。');
+        navigate('/login');
+        return;
+      }
+      alert('取引の保存に失敗しました: ' + (error as Error).message);
+      setIsProcessing(false);
+    }
   };
 
   const handleEdit = (transaction: Transaction) => {
