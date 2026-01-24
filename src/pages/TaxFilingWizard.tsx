@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
+import DepreciationCalculator from '../components/DepreciationCalculator';
 import {
     Deduction,
     calculateTaxFilingData,
@@ -53,9 +54,10 @@ import {
 const WIZARD_STEPS = [
     { id: 1, title: '基本情報', icon: FileText, description: '確定申告の基本設定' },
     { id: 2, title: '収支確認', icon: Calculator, description: '売上・経費の確認' },
-    { id: 3, title: '控除入力', icon: Plus, description: '各種控除の入力' },
-    { id: 4, title: 'AI診断', icon: Sparkles, description: 'AIによる節税アドバイス' },
-    { id: 5, title: '申告書作成', icon: Download, description: 'PDFダウンロード' },
+    { id: 3, title: '減価償却', icon: Calculator, description: '固定資産の償却計算' },
+    { id: 4, title: '控除入力', icon: Plus, description: '各種控除の入力' },
+    { id: 5, title: 'AI診断', icon: Sparkles, description: 'AIによる節税アドバイス' },
+    { id: 6, title: '申告書作成', icon: Download, description: 'PDFダウンロード' },
 ];
 
 const TaxFilingWizard: React.FC = () => {
@@ -75,6 +77,7 @@ const TaxFilingWizard: React.FC = () => {
     const [deductions, setDeductions] = useState<Deduction[]>([]);
     const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
     const [estimatedSavings, setEstimatedSavings] = useState(0);
+    const [depreciationAmount, setDepreciationAmount] = useState(0);
 
     // 初期控除を設定
     useEffect(() => {
@@ -83,13 +86,21 @@ const TaxFilingWizard: React.FC = () => {
 
     // 確定申告データを計算
     const taxData = useMemo(() => {
-        return calculateTaxFilingData(
+        const baseData = calculateTaxFilingData(
             transactions,
             fiscalYear,
             currentBusinessType?.business_type || 'individual',
             deductions
         );
-    }, [transactions, fiscalYear, currentBusinessType, deductions]);
+
+        // 減価償却費を加算
+        return {
+            ...baseData,
+            totalExpenses: baseData.totalExpenses + depreciationAmount,
+            netIncome: baseData.netIncome - depreciationAmount,
+            taxableIncome: Math.max(0, baseData.taxableIncome - depreciationAmount),
+        };
+    }, [transactions, fiscalYear, currentBusinessType, deductions, depreciationAmount]);
 
     // ステップ移動
     const goToNextStep = () => {
@@ -1158,10 +1169,17 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
             case 2:
                 return <Step2IncomeExpense />;
             case 3:
-                return <Step3Deductions />;
+                return (
+                    <DepreciationCalculator
+                        onCalculate={(amount) => setDepreciationAmount(amount)}
+                        initialAssets={[]} // TODO: Load from persistence if needed
+                    />
+                );
             case 4:
-                return <Step4AIDiagnosis />;
+                return <Step3Deductions />;
             case 5:
+                return <Step4AIDiagnosis />;
+            case 6:
                 return <Step5CreateDocument />;
             default:
                 return null;
@@ -1187,7 +1205,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                     </div>
                     <h1 className="text-3xl font-bold text-text-main mb-2">確定申告サポート</h1>
                     <p className="text-text-muted">
-                        5つのステップで簡単に確定申告を完了できます
+                        6つのステップで簡単に確定申告を完了できます
                     </p>
                 </div>
 

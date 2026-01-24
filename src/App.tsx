@@ -30,6 +30,7 @@ const CorporateTaxFilingPage = React.lazy(() => import('./pages/CorporateTaxFili
 const CorporateTaxGuidePage = React.lazy(() => import('./pages/CorporateTaxGuidePage'));
 const CSVImportPage = React.lazy(() => import('./pages/CSVImportPage'));
 const QuickTaxFilingPage = React.lazy(() => import('./pages/QuickTaxFilingPage'));
+const TransactionInbox = React.lazy(() => import('./pages/TransactionInbox'));
 
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
@@ -211,6 +212,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <AITransactionList />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/transaction-inbox"
+                  element={
+                    <ProtectedRoute>
+                      <TransactionInbox />
                     </ProtectedRoute>
                   }
                 />

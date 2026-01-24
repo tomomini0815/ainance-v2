@@ -75,8 +75,8 @@ export const calculateTax = (data: QuickTaxFilingData): TaxCalculationResult => 
   // 総収入
   const totalIncome = data.income.totalRevenue;
   
-  // 総経費
-  const totalExpenses = Object.values(data.expenses).reduce((sum, val) => sum + val, 0);
+  // 総経費 (入力されたカテゴリ経費 + 減価償却費)
+  const totalExpenses = Object.values(data.expenses).reduce((sum, val) => sum + val, 0) + (data.depreciation || 0);
   
   // 所得金額（収入 - 経費）
   const netIncome = totalIncome - totalExpenses;

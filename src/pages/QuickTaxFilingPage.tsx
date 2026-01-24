@@ -6,6 +6,7 @@ import WizardProgress from '../components/quickTaxFiling/WizardProgress';
 import Step1BasicInfo from '../components/quickTaxFiling/Step1BasicInfo';
 import Step2Income from '../components/quickTaxFiling/Step2Income';
 import Step3Expenses from '../components/quickTaxFiling/Step3Expenses';
+import StepDepreciation from '../components/quickTaxFiling/StepDepreciation';
 import Step4Deductions from '../components/quickTaxFiling/Step4Deductions';
 import Step5Confirmation from '../components/quickTaxFiling/Step5Confirmation';
 import {
@@ -47,6 +48,7 @@ const QuickTaxFilingPage: React.FC = () => {
             utilities: 0,
             other: 0
         },
+        depreciation: 0,
         deductions: {
             socialInsurance: 0,
             lifeInsurance: 0,
@@ -93,12 +95,16 @@ const QuickTaxFilingPage: React.FC = () => {
         setData({ ...data, expenses });
     };
 
+    const handleDepreciationChange = (depreciation: number) => {
+        setData({ ...data, depreciation });
+    };
+
     const handleDeductionsChange = (deductions: DeductionsInfo) => {
         setData({ ...data, deductions });
     };
 
     const handleNext = () => {
-        setCurrentStep((prev) => Math.min(5, prev + 1) as WizardStep);
+        setCurrentStep((prev) => Math.min(6, prev + 1) as WizardStep);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -164,6 +170,13 @@ const QuickTaxFilingPage: React.FC = () => {
                         />
                     )}
                     {currentStep === 4 && (
+                        <StepDepreciation
+                            onChange={handleDepreciationChange}
+                            onNext={handleNext}
+                            onBack={handleBack}
+                        />
+                    )}
+                    {currentStep === 5 && (
                         <Step4Deductions
                             data={data.deductions}
                             onChange={handleDeductionsChange}
@@ -171,7 +184,7 @@ const QuickTaxFilingPage: React.FC = () => {
                             onBack={handleBack}
                         />
                     )}
-                    {currentStep === 5 && (
+                    {currentStep === 6 && (
                         <Step5Confirmation
                             data={data}
                             onBack={handleBack}

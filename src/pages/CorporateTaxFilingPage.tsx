@@ -27,7 +27,9 @@ import {
     generateFinancialDataFromTransactions,
     formatCurrency,
     formatPercentage,
+    DepreciationAsset,
 } from '../services/CorporateTaxService';
+import DepreciationCalculator from '../components/DepreciationCalculator';
 import {
     generateCorporateTaxPDF,
     generateFinancialStatementPDF,
@@ -37,10 +39,11 @@ import {
 // ステップ定義
 const WIZARD_STEPS = [
     { id: 1, title: '会社情報', icon: Building2, description: '会社基本情報の入力' },
-    { id: 2, title: '損益計算', icon: Calculator, description: '売上・経費の確認' },
-    { id: 3, title: '法人税計算', icon: PiggyBank, description: '法人税等の計算' },
-    { id: 4, title: '消費税確認', icon: Wallet, description: '消費税の確認' },
-    { id: 5, title: '書類作成', icon: Download, description: 'PDF出力' },
+    { id: 2, title: '減価償却', icon: Calculator, description: '資産の登録と計算' },
+    { id: 3, title: '損益計算', icon: FileText, description: '売上・経費の確認' },
+    { id: 4, title: '法人税計算', icon: PiggyBank, description: '法人税等の計算' },
+    { id: 5, title: '消費税確認', icon: Wallet, description: '消費税の確認' },
+    { id: 6, title: '書類作成', icon: Download, description: 'PDF出力' },
 ];
 
 const CorporateTaxFilingPage: React.FC = () => {
@@ -67,10 +70,39 @@ const CorporateTaxFilingPage: React.FC = () => {
         employeeCount: 1,
     });
 
+    // 減価償却データ
+    const [depreciationAssets, setDepreciationAssets] = useState<DepreciationAsset[]>([]);
+    const [depreciationTotal, setDepreciationTotal] = useState(0);
+
+    const handleDepreciationCalculate = (total: number, assets: DepreciationAsset[]) => {
+        setDepreciationTotal(total);
+        setDepreciationAssets(assets);
+    };
+
     // 決算データを計算
     const financialData = useMemo(() => {
-        return generateFinancialDataFromTransactions(transactions, corporateInfo.fiscalYear);
-    }, [transactions, corporateInfo.fiscalYear]);
+        const data = generateFinancialDataFromTransactions(transactions, corporateInfo.fiscalYear);
+
+        // 減価償却費を経費に追加・合算
+        if (depreciationTotal > 0) {
+            // 既に「減価償却費」カテゴリがあるか確認
+            const depreciationCategoryIndex = data.expensesByCategory.findIndex(c => c.category === '減価償却費');
+            if (depreciationCategoryIndex >= 0) {
+                data.expensesByCategory[depreciationCategoryIndex].amount += depreciationTotal;
+            } else {
+                data.expensesByCategory.push({ category: '減価償却費', amount: depreciationTotal });
+            }
+
+            data.operatingExpenses += depreciationTotal;
+            data.operatingIncome -= depreciationTotal;
+            data.ordinaryIncome -= depreciationTotal;
+            data.incomeBeforeTax -= depreciationTotal;
+
+            data.expensesByCategory.sort((a, b) => b.amount - a.amount);
+        }
+
+        return data;
+    }, [transactions, corporateInfo.fiscalYear, depreciationTotal]);
 
     // 法人税計算結果
     const taxResult = useMemo(() => {
@@ -138,7 +170,7 @@ const CorporateTaxFilingPage: React.FC = () => {
             }
 
             // ダウンロード
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -628,10 +660,16 @@ const CorporateTaxFilingPage: React.FC = () => {
     const renderStepContent = () => {
         switch (currentStep) {
             case 1: return <Step1CompanyInfo />;
-            case 2: return <Step2ProfitLoss />;
-            case 3: return <Step3CorporateTax />;
-            case 4: return <Step4ConsumptionTax />;
-            case 5: return <Step5Documents />;
+            case 2: return (
+                <DepreciationCalculator
+                    onCalculate={handleDepreciationCalculate}
+                    initialAssets={depreciationAssets}
+                />
+            );
+            case 3: return <Step2ProfitLoss />;
+            case 4: return <Step3CorporateTax />;
+            case 5: return <Step4ConsumptionTax />;
+            case 6: return <Step5Documents />;
             default: return null;
         }
     };

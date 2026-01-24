@@ -12,9 +12,16 @@ const Login: React.FC = () => {
     const [resetSent, setResetSent] = useState(false);
     const [showResetForm, setShowResetForm] = useState(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
-    const { signIn, signInWithGoogle } = useAuth();
+    const { signIn, signInWithGoogle, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+
+    // 認証済みの場合は自動リダイレクト
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate(from, { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     // リダイレクト先のパスを取得（デフォルトは/dashboard）
     const from = location.state?.from?.pathname || '/dashboard';

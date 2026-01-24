@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import QuickActions from '../components/QuickActions'
 import { useTransactions } from '../hooks/useTransactions'
 import { useAuth } from '../hooks/useAuth'
-import { Download, Plus, X, FileText, TrendingUp, TrendingDown, JapaneseYen, ChevronRight, Sparkles } from 'lucide-react'
+import { Download, Plus, Sparkles, Inbox } from 'lucide-react'
 import { AIStatusBadge } from '../components/AIStatusComponents'
 import { isAIEnabled } from '../services/geminiAIService'
 
@@ -12,6 +12,7 @@ const RevenueChart = React.lazy(() => import('../components/RevenueChart'));
 const ExpenseChart = React.lazy(() => import('../components/ExpenseChart'));
 const TransactionTable = React.lazy(() => import('../components/TransactionTable'));
 const TransactionForm = React.lazy(() => import('../components/TransactionForm'));
+const OmniEntryPortal = React.lazy(() => import('../components/OmniEntryPortal'));
 
 // Preload components
 // これらのコンポーネントはReact.lazyで遅延読み込みされるため、明示的なプリロードは不要です
@@ -186,7 +187,8 @@ const Dashboard: React.FC = () => {
       total: transactions.length,
       income: totalIncome,
       expense: totalExpense,
-      balance: totalIncome - totalExpense
+      balance: totalIncome - totalExpense,
+      pendingCount: transactions.filter(t => t.approval_status === 'pending').length
     };
 
     console.log('ダッシュボード - 統計情報計算結果:', result);
@@ -314,6 +316,16 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex gap-3 w-full sm:w-auto">
+          {stats.pendingCount > 0 && (
+            <Link
+              to="/transaction-inbox"
+              className="btn-tertiary flex-1 sm:flex-none flex items-center justify-center relative bg-orange-500/10 border-orange-500/20 text-orange-600"
+            >
+              <Inbox className="w-4 h-4 mr-2" />
+              確認待ち ({stats.pendingCount})
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-white"></span>
+            </Link>
+          )}
           <button
             onClick={downloadCSV}
             disabled={transactions.length === 0}
@@ -444,27 +456,12 @@ const Dashboard: React.FC = () => {
       </div>
 
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-text-main">新規取引作成</h2>
-                <button
-                  onClick={() => setShowCreateForm(false)}
-                  className="p-2 rounded-lg hover:bg-surface-highlight transition-colors"
-                >
-                  <X className="w-5 h-5 text-text-muted" />
-                </button>
-              </div>
-              <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-                <TransactionForm
-                  onSubmit={handleCreateTransaction}
-                  onCancel={() => setShowCreateForm(false)}
-                />
-              </Suspense>
-            </div>
-          </div>
-        </div>
+        <Suspense fallback={null}>
+          <OmniEntryPortal
+            onClose={() => setShowCreateForm(false)}
+            onSuccess={() => fetchTransactions()}
+          />
+        </Suspense>
       )}
     </div>
   )

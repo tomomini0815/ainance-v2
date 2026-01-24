@@ -37,6 +37,7 @@ export interface QuickTaxFilingData {
   basicInfo: BasicInfo;
   income: IncomeInfo;
   expenses: ExpensesInfo;
+  depreciation?: number;      // 減価償却費
   deductions: DeductionsInfo;
   calculatedTax?: number;
   createdAt?: string;
@@ -54,4 +55,4 @@ export interface TaxCalculationResult {
   totalTax: number;           // 合計税額
 }
 
-export type WizardStep = 1 | 2 | 3 | 4 | 5;
+export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;

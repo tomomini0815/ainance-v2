@@ -3,6 +3,49 @@
  * 法人税・地方法人税・住民税・事業税の計算ロジック
  */
 
+// 減価償却資産の型
+export interface DepreciationAsset {
+  id: string;
+  name: string;               // 資産名称
+  quantity: number;           // 数量
+  unit: string;               // 単位（台、式など）
+  acquisitionDate: string;    // 取得年月
+  acquisitionCost: number;    // 取得価額
+  depreciationMethod: 'straightLine' | 'decliningBalance' | 'lumpSum' | 'unitsOfProduction' | 'leasePeriod' | 'immediateSME'; // 償却方法
+  usefulLife: number;         // 耐用年数
+  businessRatio: number;      // 事業専用割合(%)
+  currentYearMonths: number;  // 本年中の償却期間（月数）
+  // 生産高比例法用
+  totalEstimatedUnits?: number; // 預計総生産高
+  currentYearUnits?: number;    // 本年生産高
+}
+
+// 減価償却計算結果の型
+export interface DepreciationResult {
+  assetId: string;
+  depreciationRate: number;       // 償却率
+  currentDepreciation: number;    // 本年分の償却費
+  accumulatedDepreciation: number; // 累計償却費（期末減価償却累計額）
+  bookValue: number;              // 期末残高（未償却残高）
+  allowableLimit: number;         // 償却限度額
+}
+
+// 法定耐用年数に応じた償却率（簡易版：定額法・定率法）
+// 実際には詳細な表が必要ですが、ここでは主要な年数のみ定義
+const DEPRECIATION_RATES: Record<number, { straightLine: number; decliningBalance: number }> = {
+  2: { straightLine: 0.500, decliningBalance: 1.000 },
+  3: { straightLine: 0.334, decliningBalance: 0.667 }, // 改定償却率等は省略
+  4: { straightLine: 0.250, decliningBalance: 0.500 },
+  5: { straightLine: 0.200, decliningBalance: 0.400 },
+  6: { straightLine: 0.167, decliningBalance: 0.333 },
+  8: { straightLine: 0.125, decliningBalance: 0.250 },
+  10: { straightLine: 0.100, decliningBalance: 0.200 },
+  12: { straightLine: 0.084, decliningBalance: 0.167 },
+  15: { straightLine: 0.067, decliningBalance: 0.133 },
+  20: { straightLine: 0.050, decliningBalance: 0.100 },
+  22: { straightLine: 0.046, decliningBalance: 0.091 }, // 22年（木造建物等）
+};
+
 // 法人税の税率（2024/2025年度）
 const CORPORATE_TAX_RATES = {
   // 中小法人（資本金1億円以下）
@@ -298,6 +341,80 @@ export function calculateConsumptionTax(
     netConsumptionTax,
     localConsumptionTax,
     totalConsumptionTax: netConsumptionTax + localConsumptionTax,
+  };
+}
+
+/**
+ * 減価償却費を計算
+ */
+export function calculateDepreciation(asset: DepreciationAsset): DepreciationResult {
+  const {
+    acquisitionCost,
+    depreciationMethod,
+    usefulLife,
+    businessRatio,
+    currentYearMonths,
+  } = asset;
+
+  // 1. 償却率の取得
+  let rate = 0;
+  if (depreciationMethod === 'lumpSum') {
+     // 一括償却資産（3年均等）
+     rate = 1 / 3;
+  } else if (depreciationMethod === 'immediateSME') {
+     // 少額減価償却資産の特例（30万円未満、即時償却）
+     rate = 1.0;
+  } else if (depreciationMethod === 'leasePeriod') {
+     // リース期間定額法
+     rate = 1 / usefulLife;
+  } else if (depreciationMethod === 'unitsOfProduction') {
+     // 生産高比例法
+     if (asset.totalEstimatedUnits && asset.totalEstimatedUnits > 0) {
+       rate = (asset.currentYearUnits || 0) / asset.totalEstimatedUnits;
+     }
+  } else if (DEPRECIATION_RATES[usefulLife]) {
+    const methods = DEPRECIATION_RATES[usefulLife];
+    if (depreciationMethod === 'straightLine' || depreciationMethod === 'decliningBalance') {
+      rate = methods[depreciationMethod];
+    } else {
+      rate = 1 / usefulLife;
+    }
+  } else {
+    rate = 1 / usefulLife;
+  }
+
+  // 2. 本年分の償却費計算
+  let currentDepreciation = 0;
+
+  if (depreciationMethod === 'lumpSum') {
+    currentDepreciation = Math.floor(acquisitionCost * rate);
+  } else if (depreciationMethod === 'immediateSME') {
+    currentDepreciation = acquisitionCost;
+  } else if (depreciationMethod === 'unitsOfProduction') {
+    // 生産高比例法：取得価額 × (本年利用量 / 推定総利用量)
+    currentDepreciation = Math.floor(acquisitionCost * rate);
+  } else if (depreciationMethod === 'straightLine' || depreciationMethod === 'leasePeriod') {
+    currentDepreciation = Math.floor(acquisitionCost * rate * (currentYearMonths / 12));
+  } else {
+    // 定率法
+    currentDepreciation = Math.floor(acquisitionCost * rate * (currentYearMonths / 12));
+  }
+
+  // 事業専用割合の適用
+  currentDepreciation = Math.floor(currentDepreciation * (businessRatio / 100));
+
+  // 3. 期末残高（未償却残高）の計算
+  // 簡易的に「取得価額 - 当期償却額」とする（過去分は考慮していないため、運用で調整が必要）
+  // ※本来は「期首残高 - 当期償却額」
+  const bookValue = Math.max(1, acquisitionCost - currentDepreciation); // 備忘価額1円を残す
+
+  return {
+    assetId: asset.id,
+    depreciationRate: rate,
+    currentDepreciation,
+    accumulatedDepreciation: currentDepreciation, // 簡易
+    bookValue,
+    allowableLimit: currentDepreciation, // 簡易
   };
 }
 

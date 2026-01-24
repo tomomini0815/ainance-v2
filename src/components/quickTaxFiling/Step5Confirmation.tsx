@@ -98,6 +98,12 @@ const Step5Confirmation: React.FC<Step5ConfirmationProps> = ({ data, onBack, onC
                                 </div>
                             ) : null;
                         })}
+                        {data.depreciation ? (
+                            <div className="flex justify-between py-1 text-primary">
+                                <span className="text-text-muted">減価償却費</span>
+                                <span className="font-medium">¥{data.depreciation.toLocaleString()}</span>
+                            </div>
+                        ) : null}
                         <div className="flex justify-between pt-2 border-t border-border">
                             <span className="text-text-main font-semibold">合計</span>
                             <span className="text-text-main font-semibold">
