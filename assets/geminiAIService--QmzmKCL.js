@@ -1,0 +1,1 @@
+async function e(n,a){return console.warn("Gemini API Keyが設定されていません。ルールベースの分析にフォールバックします。"),null}async function t(n){return null}function i(){return!1}async function s(n){return null}export{e as a,t as b,i,s as p};
