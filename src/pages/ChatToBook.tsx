@@ -1207,7 +1207,7 @@ const ChatToBook: React.FC = () => {
                           className="w-24 px-2 py-1 bg-background border border-border rounded text-sm text-text-main text-right"
                         />
                       ) : (
-                        <span className={`font-medium ${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
+                        <span className={`font-medium ${transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}`}>
                           {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
                         </span>
                       )}
@@ -1411,7 +1411,7 @@ const ChatToBook: React.FC = () => {
                               onClick={() => recordTransaction(transaction)}
                               className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${transaction.approval_status === 'approved'
                                 ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
-                                : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white shadow-md active:scale-95 border border-emerald-500/20'
+                                : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white shadow-md active:scale-95'
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
@@ -1421,7 +1421,7 @@ const ChatToBook: React.FC = () => {
                               onClick={() => handleEdit(transaction)}
                               className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${transaction.approval_status === 'approved'
                                 ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
-                                : 'bg-primary/10 text-primary hover:bg-primary hover:text-white shadow-md active:scale-95 border border-primary/20'
+                                : 'bg-primary/10 text-primary hover:bg-primary hover:text-white shadow-md active:scale-95'
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
@@ -1431,7 +1431,7 @@ const ChatToBook: React.FC = () => {
                               onClick={() => handleDelete(transaction.id)}
                               className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${transaction.approval_status === 'approved'
                                 ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
-                                : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white shadow-md active:scale-95 border border-rose-500/20'
+                                : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white shadow-md active:scale-95'
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >

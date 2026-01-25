@@ -202,7 +202,7 @@ const TransactionInbox: React.FC = () => {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div className={`text-xl font-bold leading-none ${t.type === 'expense' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                                <div className={`text-xl font-bold leading-none ${t.type === 'expense' ? 'text-red-500' : 'text-emerald-500'}`}>
                                                     {t.type === 'expense' ? '-' : '+'}¥{Math.abs(t.amount).toLocaleString()}
                                                 </div>
                                             </div>
@@ -220,7 +220,7 @@ const TransactionInbox: React.FC = () => {
                                         <button
                                             onClick={() => handleApprove(t.id)}
                                             disabled={!!processingId}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95 border border-emerald-500/20"
+                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
                                             title="承認"
                                         >
                                             <Check className="w-5 h-5" />
@@ -228,7 +228,7 @@ const TransactionInbox: React.FC = () => {
                                         <button
                                             onClick={() => handleEditClick(t)}
                                             disabled={!!processingId}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95 border border-primary/20"
+                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95"
                                             title="編集"
                                         >
                                             <Edit2 className="w-5 h-5" />
@@ -236,7 +236,7 @@ const TransactionInbox: React.FC = () => {
                                         <button
                                             onClick={() => handleReject(t.id)}
                                             disabled={!!processingId}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95 border border-rose-500/20"
+                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
                                             title="削除"
                                         >
                                             <X className="w-5 h-5" />
@@ -313,7 +313,7 @@ const TransactionInbox: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-right font-bold whitespace-nowrap">
-                                                <span className={t.type === 'expense' ? 'text-rose-400' : 'text-emerald-400'}>
+                                                <span className={t.type === 'expense' ? 'text-red-500' : 'text-emerald-500'}>
                                                     {t.type === 'expense' ? '-' : '+'}¥{Math.abs(t.amount).toLocaleString()}
                                                 </span>
                                             </td>
@@ -358,17 +358,7 @@ const TransactionInbox: React.FC = () => {
             )}
 
             {/* AI Tips */}
-            <div className="mt-8 bg-gradient-to-br from-purple-500/5 to-blue-500/5 border border-border rounded-2xl p-6">
-                <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="w-5 h-5 text-purple-500" />
-                    <h3 className="font-semibold text-text-main text-sm">AIからのヒント</h3>
-                </div>
-                <p className="text-sm text-text-muted leading-relaxed">
-                    レシートスキャンやチャットで記録されたデータは、AIが自動で判断しています。
-                    内容が不正確な場合は、編集アイコンから正しい情報に修正してから承認してください。
-                    (※編集機能は現在開発中です。削除して再入力をお願いします)
-                </p>
-            </div>
+
             {/* 編集モーダル */}
             {isEditModalOpen && editingTransaction && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
