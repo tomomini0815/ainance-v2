@@ -40,11 +40,12 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
     const currentYear = now.getFullYear();
 
     if (period === 'monthly') {
-      // 過去12ヶ月
-      const startYear = now.getMonth() >= 11 ? currentYear : currentYear - 1;
-      const startMonth = now.getMonth() >= 11 ? 0 : now.getMonth() + 1;
+      // 過去13ヶ月 (前年同月を含むため)
+      // 今日が2026年1月の場合、2025年1月〜2026年1月を表示
+      const startYear = now.getMonth() >= 12 ? currentYear : currentYear - 1;
+      const startMonth = now.getMonth(); // 現在の月に合わせる。12ヶ月前 = 同じ月
 
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 13; i++) {
         const d = new Date(startYear, startMonth + i, 1);
         const key = `${d.getFullYear()}年${d.getMonth() + 1}月`;
         labels.push(key);

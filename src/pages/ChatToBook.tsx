@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mic, Square, Send, Trash2, Edit3, Save, CheckCircle, Circle } from 'lucide-react';
+import { ArrowLeft, Mic, Square, Send, Trash2, Edit3, Save, CheckCircle, Circle, ArrowUpDown, AlertCircle } from 'lucide-react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessType } from '../hooks/useBusinessType';
 import { useAuth } from '../hooks/useAuth';
+import toast from 'react-hot-toast';
 
 interface Transaction {
   id: string;
@@ -17,6 +18,9 @@ interface Transaction {
   approval_status?: 'pending' | 'approved' | 'rejected'; // 型を明確に指定
 }
 
+type SortKey = 'date' | 'created_at';
+type SortDirection = 'asc' | 'desc';
+
 const ChatToBook: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -28,6 +32,12 @@ const ChatToBook: React.FC = () => {
   // const [approvedTransactions, setApprovedTransactions] = useState<string[]>([]); // 承認された取引のIDを管理
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 選択されたカテゴリを管理
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージを管理
+  // ソート設定（デフォルトは作成日時降順＝新しいものが上）
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({
+    key: 'created_at',
+    direction: 'desc'
+  });
+
   const recognitionRef = useRef<any>(null);
   const { user } = useAuth();
   const { currentBusinessType } = useBusinessType(user?.id);
@@ -42,6 +52,35 @@ const ChatToBook: React.FC = () => {
     fetchTransactions
   } = useTransactions(user?.id, currentBusinessType?.business_type);
   const navigate = useNavigate();
+
+  // ソート関数
+  const handleSort = (key: SortKey) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
+
+  // ソートされた取引データ
+  const sortedTransactions = React.useMemo(() => {
+    return transactions
+      .filter(t => t.approval_status !== 'approved')
+      .sort((a, b) => {
+        const direction = sortConfig.direction === 'asc' ? 1 : -1;
+
+        if (sortConfig.key === 'created_at') {
+          // created_atがない場合は新しいものとして扱う（一時データなど）
+          const dateA = a.created_at ? new Date(a.created_at).getTime() : Date.now();
+          const dateB = b.created_at ? new Date(b.created_at).getTime() : Date.now();
+          return (dateA - dateB) * direction;
+        }
+
+        // 日付ソート
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return (dateA - dateB) * direction;
+      });
+  }, [transactions, sortConfig]);
 
   // 音声認識の初期化
   useEffect(() => {
@@ -222,9 +261,105 @@ const ChatToBook: React.FC = () => {
   // 音声テキストから取引情報を抽出
   const extractTransactionData = (text: string) => {
     console.log('extractTransactionData - text:', text);
-    // 金額を抽出（数字に万、千などの単位がつく場合も考慮）
-    const amountPattern = /(\d+(?:万)?(?:千)?(?:円)?)/g;
-    const amounts = text.match(amountPattern);
+
+    let processingText = text;
+    let targetDate = new Date();
+
+    // 1. 日付を抽出して除去
+    const datePattern = /(\d{1,2})月(\d{1,2})日/;
+    const dateMatch = processingText.match(datePattern);
+
+    if (dateMatch) {
+      const month = parseInt(dateMatch[1], 10);
+      const day = parseInt(dateMatch[2], 10);
+      const currentYear = targetDate.getFullYear();
+      targetDate = new Date(currentYear, month - 1, day);
+
+      // 未来の日付になってしまった場合、去年の日付とする
+      // 例: 現在1月で「12月」と言われた場合、今年の12月（未来）ではなく去年の12月とする
+      const today = new Date();
+      if (targetDate > today) {
+        targetDate.setFullYear(currentYear - 1);
+      }
+
+      // テキストから日付を除去
+      processingText = processingText.replace(dateMatch[0], '');
+    } else {
+      // 相対日付の処理
+      const yesterdayMatch = processingText.match(/(昨日|一昨日|おととい)/);
+      if (yesterdayMatch) {
+        if (yesterdayMatch[0] === '昨日') {
+          targetDate.setDate(targetDate.getDate() - 1);
+        } else {
+          targetDate.setDate(targetDate.getDate() - 2);
+        }
+        // テキストから除去
+        processingText = processingText.replace(yesterdayMatch[0], '');
+      }
+      // "今日"も除去しておく
+      processingText = processingText.replace('今日', '');
+    }
+
+    // 日付フォーマット
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const day = String(targetDate.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+
+    // 2. 金額を抽出（残りのテキストから）
+    // "15万6000円", "1万5千円", "1000円", "15000" などのパターンに対応
+    const amountPattern = /(\d+(?:万\d*)?(?:千\d*)?円?)/g;
+    const amounts = processingText.match(amountPattern);
+
+    let amount = 0;
+    if (amounts && amounts.length > 0) {
+      // 最も長い一致（情報量が多いもの）を採用する戦略
+      // 例: "15万6000円" と "6000円" がマッチした場合、前者を採用
+      const amountText = amounts.reduce((a, b) => a.length >= b.length ? a : b);
+
+      // テキストから除去
+      processingText = processingText.replace(amountText, '');
+
+      // 金額パースロジック
+      let tempAmount = 0;
+      let currentText = amountText;
+
+      // "万"の処理
+      if (currentText.includes('万')) {
+        const parts = currentText.split('万');
+        const manPart = parts[0];
+        const manValue = parseFloat(manPart.replace(/[^\d.]/g, '')) || 0;
+        tempAmount += manValue * 10000;
+        currentText = parts[1] || ''; // 残りの部分
+      }
+
+      // "千"の処理
+      if (currentText.includes('千')) {
+        const parts = currentText.split('千');
+        const senPart = parts[0];
+        // "1千" のように数字がある場合と、単に "千" (1000) の場合があるが、
+        // 前の正規表現で \d+千 としているので数字はあるはず
+        // ただし "万" の後ろがすぐ "千" の場合（例: 1万千円? あまりないが）のケア
+        // ここではシンプルに数字があれば掛ける
+        let senValue = 1;
+        if (senPart) {
+          senValue = parseFloat(senPart.replace(/[^\d.]/g, '')) || 1; // 数字がなければ1000? いや \d+千 なので数字はある
+        }
+        tempAmount += senValue * 1000;
+        currentText = parts[1] || '';
+      }
+
+      // 残りの数字（円や100未満の端数など）
+      if (currentText) {
+        const restValue = parseFloat(currentText.replace(/[^\d.]/g, '')) || 0;
+        tempAmount += restValue;
+      }
+
+      amount = tempAmount;
+    }
+
+    // 3. カテゴリ検出 (元のテキスト全体で判定しても良いが、誤検知減らすなら処理後の方がいいかも？
+    // 一旦元のテキストで判定（文脈重要なので）
 
     // TransactionForm.tsxのカテゴリオプションを参考にカテゴリマッピングを作成
     const categoryMapping: Array<{ keywords: string[]; category: string; type: 'income' | 'expense'; priority: number }> = [
@@ -258,7 +393,7 @@ const ChatToBook: React.FC = () => {
     let detectedType: 'income' | 'expense' = 'expense';
     let maxPriority = 0;
 
-    // カテゴリを検出
+    // カテゴリを検出 (元のテキストを使う方がキーワードを見つけやすい)
     for (const mapping of categoryMapping) {
       for (const keyword of mapping.keywords) {
         if (text.includes(keyword) && mapping.priority > maxPriority) {
@@ -269,28 +404,19 @@ const ChatToBook: React.FC = () => {
       }
     }
 
-    // 金額を数値に変換
-    let amount = 0;
-    if (amounts && amounts.length > 0) {
-      const amountText = amounts[0];
-      // 「万円」や「千円」の処理
-      if (amountText.includes('万')) {
-        const number = parseFloat(amountText.replace('万', ''));
-        amount = isNaN(number) ? 0 : number * 10000;
-      } else if (amountText.includes('千')) {
-        const number = parseFloat(amountText.replace('千', ''));
-        amount = isNaN(number) ? 0 : number * 1000;
-      } else {
-        amount = parseFloat(amountText.replace(/[^\d]/g, '')) || 0;
-      }
-    }
+    // 残ったテキストを説明文として整形
+    const description = processingText.trim();
 
-    // 日付の処理（今日の日付をデフォルトとする）
-    const today = new Date().toISOString().split('T')[0];
+    // 表示用の日付文字列
+    let dateDisplay = '今日';
+    if (text.includes('昨日')) dateDisplay = '昨日';
+    else if (text.includes('一昨日') || text.includes('おととい')) dateDisplay = '一昨日';
+    else if (dateMatch) dateDisplay = `${dateMatch[1]}月${dateMatch[2]}日`;
 
     return {
-      date: today,
-      description: text,
+      date: formattedDate,
+      dateDisplay,
+      description, // クリーニング済みのテキスト
       amount,
       category: detectedCategory,
       type: detectedType
@@ -316,8 +442,7 @@ const ChatToBook: React.FC = () => {
       // ここでは簡略化のためにクライアント側で処理
       const transactionData = extractTransactionData(transcript);
 
-      // 金額から数字部分を除去した説明文を作成
-      const cleanedDescription = transactionData.description.replace(/(\d+(?:万)?(?:千)?(?:円)?)/g, '').trim();
+      const cleanedDescription = transactionData.description;
 
       console.log('processTranscript - データベースに保存中:', {
         item: cleanedDescription,
@@ -335,7 +460,8 @@ const ChatToBook: React.FC = () => {
         category: selectedCategory || transactionData.category,
         type: transactionData.type,
         creator: user.id,
-        approval_status: 'approved' // 作成時に承認状態にする
+        approval_status: 'pending', // インボックスで確認するためpendingにする
+        tags: ['voice'] // 音声入力のタグを追加
       });
 
       console.log('processTranscript - 保存結果:', result);
@@ -496,7 +622,10 @@ const ChatToBook: React.FC = () => {
         window.dispatchEvent(new CustomEvent('transactionApproved'));
 
         console.log('recordTransaction - 取引を承認しました');
-        alert('取引が正常に承認されました');
+        toast.success('取引を登録しました。取引履歴から確認できます。', {
+          id: 'transaction-registration',
+          duration: 6000
+        });
 
         // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
         await fetchTransactions();
@@ -528,7 +657,10 @@ const ChatToBook: React.FC = () => {
         setTransactions(prev => prev.filter(t => t.id !== transaction.id));
 
         console.log('recordTransaction - 新規取引を作成しました');
-        alert('取引が正常に作成されました');
+        toast.success('取引を登録しました。取引履歴から確認できます。', {
+          id: 'transaction-registration',
+          duration: 6000
+        });
 
         // データの再取得を強制的に実行して、最近の履歴と取引履歴ページにデータを反映
         await fetchTransactions();
@@ -615,7 +747,8 @@ const ChatToBook: React.FC = () => {
           category: transaction.category,
           type: transaction.type,
           creator: user.id, // 認証されたユーザーのIDを使用
-          approval_status: 'approved' // 作成時に承認状態にする
+          approval_status: 'pending', // インボックスで確認するためpendingにする
+          tags: ['voice'] // 音声入力のタグを追加
         });
       });
 
@@ -661,9 +794,15 @@ const ChatToBook: React.FC = () => {
       });
 
       if (totalFailed > 0) {
-        alert(`${totalSuccessful}件の取引が正常に記録されましたが、${totalFailed}件の取引の記録に失敗しました。詳細はコンソールを確認してください。`);
+        toast.error(`${totalSuccessful}件の取引が記録されましたが、${totalFailed}件に失敗しました。`, {
+          id: 'transaction-registration',
+          duration: 6000
+        });
       } else {
-        alert(`${totalSuccessful}件の取引が正常に記録されました`);
+        toast.success(`${totalSuccessful}件の取引を登録しました。取引履歴から確認できます。`, {
+          id: 'transaction-registration',
+          duration: 6000
+        });
       }
 
       // ローカル状態も更新
@@ -790,7 +929,7 @@ const ChatToBook: React.FC = () => {
             <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-text-main">CHAT-TO-BOOK</h1>
+            <h1 className="text-2xl font-bold text-text-main">音声で記録</h1>
             <p className="text-text-muted">音声やチャットで簡単に取引を記録できます</p>
           </div>
         </div>
@@ -798,9 +937,11 @@ const ChatToBook: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* 音声入力セクション */}
           <div className="lg:col-span-2 bg-surface rounded-xl shadow-sm border border-border p-6">
-            <h2 className="text-lg font-semibold text-text-main mb-4">音声入力</h2>
+            <h2 className="text-lg font-semibold text-text-main mb-4">音声で記録</h2>
 
             <div className="mb-4">
+
+
               <div className="flex items-center justify-center mb-4">
                 <button
                   onClick={isListening ? stopListening : startListening}
@@ -842,7 +983,10 @@ const ChatToBook: React.FC = () => {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-muted mb-2">認識テキスト</label>
+              <label className="block text-sm font-medium text-text-muted mb-2">
+                認識テキスト
+                <span className="text-xs font-normal ml-2 text-primary">（例：5月2日 ランチ 1500円）</span>
+              </label>
               <textarea
                 value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
@@ -852,7 +996,8 @@ const ChatToBook: React.FC = () => {
               />
 
               {/* カテゴリタグ */}
-              <div className="mt-3 flex flex-wrap gap-2">
+              <label className="block text-sm font-medium text-text-muted mt-3 mb-2">カテゴリ選択</label>
+              <div className="flex flex-wrap gap-2">
                 {[
                   '売上', '給与', '交通費', '食費', '消耗品費',
                   '接待交際費', '通信費', '水道光熱費', '雑費', '未分類'
@@ -923,7 +1068,7 @@ const ChatToBook: React.FC = () => {
                     <span className="text-primary font-bold text-xs">1</span>
                   </div>
                   <div>
-                    <h3 className="font-medium text-text-main text-sm mb-1">音声入力開始</h3>
+                    <h3 className="font-semibold text-text-main group-hover:text-primary transition-colors">音声記録開始</h3>
                     <p className="text-xs text-text-muted">マイクボタンをクリックして、取引内容を話してください。</p>
                   </div>
                 </div>
@@ -945,6 +1090,17 @@ const ChatToBook: React.FC = () => {
                     <span className="text-primary font-bold text-xs">3</span>
                   </div>
                   <div>
+                    <h3 className="font-medium text-text-main text-sm mb-1">カテゴリ選択</h3>
+                    <p className="text-xs text-text-muted">必要に応じてカテゴリを選択してください。</p>
+                  </div>
+                </div>
+              </div>
+              <div className="border border-border rounded-lg p-3">
+                <div className="flex items-start">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                    <span className="text-primary font-bold text-xs">4</span>
+                  </div>
+                  <div>
                     <h3 className="font-medium text-text-main text-sm mb-1">取引に変換</h3>
                     <p className="text-xs text-text-muted">「取引に変換」ボタンをクリックして、取引を登録してください。</p>
                   </div>
@@ -956,13 +1112,19 @@ const ChatToBook: React.FC = () => {
 
         {/* 取引一覧セクション */}
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
-          <h2 className="text-lg font-semibold text-text-main mb-4">取引一覧</h2>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-text-main">取引一覧</h2>
+            <p className="text-sm text-text-muted mt-1">
+              内容を確認し、表の「登録」ボタンをクリックして記帳を確定してください。
+            </p>
+          </div>
 
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-2">
-              <p className="text-sm text-text-muted">
-                {transactions.length}件の取引
-              </p>
+              <span className="flex items-center gap-1.5 text-sm font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {sortedTransactions.length}件の未完了取引
+              </span>
               {selectedTransactions.length > 0 && (
                 <span className="text-sm text-primary">
                   {selectedTransactions.length}件選択中
@@ -993,7 +1155,7 @@ const ChatToBook: React.FC = () => {
 
           <div className="overflow-x-auto">
             <div className="block md:hidden space-y-4">
-              {transactions.map((transaction) => (
+              {sortedTransactions.map((transaction) => (
                 <div key={transaction.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center">
@@ -1132,7 +1294,15 @@ const ChatToBook: React.FC = () => {
                         )}
                       </button>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">日付</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
+                      <button
+                        className="flex items-center gap-1 hover:text-text-main transition-colors"
+                        onClick={() => handleSort('date')}
+                      >
+                        日付
+                        <ArrowUpDown className="w-3 h-3" />
+                      </button>
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">説明</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
@@ -1140,7 +1310,7 @@ const ChatToBook: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-surface divide-y divide-border">
-                  {transactions.map((transaction) => (
+                  {sortedTransactions.map((transaction) => (
                     <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
                       <td className="px-4 py-3 text-sm">
                         <button
@@ -1215,41 +1385,58 @@ const ChatToBook: React.FC = () => {
                             <option value="未分類">未分類</option>
                           </select>
                         ) : (
-                          transaction.category
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border whitespace-nowrap">
+                            {transaction.category}
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium">
                         {editingId === transaction.id ? (
-                          <button
-                            onClick={handleSave}
-                            className="text-green-500 hover:text-green-600 mr-2"
-                          >
-                            <Save className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={handleSave}
+                              className="p-2 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                            >
+                              <Save className="w-4 h-4" />
+                              保存
+                            </button>
+                          </div>
                         ) : (
-                          <>
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => recordTransaction(transaction)}
-                              className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
+                              className={`p-2 rounded-lg transition-all flex items-center gap-1 text-xs whitespace-nowrap ${transaction.approval_status === 'approved'
+                                ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
+                                : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white shadow-sm'
+                                }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
                               <CheckCircle className="w-4 h-4" />
+                              登録
                             </button>
                             <button
                               onClick={() => handleEdit(transaction)}
-                              className={`mr-2 ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
+                              className={`p-2 rounded-lg transition-all flex items-center gap-1 text-xs whitespace-nowrap ${transaction.approval_status === 'approved'
+                                ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
+                                : 'bg-primary/10 text-primary hover:bg-primary hover:text-white shadow-sm'
+                                }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
                               <Edit3 className="w-4 h-4" />
+                              編集
                             </button>
                             <button
                               onClick={() => handleDelete(transaction.id)}
-                              className={transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}
+                              className={`p-2 rounded-lg transition-all flex items-center gap-1 text-xs whitespace-nowrap ${transaction.approval_status === 'approved'
+                                ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
+                                : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white shadow-sm'
+                                }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
                               <Trash2 className="w-4 h-4" />
+                              削除
                             </button>
-                          </>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -1266,8 +1453,8 @@ const ChatToBook: React.FC = () => {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
 

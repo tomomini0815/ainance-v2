@@ -1,9 +1,9 @@
 import React, { useEffect, useState, Suspense, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import QuickActions from '../components/QuickActions'
 import { useTransactions } from '../hooks/useTransactions'
 import { useAuth } from '../hooks/useAuth'
-import { Download, Plus, Sparkles, Inbox } from 'lucide-react'
+import { Plus, Sparkles, Inbox, FileText, TrendingUp, TrendingDown, Wallet } from 'lucide-react'
 import { AIStatusBadge } from '../components/AIStatusComponents'
 import { isAIEnabled } from '../services/geminiAIService'
 
@@ -11,7 +11,6 @@ import { isAIEnabled } from '../services/geminiAIService'
 const RevenueChart = React.lazy(() => import('../components/RevenueChart'));
 const ExpenseChart = React.lazy(() => import('../components/ExpenseChart'));
 const TransactionTable = React.lazy(() => import('../components/TransactionTable'));
-const TransactionForm = React.lazy(() => import('../components/TransactionForm'));
 const OmniEntryPortal = React.lazy(() => import('../components/OmniEntryPortal'));
 
 // Preload components
@@ -22,7 +21,7 @@ import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 const Dashboard: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext();
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
-  const { transactions, loading, createTransaction, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
+  const { transactions, loading, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   console.log('ダッシュボード - currentBusinessType:', currentBusinessType);
@@ -233,78 +232,6 @@ const Dashboard: React.FC = () => {
     return <DashboardSkeleton />;
   }
 
-  const convertToCSV = (data: any[]): string => {
-    const headers = ['日付', '説明', '金額', 'カテゴリ', 'タイプ', 'ステータス'];
-    const rows = data.map(transaction => [
-      transaction.date,
-      `"${transaction.description}"`,
-      transaction.amount.toString(),
-      `"${transaction.category}"`,
-      transaction.type,
-      transaction.status
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
-
-    return csvContent;
-  };
-
-  const downloadCSV = () => {
-    const csvContent = convertToCSV(transactions);
-    const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `取引データ_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleCreateTransaction = async (transactionData: any) => {
-    try {
-      console.log('取引作成を開始:', transactionData);
-
-      // creatorフィールドをローカルストレージから取得したユーザー情報で設定
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          const userData = JSON.parse(storedUser);
-          transactionData.creator = userData.id;
-        } catch (error) {
-          console.error('ユーザー情報の解析に失敗しました:', error);
-        }
-      }
-
-      console.log('creator IDを設定:', transactionData.creator);
-
-      // typeプロパティが設定されていない場合、amountの正負で判断
-      if (!transactionData.type) {
-        const amount = typeof transactionData.amount === 'string' ? parseFloat(transactionData.amount) : transactionData.amount;
-        transactionData.type = amount > 0 ? 'income' : 'expense';
-        console.log('typeプロパティを自動設定:', transactionData.type);
-      }
-
-      const result = await createTransaction(transactionData);
-      console.log('取引作成成功:', result);
-
-      // データの再取得
-      await fetchTransactions();
-
-      // カスタムイベントを発火して他のコンポーネントでデータを再取得
-      window.dispatchEvent(new CustomEvent('transactionRecorded'));
-
-      setShowCreateForm(false);
-    } catch (error: any) {
-      console.error('取引の作成に失敗:', error);
-      alert(`取引の作成に失敗しました: ${error.message || 'もう一度お試しください。'}`);
-    }
-  };
-
   return (
     <div className="min-h-screen">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
@@ -319,21 +246,17 @@ const Dashboard: React.FC = () => {
           {stats.pendingCount > 0 && (
             <Link
               to="/transaction-inbox"
-              className="btn-tertiary flex-1 sm:flex-none flex items-center justify-center relative bg-orange-500/10 border-orange-500/20 text-orange-600"
+              className="group relative inline-flex items-center justify-center gap-2 px-4 py-2 font-medium rounded-lg bg-white dark:bg-surface border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:border-red-300 transition-all duration-200 shadow-sm active:scale-[0.98]"
             >
-              <Inbox className="w-4 h-4 mr-2" />
-              確認待ち ({stats.pendingCount})
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-white"></span>
+              <Inbox className="w-4 h-4" />
+              <span>確認待ち</span>
+              <span className="flex items-center justify-center bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-xs font-bold min-w-[20px]">
+                {stats.pendingCount}
+              </span>
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-white dark:border-surface"></span>
             </Link>
           )}
-          <button
-            onClick={downloadCSV}
-            disabled={transactions.length === 0}
-            className={`btn-ghost flex-1 sm:flex-none flex items-center justify-center ${transactions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            CSV出力
-          </button>
+          {/* CSV出力はインポートページに移動しました */}
           <button
             onClick={() => setShowCreateForm(true)}
             className="btn-primary flex-1 sm:flex-none flex items-center justify-center"
@@ -347,8 +270,8 @@ const Dashboard: React.FC = () => {
       <QuickActions />
 
       {/* 統計カード - 一旦非表示 */}
-      {/* <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow mb-8">
-        <div className="grid grid-cols-2 gap-4">
+      <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div className="text-xs font-medium text-text-muted">総取引数</div>
@@ -356,7 +279,7 @@ const Dashboard: React.FC = () => {
                 <FileText className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <div className="text-lg font-bold text-primary mt-1">{stats.total}</div>
+            <div className="text-lg font-bold text-primary mt-1">{stats.total}件</div>
           </div>
           <div className="border border-border rounded-lg p-3">
             <div className="flex items-center justify-between">
@@ -380,7 +303,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="text-xs font-medium text-text-muted">収支</div>
               <div className={`rounded-lg p-2 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
-                <JapaneseYen className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                <Wallet className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
             </div>
             <div className={`text-lg font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
@@ -388,7 +311,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </div> */}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Suspense fallback={<div className="h-80 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>

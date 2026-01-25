@@ -5,6 +5,7 @@
 
 import { PDFDocument, rgb, PDFFont } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
+import { TaxReturnInputData } from '../types/taxReturnInput';
 
 // 経費カテゴリのマッピング（日本語）
 export const EXPENSE_CATEGORIES_JP: { [key: string]: string } = {
@@ -81,6 +82,9 @@ export interface JpTaxFormData {
   // その他
   fiscalYear: number;
   isBlueReturn?: boolean;
+
+  // 手動入力データ (拡張)
+  manualData?: TaxReturnInputData;
 }
 
 // 日本語フォントをロード

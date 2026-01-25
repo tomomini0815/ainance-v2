@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Plus, FileText } from 'lucide-react'
+import { ChevronRight, Plus, FileText, Repeat } from 'lucide-react'
 import { useTransactions } from '../hooks/useTransactions'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useAuth } from '../hooks/useAuth'
@@ -32,7 +32,7 @@ interface TransactionTableProps {
 
 const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpenCreateModal, showCreateButton = true }) => {
   const { currentBusinessType } = useBusinessTypeContext();
-  const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+  const { user: authUser } = useAuth();
   const { transactions: fetchedTransactions, loading, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
 
   // データの再取得
@@ -173,7 +173,20 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                   <div className="flex items-start flex-1">
                     {getCategoryIcon(transaction.category)}
                     <div className="flex-1">
-                      <div className="font-medium text-text-main text-sm mb-1">{transaction.item}</div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="font-medium text-text-main text-sm">{transaction.item}</div>
+                        {transaction.recurring && (
+                          <div className="flex items-center gap-1 px-1 py-0.5 rounded bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">
+                            <Repeat className="w-2 h-2" />
+                            <span>{{
+                              'daily': '毎日',
+                              'weekly': '毎週',
+                              'monthly': '毎月',
+                              'yearly': '毎年'
+                            }[transaction.recurring_frequency || 'monthly']}</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="text-xs text-text-muted">
                         {new Date(transaction.date).toLocaleDateString('ja-JP', {
                           year: 'numeric',
@@ -190,12 +203,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${isFinalIncome ?
-                    'bg-green-500/10 text-green-600' :
-                    isFinalExpense ?
-                      'bg-red-500/10 text-red-600' :
-                      'bg-slate-500/10 text-text-muted'
-                    }`}>
+                  <span className="whitespace-nowrap inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-slate-500/10 text-text-muted">
                     {transaction.category}
                   </span>
                 </div>
@@ -238,9 +246,6 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                   amount = 0;
                 }
 
-                // 承認状態をチェック
-                const isApproved = transaction.approval_status === 'approved';
-
                 const isValidAmount = !isNaN(amount) && isFinite(amount);
                 const isExplicitIncome = transaction.type === 'income';
                 const isExplicitExpense = transaction.type === 'expense';
@@ -266,7 +271,20 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                       <div className="flex items-center">
                         {getCategoryIcon(transaction.category)}
                         <div>
-                          <div className="font-medium text-text-main text-sm group-hover:text-white transition-colors">{transaction.item}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium text-text-main text-sm group-hover:text-white transition-colors">{transaction.item}</div>
+                            {transaction.recurring && (
+                              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
+                                <Repeat className="w-2.5 h-2.5" />
+                                <span>{{
+                                  'daily': '毎日',
+                                  'weekly': '毎週',
+                                  'monthly': '毎月',
+                                  'yearly': '毎年'
+                                }[transaction.recurring_frequency || 'monthly']}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -283,12 +301,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                       })}
                     </td>
                     <td className="py-4 px-4 text-center">
-                      <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${isFinalIncome ?
-                        'bg-green-500/10 text-green-600' :
-                        isFinalExpense ?
-                          'bg-red-500/10 text-red-600' :
-                          'bg-slate-500/10 text-text-muted'
-                        }`}>
+                      <span className="whitespace-nowrap inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-slate-500/10 text-text-muted">
                         {transaction.category}
                       </span>
                     </td>

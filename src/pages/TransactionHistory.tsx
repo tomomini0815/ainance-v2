@@ -1,15 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowLeft, Search, Filter, Plus, ChevronDown, Calendar, JapaneseYen, Tag, FileText, Download, Trash2, Edit, TrendingUp, TrendingDown, X, Upload } from 'lucide-react'
+import { ArrowLeft, Search, Filter, Plus, ChevronDown, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat } from 'lucide-react'
 import { useTransactions } from '../hooks/useTransactions'
-import TransactionTable from '../components/TransactionTable'
 import TransactionForm from '../components/TransactionForm'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useAuth } from '../hooks/useAuth'
 
 const TransactionHistory: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext()
-  const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+  const { user: authUser } = useAuth();
   const { transactions, loading, createTransaction, updateTransaction, deleteTransaction, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type)
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -153,96 +152,28 @@ const TransactionHistory: React.FC = () => {
 
   // 統計情報
   const stats = useMemo(() => {
-    console.log('取引履歴 - 取引データ:', transactions);
-
     // amountの値を安全に取得するヘルパー関数
     const getAmountValue = (amount: any): number => {
-      if (typeof amount === 'number') {
-        return amount;
-      }
+      if (typeof amount === 'number') return amount;
       if (typeof amount === 'string') {
-        const parsed = parseFloat(amount);
+        const parsed = parseFloat(amount.replace(/,/g, ''));
         return isNaN(parsed) ? 0 : parsed;
-      }
-      if (typeof amount === 'object' && amount !== null) {
-        // オブジェクトの場合、valueやamountプロパティを探す
-        const objValue = amount.value || amount.amount || amount.number || 0;
-        if (typeof objValue === 'number') {
-          return objValue;
-        }
-        if (typeof objValue === 'string') {
-          const parsed = parseFloat(objValue);
-          return isNaN(parsed) ? 0 : parsed;
-        }
-        return 0;
       }
       return 0;
     };
 
-    // 金額を確実に数値に変換して計算
-    const incomeTransactions = transactions.filter(t => {
-      // typeが'income'の場合を優先
-      if (t.type === 'income') {
-        return true;
-      }
+    const incomeTransactions = transactions.filter(t => t.type === 'income');
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
 
-      // typeが'expense'の場合は除外
-      if (t.type === 'expense') {
-        return false;
-      }
+    const totalIncome = incomeTransactions.reduce((sum, t) => sum + getAmountValue(t.amount), 0);
+    const totalExpense = expenseTransactions.reduce((sum, t) => sum + getAmountValue(t.amount), 0);
 
-      // typeが指定されていない場合のみ、amountが正の数値の場合を収入として扱う
-      const amount = getAmountValue(t.amount);
-      const isValid = !isNaN(amount) && isFinite(amount) && amount > 0;
-      console.log(`取引履歴 - 取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 収入判定=${isValid}`);
-      return isValid;
-    });
-
-    const expenseTransactions = transactions.filter(t => {
-      // typeが'expense'の場合を優先
-      if (t.type === 'expense') {
-        return true;
-      }
-
-      // typeが'income'の場合は除外
-      if (t.type === 'income') {
-        return false;
-      }
-
-      // typeが指定されていない場合のみ、amountが負の数値の場合を支出として扱う
-      const amount = getAmountValue(t.amount);
-      const isValid = !isNaN(amount) && isFinite(amount) && amount < 0;
-      console.log(`取引履歴 - 取引ID ${t.id}: type=${t.type}, 元のamount=${JSON.stringify(t.amount)}, 数値化後=${amount}, 支出判定=${isValid}`);
-      return isValid;
-    });
-
-    const totalIncome = incomeTransactions.reduce((sum, t) => {
-      const amount = getAmountValue(t.amount);
-      const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
-      console.log(`取引履歴 - 収入計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
-      return sum + validAmount;
-    }, 0);
-
-    const totalExpense = expenseTransactions.reduce((sum, t) => {
-      const amount = getAmountValue(t.amount);
-      // 支出の場合は金額を正の値として計算（表示時にマイナスを付ける）
-      const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
-      console.log(`取引履歴 - 支出計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
-      return sum + validAmount;
-    }, 0);
-
-    const result = {
+    return {
       total: transactions.length,
       income: totalIncome,
       expense: totalExpense,
       balance: totalIncome - totalExpense
     };
-
-    console.log('取引履歴 - 統計情報計算結果:', result);
-    console.log('取引履歴 - 収入取引:', incomeTransactions);
-    console.log('取引履歴 - 支出取引:', expenseTransactions);
-
-    return result;
   }, [transactions])
 
   // チェックボックス操作
@@ -279,36 +210,12 @@ const TransactionHistory: React.FC = () => {
   // 新規取引の作成
   const handleCreateTransaction = async (transactionData: any) => {
     try {
-      // creatorフィールドをローカルストレージから取得したユーザー情報で設定
-      const storedUser = localStorage.getItem('user')
-      if (storedUser) {
-        try {
-          const userData = JSON.parse(storedUser)
-          transactionData.creator = userData.id
-        } catch (error) {
-          console.error('ユーザー情報の解析に失敗しました:', error)
-        }
-      }
-
-      // typeプロパティが設定されていない場合、amountの正負で判断
-      if (!transactionData.type) {
-        const amount = typeof transactionData.amount === 'string' ? parseFloat(transactionData.amount) : transactionData.amount;
-        transactionData.type = amount > 0 ? 'income' : 'expense';
-        console.log('typeプロパティを自動設定:', transactionData.type);
-      }
-
       await createTransaction(transactionData)
-
-      // データの再取得
       await fetchTransactions();
-
-      // カスタムイベントを発火して他のコンポーネントでデータを再取得
       window.dispatchEvent(new CustomEvent('transactionRecorded'));
-
       setShowCreateForm(false)
     } catch (error) {
       console.error('取引の作成に失敗:', error)
-      // エラーはuseMySQLTransactionsフック内で処理されるため、ここでは追加の処理は不要
     }
   }
 
@@ -316,31 +223,15 @@ const TransactionHistory: React.FC = () => {
   const handleUpdateTransaction = async (transactionData: any) => {
     if (!editingTransaction) return
     try {
-      // 既存のcreator IDを維持する
-      const updatedTransactionData = {
-        ...transactionData,
-        creator: editingTransaction.creator
-      };
+      const result = await updateTransaction(editingTransaction.id, transactionData)
+      if (result.error) throw result.error;
 
-      const result = await updateTransaction(editingTransaction.id, updatedTransactionData)
-
-      if (result.error) {
-        throw result.error;
-      }
-
-      // データの再取得
-      // 少し遅延させてからデータを再取得する
       await new Promise(resolve => setTimeout(resolve, 100));
       await fetchTransactions();
-
-      // カスタムイベントを発火して他のコンポーネントでデータを再取得
-      // 少し遅延させてからカスタムイベントを発火する
-      await new Promise(resolve => setTimeout(resolve, 100));
       window.dispatchEvent(new CustomEvent('transactionRecorded'));
 
       setEditingTransaction(null)
       setShowCreateForm(false)
-      alert('取引が正常に更新されました');
     } catch (error: any) {
       console.error('取引の更新に失敗:', error)
       alert(`取引の更新に失敗しました: ${error.message || '不明なエラーが発生しました'}`);
@@ -375,131 +266,6 @@ const TransactionHistory: React.FC = () => {
     )
   }
 
-  // エラー処理を追加
-  if (!transactions || transactions.length === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* ヘッダー */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-            <div>
-              <div className="flex items-center mb-2">
-                <Link to="/dashboard" className="mr-4 p-2 rounded-lg hover:bg-surface-highlight transition-colors">
-                  <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
-                </Link>
-                <div>
-                  <h1 className="text-3xl font-bold text-text-main">取引履歴</h1>
-                  <p className="text-text-muted mt-1">すべての取引履歴を確認・管理できます</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="btn-primary flex items-center"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                新規取引
-              </button>
-            </div>
-          </div>
-
-          {/* 統計カード */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-            <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-medium text-text-muted">総取引数</div>
-                  <div className="text-xl font-bold mt-1 text-primary">0</div>
-                </div>
-                <div className="rounded-lg bg-primary/5 p-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                </div>
-              </div>
-            </div>
-            <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-medium text-text-muted">収入</div>
-                  <div className="text-xl font-bold mt-1 text-green-500">¥0</div>
-                </div>
-                <div className="rounded-lg bg-green-500/5 p-2">
-                  <TrendingUp className="w-5 h-5 text-green-500" />
-                </div>
-              </div>
-            </div>
-            <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-medium text-text-muted">支出</div>
-                  <div className="text-xl font-bold mt-1 text-red-500">¥0</div>
-                </div>
-                <div className="rounded-lg bg-red-500/5 p-2">
-                  <TrendingDown className="w-5 h-5 text-red-500" />
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl shadow-sm p-4 border border-green-500/20 bg-green-500/5 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-medium text-text-muted">収支</div>
-                  <div className="text-xl font-bold mt-1 text-green-500">¥0</div>
-                </div>
-                <div className="rounded-lg bg-green-500/5 p-2">
-                  <JapaneseYen className="w-5 h-5 text-green-500" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* メッセージ */}
-          <div className="bg-surface rounded-xl shadow-sm border border-border p-8 text-center">
-            <FileText className="w-16 h-16 text-text-muted mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-text-main mb-2">取引が見つかりません</h3>
-            <p className="text-text-muted mb-6">まだ取引が登録されていないか、条件に一致する取引がありません</p>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="btn-primary flex items-center mx-auto"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              最初の取引を追加
-            </button>
-          </div>
-        </main>
-
-        {/* 新規取引作成モーダル（取引がない場合の表示用） */}
-        {showCreateForm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-border">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-text-main">最初の取引を追加</h2>
-                  <button
-                    onClick={() => {
-                      setShowCreateForm(false)
-                      setEditingTransaction(null)
-                    }}
-                    className="p-2 rounded-lg hover:bg-surface-highlight transition-colors"
-                  >
-                    <X className="w-5 h-5 text-text-muted" />
-                  </button>
-                </div>
-                <TransactionForm
-                  transaction={editingTransaction}
-                  onSubmit={handleCreateTransaction}
-                  onCancel={() => {
-                    setShowCreateForm(false)
-                    setEditingTransaction(null)
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -529,7 +295,7 @@ const TransactionHistory: React.FC = () => {
 
         {/* 統計カード */}
         <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow mb-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="border border-border rounded-lg p-3">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-medium text-text-muted">総取引数</div>
@@ -738,7 +504,20 @@ const TransactionHistory: React.FC = () => {
                         className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
                       />
                       <div>
-                        <div className="font-medium text-text-main">{transaction.item}</div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="font-medium text-text-main">{transaction.item}</div>
+                          {transaction.recurring && (
+                            <div className="flex items-center gap-1 px-1 py-0.5 rounded bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">
+                              <Repeat className="w-2 h-2" />
+                              <span>{{
+                                'daily': '毎日',
+                                'weekly': '毎週',
+                                'monthly': '毎月',
+                                'yearly': '毎年'
+                              }[transaction.recurring_frequency || 'monthly']}</span>
+                            </div>
+                          )}
+                        </div>
                         <div className="text-xs text-text-muted">
                           {new Date(transaction.date).toLocaleDateString('ja-JP', {
                             year: 'numeric',
@@ -756,28 +535,27 @@ const TransactionHistory: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between mt-3">
-                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${transaction.type === 'income'
-                      ? 'bg-green-500/10 text-green-600'
-                      : 'bg-red-500/10 text-red-600'
-                      }`}>
+                    <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full bg-slate-500/10 text-text-muted">
                       {transaction.category}
                     </span>
 
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center gap-2 mt-3">
                       <button
                         onClick={() => {
                           setEditingTransaction(transaction)
                           setShowCreateForm(true)
                         }}
-                        className="p-1.5 rounded-lg transition-colors text-primary hover:text-primary/80 hover:bg-primary/10"
+                        className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
                       >
                         <Edit className="w-4 h-4" />
+                        編集
                       </button>
                       <button
                         onClick={() => deleteTransaction(transaction.id)}
-                        className="p-1.5 rounded-lg transition-colors text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                        className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
                       >
                         <Trash2 className="w-4 h-4" />
+                        削除
                       </button>
                     </div>
                   </div>
@@ -814,72 +592,79 @@ const TransactionHistory: React.FC = () => {
               </thead>
               <tbody className="bg-surface divide-y divide-border">
                 {paginatedTransactions.length > 0 ? (
-                  paginatedTransactions.map((transaction) => {
-                    // 承認状態をチェック
-                    const isApproved = transaction.approval_status === 'approved';
-
-                    return (
-                      <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={selectedTransactions.includes(transaction.id)}
-                            onChange={() => toggleSelectTransaction(transaction.id)}
-                            className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
+                  paginatedTransactions.map((transaction) => (
+                    <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedTransactions.includes(transaction.id)}
+                          onChange={() => toggleSelectTransaction(transaction.id)}
+                          className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
                           <div className="text-sm font-medium text-text-main">{transaction.item}</div>
-                          <div className="text-sm text-text-muted sm:hidden">
-                            {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
-                            {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted hidden sm:table-cell">
+                          {transaction.recurring && (
+                            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
+                              <Repeat className="w-2.5 h-2.5" />
+                              <span>{{
+                                'daily': '毎日',
+                                'weekly': '毎週',
+                                'monthly': '毎月',
+                                'yearly': '毎年'
+                              }[transaction.recurring_frequency || 'monthly']}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-sm text-text-muted sm:hidden">
                           {new Date(transaction.date).toLocaleDateString('ja-JP', {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric'
                           })}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${transaction.type === 'income'
-                            ? 'bg-green-500/10 text-green-600'
-                            : 'bg-red-500/10 text-red-600'
-                            }`}>
-                            {transaction.category}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
-                          <div className="flex items-center justify-center space-x-2">
-                            <button
-                              onClick={() => {
-                                setEditingTransaction(transaction)
-                                setShowCreateForm(true)
-                              }}
-                              className="p-2 rounded-lg transition-colors text-primary hover:text-primary/80 hover:bg-primary/10"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => deleteTransaction(transaction.id)}
-                              className="p-2 rounded-lg transition-colors text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+                          {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted hidden sm:table-cell">
+                        {new Date(transaction.date).toLocaleDateString('ja-JP', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="whitespace-nowrap px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full bg-slate-500/10 text-text-muted">
+                          {transaction.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingTransaction(transaction)
+                              setShowCreateForm(true)
+                            }}
+                            className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                          >
+                            <Edit className="w-4 h-4" />
+                            編集
+                          </button>
+                          <button
+                            onClick={() => deleteTransaction(transaction.id)}
+                            className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            削除
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">

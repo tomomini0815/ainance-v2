@@ -47,34 +47,35 @@ const Step3Expenses: React.FC<Step3ExpensesProps> = ({
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold text-text-main mb-2">経費情報を入力してください</h2>
-            <p className="text-text-muted mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold text-text-main mb-2">経費情報を入力してください</h2>
+            <p className="text-sm sm:text-base text-text-muted mb-6 sm:mb-8">
                 2025年に使った経費をカテゴリ別に入力します
             </p>
 
             {/* AI推定ボタン */}
-            <div className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-lg border border-primary/20">
-                <div className="flex items-start justify-between">
+            <div className="mb-8 p-5 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-xl border border-primary/20 shadow-sm relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-5 h-5 text-primary" />
-                            <h3 className="font-semibold text-text-main">AI経費推定</h3>
+                            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                            <h3 className="font-bold text-lg text-text-main">AI経費推定</h3>
                         </div>
-                        <p className="text-sm text-text-muted mb-3">
-                            業種「{businessType}」と売上額から、一般的な経費を自動推定します
+                        <p className="text-sm text-text-muted">
+                            業種「{businessType}」と売上から一般的な経費を自動算出します
                         </p>
-                        <button
-                            onClick={handleEstimate}
-                            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all text-sm font-medium"
-                        >
-                            経費を推定する
-                        </button>
                     </div>
+                    <button
+                        onClick={handleEstimate}
+                        className="w-full sm:w-auto px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all text-sm font-bold shadow-md active:scale-95"
+                    >
+                        経費を推定する
+                    </button>
                 </div>
                 {showEstimation && (
-                    <div className="mt-3 p-3 bg-surface rounded-lg">
-                        <p className="text-xs text-green-600">
-                            ✓ 推定値を入力しました。必要に応じて調整してください。
+                    <div className="mt-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg animate-in fade-in slide-in-from-top-2">
+                        <p className="text-sm text-green-600 font-medium flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                            推定値を入力しました。必要に応じて調整してください。
                         </p>
                     </div>
                 )}
@@ -83,27 +84,28 @@ const Step3Expenses: React.FC<Step3ExpensesProps> = ({
             {/* 経費入力フォーム */}
             <div className="space-y-4">
                 {expenseCategories.map((category) => (
-                    <div key={category.key} className="bg-surface-elevated p-4 rounded-lg">
-                        <label className="block text-sm font-medium text-text-main mb-1">
+                    <div key={category.key} className="bg-surface-elevated p-4 sm:p-5 rounded-lg transition-colors border border-transparent hover:border-border">
+                        <label className="block text-base font-medium text-text-main mb-1">
                             {category.label}
                         </label>
-                        <p className="text-xs text-text-muted mb-2">{category.description}</p>
+                        <p className="text-xs text-text-muted mb-3">{category.description}</p>
                         <div className="relative">
                             <input
                                 type="number"
                                 value={data[category.key as keyof ExpensesInfo] || ''}
                                 onChange={(e) => handleChange(category.key as keyof ExpensesInfo, e.target.value)}
                                 placeholder="0"
-                                className="w-full px-4 py-2 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-text-main"
+                                inputMode="numeric"
+                                className="w-full pl-4 pr-10 py-3 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base text-text-main"
                             />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-sm">円</span>
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none">円</span>
                         </div>
                     </div>
                 ))}
             </div>
 
             {/* 合計表示 */}
-            <div className="mt-6 p-4 bg-surface-elevated rounded-lg border-2 border-primary/20">
+            <div className="sticky bottom-4 mx-auto mt-8 p-4 bg-surface/90 backdrop-blur-md rounded-xl border-2 border-primary/20 shadow-lg max-w-lg z-10 transition-all">
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                         <Calculator className="w-5 h-5 text-primary" />
@@ -115,26 +117,36 @@ const Step3Expenses: React.FC<Step3ExpensesProps> = ({
                 </div>
                 <div className="flex items-center justify-between text-sm">
                     <span className="text-text-muted">売上に対する経費率</span>
-                    <span className="font-medium text-text-main">{expenseRatio.toFixed(1)}%</span>
+                    <div className="flex items-center gap-2">
+                        <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full transition-all duration-500 ${expenseRatio > 70 ? 'bg-orange-500' : 'bg-green-500'}`}
+                                style={{ width: `${Math.min(expenseRatio, 100)}%` }}
+                            />
+                        </div>
+                        <span className={`font-medium ${expenseRatio > 70 ? 'text-orange-500' : 'text-text-main'}`}>
+                            {expenseRatio.toFixed(1)}%
+                        </span>
+                    </div>
                 </div>
                 {expenseRatio > 70 && (
-                    <div className="mt-2 p-2 bg-orange-500/10 rounded text-xs text-orange-600">
+                    <div className="mt-2 p-2 bg-orange-500/10 rounded text-xs text-orange-600 font-medium">
                         ⚠️ 経費率が高めです。入力内容を確認してください。
                     </div>
                 )}
             </div>
 
             {/* ナビゲーションボタン */}
-            <div className="mt-8 flex justify-between">
+            <div className="mt-10 mb-6 flex gap-4">
                 <button
                     onClick={onBack}
-                    className="px-8 py-3 rounded-lg font-medium bg-surface-elevated text-text-main hover:bg-surface transition-all"
+                    className="flex-1 sm:flex-none px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium bg-surface-elevated text-text-main hover:bg-surface transition-all border border-border"
                 >
                     戻る
                 </button>
                 <button
                     onClick={onNext}
-                    className="px-8 py-3 rounded-lg font-medium bg-primary text-white hover:bg-primary/90 transition-all"
+                    className="flex-1 sm:flex-none sm:ml-auto px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium bg-primary text-white hover:bg-primary/90 transition-all shadow-sm"
                 >
                     次へ進む
                 </button>

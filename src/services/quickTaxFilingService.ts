@@ -85,7 +85,47 @@ export const calculateTax = (data: QuickTaxFilingData): TaxCalculationResult => 
   const basicDeduction = 480000;
   
   // その他の控除合計
-  const totalDeductions = basicDeduction + Object.values(data.deductions).reduce((sum, val) => sum + val, 0);
+  const totalDeductions = basicDeduction + Object.entries(data.deductions).reduce((sum, [key, val]) => {
+    if (key === 'dependentDetails') return sum;
+    if (key === 'dependents') {
+        // 詳細データがあればそこから計算
+        const details = data.deductions.dependentDetails || [];
+        if (details.length > 0) {
+            // ここで年齢計算ロジックが必要だが、Service層に移植する必要がある。
+            // 簡易的に、ここでの再計算は複雑になるため、Step5Confirmation等で保存されるデータ構造を見直すべきだが、
+            // 今はバグ修正（+1円）を優先する。
+            // dependentsが「人数」である場合、これは金額ではないので加算しない。
+            // ただし、詳細データからの再計算ロジックがここにはないため、
+            // 正しくは `dependents` フィールドに「金額」を入れるべきだったかもしれない。
+            // しかし現状 `dependents` は人数。
+            
+            // 修正方針: Step4Deductionsで計算した「合計額」をどこかに保存するか、
+            // ここで再計算するロジックを持つか。
+            
+            // シンプルに、「扶養親族の控除額計算」関数をここにも実装する。
+            const calculateDepAmount = (birthDate: string): number => {
+                if (!birthDate) return 0;
+                const today = new Date();
+                const currentYear = today.getFullYear();
+                const filingYear = currentYear - 1; 
+                const baseDate = new Date(filingYear, 11, 31);
+                const birth = new Date(birthDate);
+                let age = baseDate.getFullYear() - birth.getFullYear();
+                const m = baseDate.getMonth() - birth.getMonth();
+                if (m < 0 || (m === 0 && baseDate.getDate() < birth.getDate())) age--;
+                
+                if (age < 16) return 0;
+                if (age >= 19 && age < 23) return 630000;
+                if (age >= 70) return 480000;
+                return 380000;
+            };
+            
+            return sum + details.reduce((acc, dep) => acc + calculateDepAmount(dep.birthDate), 0);
+        }
+        return sum; // 人数のみの場合は金額不明なため0とする（あるいは過去の互換性があれば値を採用するが、今回は切る）
+    }
+    return sum + (typeof val === 'number' ? val : 0);
+  }, 0);
   
   // 課税所得（所得金額 - 控除）
   const taxableIncome = Math.max(0, netIncome - totalDeductions);

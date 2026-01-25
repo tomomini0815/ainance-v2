@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, BarChart2, Camera, Calculator, Link as LinkIcon, Sparkles } from 'lucide-react';
+import { FileText, BarChart2, Camera, Mic, Link as LinkIcon, Sparkles } from 'lucide-react';
 
 const QuickActions: React.FC = () => {
   const actions = [
     {
-      title: 'CHAT-TO-BOOK',
+      title: '音声で記録',
       description: '音声で取引を記録',
-      icon: Calculator,
+      icon: Mic,
       link: '/chat-to-book',
       color: 'bg-purple-500/20',
       iconColor: 'text-purple-500',

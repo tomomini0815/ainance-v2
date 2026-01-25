@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Star, Clock, Zap, Calendar, Tag, Wallet, TrendingUp, TrendingDown } from 'lucide-react'
+import { useAuth } from '../hooks/useAuth'
 
 interface Transaction {
   id?: number
@@ -14,6 +15,7 @@ interface Transaction {
   tags?: string[]
   recurring?: boolean
   recurring_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly'
+  recurring_end_date?: string
   creator?: string
 }
 
@@ -24,6 +26,7 @@ interface TransactionFormProps {
 }
 
 const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit, onCancel }) => {
+  const { user } = useAuth()
   const [formData, setFormData] = useState<Omit<Transaction, 'id'>>({
     item: transaction?.item || '',
     amount: transaction?.amount || 0,
@@ -36,6 +39,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     tags: transaction?.tags || [],
     recurring: transaction?.recurring || false,
     recurring_frequency: transaction?.recurring_frequency || 'monthly',
+    recurring_end_date: transaction?.recurring_end_date || new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
     creator: transaction?.creator || ''
   })
 
@@ -165,19 +169,24 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     }
 
     // 新規作成モードの場合のみ、creatorを検証
-    const storedUser = localStorage.getItem('user')
     let creator = '00000000-0000-0000-0000-000000000000'
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(userData.id)) {
-          creator = userData.id
-        } else {
-          console.warn('無効なユーザーID形式です。匿名ユーザーとして処理します。');
+    if (user && user.id) {
+      creator = user.id
+      console.log('useAuthからユーザーIDを取得:', creator);
+    } else {
+      console.warn('ユーザー情報が取得できません。localStorageを確認します。');
+      // フォールバック: localStorageから取得（念のため）
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser)
+          if (userData.id) {
+            creator = userData.id
+            console.log('localStorageからユーザーIDを取得:', creator);
+          }
+        } catch (e) {
+          console.error('localStorageの解析に失敗:', e);
         }
-      } catch (error) {
-        console.error('ユーザー情報の解析に失敗しました:', error)
       }
     }
 
@@ -301,7 +310,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
               name="date"
               value={formData.date}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all appearance-none"
+              className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
               required
             />
           </div>
@@ -563,19 +572,31 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
       </div>
 
       {formData.recurring && (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-          <label className="block text-sm font-medium text-text-muted mb-1.5">繰り返し頻度</label>
-          <select
-            name="recurring_frequency"
-            value={formData.recurring_frequency}
-            onChange={handleChange}
-            className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all"
-          >
-            <option value="daily" className="bg-surface-highlight">日次</option>
-            <option value="weekly" className="bg-surface-highlight">週次</option>
-            <option value="monthly" className="bg-surface-highlight">月次</option>
-            <option value="yearly" className="bg-surface-highlight">年次</option>
-          </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1.5">繰り返し頻度</label>
+            <select
+              name="recurring_frequency"
+              value={formData.recurring_frequency}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all"
+            >
+              <option value="daily" className="bg-surface-highlight">日次</option>
+              <option value="weekly" className="bg-surface-highlight">週次</option>
+              <option value="monthly" className="bg-surface-highlight">月次</option>
+              <option value="yearly" className="bg-surface-highlight">年次</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1.5">終了日</label>
+            <input
+              type="date"
+              name="recurring_end_date"
+              value={formData.recurring_end_date}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+            />
+          </div>
         </div>
       )}
 

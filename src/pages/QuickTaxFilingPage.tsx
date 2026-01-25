@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import WizardProgress from '../components/quickTaxFiling/WizardProgress';
 import Step1BasicInfo from '../components/quickTaxFiling/Step1BasicInfo';
@@ -121,19 +122,21 @@ const QuickTaxFilingPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background">
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="min-h-screen bg-background pb-12">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
                 {/* ヘッダー */}
                 <div className="flex items-center mb-6">
-                    <Link to="/dashboard" className="mr-4">
-                        <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
+                    <Link to="/dashboard" className="mr-3 sm:mr-4">
+                        <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-text-muted hover:text-text-main" />
                     </Link>
                     <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                            <Zap className="w-8 h-8 text-primary" />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <Zap className="w-5 h-5 sm:w-8 sm:h-8 text-primary" />
+                            </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-text-main">駆け込み確定申告</h1>
-                                <p className="text-text-muted">質問に答えるだけで、1日で確定申告書類を完成</p>
+                                <h1 className="text-xl sm:text-2xl font-bold text-text-main">駆け込み確定申告</h1>
+                                <p className="text-xs sm:text-sm text-text-muted mt-0.5">質問に答えるだけで、1日で確定申告書類を完成</p>
                             </div>
                         </div>
                     </div>
@@ -143,58 +146,68 @@ const QuickTaxFilingPage: React.FC = () => {
                 <WizardProgress currentStep={currentStep} />
 
                 {/* ステップコンテンツ */}
-                <div className="bg-surface rounded-xl shadow-sm border border-border p-8">
-                    {currentStep === 1 && (
-                        <Step1BasicInfo
-                            data={data.basicInfo}
-                            onChange={handleBasicInfoChange}
-                            onNext={handleNext}
-                        />
-                    )}
-                    {currentStep === 2 && (
-                        <Step2Income
-                            data={data.income}
-                            onChange={handleIncomeChange}
-                            onNext={handleNext}
-                            onBack={handleBack}
-                        />
-                    )}
-                    {currentStep === 3 && (
-                        <Step3Expenses
-                            data={data.expenses}
-                            businessType={data.basicInfo.businessType}
-                            totalRevenue={data.income.totalRevenue}
-                            onChange={handleExpensesChange}
-                            onNext={handleNext}
-                            onBack={handleBack}
-                        />
-                    )}
-                    {currentStep === 4 && (
-                        <StepDepreciation
-                            onChange={handleDepreciationChange}
-                            onNext={handleNext}
-                            onBack={handleBack}
-                        />
-                    )}
-                    {currentStep === 5 && (
-                        <Step4Deductions
-                            data={data.deductions}
-                            onChange={handleDeductionsChange}
-                            onNext={handleNext}
-                            onBack={handleBack}
-                        />
-                    )}
-                    {currentStep === 6 && (
-                        <Step5Confirmation
-                            data={data}
-                            onBack={handleBack}
-                            onComplete={handleComplete}
-                        />
-                    )}
+                <div className="bg-surface rounded-xl shadow-sm border border-border p-4 sm:p-8 overflow-hidden">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentStep}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            {currentStep === 1 && (
+                                <Step1BasicInfo
+                                    data={data.basicInfo}
+                                    onChange={handleBasicInfoChange}
+                                    onNext={handleNext}
+                                />
+                            )}
+                            {currentStep === 2 && (
+                                <Step2Income
+                                    data={data.income}
+                                    onChange={handleIncomeChange}
+                                    onNext={handleNext}
+                                    onBack={handleBack}
+                                />
+                            )}
+                            {currentStep === 3 && (
+                                <Step3Expenses
+                                    data={data.expenses}
+                                    businessType={data.basicInfo.businessType}
+                                    totalRevenue={data.income.totalRevenue}
+                                    onChange={handleExpensesChange}
+                                    onNext={handleNext}
+                                    onBack={handleBack}
+                                />
+                            )}
+                            {currentStep === 4 && (
+                                <StepDepreciation
+                                    onChange={handleDepreciationChange}
+                                    onNext={handleNext}
+                                    onBack={handleBack}
+                                />
+                            )}
+                            {currentStep === 5 && (
+                                <Step4Deductions
+                                    data={data.deductions}
+                                    onChange={handleDeductionsChange}
+                                    onNext={handleNext}
+                                    onBack={handleBack}
+                                />
+                            )}
+                            {currentStep === 6 && (
+                                <Step5Confirmation
+                                    data={data}
+                                    onBack={handleBack}
+                                    onComplete={handleComplete}
+                                />
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
 
                 {/* フッター情報 */}
-                <div className="mt-8 text-center text-sm text-text-muted">
+                <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-text-muted">
                     <p>入力内容は自動的に保存されます。いつでも中断・再開できます。</p>
                 </div>
             </main>

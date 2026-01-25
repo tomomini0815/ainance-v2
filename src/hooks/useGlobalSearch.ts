@@ -20,7 +20,7 @@ export const useGlobalSearch = (query: string) => {
     { title: 'レシート処理', path: '/receipt-processing', icon: Receipt, description: 'レシートのスキャンと登録' },
     { title: '請求書作成', path: '/invoice-creation', icon: FileText, description: '請求書の作成と管理' },
     { title: '経営分析', path: '/business-analysis', icon: BarChart3, description: '売上・経費の分析' },
-    { title: 'CHAT-TO-BOOK', path: '/chat-to-book', icon: MessageSquare, description: 'チャットで記帳' },
+    { title: '音声で記録', path: '/chat-to-book', icon: MessageSquare, description: 'チャットで記帳' },
     { title: '申告サポート', path: '/business-conversion', icon: Users, description: '確定申告のサポート' },
     { title: '設定', path: '/integration-settings', icon: Settings, description: 'アプリの設定' },
   ];

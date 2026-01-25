@@ -24,13 +24,21 @@ export interface ExpensesInfo {
   other: number;            // その他
 }
 
+export interface DependentDetail {
+  name: string;
+  relationship: string;
+  birthDate: string;
+  income: number;
+}
+
 export interface DeductionsInfo {
   socialInsurance: number;      // 社会保険料控除
   lifeInsurance: number;        // 生命保険料控除
   earthquakeInsurance: number;  // 地震保険料控除
   medicalExpenses: number;      // 医療費控除
   donations: number;            // 寄附金控除
-  dependents: number;           // 扶養控除
+  dependents: number;           // 扶養控除(人数) - 下位互換性のため残す
+  dependentDetails?: DependentDetail[]; // 扶養親族の詳細
 }
 
 export interface QuickTaxFilingData {

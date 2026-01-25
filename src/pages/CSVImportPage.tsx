@@ -22,6 +22,8 @@ import {
     DEFAULT_COLUMN_MAPPING,
     convertToTransactions,
 } from '../services/csvImportService';
+import { useTransactions } from '../hooks/useTransactions';
+import { useAuth } from '../hooks/useAuth';
 
 type ImportStep = 'upload' | 'preview' | 'result';
 
@@ -36,6 +38,43 @@ const CSVImportPage: React.FC = () => {
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
     const [previewData, setPreviewData] = useState<CSVRow[]>([]);
     const [error, setError] = useState<string | null>(null);
+
+    // データ取得（エクスポート用）
+    const { user } = useAuth();
+    const { transactions } = useTransactions(user?.id);
+
+    // CSVエクスポート機能
+    const handleExport = useCallback(() => {
+        if (!transactions || transactions.length === 0) {
+            alert('エクスポートするデータがありません');
+            return;
+        }
+
+        const headers = ['日付', '説明', '金額', 'カテゴリ', 'タイプ', 'ステータス'];
+        const rows = transactions.map(t => [
+            t.date,
+            `"${t.description || t.item}"`,
+            t.amount.toString(),
+            `"${t.category}"`,
+            t.type,
+            t.approval_status || 'approved'
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+
+        const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `取引データ_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }, [transactions]);
 
     // ファイルアップロード処理
     const handleFileSelect = useCallback(async (selectedFile: File) => {
@@ -150,19 +189,28 @@ const CSVImportPage: React.FC = () => {
                             <ArrowLeft className="w-6 h-6 text-text-muted" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-text-main">CSVインポート</h1>
+                            <h1 className="text-2xl font-bold text-text-main">CSVインポート・エクスポート</h1>
                             <p className="text-text-muted text-sm mt-1">
-                                CSVファイルから取引データを一括インポート
+                                取引データのCSV入出力管理
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => downloadCSVTemplate()}
-                        className="flex items-center px-4 py-2 bg-surface border border-border rounded-lg hover:bg-border/50 transition-colors"
-                    >
-                        <Download className="w-5 h-5 mr-2 text-text-muted" />
-                        <span className="text-text-main">テンプレートをダウンロード</span>
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                        >
+                            <Download className="w-5 h-5 mr-2" />
+                            <span>CSVエクスポート</span>
+                        </button>
+                        <button
+                            onClick={() => downloadCSVTemplate()}
+                            className="flex items-center px-4 py-2 bg-surface border border-border rounded-lg hover:bg-border/50 transition-colors"
+                        >
+                            <FileText className="w-5 h-5 mr-2 text-text-muted" />
+                            <span className="text-text-main">テンプレート</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* ステッププログレス */}

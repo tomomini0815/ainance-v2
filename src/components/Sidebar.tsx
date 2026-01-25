@@ -35,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     const navItems = [
         { path: '/dashboard', label: 'ダッシュボード', icon: Home },
-        { path: '/chat-to-book', label: 'CHAT-TO-BOOK', icon: MessageSquare },
+        { path: '/chat-to-book', label: '音声で記録', icon: MessageSquare },
         { path: '/receipt-processing', label: 'レシート', icon: Receipt },
         { path: '/invoice-creation', label: '請求書', icon: FileText },
         { path: '/csv-import', label: 'CSVインポート', icon: Upload },

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import toast from 'react-hot-toast';
 
 interface Transaction {
   id: string;
@@ -17,6 +18,7 @@ interface Transaction {
   location?: string;
   recurring?: boolean;
   recurring_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurring_end_date?: string;
   // 法人用追加フィールド
   department?: string;
   project_code?: string;
@@ -83,12 +85,26 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       if (error) throw error;
 
       console.log('取引データ取得成功:', { count: data?.length, data, tableName });
-      // DBのitemフィールドをdescriptionにマッピング（UIとの互換性のため）
-      const transactionsWithDescription = (data || []).map((t: Transaction) => ({
-        ...t,
-        description: t.description || t.item  // descriptionがなければitemをdescriptionとして使用
-      }));
-      setTransactions(transactionsWithDescription);
+      
+      // データの正規化: amountを数値に変換し、descriptionをマッピング
+      const normalizedTransactions = (data || []).map((t: any) => {
+        let amount = t.amount;
+        if (typeof amount === 'string') {
+          // カンマを除去してパース
+          amount = parseFloat(amount.replace(/,/g, ''));
+        } else if (typeof amount === 'object' && amount !== null) {
+          // オブジェクトの場合はvalueやamountプロパティを探す
+          amount = parseFloat(String(amount.value || amount.amount || amount.number || 0).replace(/,/g, ''));
+        }
+        
+        return {
+          ...t,
+          amount: isNaN(amount) ? 0 : amount,
+          description: t.description || t.item
+        };
+      });
+      
+      setTransactions(normalizedTransactions);
       setLoading(false);
     } catch (error) {
       console.error(`取引データの取得に失敗しました: ${error}`);
@@ -106,42 +122,90 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
     }
 
     try {
+      // 数値化の確認
+      const amountValue = typeof transaction.amount === 'string' 
+        ? parseFloat((transaction.amount as string).replace(/,/g, '')) 
+        : transaction.amount;
+
       // creatorが有効なUUIDであることを確認
-      if (!isValidUUID(transaction.creator)) {
+      let creatorId = transaction.creator;
+      if (!isValidUUID(creatorId)) {
         console.warn('無効なcreator IDが検出されました。匿名ユーザーとして処理します。');
-        transaction.creator = '00000000-0000-0000-0000-000000000000'; // ダミーのUUID
+        creatorId = '00000000-0000-0000-0000-000000000000'; // ダミーのUUID
       }
 
-      // creatorが空の場合、デフォルト値を設定
-      const transactionWithCreator = {
-        ...transaction,
-        creator: transaction.creator || '00000000-0000-0000-0000-000000000000',
+      const { recurring_end_date, ...restOfTransaction } = transaction;
+
+      const transactionPayload = {
+        ...restOfTransaction,
+        amount: isNaN(amountValue) ? 0 : amountValue,
+        creator: creatorId,
       };
 
       const tableName = getTableName();
-      console.log('createTransaction - テーブル名:', tableName);
-      console.log('createTransaction - 保存するデータ:', transactionWithCreator);
+      console.log('createTransaction - 保存するデータ:', transactionPayload);
       
-      const { data, error } = await supabase
-        .from(tableName)
-        .insert(transactionWithCreator)
-        .select()
-        .single();
+      let createdData;
+      
+      if (transaction.recurring && transaction.recurring_end_date) {
+        // 繰り返しデータの生成
+        const bulkData = [transactionPayload];
+        const startDate = new Date(transaction.date);
+        const endDate = new Date(transaction.recurring_end_date);
+        let nextDate = new Date(startDate);
 
-      console.log('createTransaction - Supabaseからの応答:', { data, error });
+        while (true) {
+          if (transaction.recurring_frequency === 'daily') {
+            nextDate.setDate(nextDate.getDate() + 1);
+          } else if (transaction.recurring_frequency === 'weekly') {
+            nextDate.setDate(nextDate.getDate() + 7);
+          } else if (transaction.recurring_frequency === 'monthly') {
+            nextDate.setMonth(nextDate.getMonth() + 1);
+          } else if (transaction.recurring_frequency === 'yearly') {
+            nextDate.setFullYear(nextDate.getFullYear() + 1);
+          }
 
-      if (error) throw error;
+          if (nextDate > endDate) break;
 
-      const newTransaction: Transaction = data;
-      setTransactions(prev => [newTransaction, ...prev]);
-      console.log('createTransaction - 新しい取引をローカル状態に追加しました:', newTransaction);
-      return { data: newTransaction, error: null };
+          bulkData.push({
+            ...transactionPayload,
+            date: nextDate.toISOString().split('T')[0]
+          });
+        }
+
+        console.log(`createTransaction - 一括保存実行 (${bulkData.length}件):`, bulkData);
+        const { data, error } = await supabase
+          .from(tableName)
+          .insert(bulkData)
+          .select();
+        
+        if (error) throw error;
+        createdData = data;
+        toast.success(`${bulkData.length}件の取引を記録しました`);
+      } else {
+        const { data, error } = await supabase
+          .from(tableName)
+          .insert(transactionPayload)
+          .select()
+          .single();
+
+        if (error) throw error;
+        createdData = [data]; // 配列に統一
+        toast.success('取引を記録しました');
+      }
+
+      // ローカル状態も正規化して追加
+      const normalizedNew = (createdData || []).map((d: any) => ({
+        ...d,
+        amount: Number(d.amount),
+        description: d.description || d.item
+      }));
+      
+      setTransactions(prev => [...normalizedNew, ...prev]);
+      return { data: normalizedNew[0], error: null };
     } catch (error: any) {
       console.error('取引の作成に失敗しました:', error);
-      // ネットワークエラーの場合、より具体的なメッセージを表示
-      if (error.message && error.message.includes('Failed to fetch')) {
-        return { data: null, error: new Error('ネットワークエラーが発生しました。インターネット接続を確認してください。') };
-      }
+      toast.error('取引の作成に失敗しました');
       return { data: null, error };
     }
   };
@@ -154,22 +218,27 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
     try {
       const tableName = getTableName();
-      console.log('取引を更新中:', { id, updates, tableName });
       
-      // creatorが無効な場合はエラーを表示
-      if (updates.creator && updates.creator === '00000000-0000-0000-0000-000000000000') {
-        console.error('無効なcreator IDが検出されました。');
-        return { data: null, error: new Error('無効なユーザーIDです。ログインしていることを確認してください。') };
+      // creatorとrecurring_end_dateはDBカラムにないので除外
+      const finalUpdates = { ...updates };
+      if (finalUpdates.creator) {
+        delete (finalUpdates as any).creator;
+      }
+      if ((finalUpdates as any).recurring_end_date) {
+        delete (finalUpdates as any).recurring_end_date;
       }
 
-      // creatorが既に設定されている場合は更新しない
-      if (updates.creator) {
-        delete updates.creator;
+      // 金額の正規化（もしあれば）
+      if (finalUpdates.amount !== undefined) {
+        if (typeof finalUpdates.amount === 'string') {
+          finalUpdates.amount = parseFloat((finalUpdates.amount as string).replace(/,/g, ''));
+        }
+        if (isNaN(finalUpdates.amount as any)) finalUpdates.amount = 0;
       }
 
       const { data, error } = await supabase
         .from(tableName)
-        .update(updates)
+        .update(finalUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -177,16 +246,14 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       if (error) throw error;
 
       const updatedTransaction: Transaction = data;
-      console.log('取引更新成功:', updatedTransaction);
       setTransactions(prev =>
-        prev.map(transaction =>
-          transaction.id === id ? updatedTransaction : transaction
-        )
+        prev.map(t => t.id === id ? { ...updatedTransaction, amount: Number(updatedTransaction.amount) } : t)
       );
-
+      toast.success('取引を更新しました');
       return { data: updatedTransaction, error: null };
     } catch (error) {
       console.error('取引の更新に失敗しました:', error);
+      toast.error('取引の更新に失敗しました');
       return { data: null, error: error as Error };
     }
   };
@@ -199,7 +266,6 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
     try {
       const tableName = getTableName();
-      console.log('取引を削除中:', { id, tableName });
       const { error } = await supabase
         .from(tableName)
         .delete()
@@ -207,11 +273,12 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
       if (error) throw error;
 
-      console.log('取引削除成功:', id);
-      setTransactions(prev => prev.filter(transaction => transaction.id !== id));
+      setTransactions(prev => prev.filter(t => t.id !== id));
+      toast.success('取引を削除しました');
       return { error: null };
     } catch (error) {
       console.error('取引の削除に失敗しました:', error);
+      toast.error('取引の削除に失敗しました');
       return { error: error as Error };
     }
   };
@@ -219,64 +286,30 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
   // 取引を承認
   const approveTransaction = async (id: string): Promise<UpdateTransactionResult> => {
     if (!userId || !businessType) {
-      console.error('取引承認エラー: ユーザーIDまたは業態形態が不足しています', { userId, businessType });
       return { data: null, error: new Error('ユーザーIDと業態形態が必要です') };
     }
 
     try {
       const tableName = getTableName();
-      console.log('取引を承認中:', { id, tableName, userId, businessType });
-      
-      // まず、更新対象の取引が存在するか確認
-      const { data: existingData, error: existingError } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('id', id)
-        .eq('creator', userId)
-        .single();
-
-      if (existingError) {
-        console.error('取引検索エラー:', existingError);
-        throw existingError;
-      }
-
-      if (!existingData) {
-        console.error('取引が見つかりません:', { id, tableName, userId });
-        throw new Error('取引が見つかりません');
-      }
-
-      console.log('更新対象の取引データ:', existingData);
-
-      // 取引を承認状態に更新
       const { data, error } = await supabase
         .from(tableName)
         .update({ approval_status: 'approved', updated_at: new Date().toISOString() })
         .eq('id', id)
-        .eq('creator', userId) // creatorも条件に追加してセキュリティを強化
+        .eq('creator', userId)
         .select()
         .single();
 
-      if (error) {
-        console.error('取引承認エラー:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       const updatedTransaction: Transaction = data;
-      console.log('取引承認成功:', updatedTransaction);
-      
-      // ローカル状態も更新
       setTransactions(prev =>
-        prev.map(transaction =>
-          transaction.id === id ? updatedTransaction : transaction
-        )
+        prev.map(t => t.id === id ? { ...updatedTransaction, amount: Number(updatedTransaction.amount) } : t)
       );
-
-      // データの再取得を実行
-      await fetchTransactions();
-
+      toast.success('取引を承認しました');
       return { data: updatedTransaction, error: null };
     } catch (error) {
       console.error('取引の承認に失敗しました:', error);
+      toast.error('取引の承認に失敗しました');
       return { data: null, error: error as Error };
     }
   };
@@ -293,6 +326,6 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
     createTransaction,
     updateTransaction,
     deleteTransaction,
-    approveTransaction // 承認処理を追加
+    approveTransaction
   };
 };
