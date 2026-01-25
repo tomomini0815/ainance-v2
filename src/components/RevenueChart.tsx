@@ -79,6 +79,9 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
 
     // トランザクション集計
     transactions.forEach(transaction => {
+      // 承認待ちの取引は集計に含めない
+      if (transaction.approval_status === 'pending') return;
+
       const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
       const date = new Date(transaction.date);
       const tYear = date.getFullYear();

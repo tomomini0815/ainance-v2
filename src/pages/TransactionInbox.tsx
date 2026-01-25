@@ -2,9 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
-import { Check, X, Edit2, AlertCircle, Inbox, Sparkles, Filter, ArrowLeft, Mic } from 'lucide-react';
+import { Check, X, Edit2, AlertCircle, Inbox, Sparkles, Filter, ArrowLeft, Mic, MessageSquare } from 'lucide-react';
+import TransactionIcon from '../components/TransactionIcon';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import toast from 'react-hot-toast';
 
 const TransactionInbox: React.FC = () => {
     const { user } = useAuth();
@@ -21,9 +23,10 @@ const TransactionInbox: React.FC = () => {
         try {
             const result = await approveTransaction(id);
             if (result.error) throw result.error;
-        } catch (error) {
-            console.error('Approval failed:', error);
-            alert('承認に失敗しました。');
+            toast.success('取引を承認しました！');
+        } catch (error: any) {
+            console.error('取引の承認に失敗しました:', error);
+            toast.error('取引の承認に失敗しました: ' + (error.message || '不明なエラー'));
         } finally {
             setProcessingId(null);
         }
@@ -56,6 +59,16 @@ const TransactionInbox: React.FC = () => {
     };
 
     const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+    // 取引が記録されたときにデータを再取得するイベントリスナー
+    React.useEffect(() => {
+        const handleRefresh = () => {
+            console.log('TransactionInbox - 取引登録イベントを検知、再取得します');
+            fetchTransactions();
+        };
+        window.addEventListener('transactionRecorded', handleRefresh);
+        return () => window.removeEventListener('transactionRecorded', handleRefresh);
+    }, [fetchTransactions]);
 
     if (loading && transactions.length === 0) {
         return (
@@ -152,6 +165,13 @@ const TransactionInbox: React.FC = () => {
                                                             </div>
                                                             <span className="text-xs font-medium">AI読取</span>
                                                         </>
+                                                    ) : t.tags?.includes('ai-chat') ? (
+                                                        <>
+                                                            <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-md text-indigo-600 dark:text-indigo-400">
+                                                                <MessageSquare className="w-3.5 h-3.5" />
+                                                            </div>
+                                                            <span className="text-xs font-medium">AIチャット</span>
+                                                        </>
                                                     ) : t.tags?.includes('voice') ? (
                                                         <>
                                                             <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md text-blue-600 dark:text-blue-400">
@@ -170,7 +190,10 @@ const TransactionInbox: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="font-medium text-text-main whitespace-nowrap">{t.item}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <TransactionIcon item={t.item} category={t.category} size="sm" />
+                                                    <div className="font-medium text-text-main whitespace-nowrap">{t.item}</div>
+                                                </div>
                                                 <div className="text-xs text-text-muted truncate max-w-[200px]">{t.description}</div>
                                             </td>
                                             <td className="px-6 py-4 text-sm whitespace-nowrap">

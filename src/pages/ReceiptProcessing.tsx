@@ -94,9 +94,9 @@ const ReceiptProcessing: React.FC = () => {
   // Supabaseからレシートデータをロード
   useEffect(() => {
     const loadReceipts = async () => {
-      if (!user?.uid) return;
+      if (!user?.id) return;
 
-      const receipts = await getReceipts(user.uid);
+      const receipts = await getReceipts(user.id);
       const formattedReceipts: ReceiptData[] = receipts.map(r => ({
         id: r.id!,
         date: r.date,
@@ -648,7 +648,7 @@ const ReceiptProcessing: React.FC = () => {
   const handleApprove = async (id: string) => {
     // レシート情報を取得
     const receipt = uploadedReceipts.find(r => r.id === id);
-    if (!receipt || !user?.uid) {
+    if (!receipt || !user?.id) {
       console.error('レシートまたはユーザーが見つかりません');
       return;
     }
@@ -664,7 +664,7 @@ const ReceiptProcessing: React.FC = () => {
     // レシートデータを作成
     const receiptData = {
       id: receipt.id,
-      user_id: user.uid,
+      user_id: user.id,
       date: receipt.date,
       merchant: receipt.merchant,
       amount: receipt.amount,
@@ -681,7 +681,7 @@ const ReceiptProcessing: React.FC = () => {
       id,
       receiptData,
       businessType,
-      user.uid
+      user.id
     );
 
     if (result.success) {

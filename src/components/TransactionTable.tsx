@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, Plus, FileText, Repeat } from 'lucide-react'
+import TransactionIcon from './TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useAuth } from '../hooks/useAuth'
@@ -65,29 +66,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
     };
   }, [currentBusinessType, fetchTransactions]);
 
-  const getCategoryIcon = (category: string) => {
-    const badgeClass = "inline-flex items-center justify-center w-6 h-6 rounded-full mr-2 text-xs font-bold";
-
-    switch (category) {
-      case '交通費':
-      case '旅費交通費':
-        return <span className={`${badgeClass} bg-blue-500/20 text-blue-400`}>交</span>;
-      case '食費':
-      case '接待交際費':
-        return <span className={`${badgeClass} bg-emerald-500/20 text-emerald-400`}>食</span>;
-      case '消耗品費':
-        return <span className={`${badgeClass} bg-purple-500/20 text-purple-400`}>消</span>;
-      case '通信費':
-        return <span className={`${badgeClass} bg-amber-500/20 text-amber-400`}>通</span>;
-      case '光熱費':
-      case '水道光熱費':
-        return <span className={`${badgeClass} bg-rose-500/20 text-rose-400`}>光</span>;
-      case '地代家賃':
-        return <span className={`${badgeClass} bg-indigo-500/20 text-indigo-400`}>家</span>;
-      default:
-        return <span className={`${badgeClass} bg-slate-500/20 text-text-muted`}>他</span>;
-    }
-  };
+  // getItemIcon logic replaced by shared TransactionIcon component
 
   const latestTransactions = [...(transactions.length > 0 ? transactions : fetchedTransactions)]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -171,7 +150,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-start flex-1">
-                    {getCategoryIcon(transaction.category)}
+                    <TransactionIcon item={transaction.item} category={transaction.category} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="font-medium text-text-main text-sm">{transaction.item}</div>
@@ -269,7 +248,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                   <tr key={transaction.id} className="hover:bg-white/5 transition-colors group">
                     <td className="py-4 px-4">
                       <div className="flex items-center">
-                        {getCategoryIcon(transaction.category)}
+                        <TransactionIcon item={transaction.item} category={transaction.category} />
                         <div>
                           <div className="flex items-center gap-2">
                             <div className="font-medium text-text-main text-sm group-hover:text-white transition-colors">{transaction.item}</div>

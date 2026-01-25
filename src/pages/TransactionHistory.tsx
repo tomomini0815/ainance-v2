@@ -1,15 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowLeft, Search, Filter, Plus, ChevronDown, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat } from 'lucide-react'
+import TransactionIcon from '../components/TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionForm from '../components/TransactionForm'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useAuth } from '../hooks/useAuth'
+import OmniEntryPortal from '../components/OmniEntryPortal'
 
 const TransactionHistory: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext()
   const { user: authUser } = useAuth();
-  const { transactions, loading, createTransaction, updateTransaction, deleteTransaction, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type)
+  const { transactions, loading, updateTransaction, deleteTransaction, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type)
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<any>(null)
@@ -18,7 +20,7 @@ const TransactionHistory: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [amountRange, setAmountRange] = useState({ min: '', max: '' })
-  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'item'>('date')
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'item' | 'created_at'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -127,6 +129,10 @@ const TransactionHistory: React.FC = () => {
           aValue = a.item.toLowerCase()
           bValue = b.item.toLowerCase()
           break
+        case 'created_at':
+          aValue = a.created_at ? new Date(a.created_at) : new Date(0)
+          bValue = b.created_at ? new Date(b.created_at) : new Date(0)
+          break
         default:
           aValue = new Date(a.date)
           bValue = new Date(b.date)
@@ -162,8 +168,8 @@ const TransactionHistory: React.FC = () => {
       return 0;
     };
 
-    const incomeTransactions = transactions.filter(t => t.type === 'income');
-    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    const incomeTransactions = transactions.filter(t => t.type === 'income' && t.approval_status !== 'pending');
+    const expenseTransactions = transactions.filter(t => t.type === 'expense' && t.approval_status !== 'pending');
 
     const totalIncome = incomeTransactions.reduce((sum, t) => sum + getAmountValue(t.amount), 0);
     const totalExpense = expenseTransactions.reduce((sum, t) => sum + getAmountValue(t.amount), 0);
@@ -172,7 +178,8 @@ const TransactionHistory: React.FC = () => {
       total: transactions.length,
       income: totalIncome,
       expense: totalExpense,
-      balance: totalIncome - totalExpense
+      balance: totalIncome - totalExpense,
+      pendingCount: transactions.filter(t => t.approval_status === 'pending').length
     };
   }, [transactions])
 
@@ -195,7 +202,7 @@ const TransactionHistory: React.FC = () => {
 
   // 一括削除
   const handleBulkDelete = async () => {
-    if (window.confirm(`${selectedTransactions.length}件の取引を削除してもよろしいですか？`)) {
+    if (window.confirm(`${selectedTransactions.length} 件の取引を削除してもよろしいですか？`)) {
       try {
         for (const id of selectedTransactions) {
           await deleteTransaction(id)
@@ -204,18 +211,6 @@ const TransactionHistory: React.FC = () => {
       } catch (error) {
         console.error('一括削除に失敗:', error)
       }
-    }
-  }
-
-  // 新規取引の作成
-  const handleCreateTransaction = async (transactionData: any) => {
-    try {
-      await createTransaction(transactionData)
-      await fetchTransactions();
-      window.dispatchEvent(new CustomEvent('transactionRecorded'));
-      setShowCreateForm(false)
-    } catch (error) {
-      console.error('取引の作成に失敗:', error)
     }
   }
 
@@ -234,7 +229,7 @@ const TransactionHistory: React.FC = () => {
       setShowCreateForm(false)
     } catch (error: any) {
       console.error('取引の更新に失敗:', error)
-      alert(`取引の更新に失敗しました: ${error.message || '不明なエラーが発生しました'}`);
+      alert(`取引の更新に失敗しました: ${error.message || '不明なエラーが発生しました'} `);
     }
   }
 
@@ -326,11 +321,11 @@ const TransactionHistory: React.FC = () => {
             <div className="border border-border rounded-lg p-3">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-medium text-text-muted">収支</div>
-                <div className={`rounded-lg p-2 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
-                  <JapaneseYen className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                <div className={`rounded - lg p - 2 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'} `}>
+                  <JapaneseYen className={`w - 5 h - 5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'} `} />
                 </div>
               </div>
-              <div className={`text-xl font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`text - xl font - bold mt - 1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'} `}>
                 ¥{stats.balance.toLocaleString()}
               </div>
             </div>
@@ -357,10 +352,10 @@ const TransactionHistory: React.FC = () => {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`px-4 py-2.5 text-sm rounded-lg transition-colors flex items-center space-x-2 ${showFilters
+                  className={`px - 4 py - 2.5 text - sm rounded - lg transition - colors flex items - center space - x - 2 ${showFilters
                     ? 'bg-primary/10 text-primary'
                     : 'bg-surface-highlight text-text-muted hover:bg-border'
-                    }`}
+                    } `}
                 >
                   <Filter className="w-4 h-4" />
                   <span>フィルタ</span>
@@ -369,7 +364,7 @@ const TransactionHistory: React.FC = () => {
                       {activeFilterCount}
                     </span>
                   )}
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w - 4 h - 4 transition - transform ${showFilters ? 'rotate-180' : ''} `} />
                 </button>
                 {(categoryFilter || dateRange.start || dateRange.end || amountRange.min || amountRange.max) && (
                   <button
@@ -462,6 +457,7 @@ const TransactionHistory: React.FC = () => {
                     <option value="date">日付</option>
                     <option value="amount">金額</option>
                     <option value="item">項目</option>
+                    <option value="created_at">登録</option>
                   </select>
                 </div>
                 <button
@@ -505,6 +501,7 @@ const TransactionHistory: React.FC = () => {
                       />
                       <div>
                         <div className="flex items-center gap-2 mb-1">
+                          <TransactionIcon item={transaction.item} category={transaction.category} size="sm" />
                           <div className="font-medium text-text-main">{transaction.item}</div>
                           {transaction.recurring && (
                             <div className="flex items-center gap-1 px-1 py-0.5 rounded bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">
@@ -528,7 +525,7 @@ const TransactionHistory: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`font-bold ${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
+                      <div className={`font - bold ${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'} `}>
                         {transaction.type === 'expense' ? '-' : ''}¥{transaction.amount.toLocaleString()}
                       </div>
                     </div>
@@ -602,27 +599,25 @@ const TransactionHistory: React.FC = () => {
                           className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
                         />
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm font-medium text-text-main">{transaction.item}</div>
-                          {transaction.recurring && (
-                            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
-                              <Repeat className="w-2.5 h-2.5" />
-                              <span>{{
-                                'daily': '毎日',
-                                'weekly': '毎週',
-                                'monthly': '毎月',
-                                'yearly': '毎年'
-                              }[transaction.recurring_frequency || 'monthly']}</span>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <TransactionIcon item={transaction.item} category={transaction.category} size="sm" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-medium text-text-main">{transaction.item}</div>
+                              {transaction.recurring && (
+                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
+                                  <Repeat className="w-2.5 h-2.5" />
+                                  <span>{{
+                                    'daily': '毎日',
+                                    'weekly': '毎週',
+                                    'monthly': '毎月',
+                                    'yearly': '毎年'
+                                  }[transaction.recurring_frequency || 'monthly']}</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        <div className="text-sm text-text-muted sm:hidden">
-                          {new Date(transaction.date).toLocaleDateString('ja-JP', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -677,112 +672,125 @@ const TransactionHistory: React.FC = () => {
                   </tr>
                 )}
               </tbody>
-            </table>
-          </div>
+            </table >
+          </div >
 
           {/* ページネーション */}
-          {paginatedTransactions.length > 0 && (
-            <div className="bg-surface px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-text-muted bg-surface hover:bg-surface-highlight disabled:opacity-50"
-                >
-                  前へ
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-text-muted bg-surface hover:bg-surface-highlight disabled:opacity-50"
-                >
-                  次へ
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-text-muted">
-                    <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredAndSortedTransactions.length)}</span>
-                    &nbsp;件から&nbsp;
-                    <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredAndSortedTransactions.length)}</span>
-                    &nbsp;件までを表示中（全&nbsp;
-                    <span className="font-medium">{filteredAndSortedTransactions.length}</span>
-                    &nbsp;件）
-                  </p>
+          {
+            paginatedTransactions.length > 0 && (
+              <div className="bg-surface px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-text-muted bg-surface hover:bg-surface-highlight disabled:opacity-50"
+                  >
+                    前へ
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-text-muted bg-surface hover:bg-surface-highlight disabled:opacity-50"
+                  >
+                    次へ
+                  </button>
                 </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border bg-surface text-sm font-medium text-text-muted hover:bg-surface-highlight disabled:opacity-50"
-                    >
-                      <span className="sr-only">前へ</span>
-                      &lt;
-                    </button>
-                    {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                      const pageNum = Math.max(1, Math.min(currentPage - 2, totalPages - 4)) + i;
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
-                            ? 'z-10 bg-primary/10 border-primary text-primary'
-                            : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
-                            }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border bg-surface text-sm font-medium text-text-muted hover:bg-surface-highlight disabled:opacity-50"
-                    >
-                      <span className="sr-only">次へ</span>
-                      &gt;
-                    </button>
-                  </nav>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-text-muted">
+                      <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredAndSortedTransactions.length)}</span>
+                      &nbsp;件から&nbsp;
+                      <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredAndSortedTransactions.length)}</span>
+                      &nbsp;件までを表示中（全&nbsp;
+                      <span className="font-medium">{filteredAndSortedTransactions.length}</span>
+                      &nbsp;件）
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border bg-surface text-sm font-medium text-text-muted hover:bg-surface-highlight disabled:opacity-50"
+                      >
+                        <span className="sr-only">前へ</span>
+                        &lt;
+                      </button>
+                      {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                        const pageNum = Math.max(1, Math.min(currentPage - 2, totalPages - 4)) + i;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`relative inline - flex items - center px - 4 py - 2 border text - sm font - medium ${currentPage === pageNum
+                              ? 'z-10 bg-primary/10 border-primary text-primary'
+                              : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
+                              } `}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border bg-surface text-sm font-medium text-text-muted hover:bg-surface-highlight disabled:opacity-50"
+                      >
+                        <span className="sr-only">次へ</span>
+                        &gt;
+                      </button>
+                    </nav>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </main>
+            )
+          }
+        </div >
+      </main >
 
       {/* 新規取引作成/編集モーダル */}
-      {showCreateForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-border">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-text-main">
-                  {editingTransaction ? '取引を編集' : '新規取引作成'}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowCreateForm(false)
-                    setEditingTransaction(null)
-                  }}
-                  className="p-2 rounded-lg hover:bg-surface-highlight transition-colors"
-                >
-                  <X className="w-5 h-5 text-text-muted" />
-                </button>
+      {
+        showCreateForm && (
+          <div className="z-50">
+            {editingTransaction ? (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-border">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-bold text-text-main">
+                        取引を編集
+                      </h2>
+                      <button
+                        onClick={() => {
+                          setShowCreateForm(false)
+                          setEditingTransaction(null)
+                        }}
+                        className="p-2 rounded-lg hover:bg-surface-highlight transition-colors"
+                      >
+                        <X className="w-5 h-5 text-text-muted" />
+                      </button>
+                    </div>
+                    <TransactionForm
+                      transaction={editingTransaction}
+                      onSubmit={handleUpdateTransaction}
+                      onCancel={() => {
+                        setShowCreateForm(false)
+                        setEditingTransaction(null)
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <TransactionForm
-                transaction={editingTransaction}
-                onSubmit={editingTransaction ? handleUpdateTransaction : handleCreateTransaction}
-                onCancel={() => {
-                  setShowCreateForm(false)
-                  setEditingTransaction(null)
-                }}
+            ) : (
+              <OmniEntryPortal
+                onClose={() => setShowCreateForm(false)}
+                onSuccess={() => fetchTransactions()}
               />
-            </div>
+            )}
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   )
 }
 

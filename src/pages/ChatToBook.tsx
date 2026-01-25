@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mic, Square, Send, Trash2, Edit3, Save, CheckCircle, Circle, ArrowUpDown, AlertCircle } from 'lucide-react';
+import { Mic, Send, Save, Trash2, Edit3, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Receipt, AlertCircle } from 'lucide-react';
+import TransactionIcon from '../components/TransactionIcon';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessType } from '../hooks/useBusinessType';
 import { useAuth } from '../hooks/useAuth';
@@ -460,7 +461,7 @@ const ChatToBook: React.FC = () => {
         category: selectedCategory || transactionData.category,
         type: transactionData.type,
         creator: user.id,
-        approval_status: 'pending', // インボックスで確認するためpendingにする
+        approval_status: currentBusinessType?.business_type === 'corporation' ? 'pending' : 'approved',
         tags: ['voice'] // 音声入力のタグを追加
       });
 
@@ -746,9 +747,9 @@ const ChatToBook: React.FC = () => {
           date: transaction.date,
           category: transaction.category,
           type: transaction.type,
-          creator: user.id, // 認証されたユーザーのIDを使用
-          approval_status: 'pending', // インボックスで確認するためpendingにする
-          tags: ['voice'] // 音声入力のタグを追加
+          creator: user.id,
+          approval_status: currentBusinessType?.business_type === 'corporation' ? 'pending' : 'approved',
+          tags: ['voice']
         });
       });
 
@@ -951,7 +952,7 @@ const ChatToBook: React.FC = () => {
                     } text-white transition-colors shadow-lg shadow-primary/25`}
                 >
                   {isListening ? (
-                    <Square className="w-8 h-8" />
+                    <Receipt className="w-8 h-8" />
                   ) : (
                     <Mic className="w-8 h-8" />
                   )}
@@ -1349,7 +1350,10 @@ const ChatToBook: React.FC = () => {
                             className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                           />
                         ) : (
-                          transaction.description
+                          <div className="flex items-center gap-2">
+                            <TransactionIcon item={transaction.description || ''} category={transaction.category || ''} size="sm" />
+                            <span>{transaction.description}</span>
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-text-main">

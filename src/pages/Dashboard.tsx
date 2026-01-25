@@ -40,11 +40,11 @@ const Dashboard: React.FC = () => {
 
   // データの再取得
   useEffect(() => {
-    if (currentBusinessType?.id) {
-      console.log('ダッシュボード - データ再取得を実行');
+    if (!authLoading) {
+      console.log('ダッシュボード - 取引データの読み込みを開始');
       fetchTransactions();
     }
-  }, [currentBusinessType, fetchTransactions]);
+  }, [authLoading, fetchTransactions]);
 
   // transactionsの状態変化を監視
   useEffect(() => {
@@ -131,6 +131,9 @@ const Dashboard: React.FC = () => {
 
     // 金額を確実に数値に変換して計算
     const incomeTransactions = transactions.filter(t => {
+      // 承認待ちの取引は統計に含めない
+      if (t.approval_status === 'pending') return false;
+
       // typeが'income'の場合を優先
       if (t.type === 'income') {
         return true;
@@ -149,6 +152,9 @@ const Dashboard: React.FC = () => {
     });
 
     const expenseTransactions = transactions.filter(t => {
+      // 承認待ちの取引は統計に含めない
+      if (t.approval_status === 'pending') return false;
+
       // typeが'expense'の場合を優先
       if (t.type === 'expense') {
         return true;
@@ -195,7 +201,7 @@ const Dashboard: React.FC = () => {
     console.log('ダッシュボード - 支出取引:', expenseTransactions);
 
     return result;
-  }, [transactions])
+  }, [transactions]);
 
   // Skeleton Loader Component
   const DashboardSkeleton = () => (
@@ -243,20 +249,25 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex gap-3 w-full sm:w-auto">
-          {stats.pendingCount > 0 && (
-            <Link
-              to="/transaction-inbox"
-              className="group relative inline-flex items-center justify-center gap-2 px-4 py-2 font-medium rounded-lg bg-white dark:bg-surface border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:border-red-300 transition-all duration-200 shadow-sm active:scale-[0.98]"
-            >
-              <Inbox className="w-4 h-4" />
-              <span>確認待ち</span>
-              <span className="flex items-center justify-center bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded text-xs font-bold min-w-[20px]">
-                {stats.pendingCount}
-              </span>
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-white dark:border-surface"></span>
-            </Link>
-          )}
-          {/* CSV出力はインポートページに移動しました */}
+          <Link
+            to="/transaction-inbox"
+            className={`group relative inline-flex items-center justify-center gap-2 px-4 py-2 font-medium rounded-lg transition-all duration-200 shadow-sm active:scale-[0.98] border ${stats.pendingCount > 0
+              ? "bg-white dark:bg-surface border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:border-red-300 shadow-red-500/5"
+              : "bg-white dark:bg-surface border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:border-emerald-300 shadow-emerald-500/5"
+              }`}
+          >
+            <Inbox className="w-4 h-4" />
+            <span>確認待ち</span>
+            <span className={`flex items-center justify-center px-2 py-0.5 rounded text-xs font-bold min-w-[20px] ${stats.pendingCount > 0
+              ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+              : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+              }`}>
+              {stats.pendingCount}
+            </span>
+            {stats.pendingCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-white dark:border-surface shadow-[0_0_10px_rgba(239,68,68,0.5)]"></span>
+            )}
+          </Link>
           <button
             onClick={() => setShowCreateForm(true)}
             className="btn-primary flex-1 sm:flex-none flex items-center justify-center"

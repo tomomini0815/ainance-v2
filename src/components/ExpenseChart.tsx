@@ -15,7 +15,7 @@ interface ExpenseChartProps {
 
 const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
   const calculateExpenseByCategory = () => {
-    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    const expenseTransactions = transactions.filter(t => t.type === 'expense' && t.approval_status !== 'pending');
     const categoryTotals: { [key: string]: number } = {};
 
     expenseTransactions.forEach(transaction => {

@@ -134,6 +134,82 @@ ${ocrText}
 }
 
 /**
+ * Gemini AIのマルチモーダル機能を使用して画像から直接レシートを分析
+ */
+export async function analyzeReceiptWithVision(
+  imageBase64: string
+): Promise<AIReceiptAnalysis | null> {
+  if (!GEMINI_API_KEY) {
+    return null;
+  }
+
+  // Base64プレフィックスを除去
+  const pureBase64 = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+
+  const prompt = `あなたは日本の経理・会計の専門家です。提供されたレシートの画像を分析し、正確な情報を抽出してください。
+以下の情報をJSON形式で返してください（JSONのみ、説明不要）:
+{
+  "storeName": "店舗名",
+  "storeCategory": "店舗の業種",
+  "totalAmount": 数値（合計金額）,
+  "date": "YYYY-MM-DD形式の日付",
+  "items": [
+    {"name": "商品名", "price": 数値, "category": "食品/飲料/事務用品/日用品/その他"}
+  ],
+  "classification": {
+    "category": "経費カテゴリ（消耗品費/旅費交通費/接待交際費/通信費/水道光熱費/会議費/福利厚生費/外注費/地代家賃/雑費/その他）",
+    "accountTitle": "勘定科目",
+    "confidence": 0.0-1.0の信頼度,
+    "reasoning": "この分類にした理由",
+    "taxDeductible": true/false
+  }
+}`;
+
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: 'image/jpeg',
+                data: pureBase64
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 2048,
+          response_mime_type: "application/json"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Gemini Vision API エラー:', errorData);
+      return null;
+    }
+
+    const data = await response.json();
+    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!textContent) return null;
+
+    return JSON.parse(textContent) as AIReceiptAnalysis;
+  } catch (error) {
+    console.error('Gemini Vision AI分析エラー:', error);
+    return null;
+  }
+}
+
+/**
  * AIを使用して経費カテゴリを分類
  */
 export async function classifyExpenseWithAI(
@@ -457,4 +533,71 @@ ${data.topIncomeCategories.map(c => `- ${c.category}: ¥${c.amount.toLocaleStrin
   }
   
   throw new Error('AIアドバイスの生成に失敗しました。しばらくしてから再度お試しください。');
+}
+/**
+ * AIを使用してチャットテキストから取引データを抽出
+ */
+export async function parseChatTransactionWithAI(
+  text: string
+): Promise<{
+  item: string;
+  amount: number;
+  date: string;
+  category: string;
+  type: 'income' | 'expense';
+  description: string;
+} | null> {
+  if (!GEMINI_API_KEY) {
+    return null;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const prompt = `あなたは日本の経理専門家です。ユーザーのチャットメッセージから取引情報を抽出してJSON形式で返してください。
+
+現在の今日の日付: ${today}
+
+チャットメッセージ: "${text}"
+
+以下のJSON形式で回答してください（JSONのみ、説明不要）:
+{
+  "item": "品目名（例：昼食代、タクシー代、消耗品購入など）",
+  "amount": 数値（金額）,
+  "date": "YYYY-MM-DD形式の日付（昨日、今日などの表現も解釈してください）",
+  "category": "カテゴリ（消耗品費/旅費交通費/接待交際費/通信費/水道光熱費/会議費/福利厚生費/外注費/広告宣伝費/地代家賃/雑費/売上など）",
+  "type": "income または expense",
+  "description": "補足説明があれば"
+}
+
+注意: カテゴリは日本の一般的な青色申告の勘定科目に準拠してください。`;
+
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 512,
+        }
+      })
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const jsonMatch = textContent?.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) return null;
+
+    return JSON.parse(jsonMatch[0]);
+  } catch (error) {
+    console.error('AIチャット解析エラー:', error);
+    return null;
+  }
 }
