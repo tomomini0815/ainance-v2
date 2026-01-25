@@ -58,13 +58,33 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
     const capturePhoto = () => {
         if (videoRef.current) {
             const video = videoRef.current;
+
+            if (video.videoWidth === 0 || video.videoHeight === 0) {
+                console.error('Camera dimensions are 0. Waiting for video to load...');
+                toast.error('カメラの準備ができていません。もう一度お試しください。');
+                return;
+            }
+
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             if (ctx) {
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const dataUrl = canvas.toDataURL('image/jpeg');
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // slight compression
+
+                console.log('Captured photo:', {
+                    width: canvas.width,
+                    height: canvas.height,
+                    dataSize: dataUrl.length
+                });
+
+                if (dataUrl.length < 1000) {
+                    console.error('Captured image is too small (invalid).');
+                    toast.error('画像の撮影に失敗しました。');
+                    return;
+                }
+
                 setCapturedImageUrl(dataUrl);
                 stopCamera();
                 setIsCameraActive(false);

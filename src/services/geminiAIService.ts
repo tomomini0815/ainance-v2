@@ -214,21 +214,38 @@ export async function analyzeReceiptWithVision(
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Gemini Vision API エラー:', errorData);
+      console.error('Gemini Vision API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
       return null;
     }
 
     const data = await response.json();
+    console.log('Gemini Vision API Raw Response:', JSON.stringify(data, null, 2));
+
     const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!textContent) return null;
+    if (!textContent) {
+        console.warn('Gemini Vision API returned empty text content.');
+        return null;
+    }
 
-    return JSON.parse(textContent) as AIReceiptAnalysis;
+    // JSON extraction fix for potential markdown wrapping
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+        console.error('Failed to extract JSON from Gemini Vision response:', textContent);
+        return null;
+    }
+
+    return JSON.parse(jsonMatch[0]) as AIReceiptAnalysis;
   } catch (error) {
-    console.error('Gemini Vision AI分析エラー:', error);
+    console.error('Gemini Vision AI Analysis Exception:', error);
     return null;
   }
 }
+
 
 /**
  * AIを使用して経費カテゴリを分類
