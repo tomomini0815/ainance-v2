@@ -26,7 +26,72 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
     const [aiInput, setAiInput] = useState('');
     const [analysisResult, setAnalysisResult] = useState<AIReceiptAnalysis | null>(null);
     const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
+
     const cameraInputRef = useRef<HTMLInputElement>(null);
+    const [isCameraActive, setIsCameraActive] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    const startCamera = async () => {
+        setIsCameraActive(true);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+        } catch (err) {
+            console.error("Camera access denied:", err);
+            toast.error("カメラへのアクセスが拒否されました。");
+            setIsCameraActive(false);
+        }
+    };
+
+    const stopCamera = () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+    };
+
+    const capturePhoto = () => {
+        if (videoRef.current) {
+            const video = videoRef.current;
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg');
+                setCapturedImageUrl(dataUrl);
+                stopCamera();
+                setIsCameraActive(false);
+
+                // Trigger analysis immediately
+                const toastId = toast.loading('レシートを解析中...');
+                setIsProcessing(true);
+
+                analyzeReceiptWithVision(dataUrl)
+                    .then(aiAnalysis => {
+                        if (aiAnalysis) {
+                            setAnalysisResult(aiAnalysis);
+                            toast.success('分析が完了しました。', { id: toastId });
+                        } else {
+                            throw new Error('AI解析に失敗しました');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Analysis failed:', error);
+                        toast.error('解析に失敗しました: ' + (error.message || '不明なエラー'), { id: toastId });
+                    })
+                    .finally(() => {
+                        setIsProcessing(false);
+                    });
+            }
+        }
+    };
 
     console.log('OmniEntryPortal - Render:', {
         hasUser: !!user?.id,
@@ -254,11 +319,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
         }
     };
 
-    const handleCameraCapture = () => {
-        if (cameraInputRef.current) {
-            cameraInputRef.current.click();
-        }
-    };
+
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
@@ -317,38 +378,70 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                     {mode === 'ocr' && (
                         <div className="flex flex-col gap-6">
                             {!analysisResult ? (
-                                <div className="py-8 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-2xl bg-surface/30 px-4">
-                                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                                        <Camera className="w-8 h-8 text-primary" />
-                                    </div>
-                                    <h3 className="text-lg font-semibold text-text-main mb-2 text-center">レシートを撮影・アップロード</h3>
-                                    <p className="text-sm text-text-muted mb-6 text-center max-w-xs">
-                                        カメラで撮影するか、ファイルを選択してください。<br />AIが自動で内容を読み取ります。
-                                    </p>
+                                <div className="py-8 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-2xl bg-surface/30 px-4 relative overflow-hidden">
+                                    {isCameraActive ? (
+                                        <div className="w-full max-w-md aspect-[3/4] bg-black rounded-xl overflow-hidden relative mb-4">
+                                            <video
+                                                ref={videoRef}
+                                                autoPlay
+                                                playsInline
+                                                muted
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-10 px-4">
+                                                <button
+                                                    onClick={() => {
+                                                        stopCamera();
+                                                        setIsCameraActive(false);
+                                                    }}
+                                                    className="px-4 py-2 bg-black/50 text-white rounded-full text-sm font-bold backdrop-blur-md"
+                                                >
+                                                    キャンセル
+                                                </button>
+                                                <button
+                                                    onClick={capturePhoto}
+                                                    className="w-16 h-16 border-4 border-white rounded-full flex items-center justify-center relative hover:scale-105 transition-transform"
+                                                >
+                                                    <div className="w-12 h-12 bg-white rounded-full" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                                <Camera className="w-8 h-8 text-primary" />
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-text-main mb-2 text-center">レシートを撮影・アップロード</h3>
+                                            <p className="text-sm text-text-muted mb-6 text-center max-w-xs">
+                                                カメラで撮影するか、ファイルを選択してください。<br />AIが自動で内容を読み取ります。
+                                            </p>
 
-                                    <div className="flex flex-col gap-3 w-full max-w-sm px-2">
-                                        <input
-                                            type="file"
-                                            ref={cameraInputRef}
-                                            className="hidden"
-                                            accept="image/*"
-                                            capture="environment"
-                                            onChange={handleFileUpload}
-                                        />
-                                        <button
-                                            onClick={handleCameraCapture}
-                                            disabled={isProcessing}
-                                            className="w-full btn-primary flex items-center justify-center gap-2 py-4 rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
-                                        >
-                                            <Camera className="w-5 h-5" />
-                                            カメラで撮影
-                                        </button>
-                                        <label className="w-full flex items-center justify-center gap-2 py-4 bg-surface border border-border rounded-xl text-base font-bold text-text-main hover:bg-surface-highlight transition-all cursor-pointer hover:border-primary/30">
-                                            <Upload className="w-5 h-5" />
-                                            ファイルを選択
-                                            <input type="file" className="hidden" onChange={handleFileUpload} accept="image/*,application/pdf" disabled={isProcessing} />
-                                        </label>
-                                    </div>
+                                            <div className="flex flex-col gap-3 w-full max-w-sm px-2">
+                                                <button
+                                                    onClick={startCamera}
+                                                    disabled={isProcessing}
+                                                    className="w-full btn-primary flex items-center justify-center gap-2 py-4 rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
+                                                >
+                                                    <Camera className="w-5 h-5" />
+                                                    カメラで撮影
+                                                </button>
+                                                <label className="w-full flex items-center justify-center gap-2 py-4 bg-surface border border-border rounded-xl text-base font-bold text-text-main hover:bg-surface-highlight transition-all cursor-pointer hover:border-primary/30">
+                                                    <Upload className="w-5 h-5" />
+                                                    ファイルを選択
+                                                    <input type="file" className="hidden" onChange={handleFileUpload} accept="image/*,application/pdf" disabled={isProcessing} />
+                                                </label>
+                                                {/* Fallback hidden input for mobile if needed, but we try Start Camera first */}
+                                                <input
+                                                    type="file"
+                                                    ref={cameraInputRef}
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    capture="environment"
+                                                    onChange={handleFileUpload}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="animate-in slide-in-from-bottom-4 duration-300">

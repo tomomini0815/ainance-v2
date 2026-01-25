@@ -146,9 +146,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
             return (
               <div
                 key={transaction.id}
-                className="bg-surface-highlight rounded-xl p-4 border border-border hover:border-primary/50 transition-all"
+                className="bg-surface-highlight rounded-xl p-3 border border-border hover:border-primary/50 transition-all"
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex items-start flex-1">
                     <TransactionIcon item={transaction.item} category={transaction.category} />
                     <div className="flex-1">
@@ -182,7 +182,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="whitespace-nowrap inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-slate-500/10 text-text-muted">
+                  <span className="whitespace-nowrap inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full bg-surface-highlight text-gray-300 border border-white/5">
                     {transaction.category}
                   </span>
                 </div>
@@ -280,7 +280,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                       })}
                     </td>
                     <td className="py-4 px-4 text-center">
-                      <span className="whitespace-nowrap inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-slate-500/10 text-text-muted">
+                      <span className="whitespace-nowrap inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full bg-surface-highlight text-gray-300 border border-white/5">
                         {transaction.category}
                       </span>
                     </td>

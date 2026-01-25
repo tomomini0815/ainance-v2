@@ -1157,8 +1157,8 @@ const ChatToBook: React.FC = () => {
           <div className="overflow-x-auto">
             <div className="block md:hidden space-y-4">
               {sortedTransactions.map((transaction) => (
-                <div key={transaction.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
-                  <div className="flex justify-between items-start mb-2">
+                <div key={transaction.id} className="bg-surface p-3 rounded-lg shadow-sm border border-border">
+                  <div className="flex justify-between items-start mb-1">
                     <div className="flex items-center">
                       <button
                         onClick={() => toggleTransactionSelection(transaction.id)}
@@ -1214,7 +1214,7 @@ const ChatToBook: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
+                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-border">
                     <div className="text-sm">
                       {editingId === transaction.id ? (
                         <select
@@ -1234,7 +1234,7 @@ const ChatToBook: React.FC = () => {
                           <option value="未分類">未分類</option>
                         </select>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-muted">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-gray-300 border border-white/5">
                           {transaction.category}
                         </span>
                       )}
