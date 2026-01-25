@@ -585,7 +585,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                             <p className="text-sm text-text-muted mb-6 text-center max-w-sm">
                                 「今日のお昼代 1200円 経費で」<br />のように入力するだけで、AIが自動で仕訳します。
                             </p>
-                            <div className="w-full max-w-md relative group px-4">
+                            <div className="w-full max-w-md px-4">
                                 <div className="flex justify-center mb-4">
                                     <div className="relative inline-flex items-center">
                                         <Calendar className="absolute left-3 w-4 h-4 text-primary pointer-events-none" />
@@ -600,32 +600,34 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                                         />
                                     </div>
                                 </div>
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    value={aiInput}
-                                    onChange={(e) => setAiInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleAiSubmit()}
-                                    placeholder="メッセージを入力..."
-                                    className="input-base pr-20 h-12 shadow-sm focus:ring-purple-500/20 border-purple-500/30"
-                                    disabled={isProcessing}
-                                />
-                                <button
-                                    onClick={handleAiSubmit}
-                                    disabled={!aiInput.trim() || isProcessing || !user?.id || !currentBusinessType?.business_type}
-                                    className={`absolute right-5 top-1.5 bottom-1.5 px-4 rounded-lg text-sm font-bold transition-all shadow-sm ${aiInput.trim() && !isProcessing && user?.id && currentBusinessType?.business_type
-                                        ? 'bg-purple-600 text-white hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/40 active:scale-95'
-                                        : 'bg-surface-highlight text-text-muted cursor-not-allowed'
-                                        }`}
-                                >
-                                    {isProcessing ? (
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    ) : (!user?.id || !currentBusinessType?.business_type) ? (
-                                        '準備中'
-                                    ) : (
-                                        '送信'
-                                    )}
-                                </button>
+                                <div className="relative group w-full">
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        value={aiInput}
+                                        onChange={(e) => setAiInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAiSubmit()}
+                                        placeholder="メッセージを入力..."
+                                        className="input-base pr-20 h-12 shadow-sm focus:ring-purple-500/20 border-purple-500/30 w-full"
+                                        disabled={isProcessing}
+                                    />
+                                    <button
+                                        onClick={handleAiSubmit}
+                                        disabled={!aiInput.trim() || isProcessing || !user?.id || !currentBusinessType?.business_type}
+                                        className={`absolute right-1 top-1.5 bottom-1.5 px-4 rounded-lg text-sm font-bold transition-all shadow-sm ${aiInput.trim() && !isProcessing && user?.id && currentBusinessType?.business_type
+                                            ? 'bg-purple-600 text-white hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/40 active:scale-95'
+                                            : 'bg-surface-highlight text-text-muted cursor-not-allowed'
+                                            }`}
+                                    >
+                                        {isProcessing ? (
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : (!user?.id || !currentBusinessType?.business_type) ? (
+                                            '準備中'
+                                        ) : (
+                                            '送信'
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}

@@ -639,6 +639,7 @@ export async function parseChatTransactionWithAI(
         generationConfig: {
           temperature: 0.1,
           maxOutputTokens: 512,
+          response_mime_type: "application/json"
         }
       })
     });
@@ -647,11 +648,26 @@ export async function parseChatTransactionWithAI(
 
     const data = await response.json();
     const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    const jsonMatch = textContent?.match(/\{[\s\S]*\}/);
     
-    if (!jsonMatch) return null;
+    if (!textContent) return null;
 
-    return JSON.parse(jsonMatch[0]);
+    // Remove markdown code blocks if present
+    const cleanedText = textContent.replace(/```json\n|\n```/g, '').trim();
+    
+    let result;
+    try {
+        result = JSON.parse(cleanedText);
+    } catch (e) {
+        // Fallback: try regex extraction if direct parse fails
+        const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            result = JSON.parse(jsonMatch[0]);
+        } else {
+            return null;
+        }
+    }
+
+    return result;
   } catch (error) {
     console.error('AIチャット解析エラー:', error);
     return null;
