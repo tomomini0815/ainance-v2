@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, MessageSquare, Edit3, Camera, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, Upload, MessageSquare, Edit3, Camera, Sparkles, CheckCircle2, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import TransactionForm from './TransactionForm';
@@ -26,6 +26,8 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
     const [aiInput, setAiInput] = useState('');
     const [analysisResult, setAnalysisResult] = useState<AIReceiptAnalysis | null>(null);
     const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
+    const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [isDateManuallySelected, setIsDateManuallySelected] = useState(false);
 
     const cameraInputRef = useRef<HTMLInputElement>(null);
     const [isCameraActive, setIsCameraActive] = useState(false);
@@ -178,7 +180,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                     item: aiData.item || 'AIチャット入力',
                     description: aiData.description || aiData.item,
                     amount: aiData.amount,
-                    date: aiData.date || new Date().toISOString().split('T')[0],
+                    date: isDateManuallySelected ? selectedDate : (aiData.date || selectedDate),
                     category: aiData.category || '未分類',
                     type: aiData.type || 'expense',
                     creator: uId,
@@ -221,7 +223,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                     item: cleanedItem,
                     description: cleanedItem,
                     amount: amount,
-                    date: new Date().toISOString().split('T')[0],
+                    date: isDateManuallySelected ? selectedDate : new Date().toISOString().split('T')[0],
                     category: '未分類',
                     type: 'expense' as const,
                     creator: uId,
@@ -584,6 +586,20 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                                 「今日のお昼代 1200円 経費で」<br />のように入力するだけで、AIが自動で仕訳します。
                             </p>
                             <div className="w-full max-w-md relative group px-4">
+                                <div className="flex justify-center mb-4">
+                                    <div className="relative inline-flex items-center">
+                                        <Calendar className="absolute left-3 w-4 h-4 text-primary pointer-events-none" />
+                                        <input
+                                            type="date"
+                                            value={selectedDate}
+                                            onChange={(e) => {
+                                                setSelectedDate(e.target.value);
+                                                setIsDateManuallySelected(true);
+                                            }}
+                                            className="pl-9 pr-4 py-1.5 bg-surface border border-border rounded-lg text-sm font-bold text-text-main focus:border-primary outline-none transition-all hover:bg-surface-highlight cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
                                 <input
                                     autoFocus
                                     type="text"
