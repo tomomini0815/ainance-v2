@@ -36,10 +36,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     const navItems = [
         { path: '/dashboard', label: 'ダッシュボード', icon: Home },
         { path: '/chat-to-book', label: '音声で記録', icon: MessageSquare },
-        { path: '/receipt-processing', label: 'レシート', icon: Receipt },
-        { path: '/invoice-creation', label: '請求書', icon: FileText },
-        { path: '/csv-import', label: 'CSVインポート', icon: Upload },
-        { path: '/subsidy-matching', label: '補助金', icon: Sparkles },
+        { path: '/receipt-processing', label: 'レシート処理', icon: Receipt },
+        { path: '/invoice-creation', label: '書類作成管理', icon: FileText },
+        { path: '/csv-import', label: 'CSV入出力管理', icon: Upload },
+        { path: '/subsidy-matching', label: '補助金マッチ', icon: Sparkles },
         { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
         // 法人の場合は法人税申告サポート、個人の場合は確定申告サポート
         {

@@ -251,10 +251,13 @@ const Dashboard: React.FC = () => {
         <div className="flex gap-4 w-full sm:w-auto h-12">
           <Link
             to="/transaction-inbox"
-            className={`group flex-1 sm:flex-none relative inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full transition-all duration-200 border border-red-500/50 hover:border-red-500 bg-surface text-red-500 hover:bg-red-500/10`}
+            className={`group flex-1 sm:flex-none relative inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full transition-all duration-200 border ${stats.pendingCount > 0
+              ? 'border-red-500/50 hover:border-red-500 text-red-500 hover:bg-red-500/10'
+              : 'border-border hover:border-border-strong text-text-muted hover:bg-surface-highlight'
+              } bg-surface`}
           >
             <Inbox className="w-5 h-5" />
-            <span className="font-bold">確認待ち</span>
+            <span className="font-bold">確認待ち{stats.pendingCount === 0 ? '(0)' : ''}</span>
             {stats.pendingCount > 0 && (
               <>
                 <span className="flex items-center justify-center min-w-[24px] h-6 px-1.5 ml-1 rounded-full text-xs font-bold bg-white/10 text-red-500">

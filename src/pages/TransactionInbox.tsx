@@ -303,10 +303,20 @@ const TransactionInbox: React.FC = () => {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
                                                     <TransactionIcon item={t.item} category={t.category} size="sm" />
-                                                    <div className="font-medium text-text-main whitespace-nowrap">{t.item}</div>
-                                                    {t.description && t.description !== t.item && (
-                                                        <div className="text-xs text-text-muted truncate max-w-[200px]">{t.description}</div>
-                                                    )}
+                                                    <div className="flex flex-col overflow-hidden">
+                                                        {t.description && t.description !== t.item ? (
+                                                            <>
+                                                                <div className="font-bold text-text-main text-sm truncate max-w-[200px]" title={t.description}>
+                                                                    {t.description}
+                                                                </div>
+                                                                <div className="text-xs text-text-muted truncate max-w-[200px]" title={t.item}>
+                                                                    {t.item}
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <div className="font-medium text-text-main whitespace-nowrap">{t.item}</div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm whitespace-nowrap">

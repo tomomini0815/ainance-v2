@@ -722,7 +722,7 @@ const TransactionHistory: React.FC = () => {
                           <button
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`relative inline - flex items - center px - 4 py - 2 border text - sm font - medium ${currentPage === pageNum
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
                               ? 'z-10 bg-primary/10 border-primary text-primary'
                               : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
                               } `}

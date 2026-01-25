@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mic, Send, Save, Trash2, Edit3, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Receipt, AlertCircle } from 'lucide-react';
+import { Mic, Send, Save, Trash2, Edit3, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Receipt, AlertCircle, Square } from 'lucide-react';
 import TransactionIcon from '../components/TransactionIcon';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessType } from '../hooks/useBusinessType';
@@ -177,17 +177,19 @@ const ChatToBook: React.FC = () => {
       // DBから取得したデータとローカルの一時データを結合
       // 承認された取引も表示するが、重複を避ける
       const mergedTransactions = [
-        ...dbTransactions.map((t: any) => ({
-          id: t.id,
-          date: t.date,
-          description: t.description || t.item || '',
-          amount: t.amount,
-          category: t.category,
-          type: t.type as 'income' | 'expense',
-          created_at: t.created_at,
-          updated_at: t.updated_at,
-          approval_status: t.approval_status // 承認状態を追加
-        })),
+        ...dbTransactions
+          .filter((t: any) => !t.tags?.includes('manual_created') && !t.tags?.includes('ai-chat')) // 手動作成とAIチャットデータを除外
+          .map((t: any) => ({
+            id: t.id,
+            date: t.date,
+            description: t.description || t.item || '',
+            amount: t.amount,
+            category: t.category,
+            type: t.type as 'income' | 'expense',
+            created_at: t.created_at,
+            updated_at: t.updated_at,
+            approval_status: t.approval_status // 承認状態を追加
+          })),
         ...localTempData
       ];
 
@@ -461,7 +463,7 @@ const ChatToBook: React.FC = () => {
         category: selectedCategory || transactionData.category,
         type: transactionData.type,
         creator: user.id,
-        approval_status: currentBusinessType?.business_type === 'corporation' ? 'pending' : 'approved',
+        approval_status: 'pending', // 確認リストに表示するために一旦pendingにする
         tags: ['voice'] // 音声入力のタグを追加
       });
 
@@ -748,7 +750,7 @@ const ChatToBook: React.FC = () => {
           category: transaction.category,
           type: transaction.type,
           creator: user.id,
-          approval_status: currentBusinessType?.business_type === 'corporation' ? 'pending' : 'approved',
+          approval_status: 'pending', // 確認リストに表示するために一旦pendingにする
           tags: ['voice']
         });
       });
@@ -952,7 +954,7 @@ const ChatToBook: React.FC = () => {
                     } text-white transition-colors shadow-lg shadow-primary/25`}
                 >
                   {isListening ? (
-                    <Receipt className="w-8 h-8" />
+                    <Square className="w-8 h-8 fill-current" />
                   ) : (
                     <Mic className="w-8 h-8" />
                   )}
@@ -1406,36 +1408,39 @@ const ChatToBook: React.FC = () => {
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => recordTransaction(transaction)}
-                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${transaction.approval_status === 'approved'
+                              className={`p-2 rounded-lg transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap ${transaction.approval_status === 'approved'
                                 ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
-                                : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white shadow-md active:scale-95'
+                                : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
-                              <CheckCircle className="w-5 h-5" />
+                              <CheckCircle className="w-4 h-4" />
+                              登録
                             </button>
                             <button
                               onClick={() => handleEdit(transaction)}
-                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${transaction.approval_status === 'approved'
+                              className={`p-2 rounded-lg transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap ${transaction.approval_status === 'approved'
                                 ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
-                                : 'bg-primary/10 text-primary hover:bg-primary hover:text-white shadow-md active:scale-95'
+                                : 'bg-primary/10 text-primary hover:bg-primary hover:text-white'
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
-                              <Edit3 className="w-5 h-5" />
+                              <Edit3 className="w-4 h-4" />
+                              編集
                             </button>
                             <button
                               onClick={() => handleDelete(transaction.id)}
-                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${transaction.approval_status === 'approved'
+                              className={`p-2 rounded-lg transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap ${transaction.approval_status === 'approved'
                                 ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
-                                : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white shadow-md active:scale-95'
+                                : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white'
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
-                              <Trash2 className="w-5 h-5" />
+                              <Trash2 className="w-4 h-4" />
+                              削除
                             </button>
                           </div>
                         )}

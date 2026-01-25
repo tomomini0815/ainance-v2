@@ -19,6 +19,8 @@ const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/
 const getApiUrl = (model: string) => 
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
+import { determineCategoryByKeyword } from './keywordCategoryService';
+
 export interface AIClassificationResult {
   category: string;
   accountTitle: string;
@@ -239,7 +241,38 @@ export async function analyzeReceiptWithVision(
         return null;
     }
 
-    return JSON.parse(jsonMatch[0]) as AIReceiptAnalysis;
+    const result = JSON.parse(jsonMatch[0]) as AIReceiptAnalysis;
+
+    // キーワードによるカテゴリ修正のフォールバック
+    if (result && result.items) {
+      result.items.forEach(item => {
+        if (!item.category || item.category === 'その他' || item.category === '未分類' || item.category === 'Unclassified') {
+          const keywordCategory = determineCategoryByKeyword(item.name);
+          if (keywordCategory) {
+             console.log(`Keyword Category Fallback (Item): ${item.name} -> ${keywordCategory}`);
+             item.category = keywordCategory;
+          }
+        }
+      });
+    }
+    
+    // 全体の分類もチェック
+    if (result && result.classification) {
+       const cls = result.classification;
+       if (!cls.category || cls.category === 'その他' || cls.category === '未分類' || cls.category === 'Unclassified' || cls.category === '雑費') {
+          // 店名や品目から推測
+          const textToAnalyze = `${result.storeName} ${result.items?.map(i => i.name).join(' ')}`;
+          const keywordCategory = determineCategoryByKeyword(textToAnalyze);
+          if (keywordCategory) {
+              console.log(`Keyword Category Fallback (Main): ${result.storeName} -> ${keywordCategory}`);
+              cls.category = keywordCategory;
+              cls.accountTitle = keywordCategory; // 簡易的に勘定科目も同じにする
+              cls.reasoning += " (キーワードマッチングにより修正)";
+          }
+       }
+    }
+
+    return result;
   } catch (error) {
     console.error('Gemini Vision AI Analysis Exception:', error);
     return null;
@@ -664,6 +697,19 @@ export async function parseChatTransactionWithAI(
             result = JSON.parse(jsonMatch[0]);
         } else {
             return null;
+        }
+    }
+
+    // キーワードによるカテゴリ修正のフォールバック
+    if (result) {
+        if (!result.category || result.category === 'その他' || result.category === '未分類' || result.category === 'Unclassified' || result.category === '雑費') {
+            // 品目やDescriptionから推測
+            const textToAnalyze = `${result.item} ${result.description || ''}`;
+            const keywordCategory = determineCategoryByKeyword(textToAnalyze);
+            if (keywordCategory) {
+                console.log(`Keyword Category Fallback (Chat): ${result.item} -> ${keywordCategory}`);
+                result.category = keywordCategory;
+            }
         }
     }
 

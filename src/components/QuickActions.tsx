@@ -50,8 +50,8 @@ const QuickActions: React.FC = () => {
       borderColor: 'border-rose-500/30'
     },
     {
-      title: '駆け込み確定申告',
-      description: '1日で書類完成',
+      title: '即日確定申告',
+      description: '最短10分で書類作成完了',
       icon: Sparkles,
       link: '/quick-tax-filing',
       color: 'bg-orange-500/20',

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Plus, FileText, Repeat } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Plus, FileText, Repeat } from 'lucide-react'
 import TransactionIcon from './TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
@@ -71,6 +71,19 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
   const latestTransactions = [...(transactions.length > 0 ? transactions : fetchedTransactions)]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 5;
+
+  const totalPages = Math.ceil(latestTransactions.length / itemsPerPage);
+  const paginatedTransactions = latestTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   if (loading) {
     return (
       <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
@@ -124,8 +137,8 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
 
       {/* モバイル: カード表示 */}
       <div className="block md:hidden space-y-3">
-        {latestTransactions.length > 0 ? (
-          latestTransactions.slice(0, 10).map((transaction) => {
+        {paginatedTransactions.length > 0 ? (
+          paginatedTransactions.map((transaction) => {
             // amountの型を確実に数値に変換
             let amount = transaction.amount;
             if (typeof transaction.amount === 'string') {
@@ -202,7 +215,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
       </div>
 
       {/* デスクトップ: テーブル表示 */}
-      <div className="hidden md:block overflow-x-auto max-h-96 overflow-y-auto">
+      <div className="hidden md:block overflow-x-auto min-h-[300px]">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
@@ -213,8 +226,8 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {latestTransactions.length > 0 ? (
-              latestTransactions.slice(0, 10).map((transaction) => {
+            {paginatedTransactions.length > 0 ? (
+              paginatedTransactions.map((transaction) => {
                 // amountの型を確実に数値に変換
                 let amount = transaction.amount;
                 if (typeof transaction.amount === 'string') {
@@ -233,16 +246,6 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                 // 両方がtrueになることはないので、isExplicitIncomeを優先
                 const isFinalIncome = isExplicitIncome ? true : (isExplicitExpense ? false : (isValidAmount && amount > 0));
                 const isFinalExpense = isExplicitExpense ? true : (isExplicitIncome ? false : (isValidAmount && amount < 0));
-
-                console.log('Transaction processing:', {
-                  id: transaction.id,
-                  amount,
-                  type: transaction.type,
-                  isExplicitIncome,
-                  isExplicitExpense,
-                  isFinalIncome,
-                  isFinalExpense
-                });
 
                 return (
                   <tr key={transaction.id} className="hover:bg-white/5 transition-colors group">
@@ -304,17 +307,58 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
       </div>
 
       {/* ページネーション */}
-      <div className="flex items-center justify-center mt-6 space-x-2">
-        <button className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center text-sm font-medium shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all">
-          1
-        </button>
-        <button className="w-8 h-8 rounded-lg bg-surface text-text-muted flex items-center justify-center text-sm font-medium hover:bg-surface-highlight hover:text-text-main transition-all border border-border">
-          2
-        </button>
-        <button className="p-2 text-text-muted hover:text-text-secondary transition-colors">
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center mt-6 space-x-2">
+          <button
+            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className={`p-2 rounded-lg transition-colors ${currentPage === 1
+              ? 'text-gray-300 cursor-not-allowed'
+              : 'text-text-muted hover:text-text-secondary hover:bg-surface-highlight'
+              }`}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          {(() => {
+            // 表示するページ番号の範囲を計算（最大5つ表示）
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+
+            // ページの範囲を調整（端の場合）
+            if (endPage - startPage < 4) {
+              startPage = Math.max(1, endPage - 4);
+            }
+
+            return Array.from({ length: endPage - startPage + 1 }).map((_, i) => {
+              const pageNumber = startPage + i;
+              return (
+                <button
+                  key={pageNumber}
+                  onClick={() => handlePageChange(pageNumber)}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${currentPage === pageNumber
+                    ? 'bg-primary text-white shadow-lg shadow-primary/25 hover:bg-primary/90'
+                    : 'bg-surface text-text-muted hover:bg-surface-highlight hover:text-text-main border border-border'
+                    }`}
+                >
+                  {pageNumber}
+                </button>
+              );
+            });
+          })()}
+
+          <button
+            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className={`p-2 rounded-lg transition-colors ${currentPage === totalPages
+              ? 'text-gray-300 cursor-not-allowed'
+              : 'text-text-muted hover:text-text-secondary hover:bg-surface-highlight'
+              }`}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

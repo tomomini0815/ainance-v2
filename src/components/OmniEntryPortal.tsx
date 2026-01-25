@@ -126,6 +126,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
         try {
             const result = await createTransaction({
                 ...data,
+                tags: [...(data.tags || []), 'manual_created'], // 手動作成タグを追加
                 approval_status: 'approved' // 手入力は即時承認扱い
             });
             if (result.error) throw result.error;

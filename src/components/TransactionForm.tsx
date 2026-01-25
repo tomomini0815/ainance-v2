@@ -403,11 +403,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
               <option value="看板設置費" className="bg-surface-highlight">看板設置費</option>
               <option value="贈答品代" className="bg-surface-highlight">贈答品代</option>
               <option value="火災保険料" className="bg-surface-highlight">火災保険料</option>
+              <option value="生命保険料" className="bg-surface-highlight">生命保険料</option>
               <option value="振込手数料" className="bg-surface-highlight">振込手数料</option>
               <option value="税理士報酬" className="bg-surface-highlight">税理士報酬</option>
               <option value="デザイン委託費" className="bg-surface-highlight">デザイン委託費</option>
               <option value="システム開発費" className="bg-surface-highlight">システム開発費</option>
+              <option value="業務ツール" className="bg-surface-highlight">業務ツール</option>
+              <option value="サブスク" className="bg-surface-highlight">サブスク</option>
               <option value="少額費用" className="bg-surface-highlight">少額費用</option>
+              <option value="その他" className="bg-surface-highlight">その他</option>
             </select>
             <div className="absolute right-3.5 top-1/2 transform -translate-y-1/2 pointer-events-none">
               <Zap className="w-4 h-4 text-text-muted" />

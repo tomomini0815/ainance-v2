@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
-import { Upload, FileText, ArrowRight, ArrowLeft, Camera, X, RefreshCw, FileImage, Search, Eye, Check, Save, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, ArrowRight, ArrowLeft, Camera, X, RefreshCw, FileImage, Search, Eye, Check, Save, AlertTriangle, Edit2, CheckCircle, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import ReceiptCamera from '../components/ReceiptCamera';
@@ -656,10 +656,8 @@ const ReceiptProcessing: React.FC = () => {
     // 事業タイプを取得（デフォルトは個人）
     const businessType = currentBusinessType?.business_type || 'individual';
 
-    // UIを先に更新（楽観的更新）
-    setUploadedReceipts(prev => prev.map(r =>
-      r.id === id ? { ...r, status: 'approved' as const } : r
-    ));
+    // UIを先に更新（楽観的削除）
+    setUploadedReceipts(prev => prev.filter(r => r.id !== id));
 
     // レシートデータを作成
     const receiptData = {
@@ -685,25 +683,30 @@ const ReceiptProcessing: React.FC = () => {
     );
 
     if (result.success) {
-      console.log('✅ レシート承認完了: 各テーブルに保存されました');
-      // 成功通知を表示（オプション）
-      toast.success(`レシートが承認され、${businessType === 'individual' ? '個人' : '法人'}の取引として記録されました！`);
+      console.log('✅ レシート登録完了: 各テーブルに保存されました');
+      toast.success(`レシートが登録され、${businessType === 'individual' ? '個人' : '法人'}の取引として記録されました！`);
     } else {
-      console.error('❌ レシート承認エラー:', result.error);
-      // エラー時は状態を元に戻す
-      setUploadedReceipts(prev => prev.map(r =>
-        r.id === id ? { ...r, status: 'pending' as const } : r
-      ));
+      console.error('❌ レシート登録エラー:', result.error);
+      // エラー時は状態を元に戻す（再取得が必要だが、ここでは簡易的に通知のみ）
+      // 必要であればここでstateを巻き戻す処理を追加するが、複雑になるため再ロードを促すか、エラー通知に留める
       toast.error(`エラーが発生しました: ${result.error}`);
+      // 失敗した場合はリストに戻す（楽観的削除のロールバック）
+      setUploadedReceipts(prev => [...prev, receipt]);
     }
   }
 
   const handleReject = async (id: string) => {
-    setUploadedReceipts(prev => prev.map(receipt =>
-      receipt.id === id ? { ...receipt, status: 'rejected' as const } : receipt
-    ))
-    // Supabaseにも保存
+    // UIから削除（楽観的更新）
+    const receipt = uploadedReceipts.find(r => r.id === id);
+    setUploadedReceipts(prev => prev.filter(r => r.id !== id));
+
+    // Supabaseにも保存（ステータス更新または削除）
+    // updateReceiptStatus(id, 'rejected'); 
+    // 完全に削除する場合は deleteReceipt(id) などを呼ぶべきだが、
+    // ここではステータスをrejectedにしてリストから消す（裏では残る）か、
+    // 要件通り「リストから消える」を実現するために、ユーザー視点では削除と同様に振る舞う。
     await updateReceiptStatus(id, 'rejected');
+    toast.success('レシートを削除しました');
   }
 
   // 再試行機能
@@ -867,55 +870,7 @@ const ReceiptProcessing: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* 最近のアップロード */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-surface border border-border rounded-xl p-6 shadow-sm"
-          >
-            <div className="flex items-center gap-2 mb-5">
-              <FileText className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold text-text-main">最近のアップロード</h2>
-            </div>
-            <div className="space-y-3">
-              {uploadedReceipts.length > 0 ? (
-                uploadedReceipts.slice(0, 3).map((receipt) => (
-                  <div key={receipt.id} className="flex items-center justify-between p-4 bg-background rounded-lg border border-border hover:border-primary/50 hover:shadow-sm transition-all duration-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                        <FileText className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-text-main">{receipt.merchant}</p>
-                        <p className="text-sm text-text-muted">{receipt.date} {receipt.amount > 0 ? `• ¥${receipt.amount.toLocaleString()}` : ''}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${receipt.status === 'approved' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
-                        receipt.status === 'rejected' ? 'bg-red-500/10 text-red-600 border-red-500/20' :
-                          'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
-                        }`}>
-                        {receipt.status === 'approved' ? '処理完了' :
-                          receipt.status === 'rejected' ? '却下' : '処理中'}
-                      </span>
-                      <button
-                        onClick={() => showReceiptDetails(receipt)}
-                        className="p-2 text-text-muted hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200"
-                      >
-                        <ArrowRight className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-12 text-text-muted">
-                  <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">まだアップロードされたレシートはありません</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
+          {/* 最近のアップロードセクションは削除されました */}
         </div>
 
         {/* Other Components Placeholder */}
@@ -1205,16 +1160,14 @@ const ReceiptProcessing: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">店舗名</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">説明</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">信頼度</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">ステータス</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
                 <tbody className="bg-surface divide-y divide-gray-200">
                   {filteredReceipts.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-12 text-center text-text-muted">
+                      <td colSpan={6} className="px-6 py-12 text-center text-text-muted">
                         <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
                         <p>処理済みのレシートはありません</p>
                         <p className="text-sm mt-1">新しいレシートをアップロードしてください</p>
@@ -1276,25 +1229,6 @@ const ReceiptProcessing: React.FC = () => {
                             receipt.category
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-text-main max-w-xs truncate">
-                          {editingId === receipt.id ? (
-                            <input
-                              type="text"
-                              value={editData.description || receipt.description}
-                              onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-                              className="w-full px-2 py-1 border border-border rounded text-sm"
-                            />
-                          ) : (
-                            <div>
-                              <div>{receipt.description}</div>
-                              {receipt.taxRate !== undefined && receipt.taxRate > 0 && (
-                                <div className="text-xs text-text-muted mt-1">
-                                  税率: {receipt.taxRate}%
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <div className="flex items-center">
                             <div className="w-16 bg-border rounded-full h-2 mr-2">
@@ -1307,14 +1241,6 @@ const ReceiptProcessing: React.FC = () => {
                             </div>
                             <span className="text-xs text-text-muted">{receipt.confidence}%</span>
                           </div>
-                          {/* 各項目の信頼度スコアを表示 */}
-                          {receipt.confidenceScores && (
-                            <div className="text-xs text-text-muted mt-1">
-                              <div>店舗: {receipt.confidenceScores.merchant || 0}%</div>
-                              <div>日付: {receipt.confidenceScores.date || 0}%</div>
-                              <div>金額: {receipt.confidenceScores.amount || 0}%</div>
-                            </div>
-                          )}
                           {/* AI分析の信頼度を表示 */}
                           {receipt.aiAnalysis && receipt.aiAnalysis.confidence !== undefined && (
                             <div className="text-xs text-text-muted mt-1">
@@ -1322,60 +1248,43 @@ const ReceiptProcessing: React.FC = () => {
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${receipt.status === 'approved' ? 'bg-green-100 text-green-800' :
-                            receipt.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                            {receipt.status === 'approved' ? '承認済み' :
-                              receipt.status === 'rejected' ? '却下' : '保留中'}
-                          </span>
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
+                          <div className="flex items-center gap-2">
                             {editingId === receipt.id ? (
                               <button
                                 onClick={handleSave}
-                                className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-full transition-colors duration-200"
+                                className="p-2 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
                                 title="保存"
                               >
-                                <Save className="w-5 h-5" />
+                                <Save className="w-4 h-4" />
+                                保存
                               </button>
                             ) : (
                               <>
                                 <button
-                                  onClick={() => showReceiptDetails(receipt)}
-                                  className="p-2 text-primary hover:text-blue-900 hover:bg-blue-50 rounded-full transition-colors duration-200"
-                                  title="詳細"
+                                  onClick={() => handleApprove(receipt.id)}
+                                  className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                                  title="登録"
                                 >
-                                  <Eye className="w-5 h-5" />
+                                  <CheckCircle className="w-4 h-4" />
+                                  登録
                                 </button>
                                 <button
                                   onClick={() => handleEdit(receipt)}
-                                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors duration-200"
+                                  className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
                                   title="編集"
                                 >
-                                  <FileText className="w-5 h-5" />
+                                  <Edit2 className="w-4 h-4" />
+                                  編集
                                 </button>
-
-                                {receipt.status === 'pending' && (
-                                  <>
-                                    <button
-                                      onClick={() => handleApprove(receipt.id)}
-                                      className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-full transition-colors duration-200"
-                                      title="承認"
-                                    >
-                                      <Check className="w-5 h-5" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleReject(receipt.id)}
-                                      className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-full transition-colors duration-200"
-                                      title="却下"
-                                    >
-                                      <X className="w-5 h-5" />
-                                    </button>
-                                  </>
-                                )}
+                                <button
+                                  onClick={() => handleReject(receipt.id)}
+                                  className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                                  title="削除"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  削除
+                                </button>
                               </>
                             )}
                           </div>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
     ArrowLeft,
     Search,
-    DollarSign,
+    JapaneseYen,
     TrendingUp,
     FileText,
     Download,
@@ -148,7 +148,7 @@ const SubsidyMatching: React.FC = () => {
                             <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-6 border border-green-500/20">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-medium text-text-muted">推定受給額</span>
-                                    <DollarSign className="w-5 h-5 text-green-500" />
+                                    <JapaneseYen className="w-5 h-5 text-green-500" />
                                 </div>
                                 <p className="text-3xl font-bold text-text-main">
                                     ¥{matches.reduce((sum, m) => sum + m.estimatedAmount, 0).toLocaleString()}

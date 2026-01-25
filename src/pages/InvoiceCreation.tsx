@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Plus, Save, Send, Eye, Download, Search, Calendar, User, FileText, X, Trash2, FileSpreadsheet, Banknote } from 'lucide-react'
+import { ArrowLeft, Plus, Save, Send, Eye, Download, Search, Calendar, User, FileText, X, Trash2, FileSpreadsheet, JapaneseYen } from 'lucide-react'
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -574,7 +574,7 @@ const InvoiceCreation: React.FC = () => {
                       <span className={bankAccount.bankName ? 'text-text-main' : 'text-text-muted'}>
                         {bankAccount.bankName ? `${bankAccount.bankName} ${bankAccount.branchName} ${bankAccount.accountType} ${bankAccount.accountNumber}` : '振込先を選択'}
                       </span>
-                      <Banknote className="w-4 h-4 text-text-muted" />
+                      <JapaneseYen className="w-4 h-4 text-text-muted" />
                     </button>
                   </div>
 

@@ -12,7 +12,7 @@ import {
     ChevronUp,
     ExternalLink,
     ClipboardList,
-    Banknote,
+    JapaneseYen,
     BookOpen,
     HelpCircle,
     ArrowRight,
@@ -409,7 +409,7 @@ const CorporateTaxGuidePage: React.FC = () => {
                 {/* 費用の目安 */}
                 <section className="mb-8">
                     <h2 className="text-xl font-bold text-text-main mb-4 flex items-center gap-2">
-                        <Banknote className="w-6 h-6 text-primary" />
+                        <JapaneseYen className="w-6 h-6 text-primary" />
                         費用の目安
                     </h2>
                     <div className="grid gap-4">
