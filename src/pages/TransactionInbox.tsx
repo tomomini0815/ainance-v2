@@ -216,33 +216,30 @@ const TransactionInbox: React.FC = () => {
                                         {t.category}
                                     </span>
 
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-3">
                                         <button
                                             onClick={() => handleApprove(t.id)}
                                             disabled={!!processingId}
-                                            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm text-xs font-bold whitespace-nowrap"
+                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95 border border-emerald-500/20"
                                             title="承認"
                                         >
-                                            <Check className="w-3.5 h-3.5" />
-                                            承認
+                                            <Check className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => handleEditClick(t)}
                                             disabled={!!processingId}
-                                            className="flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm text-xs font-bold whitespace-nowrap"
+                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95 border border-primary/20"
                                             title="編集"
                                         >
-                                            <Edit2 className="w-3.5 h-3.5" />
-                                            編集
+                                            <Edit2 className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => handleReject(t.id)}
                                             disabled={!!processingId}
-                                            className="flex items-center gap-1 px-2.5 py-1.5 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm text-xs font-bold whitespace-nowrap"
+                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95 border border-rose-500/20"
                                             title="削除"
                                         >
-                                            <X className="w-3.5 h-3.5" />
-                                            削除
+                                            <X className="w-5 h-5" />
                                         </button>
                                     </div>
                                 </div>
