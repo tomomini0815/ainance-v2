@@ -1406,39 +1406,36 @@ const ChatToBook: React.FC = () => {
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-3">
                             <button
                               onClick={() => recordTransaction(transaction)}
-                              className={`p-2 rounded-lg transition-all flex items-center gap-1 text-xs whitespace-nowrap ${transaction.approval_status === 'approved'
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${transaction.approval_status === 'approved'
                                 ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
-                                : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white shadow-sm'
+                                : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white shadow-md active:scale-95 border border-emerald-500/20'
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
-                              <CheckCircle className="w-4 h-4" />
-                              登録
+                              <CheckCircle className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => handleEdit(transaction)}
-                              className={`p-2 rounded-lg transition-all flex items-center gap-1 text-xs whitespace-nowrap ${transaction.approval_status === 'approved'
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${transaction.approval_status === 'approved'
                                 ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
-                                : 'bg-primary/10 text-primary hover:bg-primary hover:text-white shadow-sm'
+                                : 'bg-primary/10 text-primary hover:bg-primary hover:text-white shadow-md active:scale-95 border border-primary/20'
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
-                              <Edit3 className="w-4 h-4" />
-                              編集
+                              <Edit3 className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => handleDelete(transaction.id)}
-                              className={`p-2 rounded-lg transition-all flex items-center gap-1 text-xs whitespace-nowrap ${transaction.approval_status === 'approved'
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${transaction.approval_status === 'approved'
                                 ? 'bg-surface-highlight text-text-muted cursor-not-allowed shadow-none'
-                                : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white shadow-sm'
+                                : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white shadow-md active:scale-95 border border-rose-500/20'
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
-                              <Trash2 className="w-4 h-4" />
-                              削除
+                              <Trash2 className="w-5 h-5" />
                             </button>
                           </div>
                         )}
