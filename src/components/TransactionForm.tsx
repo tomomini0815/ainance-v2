@@ -304,7 +304,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         <div>
           <label className="block text-sm font-medium text-text-muted mb-1.5">日付</label>
           <div className="relative">
-            <Calendar className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4" />
+            <Calendar className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4 pointer-events-none z-10" />
             <input
               type="date"
               name="date"
@@ -604,13 +604,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         <button
           type="button"
           onClick={onCancel}
-          className="btn-tertiary"
+          className="btn-tertiary whitespace-nowrap"
         >
           キャンセル
         </button>
         <button
           type="submit"
-          className="btn-primary"
+          className="btn-primary px-10 py-3 text-base font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
         >
           {transaction ? '更新' : '作成'}
         </button>

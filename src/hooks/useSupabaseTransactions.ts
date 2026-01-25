@@ -101,7 +101,7 @@ export const useSupabaseTransactions = () => {
   const createTransaction = async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'updated_at' | 'creator'>) => {
     try {
       // モックユーザーIDを使用
-      const mockUserId = 'mock_user_001'
+      const mockUserId = '00000000-0000-0000-0000-000000000000'
 
       const newTransaction = {
         ...transactionData,

@@ -50,7 +50,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
   // 取引データをSupabaseから取得
   // ユーザーIDの正規化（未ログイン時はデフォルトIDを使用）
-  const creatorId = useMemo(() => userId || "user_001", [userId]);
+  const creatorId = useMemo(() => userId || "00000000-0000-0000-0000-000000000000", [userId]);
 
   const fetchTransactions = useCallback(async () => {
     if (!creatorId || !businessType) {

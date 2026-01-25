@@ -146,24 +146,44 @@ export async function analyzeReceiptWithVision(
   // Base64プレフィックスを除去
   const pureBase64 = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
 
-  const prompt = `あなたは日本の経理・会計の専門家です。提供されたレシートの画像を分析し、正確な情報を抽出してください。
-以下の情報をJSON形式で返してください（JSONのみ、説明不要）:
+  const today = new Date().toISOString().split('T')[0];
+  const currentYear = new Date().getFullYear();
+
+  const prompt = `あなたは日本の経理・会計および税務の専門家です。提供されたレシートまたは領収書の画像を細部まで詳細に分析し、最高精度の情報を抽出してください。
+
+### 解析ルール:
+1. **店舗名**: 正確な正式名称を抽出してください。ロゴや電話番号、住所から推測が必要な場合も、最も可能性の高い名称を特定してください。
+2. **日付**: "YYYY-MM-DD"形式で抽出してください。
+   - 年が明記されていない場合（例: "1月25日"）、現在の年（${currentYear}年）を補完してください。ただし、現在1月でレシートが12月の場合は前年と判断してください。
+   - 和暦（令和、平成）は西暦に変換してください。
+3. **合計金額**: 最終的な支払い金額（税込、値引き後）を抽出してください。
+4. **品目**: 各行の商品名、単価、カテゴリを抽出してください。
+   - 消費税（8% vs 10%）の区別がある場合は、それぞれの税額も考慮してください。
+   - 値引きやポイント利用がある場合は、それらも正確に反映させて合計と一致するか内部で検証してください。
+5. **分類**: 日本の標準的な勘定科目に基いて分類してください。
+   - 事業主貸、消耗品費、旅費交通費、接待交際費、通信費、水道光熱費、会議費、福利厚生費、外注費、地代家賃、雑費など。
+   - 判断の根拠を日本語で簡潔に記述してください。
+
+### 回答形式:
+必ず以下の純粋なJSON形式のみで回答してください（コードブロックなどの装飾は不要）:
 {
   "storeName": "店舗名",
   "storeCategory": "店舗の業種",
-  "totalAmount": 数値（合計金額）,
-  "date": "YYYY-MM-DD形式の日付",
+  "totalAmount": 数値,
+  "date": "YYYY-MM-DD",
   "items": [
     {"name": "商品名", "price": 数値, "category": "食品/飲料/事務用品/日用品/その他"}
   ],
   "classification": {
-    "category": "経費カテゴリ（消耗品費/旅費交通費/接待交際費/通信費/水道光熱費/会議費/福利厚生費/外注費/地代家賃/雑費/その他）",
-    "accountTitle": "勘定科目",
-    "confidence": 0.0-1.0の信頼度,
-    "reasoning": "この分類にした理由",
+    "category": "勘定科目カテゴリ名",
+    "accountTitle": "勘定科目詳細",
+    "confidence": 0.0-1.0,
+    "reasoning": "分類の理由（日本語）",
     "taxDeductible": true/false
   }
-}`;
+}
+
+現在の今日の日付: ${today}`;
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {

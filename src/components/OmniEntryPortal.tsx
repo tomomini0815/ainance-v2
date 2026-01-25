@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, MessageSquare, Edit3, Camera, Sparkles, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import TransactionForm from './TransactionForm';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
@@ -17,6 +18,7 @@ type EntryMode = 'manual' | 'ocr' | 'ai';
 
 const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess }) => {
     const [mode, setMode] = useState<EntryMode>('manual');
+    const navigate = useNavigate();
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
     const { createTransaction } = useTransactions(user?.id, currentBusinessType?.business_type);
@@ -282,7 +284,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                 <div className="flex border border-white/10 p-1.5 bg-surface-highlight/50 mx-6 mt-6 rounded-2xl shadow-inner mb-2">
                     <button
                         onClick={() => setMode('manual')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${mode === 'manual' ? 'bg-surface text-primary shadow-lg border border-white/10 scale-[1.02] z-10' : 'text-text-muted hover:text-text-main hover:bg-white/5'
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all ${mode === 'manual' ? 'bg-surface text-primary shadow-lg border border-white/10 scale-[1.02] z-10' : 'text-text-muted hover:text-text-main hover:bg-white/5'
                             }`}
                     >
                         <Edit3 className="w-4 h-4" />
@@ -290,7 +292,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                     </button>
                     <button
                         onClick={() => setMode('ocr')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${mode === 'ocr' ? 'bg-surface text-primary shadow-lg border border-white/10 scale-[1.02] z-10' : 'text-text-muted hover:text-text-main hover:bg-white/5'
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all ${mode === 'ocr' ? 'bg-surface text-primary shadow-lg border border-white/10 scale-[1.02] z-10' : 'text-text-muted hover:text-text-main hover:bg-white/5'
                             }`}
                     >
                         <Camera className="w-4 h-4" />
@@ -298,7 +300,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                     </button>
                     <button
                         onClick={() => setMode('ai')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${mode === 'ai' ? 'bg-surface text-primary shadow-lg border border-white/10 scale-[1.02] z-10' : 'text-text-muted hover:text-text-main hover:bg-white/5'
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all ${mode === 'ai' ? 'bg-surface text-primary shadow-lg border border-white/10 scale-[1.02] z-10' : 'text-text-muted hover:text-text-main hover:bg-white/5'
                             }`}
                     >
                         <MessageSquare className="w-4 h-4" />
@@ -324,7 +326,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                                         カメラで撮影するか、ファイルを選択してください。<br />AIが自動で内容を読み取ります。
                                     </p>
 
-                                    <div className="flex flex-row gap-2 w-full max-w-md px-2">
+                                    <div className="flex flex-col gap-3 w-full max-w-sm px-2">
                                         <input
                                             type="file"
                                             ref={cameraInputRef}
@@ -333,23 +335,20 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                                             capture="environment"
                                             onChange={handleFileUpload}
                                         />
-                                        <label className="flex-1 btn-primary flex items-center justify-center gap-2 py-3 cursor-pointer whitespace-nowrap">
-                                            <Upload className="w-4 h-4" />
-                                            ファイルを選択
-                                            <input type="file" className="hidden" onChange={handleFileUpload} accept="image/*,application/pdf" disabled={isProcessing} />
-                                        </label>
                                         <button
                                             onClick={handleCameraCapture}
                                             disabled={isProcessing}
-                                            className="flex-1 flex items-center justify-center gap-2 px-2 py-3 bg-surface border border-border rounded-xl text-sm font-bold text-text-muted hover:bg-surface-highlight transition-all whitespace-nowrap opacity-60"
+                                            className="w-full btn-primary flex items-center justify-center gap-2 py-4 rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
                                         >
-                                            <Camera className="w-4 h-4" />
+                                            <Camera className="w-5 h-5" />
                                             カメラで撮影
                                         </button>
+                                        <label className="w-full flex items-center justify-center gap-2 py-4 bg-surface border border-border rounded-xl text-base font-bold text-text-main hover:bg-surface-highlight transition-all cursor-pointer hover:border-primary/30">
+                                            <Upload className="w-5 h-5" />
+                                            ファイルを選択
+                                            <input type="file" className="hidden" onChange={handleFileUpload} accept="image/*,application/pdf" disabled={isProcessing} />
+                                        </label>
                                     </div>
-                                    <p className="mt-4 text-[10px] text-text-muted text-center">
-                                        ※スマートフォンでアクセスすると、カメラを起動して直接撮影できます。
-                                    </p>
                                 </div>
                             ) : (
                                 <div className="animate-in slide-in-from-bottom-4 duration-300">
@@ -399,31 +398,61 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                                                 </div>
 
                                                 <div className="pt-2">
-                                                    <label className="text-[10px] uppercase tracking-wider text-text-muted font-bold">AI推論カテゴリ</label>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <span className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-bold">
-                                                            {analysisResult.classification?.category || '未分類'}
-                                                        </span>
-                                                        <span className="text-[10px] text-text-muted">信頼度: {Math.round((analysisResult.classification?.confidence || 0) * 100)}%</span>
+                                                    <label className="text-[10px] uppercase tracking-wider text-text-muted font-bold">勘定科目（カテゴリ）</label>
+                                                    <div className="mt-1">
+                                                        <select
+                                                            value={analysisResult.classification?.category || '未分類'}
+                                                            onChange={(e) => setAnalysisResult({
+                                                                ...analysisResult,
+                                                                classification: {
+                                                                    ...(analysisResult.classification || {
+                                                                        category: '未分類',
+                                                                        accountTitle: '未分類',
+                                                                        confidence: 1,
+                                                                        reasoning: '手動変更',
+                                                                        taxDeductible: true
+                                                                    }),
+                                                                    category: e.target.value
+                                                                }
+                                                            })}
+                                                            className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm font-bold text-primary focus:border-primary outline-none appearance-none cursor-pointer hover:bg-surface-highlight transition-all"
+                                                        >
+                                                            <option value="売上">売上</option>
+                                                            <option value="仕入">仕入</option>
+                                                            <option value="消耗品費">消耗品費</option>
+                                                            <option value="旅費交通費">旅費交通費</option>
+                                                            <option value="接待交際費">接待交際費</option>
+                                                            <option value="通信費">通信費</option>
+                                                            <option value="水道光熱費">水道光熱費</option>
+                                                            <option value="会議費">会議費</option>
+                                                            <option value="福利厚生費">福利厚生費</option>
+                                                            <option value="外注費">外注費</option>
+                                                            <option value="広告宣伝費">広告宣伝費</option>
+                                                            <option value="地代家賃">地代家賃</option>
+                                                            <option value="支払手数料">支払手数料</option>
+                                                            <option value="雑費">雑費</option>
+                                                            <option value="未分類">未分類</option>
+                                                        </select>
+                                                        <p className="text-[10px] text-text-muted mt-1 ml-1">AI信頼度: {Math.round((analysisResult.classification?.confidence || 0) * 100)}%</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="p-4 bg-surface-highlight border-t border-border flex gap-3">
-                                            <button
-                                                onClick={() => setAnalysisResult(null)}
-                                                className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-text-muted hover:bg-white/5 transition-all outline-none"
-                                            >
-                                                撮り直す
-                                            </button>
+                                        <div className="p-4 bg-surface-highlight border-t border-border flex flex-col gap-3">
                                             <button
                                                 onClick={handleConfirmAnalysis}
                                                 disabled={isProcessing}
-                                                className="flex-2 py-3 px-8 bg-primary text-surface rounded-xl text-sm font-bold hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                                                className="w-full py-5 bg-primary text-surface rounded-2xl text-lg font-black hover:bg-primary-hover shadow-xl shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-3"
                                             >
-                                                {isProcessing ? <div className="w-4 h-4 border-2 border-surface/30 border-t-surface rounded-full animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                                {isProcessing ? <div className="w-5 h-5 border-2 border-surface/30 border-t-surface rounded-full animate-spin" /> : <Sparkles className="w-5 h-5" />}
                                                 確定して登録
+                                            </button>
+                                            <button
+                                                onClick={() => setAnalysisResult(null)}
+                                                className="w-full py-2 px-4 rounded-xl text-xs font-bold text-text-muted hover:bg-white/5 transition-all outline-none"
+                                            >
+                                                撮り直す
                                             </button>
                                         </div>
                                     </div>
@@ -477,9 +506,17 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                 <div className="p-4 bg-surface-highlight/50 border-t border-border flex items-center justify-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     <span className="text-xs text-text-muted">
-                        {currentBusinessType?.business_type === 'corporation'
-                            ? 'OCRやAIで入力したデータは「インボックス」で確認・承認できます'
-                            : 'OCRやAIで入力したデータは直接「取引履歴」に保存されます'}
+                        OCRやAIで入力したデータは
+                        <button
+                            onClick={() => {
+                                onClose();
+                                navigate('/inbox');
+                            }}
+                            className="text-primary font-bold hover:underline mx-1 outline-none"
+                        >
+                            「インボックス」
+                        </button>
+                        に保存されます
                     </span>
                 </div>
             </div>
