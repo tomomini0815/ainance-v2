@@ -125,18 +125,18 @@ const QuickTaxFilingPage: React.FC = () => {
         <div className="min-h-screen bg-background pb-12">
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
                 {/* ヘッダー */}
-                <div className="flex items-center mb-6">
-                    <Link to="/dashboard" className="mr-3 sm:mr-4">
-                        <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-text-muted hover:text-text-main" />
+                <div className="flex items-center mb-4">
+                    <Link to="/dashboard" className="mr-3">
+                        <ArrowLeft className="w-5 h-5 text-text-muted hover:text-text-main" />
                     </Link>
                     <div className="flex-1">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <Zap className="w-5 h-5 sm:w-8 sm:h-8 text-primary" />
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-primary/10 rounded-lg">
+                                <Zap className="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                                <h1 className="text-xl sm:text-2xl font-bold text-text-main">駆け込み確定申告</h1>
-                                <p className="text-xs sm:text-sm text-text-muted mt-0.5">質問に答えるだけで、1日で確定申告書類を完成</p>
+                                <h1 className="text-lg font-bold text-text-main">駆け込み確定申告</h1>
+                                <p className="text-[11px] text-text-muted mt-0.5">質問に答えるだけで、1日で確定申告書類を完成</p>
                             </div>
                         </div>
                     </div>
@@ -146,7 +146,7 @@ const QuickTaxFilingPage: React.FC = () => {
                 <WizardProgress currentStep={currentStep} />
 
                 {/* ステップコンテンツ */}
-                <div className="bg-surface rounded-xl shadow-sm border border-border p-4 sm:p-8 overflow-hidden">
+                <div className="bg-surface rounded-xl shadow-sm border border-border p-3 sm:p-8 overflow-hidden">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentStep}

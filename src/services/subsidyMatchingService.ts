@@ -54,8 +54,24 @@ export interface ApplicationDraft {
     content: string;
     tips: string[];
   }>;
+  strategicSummary?: string;
+  strategicAdvice?: string[];
   checklist: string[];
   estimatedCompletionTime: string;
+}
+
+export interface WizardStep {
+  id: string;
+  title: string;
+  question: string;
+  options: Array<{
+    id: string;
+    label: string;
+    description?: string;
+    suggestedContent?: string;
+  }>;
+  allowCustom?: boolean;
+  sectionTitle?: string; // 生成されるセクションのタイトル
 }
 
 /**
@@ -335,12 +351,16 @@ export const generateApplicationDraft = async (
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        subsidyId: subsidy.id,
-        subsidyName: subsidy.name,
-        ...parsed,
-      };
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          subsidyId: subsidy.id,
+          subsidyName: subsidy.name,
+          ...parsed,
+        };
+      } catch (err) {
+        console.error('Draft generation JSON error:', err);
+      }
     }
 
     // フォールバック
@@ -483,4 +503,252 @@ export const getDeadlineUrgency = (deadline: string): 'urgent' | 'soon' | 'norma
   if (days <= 7) return 'urgent';
   if (days <= 30) return 'soon';
   return 'normal';
+};
+/**
+ * ウィザードの各ステップ（質問と選択肢）を生成
+ */
+// フォールバック用のステップ定義
+const FALLBACK_STEPS: WizardStep[] = [
+  {
+    id: 'step1',
+    title: '事業計画の骨子',
+    sectionTitle: '１．事業計画の概要と目的',
+    question: '今回の補助事業で解決したい具体的な経営課題と、達成したい数値目標は何ですか？',
+    options: [
+      { id: '1', label: '生産性向上（労働時間削減）', description: 'IT導入によるルーチン業務の自動化' },
+      { id: '2', label: '新市場開拓（売上成長）', description: 'ECサイト展開による全国への販路拡大' },
+      { id: '3', label: 'コスト最適化', description: '新設備導入による原材料ロスの低減' },
+    ],
+    allowCustom: true,
+  },
+  {
+    id: 'step2',
+    title: '市場のニーズと強み',
+    sectionTitle: '２．市場の状況と自社の優位性',
+    question: 'ターゲットとする市場のニーズと、競合他社に対する貴社の独自の強みは何ですか？',
+    options: [
+      { id: '1', label: '独自の技術力・ノウハウ', description: '長年培った専門的な製造技術' },
+      { id: '2', label: '地域密着のネットワーク', description: '既存顧客との強い信頼関係' },
+      { id: '3', label: '高品質・高付加価値', description: '他社にはない独自のデザインや機能' },
+    ],
+    allowCustom: true,
+  },
+  {
+    id: 'step3',
+    title: '期待される成果',
+    sectionTitle: '３．補助事業の成果と波及効果',
+    question: '事業実施後、3〜5年でどのような定量的な成果（利益率、付加価値額など）を見込んでいますか？',
+    options: [
+      { id: '1', label: '付加価値額の年率3%以上向上', description: '生産性アップによる収益性改善' },
+      { id: '2', label: '新規顧客数の大幅増加', description: '認知度向上による継続的な集客' },
+      { id: '3', label: '地域雇用の創出', description: '事業拡大に伴う新規採用の計画' },
+    ],
+    allowCustom: true,
+  }
+];
+
+export const generateWizardSteps = async (
+  subsidy: Subsidy,
+  profile: BusinessProfile
+): Promise<WizardStep[]> => {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+    const prompt = `
+あなたは日本国内の補助金申請（再構築補助金、ものづくり補助金、IT導入補助金、持続化補助金など）の採択を熟知した専門家です。
+「${subsidy.name}」への申請を検討している事業者（${profile.industry}、売上¥${profile.revenue.toLocaleString()}）に対して、
+採択率を最大化するための申請書類を作成するための「戦略的な質問」を3つ作成してください。
+
+質問を作成する際の重要ポイント：
+1. 定量的な目標（KPI）: 「売上○%アップ」「コスト○時間削減」などを引き出す質問。
+2. 政策目的への合致: この補助金の趣旨（例：デジタルトランスフォーメーション、地域活性化など）を意識させる質問。
+3. 競合優位性: なぜ「自社」でなければならないのか、独自の強みを具体化する質問。
+
+以下のJSON形式で回答してください：
+[
+  {
+    "id": "step1",
+    "title": "事業計画の骨子",
+    "sectionTitle": "１．補助事業の目的と具体的な課題",
+    "question": "（ここに戦略的な質問：例 解決したい課題と具体的な数値目標は何ですか？）",
+    "options": [
+      { "id": "opt1", "label": "...", "description": "...", "suggestedContent": "..." }
+    ],
+    "allowCustom": true
+  }
+]
+`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const steps = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(steps) && steps.length > 0) {
+        return steps;
+      }
+    }
+
+    console.warn('ウィザード生成: JSONパース失敗または空配列のためフォールバックを使用します');
+    return FALLBACK_STEPS;
+  } catch (error) {
+    console.error('ウィザードステップ生成エラー:', error);
+    return FALLBACK_STEPS;
+  }
+};
+
+/**
+ * 特定のセクションの下書きを生成
+ */
+export const generateSectionDraft = async (
+  subsidy: Subsidy,
+  profile: BusinessProfile,
+  step: WizardStep,
+  answer: string
+): Promise<string> => {
+    try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const prompt = `
+あなたは補助金採択の審査員を納得させる申請書作成のプロフェッショナルです。
+補助金「${subsidy.name}」の「${step.sectionTitle}」セクションを、以下のユーザー回答に基づき「採択されるレベル」まで昇華させて作成してください。
+
+【制約条件】
+1. Before/Afterの明確化: 現状の課題と、実施後の改善効果を対比させてください。
+2. 数値的根拠: 可能な限り「労働時間20%削減」「売上15%向上」といった具体的な数値を含めてください。
+3. 説得力のある文体: 専門用語は適切に使いつつ、第三者が読んでも分かりやすい論理的な文章（です・ます調）にしてください。
+4. 政策 alignment: 地域経済への波及効果や、業界全体のDX推進など、社会的な意義にも触れてください。
+
+【事業者情報】
+業種: ${profile.industry}
+売上: ${profile.revenue}円
+
+【質問】
+${step.question}
+
+【ユーザー回答】
+${answer}
+
+出力は作成した文章のみを返してください。挨拶や説明は不要です。
+        `;
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        return text.trim();
+    } catch (error: any) {
+        // APIキーが無効な場合などはモックを使用する（デモ用）
+        if (error.message?.includes('API key not valid') || error.message?.includes('400')) {
+            console.warn('APIキーが無効なため、モックデータを使用します');
+            return generateMockSectionDraft(step, answer);
+        }
+
+        console.error('セクション下書き生成エラー詳細:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            stepId: step.id,
+            sectionTitle: step.sectionTitle
+        });
+        return `（${step.sectionTitle}の生成に失敗しました。詳細を手動で入力してください。）\n\n【エラー原因】\n${error.message || '不明なエラー'}\n\n【元の回答】\n${answer}`;
+    }
+}
+
+/**
+ * モックデータを生成する（APIキー無効時など用）
+ */
+const generateMockSectionDraft = (step: WizardStep, answer: string): string => {
+    switch (step.id) {
+        case 'step1':
+            return `【現状と目的】\n現在、${answer}という課題に直面しており、業務効率の停滞が顕著となっています。本事業を実施することで、IT導入により手作業を自動化し、月間労働時間を約25%削減（推定15時間）することを目指します。これにより、付加価値の高い業務へリソースを集中させ、持続的な成長基盤を構築します。`;
+        case 'step2':
+            return `【市場分析と独自性】\n市場環境を分析した結果、${answer}に対する需要が高まっています。近隣他社との差別化要因として、当社の強みである専門的ノウハウを最大限活用し、独自のサービス提供モデルを確立します。これは顧客満足度の向上と、リピート率10%改善に直結する戦略的な取り組みです。`;
+        case 'step3':
+            return `【事業成果の見込み】\n本事業の実施により、${answer}という具体的な波及効果を期待しています。3年後には営業利益率を現在の水準から5%ポイント向上させる計画であり、これは地域経済への雇用創出や、業界におけるデジタルトランスフォーメーションのモデルケースとなることを確信しております。`;
+        default:
+            return `${answer}に関する具体的な実行計画を策定します。現状の課題解決、目標数値の達成、そして将来の事業拡大という一貫したストーリーに基づき、実効性の高いプロジェクトを推進いたします。`;
+    }
+}
+
+/**
+ * ウィザードでの選択結果から最終的な下書きを生成（後方互換性のため残すまたは統合）
+ */
+export const generateDraftFromWizard = async (
+  subsidy: Subsidy,
+  profile: BusinessProfile,
+  answers: Record<string, string>,
+  sectionsContent?: Record<string, {title: string, content: string}>
+): Promise<ApplicationDraft> => {
+    // すでにセクションごとのコンテンツがある場合はそれを使用
+    if (sectionsContent) {
+        return {
+            subsidyId: subsidy.id,
+            subsidyName: subsidy.name,
+            sections: Object.values(sectionsContent).map(s => ({
+                title: s.title,
+                content: s.content,
+                tips: ['採択率を高めるために、具体的な数値目標が含まれていることを確認してください']
+            })),
+            strategicSummary: '本計画は「生産性の向上」と「市場優位性の確立」に重点を置いて構成されています。Before/Afterの数値対比により、審査員に事業の実効性を強くアピールします。',
+            strategicAdvice: [
+                '数値目標の根拠（見積書や市場データ）を準備しておきましょう',
+                '地域経済への貢献（雇用創出など）を追記するとさらなる加点が期待できます',
+                '既存事業とのシナジー（相乗効果）を強調してください'
+            ],
+            checklist: ['誤字脱字がないか確認', '具体的な数値が入っているか確認'],
+            estimatedCompletionTime: '作成済み'
+        };
+    }
+
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+    const prompt = `
+補助金「${subsidy.name}」の申請書類を、以下のユーザーの回答に基づいて作成してください。
+
+【ユーザーの回答】
+${Object.entries(answers).map(([stepId, answer]) => `- ${stepId}: ${answer}`).join('\n')}
+
+【事業者情報】
+- 業種: ${profile.industry}
+- 規模: 従業員${profile.employeeCount}名
+
+以下のJSON形式で回答してください：
+{
+  "sections": [
+    {
+      "title": "セクション名",
+      "content": "回答を反映した具体的な文章",
+      "tips": ["コツ"]
+    }
+  ],
+  "checklist": ["確認事項"],
+  "estimatedCompletionTime": "約X時間",
+  "strategicSummary": "全体的な戦略の要約（採択のポイント）",
+  "strategicAdvice": ["改善のための具体的なアドバイス1", "アドバイス2"]
+}
+`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          subsidyId: subsidy.id,
+          subsidyName: subsidy.name,
+          ...parsed,
+        };
+      } catch (err) {
+        console.error('Wizard draft generation JSON error:', err);
+      }
+    }
+
+    return generateFallbackDraft(subsidy, profile);
+  } catch (error) {
+    console.error('ウィザードからの下書き生成エラー:', error);
+    return generateFallbackDraft(subsidy, profile);
+  }
 };

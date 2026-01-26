@@ -6,6 +6,7 @@
 import { PDFDocument, rgb, PDFFont } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { TaxReturnInputData } from '../types/taxReturnInput';
+import { ApplicationDraft } from './subsidyMatchingService';
 
 // 経費カテゴリのマッピング（日本語）
 export const EXPENSE_CATEGORIES_JP: { [key: string]: string } = {
@@ -815,5 +816,121 @@ export async function generateBlueReturnPDF(data: JpTaxFormData): Promise<Uint8A
   drawText('※ この書類はAinanceで作成した参考資料です。', 50, 45, { size: 8, color: colors.muted });
   drawText('※ 正式な申告には国税庁「確定申告書等作成コーナー」をご利用ください。', 50, 33, { size: 8, color: colors.muted });
   
+  return pdfDoc.save();
+}
+
+/**
+ * 補助金申請書ドラフトPDFを生成（日本語）
+ */
+export async function generateSubsidyApplicationPDF(draft: ApplicationDraft): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  // マージンとサイズの設定
+  const margin = 50;
+  const pageHeight = 841.89;
+  const pageWidth = 595.28;
+  
+  let page = pdfDoc.addPage([pageWidth, pageHeight]);
+  const { regular, bold } = await loadJapaneseFont(pdfDoc);
+  
+  const colors = {
+    primary: rgb(0.1, 0.2, 0.4),
+    text: rgb(0.1, 0.1, 0.1),
+    muted: rgb(0.4, 0.4, 0.4),
+    line: rgb(0.8, 0.8, 0.8),
+    headerBg: rgb(0.95, 0.95, 0.98),
+  };
+
+  let y = pageHeight - margin;
+
+  // テキスト描画ヘルパー
+  const drawText = (text: string, x: number, py: number, size: number = 10, font: PDFFont = regular, color = colors.text) => {
+    page.drawText(text, { x, y: py, size, font, color });
+  };
+
+  // テキスト折り返し処理ヘルパー
+  const wrapText = (text: string, size: number, font: PDFFont, maxWidth: number): string[] => {
+    if (!text) return [];
+    // 改行で分割
+    const chars = text.split('');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (let i = 0; i < chars.length; i++) {
+        const char = chars[i];
+        const width = font.widthOfTextAtSize(currentLine + char, size);
+        if (width < maxWidth) {
+            currentLine += char;
+        } else {
+            lines.push(currentLine);
+            currentLine = char;
+        }
+    }
+    lines.push(currentLine);
+    return lines;
+  };
+
+  // ページ追加判定
+  const checkPageBreak = (heightNeeded: number) => {
+    if (y - heightNeeded < margin) {
+        page = pdfDoc.addPage([pageWidth, pageHeight]);
+        y = pageHeight - margin;
+        return true;
+    }
+    return false;
+  };
+
+  // === ヘッダー ===
+  checkPageBreak(80);
+  drawText('補 助 金 申 請 書 （案）', margin, y, 18, bold);
+  y -= 30;
+  
+  drawText(`申請補助金: ${draft.subsidyName}`, margin, y, 12, bold, colors.primary);
+  y -= 20;
+  
+  drawText(`作成日: ${new Date().toLocaleDateString('ja-JP')}`, margin, y, 10, regular, colors.muted);
+  y -= 10;
+  
+  page.drawLine({
+      start: { x: margin, y: y },
+      end: { x: pageWidth - margin, y: y },
+      thickness: 1,
+      color: colors.primary
+  });
+  y -= 30;
+
+  // === セクション出力 ===
+  const contentWidth = pageWidth - (margin * 2);
+  const fontSize = 10;
+  const lineHeight = 16;
+
+  for (const section of draft.sections) {
+      // タイトルの出力
+      checkPageBreak(40);
+      page.drawRectangle({
+          x: margin,
+          y: y - 20,
+          width: contentWidth,
+          height: 24,
+          color: colors.headerBg
+      });
+      drawText(section.title, margin + 10, y - 14, 11, bold, colors.primary);
+      y -= 35;
+
+      // 本文の出力
+      const paragraphs = section.content.split('\n');
+      
+      for (const paragraph of paragraphs) {
+          const lines = wrapText(paragraph, fontSize, regular, contentWidth);
+          
+          for (const line of lines) {
+              checkPageBreak(lineHeight);
+              drawText(line, margin, y, fontSize, regular);
+              y -= lineHeight;
+          }
+          y -= 5; // 段落間のマージン
+      }
+      y -= 15; // セクション間のマージン
+  }
+
   return pdfDoc.save();
 }

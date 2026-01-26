@@ -112,9 +112,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
   }
 
   return (
-    <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-text-main">取引履歴</h3>
+    <div className="bg-white dark:bg-surface rounded-2xl p-4 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-semibold text-text-main">取引履歴</h3>
         <div className="flex items-center space-x-3">
           <Link
             to="/transaction-history"
@@ -159,11 +159,11 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
             return (
               <div
                 key={transaction.id}
-                className="bg-surface-highlight rounded-xl p-3 border border-border hover:border-primary/50 transition-all"
+                className="bg-surface-highlight rounded-xl p-2.5 border border-border hover:border-primary/50 transition-all"
               >
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start justify-between mb-1.5">
                   <div className="flex items-start flex-1">
-                    <TransactionIcon item={transaction.item} category={transaction.category} />
+                    <TransactionIcon item={transaction.item} category={transaction.category} size="xs" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="font-medium text-text-main text-sm">{transaction.item}</div>
@@ -219,10 +219,10 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
-              <th className="text-left py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wider">項目</th>
-              <th className="text-right py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
-              <th className="text-left py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wider">日付</th>
-              <th className="text-center py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
+              <th className="text-left py-2 px-3 text-[10px] font-medium text-text-muted uppercase tracking-wider">項目</th>
+              <th className="text-right py-2 px-3 text-[10px] font-medium text-text-muted uppercase tracking-wider">金額</th>
+              <th className="text-left py-2 px-3 text-[10px] font-medium text-text-muted uppercase tracking-wider">日付</th>
+              <th className="text-center py-2 px-3 text-[10px] font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -249,12 +249,12 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
 
                 return (
                   <tr key={transaction.id} className="hover:bg-white/5 transition-colors group">
-                    <td className="py-4 px-4">
+                    <td className="py-2.5 px-3">
                       <div className="flex items-center">
-                        <TransactionIcon item={transaction.item} category={transaction.category} />
+                        <TransactionIcon item={transaction.item} category={transaction.category} size="xs" />
                         <div>
                           <div className="flex items-center gap-2">
-                            <div className="font-medium text-text-main text-sm group-hover:text-white transition-colors">{transaction.item}</div>
+                            <div className="font-medium text-text-main text-xs group-hover:text-white transition-colors">{transaction.item}</div>
                             {transaction.recurring && (
                               <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
                                 <Repeat className="w-2.5 h-2.5" />
@@ -270,20 +270,20 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-right font-medium">
+                    <td className="py-2.5 px-3 text-right font-medium">
                       <span className={`${isFinalIncome ? 'text-green-500' : isFinalExpense ? 'text-red-500' : 'text-text-muted'}`}>
                         {isFinalIncome ? '+' : isFinalExpense ? '-' : ''}¥{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-sm text-text-muted">
+                    <td className="py-2.5 px-3 text-xs text-text-muted">
                       {new Date(transaction.date).toLocaleDateString('ja-JP', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric'
                       })}
                     </td>
-                    <td className="py-4 px-4 text-center">
-                      <span className="whitespace-nowrap inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full bg-surface-highlight text-gray-300 border border-white/5">
+                    <td className="py-2.5 px-3 text-center">
+                      <span className="whitespace-nowrap inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full bg-surface-highlight text-gray-300 border border-white/5">
                         {transaction.category}
                       </span>
                     </td>

@@ -272,8 +272,8 @@ const TransactionHistory: React.FC = () => {
                 <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold text-text-main">取引履歴</h1>
-                <p className="text-text-muted mt-1">すべての取引履歴を確認・管理できます</p>
+                <h1 className="text-2xl font-bold text-text-main">取引履歴</h1>
+                <p className="text-xs text-text-muted mt-0.5">すべての取引履歴を確認・管理できます</p>
               </div>
             </div>
           </div>
@@ -289,106 +289,143 @@ const TransactionHistory: React.FC = () => {
         </div>
 
         {/* 統計カード */}
-        <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow mb-6">
+        <div className="bg-surface rounded-xl shadow-sm p-3 border border-border hover:shadow-md transition-shadow mb-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="border border-border rounded-lg p-3">
+            <div className="border border-border rounded-lg p-2.5">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-medium text-text-muted">総取引数</div>
-                <div className="rounded-lg bg-primary/5 p-2">
-                  <FileText className="w-5 h-5 text-primary" />
+                <div className="text-[10px] font-medium text-text-muted">総取引数</div>
+                <div className="rounded-lg bg-primary/5 p-1.5">
+                  <FileText className="w-4 h-4 text-primary" />
                 </div>
               </div>
-              <div className="text-xl font-bold text-primary mt-1">{stats.total}</div>
+              <div className="text-lg font-bold text-primary mt-0.5">{stats.total}</div>
             </div>
-            <div className="border border-border rounded-lg p-3">
+            <div className="border border-border rounded-lg p-2.5">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-medium text-text-muted">収入</div>
-                <div className="rounded-lg bg-green-500/5 p-2">
-                  <TrendingUp className="w-5 h-5 text-green-500" />
+                <div className="text-[10px] font-medium text-text-muted">収入</div>
+                <div className="rounded-lg bg-green-500/5 p-1.5">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
                 </div>
               </div>
-              <div className="text-xl font-bold text-green-500 mt-1">¥{stats.income.toLocaleString()}</div>
+              <div className="text-lg font-bold text-green-500 mt-0.5">¥{stats.income.toLocaleString()}</div>
             </div>
-            <div className="border border-border rounded-lg p-3">
+            <div className="border border-border rounded-lg p-2.5">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-medium text-text-muted">支出</div>
-                <div className="rounded-lg bg-red-500/5 p-2">
-                  <TrendingDown className="w-5 h-5 text-red-500" />
+                <div className="text-[10px] font-medium text-text-muted">支出</div>
+                <div className="rounded-lg bg-red-500/5 p-1.5">
+                  <TrendingDown className="w-4 h-4 text-red-500" />
                 </div>
               </div>
-              <div className="text-xl font-bold text-red-500 mt-1">¥{stats.expense.toLocaleString()}</div>
+              <div className="text-lg font-bold text-red-500 mt-0.5">¥{stats.expense.toLocaleString()}</div>
             </div>
-            <div className="border border-border rounded-lg p-3">
+            <div className="border border-border rounded-lg p-2.5">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-medium text-text-muted">収支</div>
-                <div className={`rounded - lg p - 2 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'} `}>
-                  <JapaneseYen className={`w - 5 h - 5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'} `} />
+                <div className="text-[10px] font-medium text-text-muted">収支</div>
+                <div className={`rounded-lg p-1.5 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
+                  <JapaneseYen className={`w-4 h-4 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
                 </div>
               </div>
-              <div className={`text - xl font - bold mt - 1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'} `}>
+              <div className={`text-lg font-bold mt-0.5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 ¥{stats.balance.toLocaleString()}
               </div>
             </div>
           </div>
         </div>
 
-        {/* フィルターと検索 */}
-        <div className="bg-surface rounded-xl shadow-sm border border-border mb-6 overflow-hidden">
-          <div className="p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex-1 max-w-md">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-5 h-5" />
+        {/* 操作パネル（検索・検索・ソート） */}
+        <div className="bg-surface rounded-xl shadow-sm border border-border mb-4 overflow-hidden">
+          <div className="p-2 sm:p-2.5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              {/* ソート・一括操作エリア */}
+              <div className="flex items-center justify-between lg:justify-start gap-4 lg:border-r lg:border-border lg:pr-4">
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center">
+                    <label className="text-[10px] text-text-muted mr-1.5 whitespace-nowrap">ソート:</label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="px-2 py-1 border border-border rounded-lg bg-background text-[11px] text-text-main focus:ring-1 focus:ring-primary outline-none"
+                    >
+                      <option value="date">日付</option>
+                      <option value="amount">金額</option>
+                      <option value="item">項目</option>
+                      <option value="created_at">追加日</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className="p-1 px-1.5 text-[10px] bg-surface-highlight text-text-muted rounded hover:bg-border transition-colors"
+                  >
+                    {sortOrder === 'asc' ? '昇順' : '降順'}
+                  </button>
+                </div>
+
+                {selectedTransactions.length > 0 && (
+                  <div className="flex items-center space-x-2 pl-3 border-l border-border">
+                    <span className="text-[10px] text-text-muted whitespace-nowrap">{selectedTransactions.length}件選択</span>
+                    <button
+                      onClick={handleBulkDelete}
+                      className="px-2 py-1 text-[10px] bg-red-500/10 text-red-600 rounded hover:bg-red-500 hover:text-white transition-colors flex items-center"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      削除
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* 検索・フィルターエリア */}
+              <div className="flex flex-col sm:flex-row flex-1 sm:items-center gap-2 lg:justify-end">
+                <div className="relative flex-1 max-w-md lg:max-w-xs">
+                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="取引内容、カテゴリなどで検索..."
-                    className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background focus:bg-surface transition-colors text-text-main placeholder-text-muted"
+                    placeholder="検索..."
+                    className="w-full pl-8 pr-3 py-1.5 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background focus:bg-surface transition-colors text-xs text-text-main placeholder-text-muted"
                   />
                 </div>
-              </div>
 
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`px - 4 py - 2.5 text - sm rounded - lg transition - colors flex items - center space - x - 2 ${showFilters
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-surface-highlight text-text-muted hover:bg-border'
-                    } `}
-                >
-                  <Filter className="w-4 h-4" />
-                  <span>フィルタ</span>
-                  {activeFilterCount > 0 && (
-                    <span className="bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                  <ChevronDown className={`w - 4 h - 4 transition - transform ${showFilters ? 'rotate-180' : ''} `} />
-                </button>
-                {(categoryFilter || dateRange.start || dateRange.end || amountRange.min || amountRange.max) && (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={resetFilters}
-                    className="px-4 py-2.5 text-sm bg-surface-highlight text-text-muted rounded-lg hover:bg-border transition-colors flex items-center"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`px-2.5 py-1.5 text-xs rounded-lg transition-colors flex items-center space-x-1.5 ${showFilters
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-surface-highlight text-text-muted hover:bg-border'
+                      }`}
                   >
-                    <X className="w-4 h-4 mr-1" />
-                    クリア
+                    <Filter className="w-3.5 h-3.5" />
+                    <span>フィルター</span>
+                    {activeFilterCount > 0 && (
+                      <span className="bg-primary text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                    <ChevronDown className={`w-3 h-3 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                   </button>
-                )}
+                  {activeFilterCount > 0 && (
+                    <button
+                      onClick={resetFilters}
+                      className="px-2 py-1.5 text-xs bg-surface-highlight text-text-muted rounded-lg hover:bg-border transition-colors flex items-center"
+                      title="フィルターをクリア"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {showFilters && (
-            <div className="px-4 pb-4 border-t border-border">
-              <div className="pt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {showFilters && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-text-muted mb-2">カテゴリ</label>
+                    <label className="block text-[10px] font-medium text-text-muted mb-1">カテゴリ</label>
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="input-base"
+                      className="w-full px-2 py-1 border border-border rounded bg-background text-[11px] text-text-main"
                     >
                       <option value="">すべて</option>
                       {availableCategories.map(category => (
@@ -396,91 +433,45 @@ const TransactionHistory: React.FC = () => {
                       ))}
                     </select>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-text-muted mb-2">開始日</label>
+                    <label className="block text-[10px] font-medium text-text-muted mb-1">開始日</label>
                     <input
                       type="date"
                       value={dateRange.start}
                       onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                      className="input-base"
+                      className="w-full px-2 py-1 border border-border rounded bg-background text-[11px] text-text-main"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-text-muted mb-2">終了日</label>
+                    <label className="block text-[10px] font-medium text-text-muted mb-1">終了日</label>
                     <input
                       type="date"
                       value={dateRange.end}
                       onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                      className="input-base"
+                      className="w-full px-2 py-1 border border-border rounded bg-background text-[11px] text-text-main"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-text-muted mb-2">最小金額</label>
+                    <label className="block text-[10px] font-medium text-text-muted mb-1">最小金額</label>
                     <input
                       type="number"
                       value={amountRange.min}
                       onChange={(e) => setAmountRange({ ...amountRange, min: e.target.value })}
-                      className="input-base"
+                      className="w-full px-2 py-1 border border-border rounded bg-background text-[11px] text-text-main"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-text-muted mb-2">最大金額</label>
+                    <label className="block text-[10px] font-medium text-text-muted mb-1">最大金額</label>
                     <input
                       type="number"
                       value={amountRange.max}
                       onChange={(e) => setAmountRange({ ...amountRange, max: e.target.value })}
-                      className="input-base"
+                      className="w-full px-2 py-1 border border-border rounded bg-background text-[11px] text-text-main"
                     />
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* ソートと一括操作 */}
-        <div className="bg-surface rounded-xl shadow-sm border border-border mb-6 overflow-hidden">
-          <div className="p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center">
-                  <label className="text-sm text-text-muted mr-2">ソート:</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background focus:bg-surface transition-colors text-text-main"
-                  >
-                    <option value="date">日付</option>
-                    <option value="amount">金額</option>
-                    <option value="item">項目</option>
-                    <option value="created_at">登録</option>
-                  </select>
-                </div>
-                <button
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  className="px-3 py-2 text-sm bg-surface-highlight text-text-muted rounded-lg hover:bg-border transition-colors flex items-center"
-                >
-                  {sortOrder === 'asc' ? '昇順' : '降順'}
-                </button>
-              </div>
-
-              {selectedTransactions.length > 0 && (
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm text-text-muted">{selectedTransactions.length}件選択中</span>
-                  <button
-                    onClick={handleBulkDelete}
-                    className="px-3 py-2 text-sm bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500/20 transition-colors flex items-center"
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    削除
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
@@ -572,7 +563,7 @@ const TransactionHistory: React.FC = () => {
             <table className="w-full">
               <thead className="bg-surface-highlight">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-text-muted uppercase tracking-wider w-12">
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider w-12">
                     <input
                       type="checkbox"
                       checked={selectedTransactions.length === paginatedTransactions.length && paginatedTransactions.length > 0}
@@ -580,18 +571,18 @@ const TransactionHistory: React.FC = () => {
                       className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
                     />
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-text-muted uppercase tracking-wider">項目</th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-text-muted uppercase tracking-wider hidden sm:table-cell">日付</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
-                  <th className="px-6 py-4 text-center text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider">項目</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-medium text-text-muted uppercase tracking-wider">金額</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider hidden sm:table-cell">日付</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
+                  <th className="px-4 py-3 text-center text-[10px] font-medium text-text-muted uppercase tracking-wider">操作</th>
                 </tr>
               </thead>
               <tbody className="bg-surface divide-y divide-border">
                 {paginatedTransactions.length > 0 ? (
                   paginatedTransactions.map((transaction) => (
                     <tr key={transaction.id} className="hover:bg-surface-highlight transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
                         <input
                           type="checkbox"
                           checked={selectedTransactions.includes(transaction.id)}
@@ -599,12 +590,12 @@ const TransactionHistory: React.FC = () => {
                           className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
                         />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
                         <div className="flex items-center">
-                          <TransactionIcon item={transaction.item} category={transaction.category} size="sm" />
+                          <TransactionIcon item={transaction.item} category={transaction.category} size="xs" />
                           <div>
                             <div className="flex items-center gap-2">
-                              <div className="text-sm font-medium text-text-main">{transaction.item}</div>
+                              <div className="text-xs font-medium text-text-main">{transaction.item}</div>
                               {transaction.recurring && (
                                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
                                   <Repeat className="w-2.5 h-2.5" />
@@ -620,24 +611,24 @@ const TransactionHistory: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium">
                         <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
                           {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted hidden sm:table-cell">
+                      <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-muted hidden sm:table-cell">
                         {new Date(transaction.date).toLocaleDateString('ja-JP', {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric'
                         })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="whitespace-nowrap px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full bg-slate-500/10 text-text-muted">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <span className="whitespace-nowrap px-2 py-0.5 inline-flex text-[10px] leading-4 font-medium rounded-full bg-slate-500/10 text-text-muted">
                           {transaction.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                      <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => {

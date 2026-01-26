@@ -335,7 +335,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                     <React.Fragment key={step.id}>
                         <div className="flex flex-col items-center">
                             <div
-                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${currentStep > step.id
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${currentStep > step.id
                                     ? 'bg-success text-white'
                                     : currentStep === step.id
                                         ? 'bg-primary text-white'
@@ -343,9 +343,9 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                     }`}
                             >
                                 {currentStep > step.id ? (
-                                    <Check className="w-5 h-5" />
+                                    <Check className="w-4 h-4" />
                                 ) : (
-                                    <step.icon className="w-5 h-5" />
+                                    <step.icon className="w-4 h-4" />
                                 )}
                             </div>
                             <span className={`text-xs mt-2 hidden sm:block ${currentStep >= step.id ? 'text-text-main font-medium' : 'text-text-muted'
@@ -1188,23 +1188,23 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
 
     return (
         <div className="min-h-screen bg-background">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
                 {/* ヘッダー */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <Link to="/dashboard" className="flex items-center text-primary hover:text-primary-hover">
-                            <ArrowLeft className="h-5 w-5 mr-2" />
+                <div className="mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                        <Link to="/dashboard" className="flex items-center text-xs text-primary hover:text-primary-hover">
+                            <ArrowLeft className="h-4 w-4 mr-1.5" />
                             ダッシュボードに戻る
                         </Link>
                         <Link
                             to="/tax-filing-guide"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium"
                         >
                             📖 申告ガイド
                         </Link>
                     </div>
-                    <h1 className="text-3xl font-bold text-text-main mb-2">確定申告サポート</h1>
-                    <p className="text-text-muted">
+                    <h1 className="text-xl font-bold text-text-main mb-1">確定申告サポート</h1>
+                    <p className="text-xs text-text-muted">
                         6つのステップで簡単に確定申告を完了できます
                     </p>
                 </div>
@@ -1213,7 +1213,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                 <ProgressBar />
 
                 {/* メインコンテンツ */}
-                <div className="bg-surface border border-border rounded-xl p-6 mb-6">
+                <div className="bg-surface border border-border rounded-xl p-3 mb-6">
                     {renderStepContent()}
                 </div>
 

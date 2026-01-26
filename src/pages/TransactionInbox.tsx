@@ -120,24 +120,23 @@ const TransactionInbox: React.FC = () => {
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-5xl">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => window.history.back()}
-                        className="p-2 hover:bg-surface-highlight rounded-full transition-colors"
+                        className="p-1.5 hover:bg-surface-highlight rounded-full transition-colors"
                         aria-label="戻る"
                     >
-                        <ArrowLeft className="w-6 h-6 text-text-muted" />
+                        <ArrowLeft className="w-5 h-5 text-text-muted" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
-                            <Inbox className="w-6 h-6 text-primary" />
+                        <h1 className="text-xl font-bold text-text-main flex items-center gap-2">
+                            <Inbox className="w-5 h-5 text-primary" />
                             インボックス
                         </h1>
-                        <p className="text-text-muted mt-1">AIチャット・レシートスキャンで入力された内容を確認し、承認ボタンで記帳してください。</p>
+                        <p className="text-xs text-text-muted mt-0.5">AIチャット・レシートスキャンで入力された内容を確認し、承認ボタンで記帳してください。</p>
                     </div>
                 </div>
-
             </div>
 
             {pendingTransactions.length === 0 ? (
@@ -234,35 +233,35 @@ const TransactionInbox: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between mt-3 gap-2">
-                                    <span className="inline-flex items-center px-2 h-5 rounded-full text-[10px] font-medium bg-surface-highlight text-text-secondary border border-border whitespace-nowrap">
+                                <div className="flex items-center justify-between mt-2.5 gap-2">
+                                    <span className="inline-flex items-center px-1.5 h-4.5 rounded-full text-[9px] font-medium bg-surface-highlight text-text-secondary border border-border whitespace-nowrap">
                                         {t.category}
                                     </span>
 
-                                    <div className="flex gap-3">
+                                    <div className="flex gap-2.5">
                                         <button
                                             onClick={() => handleApprove(t.id)}
                                             disabled={!!processingId}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
+                                            className="w-9 h-9 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
                                             title="承認"
                                         >
-                                            <Check className="w-5 h-5" />
+                                            <Check className="w-4.5 h-4.5" />
                                         </button>
                                         <button
                                             onClick={() => handleEditClick(t)}
                                             disabled={!!processingId}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95"
+                                            className="w-9 h-9 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95"
                                             title="編集"
                                         >
-                                            <Edit2 className="w-5 h-5" />
+                                            <Edit2 className="w-4.5 h-4.5" />
                                         </button>
                                         <button
                                             onClick={() => handleReject(t.id)}
                                             disabled={!!processingId}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
+                                            className="w-9 h-9 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
                                             title="削除"
                                         >
-                                            <X className="w-5 h-5" />
+                                            <X className="w-4.5 h-4.5" />
                                         </button>
                                     </div>
                                 </div>
@@ -276,56 +275,56 @@ const TransactionInbox: React.FC = () => {
                             <table className="w-full text-left">
                                 <thead className="bg-surface-highlight/30 border-b border-border">
                                     <tr>
-                                        <th className="px-6 py-4 text-xs font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">日付</th>
-                                        <th className="px-6 py-4 text-xs font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">入力元</th>
-                                        <th className="px-6 py-4 text-xs font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">説明・項目</th>
-                                        <th className="px-6 py-4 text-xs font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">カテゴリ</th>
-                                        <th className="px-6 py-4 text-xs font-semibold text-text-muted uppercase tracking-wider text-right whitespace-nowrap">金額</th>
-                                        <th className="px-6 py-4 text-xs font-semibold text-text-muted uppercase tracking-wider text-center whitespace-nowrap">操作</th>
+                                        <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">日付</th>
+                                        <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">入力元</th>
+                                        <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">説明・項目</th>
+                                        <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">カテゴリ</th>
+                                        <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider text-right whitespace-nowrap">金額</th>
+                                        <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider text-center whitespace-nowrap">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
                                     {pendingTransactions.map((t) => (
                                         <tr key={t.id} className="hover:bg-surface-highlight/20 transition-colors group">
-                                            <td className="px-6 py-4 text-sm text-text-main whitespace-nowrap">
+                                            <td className="px-4 py-2.5 text-xs text-text-main whitespace-nowrap">
                                                 {format(new Date(t.date), 'yyyy/MM/dd', { locale: ja })}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-text-main whitespace-nowrap">
+                                            <td className="px-4 py-2.5 text-xs text-text-main whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
                                                     {t.receipt_url ? (
                                                         <>
-                                                            <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-md text-purple-600 dark:text-purple-400">
-                                                                <Sparkles className="w-3.5 h-3.5" />
+                                                            <div className="p-1 bg-purple-100 dark:bg-purple-900/30 rounded-md text-purple-600 dark:text-purple-400">
+                                                                <Sparkles className="w-3 h-3" />
                                                             </div>
-                                                            <span className="text-xs font-medium">AI読取</span>
+                                                            <span className="text-[10px] font-medium">AI読取</span>
                                                         </>
                                                     ) : t.tags?.includes('ai-chat') ? (
                                                         <>
-                                                            <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-md text-indigo-600 dark:text-indigo-400">
-                                                                <MessageSquare className="w-3.5 h-3.5" />
+                                                            <div className="p-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-md text-indigo-600 dark:text-indigo-400">
+                                                                <MessageSquare className="w-3 h-3" />
                                                             </div>
-                                                            <span className="text-xs font-medium">AIチャット</span>
+                                                            <span className="text-[10px] font-medium">AIチャット</span>
                                                         </>
                                                     ) : t.tags?.includes('voice') ? (
                                                         <>
-                                                            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md text-blue-600 dark:text-blue-400">
-                                                                <Mic className="w-3.5 h-3.5" />
+                                                            <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-blue-600 dark:text-blue-400">
+                                                                <Mic className="w-3 h-3" />
                                                             </div>
-                                                            <span className="text-xs font-medium">音声入力</span>
+                                                            <span className="text-[10px] font-medium">音声入力</span>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <div className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-md text-gray-600 dark:text-gray-400">
-                                                                <Edit2 className="w-3.5 h-3.5" />
+                                                            <div className="p-1 bg-gray-100 dark:bg-gray-800 rounded-md text-gray-600 dark:text-gray-400">
+                                                                <Edit2 className="w-3 h-3" />
                                                             </div>
-                                                            <span className="text-xs font-medium">手入力</span>
+                                                            <span className="text-[10px] font-medium">手入力</span>
                                                         </>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-4 py-2.5">
                                                 <div className="flex items-center gap-2">
-                                                    <TransactionIcon item={t.item} category={t.category} size="sm" />
+                                                    <TransactionIcon item={t.item} category={t.category} size="xs" />
                                                     <div className="flex flex-col overflow-hidden">
                                                         {t.description && t.description !== t.item ? (
                                                             <>
@@ -355,38 +354,38 @@ const TransactionInbox: React.FC = () => {
                                                     {t.category}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-right font-bold whitespace-nowrap">
+                                            <td className="px-4 py-2.5 text-xs text-right font-bold whitespace-nowrap">
                                                 <span className={t.type === 'expense' ? 'text-red-500' : 'text-emerald-500'}>
                                                     {t.type === 'expense' ? '-' : '+'}¥{Math.abs(t.amount).toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-4 py-2.5 whitespace-nowrap">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button
                                                         onClick={() => handleApprove(t.id)}
                                                         disabled={!!processingId}
-                                                        className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                                                        className="p-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-[10px] whitespace-nowrap"
                                                         title="承認する"
                                                     >
-                                                        <Check className="w-4 h-4" />
+                                                        <Check className="w-3.5 h-3.5" />
                                                         承認
                                                     </button>
                                                     <button
                                                         onClick={() => handleEditClick(t)}
                                                         disabled={!!processingId}
-                                                        className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                                                        className="p-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-[10px] whitespace-nowrap"
                                                         title="編集する"
                                                     >
-                                                        <Edit2 className="w-4 h-4" />
+                                                        <Edit2 className="w-3.5 h-3.5" />
                                                         編集
                                                     </button>
                                                     <button
                                                         onClick={() => handleReject(t.id)}
                                                         disabled={!!processingId}
-                                                        className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                                                        className="p-1.5 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-[10px] whitespace-nowrap"
                                                         title="削除する"
                                                     >
-                                                        <X className="w-4 h-4" />
+                                                        <X className="w-3.5 h-3.5" />
                                                         削除
                                                     </button>
                                                 </div>

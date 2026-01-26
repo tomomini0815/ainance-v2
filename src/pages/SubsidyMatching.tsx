@@ -8,9 +8,12 @@ import {
     FileText,
     Download,
     Sparkles,
-    AlertCircle,
     CheckCircle,
     Clock,
+    X,
+    Info,
+    Trophy,
+    Lightbulb,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessType } from '../hooks/useBusinessType';
@@ -21,14 +24,16 @@ import {
     generateApplicationDraft,
     getDaysUntilDeadline,
     getDeadlineUrgency,
-    type Subsidy,
     type SubsidyMatch,
     type BusinessProfile,
     type ApplicationDraft,
 } from '../services/subsidyMatchingService';
+import { generateSubsidyApplicationPDF } from '../services/pdfJapaneseService';
+import SubsidyDraftWizard from '../components/SubsidyDraftWizard';
 
 const SubsidyMatching: React.FC = () => {
     const { user } = useAuth();
+    const userId = user?.id; // 固定のアクセスのために
     const { currentBusinessType } = useBusinessType(user?.id);
     const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
 
@@ -36,7 +41,10 @@ const SubsidyMatching: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [selectedSubsidy, setSelectedSubsidy] = useState<SubsidyMatch | null>(null);
     const [applicationDraft, setApplicationDraft] = useState<ApplicationDraft | null>(null);
-    const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+    const [showDraftWizard, setShowDraftWizard] = useState(false);
+    const [selectedSubsidyForWizard, setSelectedSubsidyForWizard] = useState<SubsidyMatch | null>(null);
+    const [isGeneratingGuide, setIsGeneratingGuide] = useState(false);
+    const [isDraftCompleted, setIsDraftCompleted] = useState(false);
 
     // 事業プロフィールを生成
     const generateBusinessProfile = (): BusinessProfile => {
@@ -56,36 +64,65 @@ const SubsidyMatching: React.FC = () => {
 
     // 初期データ読み込み
     useEffect(() => {
-        loadSubsidies();
-    }, []);
+        if (currentBusinessType) {
+            loadSubsidies();
+        }
+    }, [currentBusinessType?.business_type, userId]);
 
     const loadSubsidies = async () => {
+        if (isLoading) return;
         setIsLoading(true);
+        console.log('SubsidyMatching: 補助金データの読み込みを開始します...');
         try {
             const subsidyData = await fetchSubsidies();
+            console.log('SubsidyMatching: 取得した補助金データ:', subsidyData.length, '件');
 
             // マッチング実行
             const profile = generateBusinessProfile();
+            console.log('SubsidyMatching: 生成したビジネスプロフィール:', profile);
+
             const matchedSubsidies = await matchSubsidies(profile, subsidyData);
+            console.log('SubsidyMatching: マッチング結果:', matchedSubsidies.length, '件');
             setMatches(matchedSubsidies);
         } catch (error) {
-            console.error('補助金データ読み込みエラー:', error);
+            console.error('SubsidyMatching: 補助金データ読み込みエラー:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleGenerateDraft = async (match: SubsidyMatch) => {
-        setIsGeneratingDraft(true);
+
+    const handleGenerateGuide = async (match: SubsidyMatch) => {
+        setIsGeneratingGuide(true);
+        setSelectedSubsidy(match);
+        setIsDraftCompleted(false);
         try {
-            const profile = generateBusinessProfile();
-            const draft = await generateApplicationDraft(match.subsidy, profile);
-            setApplicationDraft(draft);
-            setSelectedSubsidy(match);
+            const guide = await generateApplicationDraft(match.subsidy, generateBusinessProfile());
+            setApplicationDraft(guide);
         } catch (error) {
-            console.error('申請書下書き生成エラー:', error);
+            console.error('ガイド生成エラー:', error);
         } finally {
-            setIsGeneratingDraft(false);
+            setIsGeneratingGuide(false);
+        }
+    };
+
+    const handleDownloadPDF = async () => {
+        if (!applicationDraft) return;
+
+        try {
+            const pdfBytes = await generateSubsidyApplicationPDF(applicationDraft);
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `補助金申請書_${applicationDraft.subsidyName}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('PDF生成エラー:', error);
+            alert('PDFの生成中にエラーが発生しました。');
         }
     };
 
@@ -112,8 +149,8 @@ const SubsidyMatching: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background">
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-background min-h-full">
+            <div className="mx-auto py-2">
                 {/* ヘッダー */}
                 <div className="flex items-center mb-6">
                     <Link to="/dashboard" className="mr-4">
@@ -135,36 +172,36 @@ const SubsidyMatching: React.FC = () => {
                 ) : (
                     <>
                         {/* サマリーカード */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-xl p-6 border border-blue-500/20">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-text-muted">マッチした補助金</span>
-                                    <Search className="w-5 h-5 text-blue-500" />
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+                            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-xl p-3 sm:p-6 border border-blue-500/20">
+                                <div className="flex items-center justify-between mb-1 sm:mb-2">
+                                    <span className="text-[10px] sm:text-sm font-medium text-text-muted">マッチ</span>
+                                    <Search className="w-3 h-3 sm:w-5 h-5 text-blue-500" />
                                 </div>
-                                <p className="text-3xl font-bold text-text-main">{matches.length}</p>
-                                <p className="text-xs text-text-muted mt-1">件</p>
+                                <p className="text-xl sm:text-3xl font-bold text-text-main">{matches.length}</p>
+                                <p className="text-[9px] sm:text-xs text-text-muted mt-1">件</p>
                             </div>
 
-                            <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-6 border border-green-500/20">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-text-muted">推定受給額</span>
-                                    <JapaneseYen className="w-5 h-5 text-green-500" />
+                            <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-3 sm:p-6 border border-green-500/20">
+                                <div className="flex items-center justify-between mb-1 sm:mb-2">
+                                    <span className="text-[10px] sm:text-sm font-medium text-text-muted">推定総額</span>
+                                    <JapaneseYen className="w-3 h-3 sm:w-5 h-5 text-green-500" />
                                 </div>
-                                <p className="text-3xl font-bold text-text-main">
-                                    ¥{matches.reduce((sum, m) => sum + m.estimatedAmount, 0).toLocaleString()}
+                                <p className="text-xl sm:text-3xl font-bold text-text-main">
+                                    ¥{Math.round(matches.reduce((sum, m) => sum + m.estimatedAmount, 0) / 10000).toLocaleString()}
                                 </p>
-                                <p className="text-xs text-text-muted mt-1">合計</p>
+                                <p className="text-[8px] sm:text-xs text-text-muted mt-1">万円相当</p>
                             </div>
 
-                            <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-xl p-6 border border-purple-500/20">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-text-muted">高マッチ度</span>
-                                    <TrendingUp className="w-5 h-5 text-purple-500" />
+                            <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-xl p-3 sm:p-6 border border-purple-500/20">
+                                <div className="flex items-center justify-between mb-1 sm:mb-2">
+                                    <span className="text-[10px] sm:text-sm font-medium text-text-muted">高マッチ</span>
+                                    <TrendingUp className="w-3 h-3 sm:w-5 h-5 text-purple-500" />
                                 </div>
-                                <p className="text-3xl font-bold text-text-main">
+                                <p className="text-xl sm:text-3xl font-bold text-text-main">
                                     {matches.filter(m => m.matchScore >= 70).length}
                                 </p>
-                                <p className="text-xs text-text-muted mt-1">件（70%以上）</p>
+                                <p className="text-[9px] sm:text-xs text-text-muted mt-1">件</p>
                             </div>
                         </div>
 
@@ -177,7 +214,7 @@ const SubsidyMatching: React.FC = () => {
                                 return (
                                     <div
                                         key={match.subsidy.id}
-                                        className="bg-surface rounded-xl shadow-sm border border-border p-6 hover:shadow-md transition-all"
+                                        className="bg-surface rounded-xl shadow-sm border border-border p-3 sm:p-6 hover:shadow-md transition-all"
                                     >
                                         <div className="flex items-start justify-between mb-4">
                                             <div className="flex-1">
@@ -252,28 +289,52 @@ const SubsidyMatching: React.FC = () => {
                                         </div>
 
                                         {/* アクションボタン */}
-                                        <div className="flex gap-3">
+                                        <div className="flex flex-wrap gap-2 sm:gap-3">
                                             <button
-                                                onClick={() => handleGenerateDraft(match)}
-                                                disabled={isGeneratingDraft}
-                                                className="btn-primary flex items-center gap-2"
+                                                onClick={() => {
+                                                    setSelectedSubsidyForWizard(match);
+                                                    setShowDraftWizard(true);
+                                                }}
+                                                className="btn-primary flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-sm py-1.5 sm:py-2.5 whitespace-nowrap"
                                             >
-                                                <Sparkles className="w-4 h-4" />
-                                                AI申請書下書き生成
+                                                <Sparkles className="w-3 h-3 sm:w-4 h-4" />
+                                                申請書作成
+                                            </button>
+                                            <button
+                                                onClick={() => handleGenerateGuide(match)}
+                                                disabled={isGeneratingGuide}
+                                                className="btn-ghost flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-sm py-1.5 sm:py-2.5 whitespace-nowrap border-primary/30 text-primary hover:bg-primary/5"
+                                            >
+                                                {isGeneratingGuide && selectedSubsidy?.subsidy.id === match.subsidy.id ? (
+                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                                                ) : (
+                                                    <Info className="w-3 h-3 sm:w-4 h-4" />
+                                                )}
+                                                申請ガイド
                                             </button>
                                             <a
                                                 href={match.subsidy.applicationUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="btn-ghost flex items-center gap-2"
+                                                className="btn-ghost flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-sm py-1.5 sm:py-2.5 whitespace-nowrap border-border text-text-muted hover:text-text-main border"
                                             >
-                                                <Download className="w-4 h-4" />
+                                                <Download className="w-3 h-3 sm:w-4 h-4" />
                                                 公式サイト
                                             </a>
                                         </div>
                                     </div>
                                 );
                             })}
+
+                            {matches.length === 0 && !isLoading && (
+                                <div className="text-center py-20 bg-surface rounded-2xl border border-border border-dashed">
+                                    <div className="bg-surface-highlight w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Search className="w-8 h-8 text-text-muted opacity-20" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-text-main mb-2">該当する補助金が見つかりませんでした</h3>
+                                    <p className="text-sm text-text-muted">条件を変更して再度お試しください</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* 申請書下書きモーダル */}
@@ -283,7 +344,9 @@ const SubsidyMatching: React.FC = () => {
                                     <div className="p-6">
                                         <div className="flex items-center justify-between mb-6">
                                             <div>
-                                                <h2 className="text-2xl font-bold text-text-main">AI申請書下書き</h2>
+                                                <h2 className="text-2xl font-bold text-text-main">
+                                                    {isDraftCompleted ? 'AI申請書下書き' : 'AI申請概要ガイド'}
+                                                </h2>
                                                 <p className="text-text-muted mt-1">{applicationDraft.subsidyName}</p>
                                             </div>
                                             <button
@@ -291,36 +354,91 @@ const SubsidyMatching: React.FC = () => {
                                                     setApplicationDraft(null);
                                                     setSelectedSubsidy(null);
                                                 }}
-                                                className="p-2 rounded-lg hover:bg-surface-highlight transition-colors"
+                                                className="p-2 rounded-lg hover:bg-surface-highlight transition-colors text-text-muted"
                                             >
-                                                <AlertCircle className="w-5 h-5 text-text-muted" />
+                                                <X className="w-5 h-5" />
                                             </button>
                                         </div>
 
                                         {/* 所要時間 */}
-                                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-                                            <div className="flex items-center gap-2">
-                                                <Clock className="w-5 h-5 text-blue-500" />
-                                                <span className="text-sm font-medium text-text-main">
-                                                    推定作成時間: {applicationDraft.estimatedCompletionTime}
-                                                </span>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="w-5 h-5 text-blue-500" />
+                                                    <span className="text-sm font-medium text-text-main">
+                                                        推定作成時間: {applicationDraft.estimatedCompletionTime}
+                                                    </span>
+                                                </div>
                                             </div>
+
+                                            {applicationDraft.strategicSummary && (
+                                                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Trophy className="w-5 h-5 text-amber-500" />
+                                                        <span className="text-sm font-bold text-amber-700">
+                                                            採択率向上の戦略ポイント
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] text-amber-800 leading-tight">
+                                                        {applicationDraft.strategicSummary}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
+
+                                        {applicationDraft.strategicAdvice && applicationDraft.strategicAdvice.length > 0 && (
+                                            <div className="border border-amber-200 bg-amber-50/50 rounded-lg p-4 mb-6">
+                                                <h4 className="text-xs font-bold text-amber-900 mb-2 flex items-center gap-1">
+                                                    <Lightbulb className="w-3 h-3" />
+                                                    さらに採択率を上げるためのアドバイス
+                                                </h4>
+                                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                                                    {applicationDraft.strategicAdvice.map((advice, idx) => (
+                                                        <li key={idx} className="text-[11px] text-amber-800 flex items-start gap-2">
+                                                            <span className="text-amber-500 mt-1">★</span>
+                                                            <span>{advice}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
 
                                         {/* セクション */}
                                         <div className="space-y-6 mb-6">
                                             {applicationDraft.sections.map((section, index) => (
-                                                <div key={index} className="border border-border rounded-lg p-4">
-                                                    <h3 className="text-lg font-bold text-text-main mb-3">{section.title}</h3>
-                                                    <div className="bg-surface-highlight rounded-lg p-4 mb-3">
-                                                        <p className="text-sm text-text-main whitespace-pre-wrap">{section.content}</p>
+                                                <div key={index} className="border border-border rounded-lg p-4 bg-background">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <h3 className="text-lg font-bold text-text-main">{section.title}</h3>
+                                                        <Sparkles className={`w-4 h-4 ${isDraftCompleted ? 'text-primary' : 'text-blue-500'} opacity-50`} />
+                                                    </div>
+                                                    <div className={`rounded-lg p-4 mb-3 border ${isDraftCompleted ? 'bg-surface-highlight border-border/50' : 'bg-blue-500/5 border-blue-500/10'}`}>
+                                                        {isDraftCompleted ? (
+                                                            <textarea
+                                                                className="w-full bg-transparent text-sm text-text-main leading-relaxed border-none focus:ring-0 p-0 resize-none overflow-hidden"
+                                                                value={section.content}
+                                                                rows={Math.max(3, section.content.split('\n').length)}
+                                                                onChange={(e) => {
+                                                                    if (!applicationDraft) return;
+                                                                    const newSections = [...applicationDraft.sections];
+                                                                    newSections[index] = { ...section, content: e.target.value };
+                                                                    setApplicationDraft({ ...applicationDraft, sections: newSections });
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <p className="text-sm text-text-main whitespace-pre-wrap leading-relaxed">
+                                                                {section.content}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                     {section.tips.length > 0 && (
-                                                        <div className="space-y-2">
-                                                            <p className="text-xs font-medium text-text-muted">💡 記入のコツ:</p>
+                                                        <div className="space-y-2 bg-blue-500/5 p-3 rounded-lg border border-blue-500/10">
+                                                            <p className="text-xs font-medium text-blue-500 flex items-center gap-1">
+                                                                <Info className="w-3 h-3" />
+                                                                記入のアドバイス:
+                                                            </p>
                                                             <ul className="space-y-1">
                                                                 {section.tips.map((tip, idx) => (
-                                                                    <li key={idx} className="text-xs text-text-muted flex items-start gap-2">
+                                                                    <li key={idx} className="text-[11px] text-text-muted flex items-start gap-2">
                                                                         <span className="text-primary mt-1">•</span>
                                                                         <span>{tip}</span>
                                                                     </li>
@@ -348,10 +466,7 @@ const SubsidyMatching: React.FC = () => {
                                         {/* アクション */}
                                         <div className="flex gap-3">
                                             <button
-                                                onClick={() => {
-                                                    // TODO: PDFダウンロード機能
-                                                    alert('PDF出力機能は開発中です');
-                                                }}
+                                                onClick={handleDownloadPDF}
                                                 className="btn-primary flex items-center gap-2"
                                             >
                                                 <Download className="w-4 h-4" />
@@ -371,9 +486,28 @@ const SubsidyMatching: React.FC = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* 下書きウィザード */}
+                        {showDraftWizard && selectedSubsidyForWizard && (
+                            <SubsidyDraftWizard
+                                match={selectedSubsidyForWizard}
+                                profile={generateBusinessProfile()}
+                                onClose={() => {
+                                    setShowDraftWizard(false);
+                                    setSelectedSubsidyForWizard(null);
+                                }}
+                                onComplete={(draft) => {
+                                    setApplicationDraft(draft);
+                                    setSelectedSubsidy(selectedSubsidyForWizard);
+                                    setIsDraftCompleted(true);
+                                    setShowDraftWizard(false);
+                                    setSelectedSubsidyForWizard(null);
+                                }}
+                            />
+                        )}
                     </>
                 )}
-            </main>
+            </div>
         </div>
     );
 };

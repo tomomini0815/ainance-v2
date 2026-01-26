@@ -3,17 +3,18 @@ import React from 'react';
 interface TransactionIconProps {
     item: string;
     category: string;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
 const TransactionIcon: React.FC<TransactionIconProps> = ({ item, category, size = 'md' }) => {
     const sizeClass = {
+        xs: 'w-4 h-4 text-[8px]',
         sm: 'w-5 h-5 text-[10px]',
         md: 'w-6 h-6 text-xs',
         lg: 'w-8 h-8 text-sm'
     }[size];
 
-    const badgeClass = `inline-flex items-center justify-center rounded-full font-bold shrink-0 mr-3 ${sizeClass}`;
+    const badgeClass = `inline-flex items-center justify-center rounded-full font-bold shrink-0 ${size === 'xs' ? 'mr-2' : 'mr-3'} ${sizeClass}`;
 
     // 項目名による特殊処理
     if (item.includes('売上') || item.includes('売掛')) {

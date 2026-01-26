@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Plus, Save, Send, Eye, Download, Search, Calendar, User, FileText, X, Trash2, FileSpreadsheet, JapaneseYen } from 'lucide-react'
+import { ArrowLeft, Plus, Save, Send, Eye, Download, User, FileText, X, Trash2, FileSpreadsheet, JapaneseYen } from 'lucide-react'
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -191,7 +191,7 @@ const InvoiceCreation: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              ${items.map((item, index) => `
+              ${items.map((item) => `
                 <tr style="border-bottom: 1px solid #eee;">
                   <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.description || '（品目なし）'}</td>
                   <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">${item.quantity}</td>
@@ -383,18 +383,6 @@ const InvoiceCreation: React.FC = () => {
     setSendEmail('')
   }
 
-  // 顧客モーダル表示
-  const openCustomerModal = () => {
-    console.log('顧客選択モーダルを表示します')
-    setShowCustomerModal(true)
-  }
-
-  // 銀行口座モーダル表示
-  const openBankAccountModal = () => {
-    console.log('銀行口座選択モーダルを表示します')
-    setShowBankAccountModal(true)
-  }
-
   // モーダル閉じる
   const closeModal = () => {
     console.log('モーダルを閉じます')
@@ -471,7 +459,7 @@ const InvoiceCreation: React.FC = () => {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4 md:p-8">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* ヘッダー */}
         {/* ヘッダー */}
@@ -518,11 +506,11 @@ const InvoiceCreation: React.FC = () => {
 
 
         {/* 請求書フォーム */}
-        <div className="bg-surface rounded-lg shadow-md p-4 sm:p-6">
+        <div className="bg-surface rounded-lg shadow-md p-3 sm:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Form Section */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
+              <div className="bg-surface border border-border rounded-xl p-3 sm:p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-text-main flex items-center gap-2">
                     <FileText className="w-5 h-5 text-primary" />
@@ -583,7 +571,7 @@ const InvoiceCreation: React.FC = () => {
                   <div className="border border-border rounded-xl overflow-hidden bg-background">
                     <div className="block md:hidden">
                       {items.map((item) => (
-                        <div key={item.id} className="p-4 border-b border-border last:border-b-0 bg-surface">
+                        <div key={item.id} className="p-3 border-b border-border last:border-b-0 bg-surface">
                           <div className="mb-3">
                             <label className="block text-xs font-medium text-text-muted mb-1">品目</label>
                             <input
@@ -719,8 +707,8 @@ const InvoiceCreation: React.FC = () => {
             </div>
 
             {/* Sidebar Actions */}
-            <div className="space-y-6">
-              <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
+            <div className="space-y-4">
+              <div className="bg-surface border border-border rounded-xl p-3 sm:p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-text-main mb-4">アクション</h3>
                 <div className="space-y-3">
                   <button
@@ -785,8 +773,8 @@ const InvoiceCreation: React.FC = () => {
                   <X size={24} />
                 </button>
               </div>
-              <div className="p-4 overflow-auto max-h-[70vh]">
-                <div className="mb-4">
+              <div className="p-3 overflow-auto max-h-[70vh]">
+                <div className="mb-3">
                   <input
                     type="text"
                     placeholder="顧客を検索..."
@@ -832,7 +820,7 @@ const InvoiceCreation: React.FC = () => {
 
         {/* 銀行口座選択モーダル */}
         {showBankAccountModal && documentType === 'invoice' && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
             <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden border border-border">
               <div className="flex justify-between items-center p-4 border-b border-border">
                 <h3 className="text-lg font-semibold text-text-main">銀行口座を選択</h3>
@@ -843,7 +831,7 @@ const InvoiceCreation: React.FC = () => {
                   <X size={24} />
                 </button>
               </div>
-              <div className="p-4 overflow-auto max-h-[70vh]">
+              <div className="p-3 overflow-auto max-h-[70vh]">
                 <div className="space-y-2">
                   {bankAccounts.map(account => (
                     <div
@@ -875,9 +863,9 @@ const InvoiceCreation: React.FC = () => {
 
         {/* 新規顧客作成モーダル */}
         {showNewCustomerModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
             <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden border border-border">
-              <div className="flex justify-between items-center p-4 border-b border-border">
+              <div className="flex justify-between items-center p-3 border-b border-border">
                 <h3 className="text-lg font-semibold text-text-main">新規顧客を作成</h3>
                 <button
                   onClick={closeModal}
@@ -886,7 +874,7 @@ const InvoiceCreation: React.FC = () => {
                   <X size={24} />
                 </button>
               </div>
-              <div className="p-4 overflow-auto max-h-[70vh] space-y-4">
+              <div className="p-3 overflow-auto max-h-[70vh] space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-text-muted mb-1">顧客名</label>
                   <input
@@ -948,9 +936,9 @@ const InvoiceCreation: React.FC = () => {
 
         {/* 新規銀行口座作成モーダル */}
         {showNewBankAccountModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
             <div className="bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden border border-border">
-              <div className="flex justify-between items-center p-4 border-b border-border">
+              <div className="flex justify-between items-center p-3 border-b border-border">
                 <h3 className="text-lg font-semibold text-text-main">新規銀行口座を作成</h3>
                 <button
                   onClick={closeModal}
@@ -959,7 +947,7 @@ const InvoiceCreation: React.FC = () => {
                   <X size={24} />
                 </button>
               </div>
-              <div className="p-4 overflow-auto max-h-[70vh] space-y-4">
+              <div className="p-3 overflow-auto max-h-[70vh] space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-text-muted mb-1">銀行名</label>
                   <input
@@ -1032,9 +1020,9 @@ const InvoiceCreation: React.FC = () => {
 
         {/* プレビューモーダル */}
         {showPreviewModal && previewBlobUrl && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
             <div className="bg-surface rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-border">
-              <div className="flex justify-between items-center p-4 border-b border-border">
+              <div className="flex justify-between items-center p-3 border-b border-border">
                 <h3 className="text-lg font-semibold text-text-main">{documentType === 'invoice' ? '請求書' : '見積書'} プレビュー</h3>
                 <button
                   onClick={closePreviewModal}
@@ -1070,9 +1058,9 @@ const InvoiceCreation: React.FC = () => {
 
         {/* 請求書送信モーダル */}
         {showSendModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
             <div className="bg-surface rounded-lg max-w-md w-full overflow-hidden border border-border">
-              <div className="flex justify-between items-center p-4 border-b border-border">
+              <div className="flex justify-between items-center p-3 border-b border-border">
                 <h3 className="text-lg font-semibold text-text-main">{documentType === 'invoice' ? '請求書' : '見積書'} 送信</h3>
                 <button
                   onClick={closeSendModal}
@@ -1081,7 +1069,7 @@ const InvoiceCreation: React.FC = () => {
                   <X size={24} />
                 </button>
               </div>
-              <div className="p-4 space-y-4">
+              <div className="p-3 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-text-muted mb-1">送信先メールアドレス</label>
                   <input
@@ -1124,7 +1112,7 @@ const InvoiceCreation: React.FC = () => {
                   <X size={24} />
                 </button>
               </div>
-              <div className="p-4">
+              <div className="p-3">
                 <p className="text-text-main mb-4">{documentType === 'invoice' ? '請求書' : '見積書'}をPDFとしてダウンロードしますか？</p>
                 <div className="flex justify-end gap-2">
                   <button

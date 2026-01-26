@@ -75,14 +75,14 @@ const QuickActions: React.FC = () => {
         <Link
           key={index}
           to={action.link}
-          className="bg-white dark:bg-surface rounded-xl p-4 hover:bg-surface-highlight transition-all duration-300 group border border-border hover:border-border-strong hover:-translate-y-1 shadow-sm hover:shadow-md"
+          className="bg-white dark:bg-surface rounded-xl p-2.5 hover:bg-surface-highlight transition-all duration-300 group border border-border hover:border-border-strong hover:-translate-y-1 shadow-sm hover:shadow-md"
         >
           <div className="flex flex-col items-center text-center h-full">
-            <div className={`w-12 h-12 ${action.color} rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 border ${action.borderColor}`}>
-              <action.icon className={`w-6 h-6 ${action.iconColor}`} />
+            <div className={`w-10 h-10 ${action.color} rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300 border ${action.borderColor}`}>
+              <action.icon className={`w-5 h-5 ${action.iconColor}`} />
             </div>
-            <h3 className="font-medium text-text-main mb-1 text-sm">{action.title}</h3>
-            <p className="text-xs text-text-muted leading-relaxed">{action.description}</p>
+            <h3 className="font-medium text-text-main mb-1 text-xs">{action.title}</h3>
+            <p className="text-[10px] text-text-muted leading-tight">{action.description}</p>
           </div>
         </Link>
       ))}

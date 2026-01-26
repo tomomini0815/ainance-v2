@@ -243,35 +243,37 @@ const Dashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div className="flex items-center">
           <div>
-            <h1 className="text-2xl font-bold text-text-main tracking-tight">ダッシュボード</h1>
-            <p className="text-text-muted mt-1">財務状況の概要と最近の活動</p>
+            <div>
+              <h1 className="text-xl font-bold text-text-main tracking-tight">ダッシュボード</h1>
+              <p className="text-xs text-text-muted mt-0.5">財務状況の概要と最近の活動</p>
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-4 w-full sm:w-auto h-12">
+        <div className="flex gap-3 w-full sm:w-auto h-10">
           <Link
             to="/transaction-inbox"
-            className={`group flex-1 sm:flex-none relative inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full transition-all duration-200 border whitespace-nowrap ${stats.pendingCount > 0
+            className={`group flex-1 sm:flex-none relative inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full transition-all duration-200 border whitespace-nowrap ${stats.pendingCount > 0
               ? 'border-red-500/50 hover:border-red-500 text-red-500 hover:bg-red-500/10'
               : 'border-border hover:border-border-strong text-text-muted hover:bg-surface-highlight'
               } bg-surface`}
           >
-            <Inbox className="w-5 h-5" />
-            <span className="font-bold">確認待ち{stats.pendingCount === 0 ? '(0)' : ''}</span>
+            <Inbox className="w-4 h-4" />
+            <span className="font-bold text-sm">確認待ち{stats.pendingCount === 0 ? '(0)' : ''}</span>
             {stats.pendingCount > 0 && (
               <>
-                <span className="flex items-center justify-center min-w-[24px] h-6 px-1.5 ml-1 rounded-full text-xs font-bold bg-white/10 text-red-500">
+                <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 ml-1 rounded-full text-[10px] font-bold bg-white/10 text-red-500">
                   {stats.pendingCount}
                 </span>
-                <span className="absolute top-0 right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-surface shadow-[0_0_10px_rgba(239,68,68,0.5)]"></span>
+                <span className="absolute top-0 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-surface shadow-[0_0_10px_rgba(239,68,68,0.5)]"></span>
               </>
             )}
           </Link>
           <button
             onClick={() => setShowCreateForm(true)}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-8 py-2 rounded-full bg-primary hover:bg-primary/90 text-white font-bold transition-all shadow-lg shadow-primary/25 active:scale-95"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-1.5 rounded-full bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-all shadow-lg shadow-primary/25 active:scale-95"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
             新規取引
           </button>
         </div>
@@ -279,44 +281,44 @@ const Dashboard: React.FC = () => {
 
       <QuickActions />
 
-      {/* 統計カード - 一旦非表示 */}
-      <div className="bg-surface rounded-xl shadow-sm p-4 border border-border hover:shadow-md transition-shadow mb-8">
+      {/* 統計カード */}
+      <div className="bg-surface rounded-xl shadow-sm p-3 border border-border hover:shadow-md transition-shadow mb-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="border border-border rounded-lg p-3">
+          <div className="border border-border rounded-lg p-2.5">
             <div className="flex items-center justify-between">
-              <div className="text-xs font-medium text-text-muted">総取引数</div>
-              <div className="rounded-lg bg-primary/5 p-2">
-                <FileText className="w-5 h-5 text-primary" />
+              <div className="text-[10px] font-medium text-text-muted">総取引数</div>
+              <div className="rounded-lg bg-primary/5 p-1.5">
+                <FileText className="w-4 h-4 text-primary" />
               </div>
             </div>
-            <div className="text-lg font-bold text-primary mt-1">{stats.total}件</div>
+            <div className="text-lg font-bold text-primary mt-0.5">{stats.total}件</div>
           </div>
-          <div className="border border-border rounded-lg p-3">
+          <div className="border border-border rounded-lg p-2.5">
             <div className="flex items-center justify-between">
-              <div className="text-xs font-medium text-text-muted">収入</div>
-              <div className="rounded-lg bg-green-500/5 p-2">
-                <TrendingUp className="w-5 h-5 text-green-500" />
+              <div className="text-[10px] font-medium text-text-muted">収入</div>
+              <div className="rounded-lg bg-green-500/5 p-1.5">
+                <TrendingUp className="w-4 h-4 text-green-500" />
               </div>
             </div>
-            <div className="text-lg font-bold text-green-500 mt-1">¥{stats.income.toLocaleString()}</div>
+            <div className="text-lg font-bold text-green-500 mt-0.5">¥{stats.income.toLocaleString()}</div>
           </div>
-          <div className="border border-border rounded-lg p-3">
+          <div className="border border-border rounded-lg p-2.5">
             <div className="flex items-center justify-between">
-              <div className="text-xs font-medium text-text-muted">支出</div>
-              <div className="rounded-lg bg-red-500/5 p-2">
-                <TrendingDown className="w-5 h-5 text-red-500" />
+              <div className="text-[10px] font-medium text-text-muted">支出</div>
+              <div className="rounded-lg bg-red-500/5 p-1.5">
+                <TrendingDown className="w-4 h-4 text-red-500" />
               </div>
             </div>
-            <div className="text-lg font-bold text-red-500 mt-1">¥{stats.expense.toLocaleString()}</div>
+            <div className="text-lg font-bold text-red-500 mt-0.5">¥{stats.expense.toLocaleString()}</div>
           </div>
-          <div className="border border-border rounded-lg p-3">
+          <div className="border border-border rounded-lg p-2.5">
             <div className="flex items-center justify-between">
-              <div className="text-xs font-medium text-text-muted">収支</div>
-              <div className={`rounded-lg p-2 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
-                <Wallet className={`w-5 h-5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+              <div className="text-[10px] font-medium text-text-muted">収支</div>
+              <div className={`rounded-lg p-1.5 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
+                <Wallet className={`w-4 h-4 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
             </div>
-            <div className={`text-lg font-bold mt-1 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <div className={`text-lg font-bold mt-0.5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               ¥{stats.balance.toLocaleString()}
             </div>
           </div>

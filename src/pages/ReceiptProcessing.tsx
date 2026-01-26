@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
-import { Upload, FileText, ArrowRight, ArrowLeft, Camera, X, RefreshCw, FileImage, Search, Eye, Check, Save, AlertTriangle, Edit2, CheckCircle, Trash2 } from 'lucide-react';
+import { Upload, FileText, ArrowLeft, Camera, X, RefreshCw, FileImage, Search, Eye, Check, Save, AlertTriangle, Edit2, CheckCircle, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import ReceiptCamera from '../components/ReceiptCamera';
@@ -697,7 +697,6 @@ const ReceiptProcessing: React.FC = () => {
 
   const handleReject = async (id: string) => {
     // UIから削除（楽観的更新）
-    const receipt = uploadedReceipts.find(r => r.id === id);
     setUploadedReceipts(prev => prev.filter(r => r.id !== id));
 
     // Supabaseにも保存（ステータス更新または削除）
@@ -771,13 +770,13 @@ const ReceiptProcessing: React.FC = () => {
           </div>
         )}
 
-        <div className="flex items-center mb-6">
-          <Link to="/dashboard" className="mr-4">
-            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
+        <div className="flex items-center mb-4">
+          <Link to="/dashboard" className="mr-3">
+            <ArrowLeft className="w-5 h-5 text-text-muted hover:text-text-main" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-text-main">レシート処理</h1>
-            <p className="text-text-muted">アップロードされたレシートをAIが解析し、自動で仕訳データを作成します</p>
+            <h1 className="text-xl font-bold text-text-main">レシート処理</h1>
+            <p className="text-xs text-text-muted">AI解析で自動仕訳データを作成します</p>
           </div>
         </div>
 
@@ -788,11 +787,11 @@ const ReceiptProcessing: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-surface rounded-xl shadow-sm border border-border p-6"
+            className="bg-surface rounded-xl shadow-sm border border-border p-3 sm:p-4"
           >
-            <div className="flex items-center gap-2 mb-5">
-              <Upload className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold text-text-main">レシートをアップロード</h2>
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <Upload className="w-4 h-4 text-primary" />
+              <h2 className="text-base font-semibold text-text-main">レシートをアップロード</h2>
             </div>
 
             {/* 処理状態の表示 */}
@@ -836,9 +835,9 @@ const ReceiptProcessing: React.FC = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {/* ファイルアップロード */}
-              <label className="group border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-200">
+              <label className="group border border-dashed border-border rounded-lg p-2.5 sm:p-4 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-200">
                 <input
                   type="file"
                   accept="image/*"
@@ -846,26 +845,29 @@ const ReceiptProcessing: React.FC = () => {
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-                <Upload className="w-10 h-10 text-text-muted group-hover:text-primary mx-auto mb-3 transition-colors" />
-                <p className="text-sm font-semibold text-text-main mb-1">ファイルを選択</p>
-                <p className="text-xs text-text-muted">PNG, JPG, PDF対応</p>
+                <Upload className="w-6 h-6 text-text-muted group-hover:text-primary mx-auto mb-1.5 transition-colors" />
+                <p className="text-[10px] sm:text-sm font-semibold text-text-main mb-0.5">ファイルを選択</p>
+                <p className="hidden sm:block text-[10px] text-text-muted">PNG, JPG, PDF対応</p>
+                <p className="sm:hidden text-[9px] text-text-muted">画像・PDF</p>
               </label>
 
               {/* カメラ撮影 */}
               <div
-                className="group border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-200"
+                className="group border border-dashed border-border rounded-lg p-2.5 sm:p-4 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-200"
                 onClick={startCamera}
               >
-                <Camera className="w-10 h-10 text-text-muted group-hover:text-primary mx-auto mb-3 transition-colors" />
-                <p className="text-sm font-semibold text-text-main mb-1">カメラで撮影</p>
-                <p className="text-xs text-text-muted">その場で撮影</p>
+                <Camera className="w-6 h-6 text-text-muted group-hover:text-primary mx-auto mb-1.5 transition-colors" />
+                <p className="text-[10px] sm:text-sm font-semibold text-text-main mb-0.5">カメラで撮影</p>
+                <p className="hidden sm:block text-[10px] text-text-muted">その場で撮影</p>
+                <p className="sm:hidden text-[9px] text-text-muted">撮影可能</p>
               </div>
 
               {/* ドラッグ&ドロップ */}
-              <div className="group border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary hover:bg-primary/5 transition-all duration-200">
-                <FileImage className="w-10 h-10 text-text-muted group-hover:text-primary mx-auto mb-3 transition-colors" />
-                <p className="text-sm font-semibold text-text-main mb-1">ドラッグ&ドロップ</p>
-                <p className="text-xs text-text-muted">ここに画像をドロップ</p>
+              <div className="group border border-dashed border-border rounded-lg p-2.5 sm:p-4 text-center hover:border-primary hover:bg-primary/5 transition-all duration-200">
+                <FileImage className="w-6 h-6 text-text-muted group-hover:text-primary mx-auto mb-1.5 transition-colors" />
+                <p className="text-[10px] sm:text-sm font-semibold text-text-main mb-0.5">ドロップ</p>
+                <p className="hidden sm:block text-[10px] text-text-muted">ここに画像をドロップ</p>
+                <p className="sm:hidden text-[9px] text-text-muted">ドラッグ</p>
               </div>
             </div>
           </motion.div>
@@ -1032,37 +1034,37 @@ const ReceiptProcessing: React.FC = () => {
             </div>
           )}
           {/* フィルターと検索 */}
-          <div className="bg-surface rounded-xl shadow-sm border border-border p-5 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="bg-surface rounded-xl shadow-sm border border-border p-2.5 sm:p-3 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-5 h-5" />
+                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4" />
                   <input
                     type="text"
                     placeholder="店舗名や説明で検索..."
-                    className="w-full pl-11 pr-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background transition-all"
+                    className="w-full pl-8 pr-3 py-1.5 border border-border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary bg-background text-xs transition-all"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <select
-                  className="px-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background font-medium text-sm transition-all w-full sm:w-auto"
+                  className="px-3 py-1.5 border border-border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary bg-background font-medium text-[11px] transition-all w-full sm:w-auto"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
-                  <option value="all">すべてのステータス</option>
+                  <option value="all">ステータス</option>
                   <option value="pending">保留中</option>
                   <option value="approved">承認済み</option>
                   <option value="rejected">却下</option>
                 </select>
                 <select
-                  className="px-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background font-medium text-sm transition-all w-full sm:w-auto"
+                  className="px-3 py-1.5 border border-border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary bg-background font-medium text-[11px] transition-all w-full sm:w-auto"
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                 >
-                  <option value="all">すべてのカテゴリ</option>
+                  <option value="all">カテゴリ</option>
                   {categories.map(category => (
                     <option key={category} value={category}>{category}</option>
                   ))}
@@ -1073,12 +1075,12 @@ const ReceiptProcessing: React.FC = () => {
 
           {/* 処理済みレシート一覧 */}
           <div className="bg-surface rounded-xl shadow-sm border border-border">
-            <div className="p-6 border-b border-border">
-              <h2 className="text-xl font-semibold text-text-main">処理済みレシート</h2>
+            <div className="p-3 border-b border-border">
+              <h2 className="text-base font-semibold text-text-main">処理済みレシート</h2>
             </div>
 
             {/* モバイル用カード表示 */}
-            <div className="md:hidden p-4 space-y-4">
+            <div className="md:hidden p-3 space-y-3">
               {filteredReceipts.length === 0 ? (
                 <div className="p-8 text-center text-text-muted border border-dashed border-border rounded-lg">
                   <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -1087,7 +1089,7 @@ const ReceiptProcessing: React.FC = () => {
                 </div>
               ) : (
                 filteredReceipts.map((receipt) => (
-                  <div key={receipt.id} className="border border-border rounded-lg p-4">
+                  <div key={receipt.id} className="border border-border rounded-lg p-3">
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="font-medium text-text-main">{receipt.merchant}</h3>
@@ -1101,8 +1103,8 @@ const ReceiptProcessing: React.FC = () => {
                           receipt.status === 'rejected' ? '却下' : '保留'}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center mb-3">
-                      <p className="text-lg font-semibold text-text-main">¥{receipt.amount.toLocaleString()}</p>
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-base font-semibold text-text-main">¥{receipt.amount.toLocaleString()}</p>
                       <div className="flex items-center">
                         <div className="w-16 bg-border rounded-full h-1.5 mr-2">
                           <div

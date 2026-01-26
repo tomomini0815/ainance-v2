@@ -1,13 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, MessageSquare, Edit3, Camera, Sparkles, CheckCircle2, Calendar } from 'lucide-react';
+import { X, MessageSquare, Edit3, Sparkles, CheckCircle2, Calendar, Bot } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import TransactionForm from './TransactionForm';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
-import { supabase } from '../lib/supabaseClient';
-import { parseChatTransactionWithAI, analyzeReceiptWithVision, AIReceiptAnalysis, isAIEnabled } from '../services/geminiAIService';
+import { parseChatTransactionWithAI } from '../services/geminiAIService';
 import { determineCategoryByKeyword } from '../services/keywordCategoryService';
 
 interface OmniEntryPortalProps {
@@ -15,7 +14,7 @@ interface OmniEntryPortalProps {
     onSuccess?: () => void;
 }
 
-type EntryMode = 'manual' | 'ocr' | 'ai';
+type EntryMode = 'manual' | 'ai';
 
 const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess }) => {
     const [mode, setMode] = useState<EntryMode>('manual');
@@ -25,104 +24,12 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
     const { createTransaction } = useTransactions(user?.id, currentBusinessType?.business_type);
     const [isProcessing, setIsProcessing] = useState(false);
     const [aiInput, setAiInput] = useState('');
-    const [analysisResult, setAnalysisResult] = useState<AIReceiptAnalysis | null>(null);
-    const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [isDateManuallySelected, setIsDateManuallySelected] = useState(false);
     const [isContinuousMode, setIsContinuousMode] = useState(false);
 
-    const cameraInputRef = useRef<HTMLInputElement>(null);
     const dateInputRef = useRef<HTMLInputElement>(null);
-    const [isCameraActive, setIsCameraActive] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
 
-    const startCamera = async () => {
-        setIsCameraActive(true);
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
-            });
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-            }
-        } catch (err) {
-            console.error("Camera access denied:", err);
-            toast.error("カメラへのアクセスが拒否されました。");
-            setIsCameraActive(false);
-        }
-    };
-
-    const stopCamera = () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-            videoRef.current.srcObject = null;
-        }
-    };
-
-    const capturePhoto = () => {
-        if (videoRef.current) {
-            const video = videoRef.current;
-
-            if (video.videoWidth === 0 || video.videoHeight === 0) {
-                console.error('Camera dimensions are 0. Waiting for video to load...');
-                toast.error('カメラの準備ができていません。もう一度お試しください。');
-                return;
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // slight compression
-
-                console.log('Captured photo:', {
-                    width: canvas.width,
-                    height: canvas.height,
-                    dataSize: dataUrl.length
-                });
-
-                if (dataUrl.length < 1000) {
-                    console.error('Captured image is too small (invalid).');
-                    toast.error('画像の撮影に失敗しました。');
-                    return;
-                }
-
-                setCapturedImageUrl(dataUrl);
-                stopCamera();
-                setIsCameraActive(false);
-
-                // Trigger analysis immediately
-                const toastId = toast.loading('レシートを解析中...');
-                setIsProcessing(true);
-
-                if (!isAIEnabled()) {
-                    toast.error('AI解析機能が無効です。APIキーが設定されているか確認してください。', { id: toastId });
-                    setIsProcessing(false);
-                    return;
-                }
-
-                analyzeReceiptWithVision(dataUrl)
-                    .then((aiAnalysis: AIReceiptAnalysis | null) => {
-                        if (aiAnalysis) {
-                            setAnalysisResult(aiAnalysis);
-                            toast.success('分析が完了しました。日本の税法基準で内容を抽出しました。', { id: toastId });
-                        } else {
-                            throw new Error('AI解析に失敗しました。画像の鮮明さを確認してください。');
-                        }
-                    })
-                    .catch((error: Error) => {
-                        console.error('Analysis failed:', error);
-                        toast.error('解析に失敗しました: ' + (error.message || '不明なエラー'), { id: toastId });
-                    })
-                    .finally(() => {
-                        setIsProcessing(false);
-                    });
-            }
-        }
-    };
 
     console.log('OmniEntryPortal - Render:', {
         hasUser: !!user?.id,
@@ -302,94 +209,6 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
         }
     };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement> | { target: { files: FileList | null } }) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-
-        const file = files[0];
-        const toastId = toast.loading('レシートを解析中...');
-        setIsProcessing(true);
-
-        try {
-            if (!user?.id) throw new Error('ユーザーが認証されていません。');
-
-            // 1. Base64に変換してAI分析 (Gemini Vision)
-            const reader = new FileReader();
-            const base64Promise = new Promise<string>((resolve) => {
-                reader.onload = () => resolve(reader.result as string);
-                reader.readAsDataURL(file);
-            });
-            const base64Image = await base64Promise;
-            setCapturedImageUrl(base64Image);
-
-            if (!isAIEnabled()) {
-                throw new Error('AI解析機能が無効です (APIキー未設定)。システム管理者にお問い合わせください。');
-            }
-
-            const aiAnalysis = await analyzeReceiptWithVision(base64Image);
-
-            if (aiAnalysis) {
-                setAnalysisResult(aiAnalysis);
-                toast.success('分析が完了しました。内容を確認してください。', { id: toastId });
-            } else {
-                throw new Error('AIによる解析に失敗しました。画像が不鮮明な可能性があります。');
-            }
-
-            // 2. Supabase Storageにアップロード (オプション、エラーでも解析が通れば進める)
-            try {
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-                const { data: _uploadData, error: uploadError } = await supabase.storage
-                    .from('receipts')
-                    .upload(fileName, file);
-
-                if (uploadError) console.warn('Storage upload error:', uploadError);
-            } catch (err) {
-                console.warn('Silent upload failure:', err);
-            }
-
-        } catch (error: any) {
-            console.error('Failed to process receipt:', error);
-            toast.error('解析に失敗しました: ' + (error.message || '不明なエラー'), { id: toastId });
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleConfirmAnalysis = async () => {
-        if (!analysisResult || !user?.id) return;
-
-        const toastId = toast.loading('取引を登録中...');
-        setIsProcessing(true);
-
-        try {
-            const transactionData = {
-                item: analysisResult.storeName || 'レシート入力',
-                description: `${analysisResult.storeName} (${analysisResult.storeCategory || ''})`,
-                amount: analysisResult.totalAmount || 0,
-                date: analysisResult.date || new Date().toISOString().split('T')[0],
-                category: analysisResult.classification?.category || '未分類',
-                type: 'expense' as const,
-                creator: user.id,
-                approval_status: currentBusinessType?.business_type === 'corporation' ? 'pending' : 'approved' as any,
-                tags: ['ocr', 'vision-ai']
-            };
-
-            const result = await createTransaction(transactionData);
-            if (result.error) throw result.error;
-
-            toast.success('取引を登録しました。', { id: toastId });
-
-            window.dispatchEvent(new CustomEvent('transactionRecorded'));
-            onSuccess?.();
-            onClose();
-        } catch (error: any) {
-            console.error('Final registration error:', error);
-            toast.error('登録に失敗しました: ' + error.message, { id: toastId });
-        } finally {
-            setIsProcessing(false);
-        }
-    };
 
 
 
@@ -424,14 +243,6 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                         手入力
                     </button>
                     <button
-                        onClick={() => setMode('ocr')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all ${mode === 'ocr' ? 'bg-surface text-primary shadow-lg border border-white/10 scale-[1.02] z-10' : 'text-text-muted hover:text-text-main hover:bg-white/5'
-                            }`}
-                    >
-                        <Camera className="w-4 h-4" />
-                        レシート
-                    </button>
-                    <button
                         onClick={() => setMode('ai')}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all ${mode === 'ai' ? 'bg-surface text-primary shadow-lg border border-white/10 scale-[1.02] z-10' : 'text-text-muted hover:text-text-main hover:bg-white/5'
                             }`}
@@ -447,315 +258,95 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                         <TransactionForm onSubmit={handleManualSubmit} onCancel={onClose} />
                     )}
 
-                    {mode === 'ocr' && (
-                        <div className="flex flex-col gap-6">
-                            {!analysisResult ? (
-                                <div className="py-8 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-2xl bg-surface/30 px-4 relative overflow-hidden">
-                                    {isCameraActive ? (
-                                        <div className="w-full max-w-md aspect-[3/4] bg-black rounded-xl overflow-hidden relative mb-4">
-                                            <video
-                                                ref={videoRef}
-                                                autoPlay
-                                                playsInline
-                                                muted
-                                                className="w-full h-full object-cover"
-                                            />
-                                            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-10 px-4">
-                                                <button
-                                                    onClick={() => {
-                                                        stopCamera();
-                                                        setIsCameraActive(false);
-                                                    }}
-                                                    className="px-4 py-2 bg-black/50 text-white rounded-full text-sm font-bold backdrop-blur-md"
-                                                >
-                                                    キャンセル
-                                                </button>
-                                                <button
-                                                    onClick={capturePhoto}
-                                                    className="w-16 h-16 border-4 border-white rounded-full flex items-center justify-center relative hover:scale-105 transition-transform"
-                                                >
-                                                    <div className="w-12 h-12 bg-white rounded-full" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                                                <Camera className="w-8 h-8 text-primary" />
-                                            </div>
-                                            <h3 className="text-lg font-semibold text-text-main mb-2 text-center">レシートを撮影・アップロード</h3>
-                                            <p className="text-sm text-text-muted mb-6 text-center max-w-xs">
-                                                カメラで撮影するか、ファイルを選択してください。<br />AIが自動で内容を読み取ります。
-                                            </p>
-
-                                            <div className="flex flex-col gap-3 w-full max-w-sm px-2">
-                                                <button
-                                                    onClick={startCamera}
-                                                    disabled={isProcessing}
-                                                    className="w-full btn-primary flex items-center justify-center gap-2 py-4 rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
-                                                >
-                                                    <Camera className="w-5 h-5" />
-                                                    カメラで撮影
-                                                </button>
-                                                <label className="w-full flex items-center justify-center gap-2 py-4 bg-surface border border-border rounded-xl text-base font-bold text-text-main hover:bg-surface-highlight transition-all cursor-pointer hover:border-primary/30">
-                                                    <Upload className="w-5 h-5" />
-                                                    ファイルを選択
-                                                    <input type="file" className="hidden" onChange={handleFileUpload} accept="image/*,application/pdf" disabled={isProcessing} />
-                                                </label>
-                                                {/* Fallback hidden input for mobile if needed, but we try Start Camera first */}
-                                                <input
-                                                    type="file"
-                                                    ref={cameraInputRef}
-                                                    className="hidden"
-                                                    accept="image/*"
-                                                    capture="environment"
-                                                    onChange={handleFileUpload}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="animate-in slide-in-from-bottom-4 duration-300">
-                                    <div className="bg-surface-highlight/30 rounded-2xl border border-border overflow-hidden">
-                                        <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border">
-                                            {/* Preview Image */}
-                                            {capturedImageUrl && (
-                                                <div className="md:w-1/3 h-48 md:h-auto bg-black flex items-center justify-center">
-                                                    <img src={capturedImageUrl} alt="Receipt Preview" className="max-h-full object-contain" />
-                                                </div>
-                                            )}
-
-                                            {/* Result Info */}
-                                            <div className="flex-1 p-5 space-y-4">
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-1">
-                                                        <label className="text-[10px] uppercase tracking-wider text-text-muted font-bold">店舗名</label>
-                                                        <input
-                                                            type="text"
-                                                            value={analysisResult.storeName}
-                                                            onChange={(e) => setAnalysisResult({ ...analysisResult, storeName: e.target.value })}
-                                                            className="w-full bg-transparent border-b border-border py-1 text-sm font-medium focus:border-primary transition-colors outline-none"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1 text-right">
-                                                        <label className="text-[10px] uppercase tracking-wider text-text-muted font-bold">日付</label>
-                                                        <input
-                                                            type="date"
-                                                            value={analysisResult.date}
-                                                            onChange={(e) => setAnalysisResult({ ...analysisResult, date: e.target.value })}
-                                                            className="w-full bg-transparent border-b border-border py-1 text-sm font-medium focus:border-primary transition-colors outline-none text-right"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {analysisResult.invoiceRegistrationNumber !== undefined && (
-                                                    <div className="pt-2">
-                                                        <label className="text-[10px] uppercase tracking-wider text-text-muted font-bold flex items-center gap-1">
-                                                            インボイス登録番号
-                                                            <CheckCircle2 className={`w-3 h-3 ${analysisResult.invoiceRegistrationNumber ? 'text-emerald-500' : 'text-text-muted'}`} />
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            placeholder="T1234567890123 (未検出)"
-                                                            value={analysisResult.invoiceRegistrationNumber || ''}
-                                                            onChange={(e) => setAnalysisResult({ ...analysisResult, invoiceRegistrationNumber: e.target.value })}
-                                                            className="w-full bg-transparent border-b border-border py-1 text-xs font-mono focus:border-primary transition-colors outline-none"
-                                                        />
-                                                    </div>
-                                                )}
-
-                                                <div className="pt-2">
-                                                    <label className="text-[10px] uppercase tracking-wider text-text-muted font-bold">合計金額</label>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-2xl font-black text-primary">¥</span>
-                                                        <input
-                                                            type="number"
-                                                            value={analysisResult.totalAmount}
-                                                            onChange={(e) => setAnalysisResult({ ...analysisResult, totalAmount: parseInt(e.target.value) || 0 })}
-                                                            className="w-full bg-transparent border-b border-border py-1 text-3xl font-black focus:border-primary transition-colors outline-none"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="pt-2">
-                                                    <label className="text-[10px] uppercase tracking-wider text-text-muted font-bold">勘定科目（カテゴリ）</label>
-                                                    <div className="mt-1">
-                                                        <select
-                                                            value={analysisResult.classification?.category || '未分類'}
-                                                            onChange={(e) => setAnalysisResult({
-                                                                ...analysisResult,
-                                                                classification: {
-                                                                    ...(analysisResult.classification || {
-                                                                        category: '未分類',
-                                                                        accountTitle: '未分類',
-                                                                        confidence: 1,
-                                                                        reasoning: '手動変更',
-                                                                        taxDeductible: true
-                                                                    }),
-                                                                    category: e.target.value
-                                                                }
-                                                            })}
-                                                            className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm font-bold text-primary focus:border-primary outline-none appearance-none cursor-pointer hover:bg-surface-highlight transition-all"
-                                                        >
-                                                            <option value="売上">売上</option>
-                                                            <option value="仕入">仕入</option>
-                                                            <option value="消耗品費">消耗品費</option>
-                                                            <option value="旅費交通費">旅費交通費</option>
-                                                            <option value="接待交際費">接待交際費</option>
-                                                            <option value="通信費">通信費</option>
-                                                            <option value="水道光熱費">水道光熱費</option>
-                                                            <option value="会議費">会議費</option>
-                                                            <option value="福利厚生費">福利厚生費</option>
-                                                            <option value="外注費">外注費</option>
-                                                            <option value="広告宣伝費">広告宣伝費</option>
-                                                            <option value="地代家賃">地代家賃</option>
-                                                            <option value="支払手数料">支払手数料</option>
-                                                            <option value="雑費">雑費</option>
-                                                            <option value="未分類">未分類</option>
-                                                        </select>
-                                                        <p className="text-[10px] text-text-muted mt-1 ml-1">AI信頼度: {Math.round((analysisResult.classification?.confidence || 0) * 100)}%</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="p-4 bg-surface-highlight border-t border-border flex flex-col gap-3">
-                                            <button
-                                                onClick={handleConfirmAnalysis}
-                                                disabled={isProcessing}
-                                                className="w-full py-5 bg-primary text-surface rounded-2xl text-lg font-black hover:bg-primary-hover shadow-xl shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-3"
-                                            >
-                                                {isProcessing ? <div className="w-5 h-5 border-2 border-surface/30 border-t-surface rounded-full animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                                                確定して登録
-                                            </button>
-                                            <button
-                                                onClick={() => setAnalysisResult(null)}
-                                                className="w-full py-2 px-4 rounded-xl text-xs font-bold text-text-muted hover:bg-white/5 transition-all outline-none"
-                                            >
-                                                撮り直す
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
 
                     {mode === 'ai' && (
-                        <div className="py-12 flex flex-col items-center justify-center border border-border rounded-2xl bg-gradient-to-br from-primary/5 to-blue-500/5">
-                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                                <Sparkles className="w-8 h-8 text-primary" />
+                        <div className="py-4 sm:py-8 mb-8 flex flex-col items-center justify-center border border-border rounded-2xl bg-gradient-to-br from-primary/5 to-blue-500/5 transition-all">
+                            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                <Bot className="w-8 h-8 text-primary" />
                             </div>
-                            <h3 className="text-lg font-semibold text-text-main mb-2">AIに任せる</h3>
-                            <p className="text-sm text-text-muted mb-6 text-center max-w-sm">
-                                「今日のお昼代 1200円 経費で」<br />のように入力するだけで、AIが自動で仕訳します。
+                            <h3 className="text-xl font-bold text-text-main mb-2">AIに任せる</h3>
+                            <p className="text-sm text-text-muted mb-6 text-center max-w-sm px-4">
+                                例：「タクシー代 2500円」と入力すると、AIが自動仕分けします。
                             </p>
                             <div className="w-full max-w-md px-4">
-                                <div className="w-full flex flex-col items-center gap-4 mb-6">
-                                    {/* Styled Date Display / Toggle */}
-                                    <div className="relative w-full max-w-xs group">
-                                        <button
+                                <div className="w-full flex flex-col items-center gap-4 mb-4">
+                                    {/* Action row with Date and Continuous Toggle */}
+                                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-sm">
+                                        {/* Styled Date Display / Toggle */}
+                                        <div
+                                            className="relative flex-1 group cursor-pointer w-full"
                                             onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
-                                            className="w-full flex items-center justify-between px-5 py-4 bg-surface border border-white/10 rounded-2xl text-text-main hover:bg-surface-highlight hover:border-white/20 transition-all active:scale-[0.98] shadow-lg shadow-primary/5"
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-primary/10 rounded-xl">
-                                                    <Calendar className="w-5 h-5 text-primary" />
-                                                </div>
-                                                <div className="text-left">
-                                                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider leading-none mb-1">取引日</p>
-                                                    <p className="text-base font-black leading-none">
-                                                        {formatDisplayDate(selectedDate)}
-                                                    </p>
+                                            <div
+                                                className="w-full flex items-center justify-between px-4 py-3 bg-surface border border-white/10 rounded-xl text-text-main group-hover:bg-surface-highlight group-hover:border-white/20 transition-all shadow-lg shadow-primary/5"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                                                        <Calendar className="w-5 h-5 text-primary" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="text-[9px] text-text-muted font-bold uppercase tracking-wider leading-none mb-1">取引日</p>
+                                                        <p className="text-sm font-black leading-none">
+                                                            {formatDisplayDate(selectedDate)}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <Sparkles className="w-4 h-4 text-primary/40 group-hover:text-primary transition-colors" />
-                                        </button>
-                                        {/* Hidden internal input to trigger native picker */}
-                                        <input
-                                            type="date"
-                                            ref={dateInputRef}
-                                            value={selectedDate}
-                                            onChange={(e) => {
-                                                setSelectedDate(e.target.value);
-                                                setIsDateManuallySelected(true);
-                                            }}
-                                            className="absolute inset-0 opacity-0 pointer-events-none"
-                                        />
-                                    </div>
+                                            {/* Hidden internal input to trigger native picker */}
+                                            <input
+                                                type="date"
+                                                ref={dateInputRef}
+                                                value={selectedDate}
+                                                onChange={(e) => {
+                                                    setSelectedDate(e.target.value);
+                                                    setIsDateManuallySelected(true);
+                                                }}
+                                                className="absolute inset-0 opacity-0 pointer-events-none"
+                                            />
+                                        </div>
 
-                                    {/* Quick Selection Chips */}
-                                    <div className="flex gap-2">
-                                        {[
-                                            { label: '今日', offset: 0 },
-                                            { label: '昨日', offset: -1 },
-                                            { label: '一昨日', offset: -2 }
-                                        ].map((chip) => {
-                                            const date = new Date();
-                                            date.setDate(date.getDate() + chip.offset);
-                                            const dateStr = date.toISOString().split('T')[0];
-                                            const isActive = selectedDate === dateStr;
-
-                                            return (
-                                                <button
-                                                    key={chip.label}
-                                                    onClick={() => {
-                                                        setSelectedDate(dateStr);
-                                                        setIsDateManuallySelected(true);
-                                                    }}
-                                                    className={`px-5 py-2 rounded-full text-xs font-bold transition-all border ${isActive
-                                                        ? 'bg-primary text-surface border-primary shadow-md shadow-primary/20 scale-105'
-                                                        : 'bg-surface border-border text-text-muted hover:border-primary/30 hover:text-text-main'
-                                                        }`}
-                                                >
-                                                    {chip.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                                <div className="relative group w-full mb-4">
-                                    <input
-                                        autoFocus
-                                        type="text"
-                                        value={aiInput}
-                                        onChange={(e) => setAiInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleAiSubmit()}
-                                        placeholder="メッセージを入力..."
-                                        className="input-base pr-20 h-12 shadow-sm focus:ring-primary/20 border-primary/30 w-full"
-                                        disabled={isProcessing}
-                                    />
-                                    <button
-                                        onClick={handleAiSubmit}
-                                        disabled={!aiInput.trim() || isProcessing || !user?.id || !currentBusinessType?.business_type}
-                                        className={`absolute right-1 top-1.5 bottom-1.5 px-4 rounded-lg text-sm font-bold transition-all shadow-sm ${aiInput.trim() && !isProcessing && user?.id && currentBusinessType?.business_type
-                                            ? 'bg-primary text-white hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/40 active:scale-95'
-                                            : 'bg-surface-highlight text-text-muted cursor-not-allowed'
-                                            }`}
-                                    >
-                                        {isProcessing ? (
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        ) : (!user?.id || !currentBusinessType?.business_type) ? (
-                                            '準備中'
-                                        ) : (
-                                            '送信'
-                                        )}
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center justify-center gap-2">
-                                    <button
-                                        onClick={() => setIsContinuousMode(!isContinuousMode)}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${isContinuousMode
+                                        {/* Continuous Mode Toggle moved here */}
+                                        <button
+                                            onClick={() => setIsContinuousMode(!isContinuousMode)}
+                                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all border whitespace-nowrap min-w-[140px] ${isContinuousMode
                                                 ? 'bg-primary/10 text-primary border-primary/30'
                                                 : 'bg-surface border-border text-text-muted hover:border-primary/20 hover:text-text-secondary'
-                                            }`}
-                                    >
-                                        <div className={`w-3 h-3 rounded-full border-2 transition-all ${isContinuousMode ? 'bg-primary border-primary animate-pulse' : 'bg-transparent border-text-muted'
-                                            }`} />
-                                        連続入力モード
-                                    </button>
+                                                }`}
+                                        >
+                                            <div className={`w-2.5 h-2.5 rounded-full border-2 transition-all ${isContinuousMode ? 'bg-primary border-primary animate-pulse' : 'bg-transparent border-text-muted'
+                                                }`} />
+                                            連続入力
+                                        </button>
+                                    </div>
+
+                                    <div className="relative group w-full max-w-sm">
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            value={aiInput}
+                                            onChange={(e) => setAiInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleAiSubmit()}
+                                            placeholder="メッセージを入力..."
+                                            className="input-base pr-20 h-12 shadow-sm focus:ring-primary/20 border-primary/30 w-full"
+                                            disabled={isProcessing}
+                                        />
+                                        <button
+                                            onClick={handleAiSubmit}
+                                            disabled={!aiInput.trim() || isProcessing || !user?.id || !currentBusinessType?.business_type}
+                                            className={`absolute right-1 top-1.5 bottom-1.5 px-4 rounded-lg text-sm font-bold transition-all shadow-sm ${aiInput.trim() && !isProcessing && user?.id && currentBusinessType?.business_type
+                                                ? 'bg-primary text-white hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/40 active:scale-95'
+                                                : 'bg-surface-highlight text-text-muted cursor-not-allowed'
+                                                }`}
+                                        >
+                                            {isProcessing ? (
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            ) : (!user?.id || !currentBusinessType?.business_type) ? (
+                                                '準備中'
+                                            ) : (
+                                                '送信'
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -766,7 +357,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                 <div className="p-4 bg-surface-highlight/50 border-t border-border flex items-center justify-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     <span className="text-xs text-text-muted">
-                        OCRやAIで入力したデータは
+                        AIチャットで入力したデータは
                         <button
                             onClick={() => {
                                 onClose();
@@ -774,7 +365,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                             }}
                             className="text-primary font-bold hover:underline mx-1 outline-none"
                         >
-                            「インボックス」
+                            確認待ち
                         </button>
                         に保存されます
                     </span>
