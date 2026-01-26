@@ -7,7 +7,8 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 import { supabase } from '../lib/supabaseClient';
-import { parseChatTransactionWithAI, analyzeReceiptWithVision, AIReceiptAnalysis } from '../services/geminiAIService';
+import { parseChatTransactionWithAI, analyzeReceiptWithVision, AIReceiptAnalysis, isAIEnabled } from '../services/geminiAIService';
+import { determineCategoryByKeyword } from '../services/keywordCategoryService';
 
 interface OmniEntryPortalProps {
     onClose: () => void;
@@ -28,8 +29,10 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
     const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [isDateManuallySelected, setIsDateManuallySelected] = useState(false);
+    const [isContinuousMode, setIsContinuousMode] = useState(false);
 
     const cameraInputRef = useRef<HTMLInputElement>(null);
+    const dateInputRef = useRef<HTMLInputElement>(null);
     const [isCameraActive, setIsCameraActive] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -95,16 +98,22 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                 const toastId = toast.loading('レシートを解析中...');
                 setIsProcessing(true);
 
+                if (!isAIEnabled()) {
+                    toast.error('AI解析機能が無効です。APIキーが設定されているか確認してください。', { id: toastId });
+                    setIsProcessing(false);
+                    return;
+                }
+
                 analyzeReceiptWithVision(dataUrl)
-                    .then(aiAnalysis => {
+                    .then((aiAnalysis: AIReceiptAnalysis | null) => {
                         if (aiAnalysis) {
                             setAnalysisResult(aiAnalysis);
-                            toast.success('分析が完了しました。', { id: toastId });
+                            toast.success('分析が完了しました。日本の税法基準で内容を抽出しました。', { id: toastId });
                         } else {
-                            throw new Error('AI解析に失敗しました');
+                            throw new Error('AI解析に失敗しました。画像の鮮明さを確認してください。');
                         }
                     })
-                    .catch(error => {
+                    .catch((error: Error) => {
                         console.error('Analysis failed:', error);
                         toast.error('解析に失敗しました: ' + (error.message || '不明なエラー'), { id: toastId });
                     })
@@ -120,6 +129,31 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
         businessType: currentBusinessType?.business_type,
         mode
     });
+
+    const formatDisplayDate = (dateStr: string) => {
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+
+            const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+            const month = d.getMonth() + 1;
+            const day = d.getDate();
+            const dayOfWeek = dayNames[d.getDay()];
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const yesterdayDate = new Date();
+            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+            const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+
+            let suffix = '';
+            if (dateStr === todayStr) suffix = ' (今日)';
+            else if (dateStr === yesterdayStr) suffix = ' (昨日)';
+
+            return `${month}月${day}日 (${dayOfWeek})${suffix}`;
+        } catch (e) {
+            return dateStr;
+        }
+    };
 
     const handleManualSubmit = async (data: any) => {
         setIsProcessing(true);
@@ -219,17 +253,18 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                 }
 
                 const cleanedItem = aiInput.replace(/(\d+(?:[,\d]*\d+)?(?:万|千)?(?:円)?)/g, '').trim() || 'AIチャット入力';
+                const detectedCategory = determineCategoryByKeyword(aiInput) || '未分類';
 
                 transactionData = {
                     item: cleanedItem,
                     description: cleanedItem,
                     amount: amount,
                     date: isDateManuallySelected ? selectedDate : new Date().toISOString().split('T')[0],
-                    category: '未分類',
-                    type: 'expense' as const,
+                    category: detectedCategory,
+                    type: ((detectedCategory === '売上' || detectedCategory === '業務委託収入') ? 'income' : 'expense') as 'income' | 'expense',
                     creator: uId,
                     approval_status: 'pending' as const, // AI入力は一律で「確認待ち」にする
-                    tags: ['ai-chat']
+                    tags: ['ai-chat', 'fallback-classification']
                 };
             }
 
@@ -242,16 +277,22 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
             // 入力欄をクリア
             setAiInput('');
 
-            // 成功通知とクローズ
+            // 成功通知
             const successMsg = 'AIが取引を読み取りました。インボックス（確認待ち）で内容を確認してください。';
-
             toast.success(successMsg, { id: toastId });
 
             // ページ全体のデータ再取得をトリガー
             window.dispatchEvent(new CustomEvent('transactionRecorded'));
 
             onSuccess?.();
-            onClose();
+
+            // 連続入力モードでない場合のみ閉じる
+            if (!isContinuousMode) {
+                onClose();
+            } else {
+                // 連続入力モードの場合は入力欄にフォーカスを戻す（または維持する）
+                console.log('Continuous Mode: Staying open for next entry');
+            }
         } catch (error) {
             console.error('Failed to process AI input (OmniEntryPortal):', error);
             const errorMessage = (error as Error).message;
@@ -281,23 +322,31 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
             const base64Image = await base64Promise;
             setCapturedImageUrl(base64Image);
 
+            if (!isAIEnabled()) {
+                throw new Error('AI解析機能が無効です (APIキー未設定)。システム管理者にお問い合わせください。');
+            }
+
             const aiAnalysis = await analyzeReceiptWithVision(base64Image);
 
             if (aiAnalysis) {
                 setAnalysisResult(aiAnalysis);
                 toast.success('分析が完了しました。内容を確認してください。', { id: toastId });
             } else {
-                throw new Error('AIによる解析に失敗しました。');
+                throw new Error('AIによる解析に失敗しました。画像が不鮮明な可能性があります。');
             }
 
-            // 2. Supabase Storageにアップロード
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-            const { data: _uploadData, error: uploadError } = await supabase.storage
-                .from('receipts')
-                .upload(fileName, file);
+            // 2. Supabase Storageにアップロード (オプション、エラーでも解析が通れば進める)
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+                const { data: _uploadData, error: uploadError } = await supabase.storage
+                    .from('receipts')
+                    .upload(fileName, file);
 
-            if (uploadError) console.warn('Storage upload error:', uploadError);
+                if (uploadError) console.warn('Storage upload error:', uploadError);
+            } catch (err) {
+                console.warn('Silent upload failure:', err);
+            }
 
         } catch (error: any) {
             console.error('Failed to process receipt:', error);
@@ -500,6 +549,22 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                                                     </div>
                                                 </div>
 
+                                                {analysisResult.invoiceRegistrationNumber !== undefined && (
+                                                    <div className="pt-2">
+                                                        <label className="text-[10px] uppercase tracking-wider text-text-muted font-bold flex items-center gap-1">
+                                                            インボイス登録番号
+                                                            <CheckCircle2 className={`w-3 h-3 ${analysisResult.invoiceRegistrationNumber ? 'text-emerald-500' : 'text-text-muted'}`} />
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="T1234567890123 (未検出)"
+                                                            value={analysisResult.invoiceRegistrationNumber || ''}
+                                                            onChange={(e) => setAnalysisResult({ ...analysisResult, invoiceRegistrationNumber: e.target.value })}
+                                                            className="w-full bg-transparent border-b border-border py-1 text-xs font-mono focus:border-primary transition-colors outline-none"
+                                                        />
+                                                    </div>
+                                                )}
+
                                                 <div className="pt-2">
                                                     <label className="text-[10px] uppercase tracking-wider text-text-muted font-bold">合計金額</label>
                                                     <div className="flex items-center gap-2">
@@ -578,30 +643,79 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                     )}
 
                     {mode === 'ai' && (
-                        <div className="py-12 flex flex-col items-center justify-center border border-border rounded-2xl bg-gradient-to-br from-purple-500/5 to-blue-500/5">
-                            <div className="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mb-4">
-                                <Sparkles className="w-8 h-8 text-purple-500" />
+                        <div className="py-12 flex flex-col items-center justify-center border border-border rounded-2xl bg-gradient-to-br from-primary/5 to-blue-500/5">
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                <Sparkles className="w-8 h-8 text-primary" />
                             </div>
                             <h3 className="text-lg font-semibold text-text-main mb-2">AIに任せる</h3>
                             <p className="text-sm text-text-muted mb-6 text-center max-w-sm">
                                 「今日のお昼代 1200円 経費で」<br />のように入力するだけで、AIが自動で仕訳します。
                             </p>
                             <div className="w-full max-w-md px-4">
-                                <div className="flex justify-center mb-4">
-                                    <div className="relative inline-flex items-center">
-                                        <Calendar className="absolute left-3 w-4 h-4 text-primary pointer-events-none" />
+                                <div className="w-full flex flex-col items-center gap-4 mb-6">
+                                    {/* Styled Date Display / Toggle */}
+                                    <div className="relative w-full max-w-xs group">
+                                        <button
+                                            onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
+                                            className="w-full flex items-center justify-between px-5 py-4 bg-surface border border-white/10 rounded-2xl text-text-main hover:bg-surface-highlight hover:border-white/20 transition-all active:scale-[0.98] shadow-lg shadow-primary/5"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-primary/10 rounded-xl">
+                                                    <Calendar className="w-5 h-5 text-primary" />
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider leading-none mb-1">取引日</p>
+                                                    <p className="text-base font-black leading-none">
+                                                        {formatDisplayDate(selectedDate)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Sparkles className="w-4 h-4 text-primary/40 group-hover:text-primary transition-colors" />
+                                        </button>
+                                        {/* Hidden internal input to trigger native picker */}
                                         <input
                                             type="date"
+                                            ref={dateInputRef}
                                             value={selectedDate}
                                             onChange={(e) => {
                                                 setSelectedDate(e.target.value);
                                                 setIsDateManuallySelected(true);
                                             }}
-                                            className="pl-9 pr-4 py-1.5 bg-surface border border-border rounded-lg text-sm font-bold text-text-main focus:border-primary outline-none transition-all hover:bg-surface-highlight cursor-pointer"
+                                            className="absolute inset-0 opacity-0 pointer-events-none"
                                         />
                                     </div>
+
+                                    {/* Quick Selection Chips */}
+                                    <div className="flex gap-2">
+                                        {[
+                                            { label: '今日', offset: 0 },
+                                            { label: '昨日', offset: -1 },
+                                            { label: '一昨日', offset: -2 }
+                                        ].map((chip) => {
+                                            const date = new Date();
+                                            date.setDate(date.getDate() + chip.offset);
+                                            const dateStr = date.toISOString().split('T')[0];
+                                            const isActive = selectedDate === dateStr;
+
+                                            return (
+                                                <button
+                                                    key={chip.label}
+                                                    onClick={() => {
+                                                        setSelectedDate(dateStr);
+                                                        setIsDateManuallySelected(true);
+                                                    }}
+                                                    className={`px-5 py-2 rounded-full text-xs font-bold transition-all border ${isActive
+                                                        ? 'bg-primary text-surface border-primary shadow-md shadow-primary/20 scale-105'
+                                                        : 'bg-surface border-border text-text-muted hover:border-primary/30 hover:text-text-main'
+                                                        }`}
+                                                >
+                                                    {chip.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                                <div className="relative group w-full">
+                                <div className="relative group w-full mb-4">
                                     <input
                                         autoFocus
                                         type="text"
@@ -609,14 +723,14 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                                         onChange={(e) => setAiInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleAiSubmit()}
                                         placeholder="メッセージを入力..."
-                                        className="input-base pr-20 h-12 shadow-sm focus:ring-purple-500/20 border-purple-500/30 w-full"
+                                        className="input-base pr-20 h-12 shadow-sm focus:ring-primary/20 border-primary/30 w-full"
                                         disabled={isProcessing}
                                     />
                                     <button
                                         onClick={handleAiSubmit}
                                         disabled={!aiInput.trim() || isProcessing || !user?.id || !currentBusinessType?.business_type}
                                         className={`absolute right-1 top-1.5 bottom-1.5 px-4 rounded-lg text-sm font-bold transition-all shadow-sm ${aiInput.trim() && !isProcessing && user?.id && currentBusinessType?.business_type
-                                            ? 'bg-purple-600 text-white hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/40 active:scale-95'
+                                            ? 'bg-primary text-white hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/40 active:scale-95'
                                             : 'bg-surface-highlight text-text-muted cursor-not-allowed'
                                             }`}
                                     >
@@ -627,6 +741,20 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                                         ) : (
                                             '送信'
                                         )}
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-center gap-2">
+                                    <button
+                                        onClick={() => setIsContinuousMode(!isContinuousMode)}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${isContinuousMode
+                                                ? 'bg-primary/10 text-primary border-primary/30'
+                                                : 'bg-surface border-border text-text-muted hover:border-primary/20 hover:text-text-secondary'
+                                            }`}
+                                    >
+                                        <div className={`w-3 h-3 rounded-full border-2 transition-all ${isContinuousMode ? 'bg-primary border-primary animate-pulse' : 'bg-transparent border-text-muted'
+                                            }`} />
+                                        連続入力モード
                                     </button>
                                 </div>
                             </div>

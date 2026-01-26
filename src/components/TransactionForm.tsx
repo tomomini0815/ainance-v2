@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Star, Clock, Zap, Calendar, Tag, Wallet, TrendingUp, TrendingDown } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { STANDARD_CATEGORIES } from '../services/keywordCategoryService'
 
 interface Transaction {
   id?: number
@@ -67,15 +68,28 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     }
   }, [])
 
-  const categoryOptions = useMemo(() => {
-    const accountCategories = [
-      '接待交際費', '消耗品費', '修繕費', '保険料', '支払手数料', '新聞図書費',
-      '外注費', '租税公課', '水道光熱費', '通信費', '地代家賃', '旅費交通費',
-      '広告宣伝費', '雑費', '業務委託収入'
-    ]
+  useEffect(() => {
+    if (transaction) {
+      setFormData({
+        item: transaction.item || '',
+        amount: transaction.amount || 0,
+        date: transaction.date || new Date().toISOString().split('T')[0],
+        category: transaction.category || '',
+        type: transaction.type || 'expense',
+        description: transaction.description || '',
+        receipt_url: transaction.receipt_url || '',
+        location: transaction.location || '',
+        tags: transaction.tags || [],
+        recurring: transaction.recurring || false,
+        recurring_frequency: transaction.recurring_frequency || 'monthly',
+        recurring_end_date: transaction.recurring_end_date || new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
+        creator: transaction.creator || ''
+      })
+    }
+  }, [transaction])
 
-    const allCategories = [...new Set([...favoriteCategories, ...accountCategories])]
-    return allCategories
+  const categoryOptions = useMemo(() => {
+    return [...new Set([...favoriteCategories, ...STANDARD_CATEGORIES])]
   }, [favoriteCategories])
 
   const quickAmountOptions = [1000, 3000, 5000, 10000, 30000]

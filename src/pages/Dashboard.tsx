@@ -251,7 +251,7 @@ const Dashboard: React.FC = () => {
         <div className="flex gap-4 w-full sm:w-auto h-12">
           <Link
             to="/transaction-inbox"
-            className={`group flex-1 sm:flex-none relative inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full transition-all duration-200 border ${stats.pendingCount > 0
+            className={`group flex-1 sm:flex-none relative inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full transition-all duration-200 border whitespace-nowrap ${stats.pendingCount > 0
               ? 'border-red-500/50 hover:border-red-500 text-red-500 hover:bg-red-500/10'
               : 'border-border hover:border-border-strong text-text-muted hover:bg-surface-highlight'
               } bg-surface`}
@@ -344,7 +344,7 @@ const Dashboard: React.FC = () => {
           <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <Sparkles className={`w-5 h-5 ${isAIEnabled() ? 'text-purple-500' : 'text-gray-400'}`} />
+                <Sparkles className={`w-5 h-5 ${isAIEnabled() ? 'text-primary' : 'text-gray-400'}`} />
                 <h3 className="text-lg font-semibold text-text-main">AI分析</h3>
               </div>
               <AIStatusBadge />
@@ -352,7 +352,7 @@ const Dashboard: React.FC = () => {
 
             {isAIEnabled() ? (
               <div className="space-y-4">
-                <div className="p-4 bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-xl border border-purple-500/20">
+                <div className="p-4 bg-gradient-to-br from-primary/10 to-blue-500/10 rounded-xl border border-primary/20">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     <span className="text-sm font-medium text-text-main">AI分析 有効</span>

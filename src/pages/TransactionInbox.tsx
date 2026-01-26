@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
-import { Check, X, Edit2, AlertCircle, Inbox, Sparkles, Filter, ArrowLeft, Mic, MessageSquare } from 'lucide-react';
+import { Check, X, Edit2, Info, Inbox, Sparkles, Filter, ArrowLeft, Mic, MessageSquare } from 'lucide-react';
 import TransactionIcon from '../components/TransactionIcon';
 import TransactionForm from '../components/TransactionForm';
 import { format } from 'date-fns';
@@ -121,24 +121,10 @@ const TransactionInbox: React.FC = () => {
                             <Inbox className="w-6 h-6 text-primary" />
                             インボックス
                         </h1>
-                        <p className="text-text-muted mt-1">AI・レシートスキャンで入力された内容を確認してください</p>
+                        <p className="text-text-muted mt-1">AIチャット・レシートスキャンで入力された内容を確認し、承認ボタンで記帳してください。</p>
                     </div>
                 </div>
 
-                {pendingTransactions.length > 0 && (
-                    <button
-                        onClick={handleApproveAll}
-                        disabled={isBulkProcessing}
-                        className="btn-primary flex items-center gap-2 whitespace-nowrap"
-                    >
-                        {isBulkProcessing ? (
-                            <Filter className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <Check className="w-4 h-4" />
-                        )}
-                        すべて承認する
-                    </button>
-                )}
             </div>
 
             {pendingTransactions.length === 0 ? (
@@ -157,11 +143,27 @@ const TransactionInbox: React.FC = () => {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3 mb-6">
-                        <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                        <div className="text-sm text-text-secondary">
-                            <span className="font-bold text-primary">{pendingTransactions.length}件</span>の未承認データがあります。内容を確認して、承認ボタンを押すと記帳が確定します。
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+                                <Info className="w-4 h-4 text-primary" />
+                                {pendingTransactions.length}件の未完了取引
+                            </span>
                         </div>
+                        {pendingTransactions.length > 0 && (
+                            <button
+                                onClick={handleApproveAll}
+                                disabled={isBulkProcessing}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50"
+                            >
+                                {isBulkProcessing ? (
+                                    <Filter className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Check className="w-4 h-4" />
+                                )}
+                                すべてを承認
+                            </button>
+                        )}
                     </div>
 
                     {/* モバイル表示（カードレイアウト） */}
