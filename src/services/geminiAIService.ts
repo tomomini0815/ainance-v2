@@ -19,7 +19,7 @@ const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/
 const getApiUrl = (model: string) => 
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-import { determineCategoryByKeyword } from './keywordCategoryService';
+import { determineCategoryByKeyword, standardizeItemName } from './keywordCategoryService';
 
 export interface AIClassificationResult {
   category: string;
@@ -88,7 +88,9 @@ ${ocrText}
     "suggestions": ["経費処理に関するアドバイス"]
   },
   "warnings": ["注意事項があればここに"]
-}`;
+}
+
+注意: ランチや夕食などの飲食店での利用は、原則として「接待交際費」に分類し、品目名は「飲食代」としてください。`;
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -134,6 +136,14 @@ ${ocrText}
 
     const result = JSON.parse(jsonMatch[0]) as AIReceiptAnalysis;
     console.log('Gemini AI分析結果:', result);
+
+    // 項目名の標準化を適用
+    if (result && result.items) {
+      result.items.forEach(item => {
+        item.name = standardizeItemName(item.name, result.classification?.category || '');
+      });
+    }
+
     return result;
 
   } catch (error) {
@@ -179,7 +189,8 @@ export async function analyzeReceiptWithVision(
 6. **品目**: 各行の商品名、金額、税率、カテゴリを抽出してください。
    - 値引きやポイント利用がある場合は、それらも正確に反映させて合計と一致するか内部で検証してください。
 7. **分類**: 日本の標準的な勘定科目に基いて分類してください。
-   - 消耗品費、旅費交通費、接待交際費（5000円超）、会議費（5000円以下などの社内規定考慮）、通信費、福利厚生費、外注費、地代家賃、雑費、事業主貸など。
+   - 消耗品費、旅費交通費、接待交際費、会議費、通信費、福利厚生費、外注費、地代家賃、雑費、事業主貸など。
+   - **重要**: ランチや居酒屋、レストランなどの飲食店での利用は、店舗の業種に関わらず「接待交際費」に分類し、品目名（itemsの中のname）は「飲食代」とすることを優先してください。
 
 ### 回答形式:
 必ず以下の純粋なJSON形式のみで回答してください:
@@ -292,6 +303,13 @@ export async function analyzeReceiptWithVision(
        }
     }
 
+    // 項目名の標準化を適用 (ランチ -> 飲食代)
+    if (result && result.items) {
+      result.items.forEach(item => {
+        item.name = standardizeItemName(item.name, result.classification?.category || '');
+      });
+    }
+
     return result;
   } catch (error) {
     console.error('Gemini Vision AI Analysis Exception:', error);
@@ -327,7 +345,9 @@ ${description ? `詳細: ${description}` : ''}
   "reasoning": "分類理由（日本語で簡潔に）",
   "taxDeductible": true/false,
   "suggestions": ["経費処理のアドバイス"]
-}`;
+}
+
+注意: ランチや飲食に関連する場合は「接待交際費」を優先してください。`;
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -655,9 +675,8 @@ export async function parseChatTransactionWithAI(
  3. **日付**: "昨日"、"一昨日"、"先週の金曜日"などの相対日時を、今日(${today})を基準に"YYYY-MM-DD"形式に変換。指定がなければ"${today}"とする。
  4. **カテゴリルール**: 以下のカテゴリから最も適切なものを選択。
     - **旅費交通費**: 電車、バス、タクシー、ガソリン、駐車場、宿泊費
-    - **接待交際費**: 取引先との会食、手土産、ゴルフ、慶弔費
+    - **接待交際費**: ランチ、ディナー、飲み会、レストラン、居酒屋、取引先との会食、手土産、ゴルフ、慶弔費
     - **消耗品費**: 文房具、PC周辺機器(<10万円)、日用雑貨、作業用具
-    - **食費**: ランチ、カフェ代（自分のみ）、コンビニ、スーパーでの食品購入
     - **会議費**: 打ち合わせ時のカフェ代、会議室利用料、弁当代
     - **通信費**: 携帯電話、インターネット、切手、配送料
     - **水道光熱費**: 電気、ガス、水道
@@ -734,6 +753,11 @@ export async function parseChatTransactionWithAI(
                 result.category = keywordCategory;
             }
         }
+    }
+
+    // 項目名の標準化を適用 (ランチ -> 飲食代)
+    if (result) {
+        result.item = standardizeItemName(result.item, result.category);
     }
 
     return result;

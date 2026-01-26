@@ -8,6 +8,7 @@ import TransactionForm from '../components/TransactionForm';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import { findPotentialDuplicates } from '../utils/duplicateCheckUtils';
 
 const TransactionInbox: React.FC = () => {
     const { user } = useAuth();
@@ -20,6 +21,18 @@ const TransactionInbox: React.FC = () => {
     const pendingTransactions = useMemo(() => {
         return transactions.filter(t => t.approval_status === 'pending');
     }, [transactions]);
+
+    // 重複チェックの結果をメモ化
+    const duplicateMap = useMemo(() => {
+        const map: Record<string, any[]> = {};
+        pendingTransactions.forEach(t => {
+            const dups = findPotentialDuplicates(t, transactions);
+            if (dups.length > 0) {
+                map[t.id] = dups;
+            }
+        });
+        return map;
+    }, [pendingTransactions, transactions]);
 
     const handleApprove = async (id: string) => {
         setProcessingId(id);
@@ -210,6 +223,14 @@ const TransactionInbox: React.FC = () => {
                                             </div>
                                         </div>
 
+                                        {duplicateMap[t.id] && (
+                                            <div className="mt-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 flex items-start gap-2">
+                                                <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                                <div className="text-[10px] text-amber-800 dark:text-amber-200 leading-tight">
+                                                    <span className="font-bold">重複の可能性:</span> {duplicateMap[t.id].length}件の類似した取引が見つかりました（金額が一致、±3日以内）
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -317,6 +338,14 @@ const TransactionInbox: React.FC = () => {
                                                             </>
                                                         ) : (
                                                             <div className="font-medium text-text-main whitespace-nowrap">{t.item}</div>
+                                                        )}
+                                                        {duplicateMap[t.id] && (
+                                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                                <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                                                                    <Info className="w-3 h-3" />
+                                                                    重複の可能性
+                                                                </span>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>

@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mic, Send, Save, Trash2, Edit3, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Receipt, AlertCircle, Square } from 'lucide-react';
+import { Mic, Send, Save, Trash2, Edit3, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Info, AlertCircle, Square } from 'lucide-react';
 import TransactionIcon from '../components/TransactionIcon';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessType } from '../hooks/useBusinessType';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
+import { findPotentialDuplicates } from '../utils/duplicateCheckUtils';
 
 interface Transaction {
   id: string;
@@ -1352,9 +1353,19 @@ const ChatToBook: React.FC = () => {
                             className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                           />
                         ) : (
-                          <div className="flex items-center gap-2">
-                            <TransactionIcon item={transaction.description || ''} category={transaction.category || ''} size="sm" />
-                            <span>{transaction.description}</span>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <TransactionIcon item={transaction.description || ''} category={transaction.category || ''} size="sm" />
+                              <span>{transaction.description}</span>
+                            </div>
+                            {dbTransactions && findPotentialDuplicates(transaction as any, dbTransactions).length > 0 && (
+                              <div className="flex items-center gap-1">
+                                <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                                  <Info className="w-3 h-3" />
+                                  重複の可能性
+                                </span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </td>

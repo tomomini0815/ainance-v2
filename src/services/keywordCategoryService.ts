@@ -214,13 +214,15 @@ const KEYWORD_RULES: { keyword: string; category: StandardCategory }[] = [
   { keyword: '御祝', category: '接待交際費' },
   { keyword: '慶弔', category: '接待交際費' },
   { keyword: 'Bar', category: '接待交際費' },
+  { keyword: 'ランチ', category: '接待交際費' },
+  { keyword: '昼食', category: '接待交際費' },
+  { keyword: '夕食', category: '接待交際費' },
+  { keyword: 'ディナー', category: '接待交際費' },
+  { keyword: '飲食', category: '接待交際費' },
+  { keyword: '食事', category: '接待交際費' },
 
   // 食費
-  { keyword: 'ランチ', category: '食費' },
-  { keyword: '昼食', category: '食費' },
-  { keyword: '夕食', category: '食費' },
-  { keyword: 'ディナー', category: '食費' },
-  { keyword: '弁当', category: '食費' },
+  // 食費（自分用の食費としてのキーワード）
   { keyword: 'スーパー', category: '食費' },
   { keyword: 'コンビニ', category: '食費' },
   { keyword: 'セブンイレブン', category: '食費' },
@@ -275,4 +277,35 @@ export function determineCategoryByKeyword(text: string): string | null {
   }
 
   return null;
+}
+
+/**
+ * 取引項目名を標準化する（例：飲食系は「飲食代」に統一）
+ * @param itemName 取引項目名
+ * @param category カテゴリ名
+ * @returns 標準化された項目名
+ */
+export function standardizeItemName(itemName: string, category: string): string {
+  if (!itemName) return itemName;
+
+  // 接待交際費、会議費、食費に関連するキーワードがあれば「飲食代」に統一
+  const diningKeywords = ['ランチ', '昼食', '夕食', 'ディナー', 'レストラン', '居酒屋', '会食', '食事', '飲食'];
+  const normalizedItem = itemName.toLowerCase();
+
+  const isDining = diningKeywords.some(kw => normalizedItem.includes(kw)) || 
+                   category === '接待交際費' || 
+                   category === '会議費' || 
+                   category === '食費';
+
+  if (isDining && (category === '接待交際費' || category === '会議費' || category === '食費')) {
+    // コンビニやスーパー、弁当などの場合はそのまま（個別の品目として扱う）
+    const ignoreKeywords = ['コンビニ', 'セブン', 'ローソン', 'ファミマ', 'スーパー', '弁当', '食品', '飲料'];
+    const shouldIgnore = ignoreKeywords.some(kw => normalizedItem.includes(kw));
+    
+    if (!shouldIgnore) {
+      return '飲食代';
+    }
+  }
+
+  return itemName;
 }
