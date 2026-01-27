@@ -72,7 +72,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 8;
 
   const totalPages = Math.ceil(latestTransactions.length / itemsPerPage);
   const paginatedTransactions = latestTransactions.slice(

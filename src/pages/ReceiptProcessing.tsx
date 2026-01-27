@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
-import { Upload, FileText, ArrowLeft, Camera, X, RefreshCw, FileImage, Search, Eye, Check, Save, AlertTriangle, CheckCircle, Trash2 } from 'lucide-react';
+import { Upload, FileText, ArrowLeft, Camera, RefreshCw, FileImage, Search, Save, AlertTriangle, CheckCircle, Trash2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import ReceiptCamera from '../components/ReceiptCamera';
@@ -9,6 +9,7 @@ import { getReceipts, updateReceiptStatus } from '../services/receiptService'
 import { useAuth } from '../components/AuthProvider'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useTransactions } from '../hooks/useTransactions'
+import TransactionIcon from '../components/TransactionIcon';
 
 interface ReceiptData {
   id: string
@@ -89,31 +90,30 @@ const ReceiptProcessing: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
 
-  // 詳細表示用の状態
-  const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null)
-  const [showDetailModal, setShowDetailModal] = useState(false)
 
   // Supabaseからレシートデータをロード
+  const loadReceipts = async () => {
+    if (!user?.id) return;
+
+    const receipts = await getReceipts(user.id);
+    const formattedReceipts: ReceiptData[] = receipts.map(r => ({
+      id: r.id!,
+      date: r.date,
+      merchant: r.merchant,
+      amount: r.amount,
+      category: r.category,
+      description: r.description,
+      confidence: r.confidence,
+      status: r.status,
+      taxRate: r.tax_rate,
+      confidenceScores: r.confidence_scores
+    }));
+    // 承認済み・却下済みのレシートは除外（ToDoリストとして機能させるため）
+    const activeReceipts = formattedReceipts.filter(r => r.status !== 'approved' && r.status !== 'rejected');
+    setUploadedReceipts(activeReceipts);
+  };
+
   useEffect(() => {
-    const loadReceipts = async () => {
-      if (!user?.id) return;
-
-      const receipts = await getReceipts(user.id);
-      const formattedReceipts: ReceiptData[] = receipts.map(r => ({
-        id: r.id!,
-        date: r.date,
-        merchant: r.merchant,
-        amount: r.amount,
-        category: r.category,
-        description: r.description,
-        confidence: r.confidence,
-        status: r.status,
-        taxRate: r.tax_rate,
-        confidenceScores: r.confidence_scores
-      }));
-      setUploadedReceipts(formattedReceipts);
-    };
-
     loadReceipts();
   }, [user]);
 
@@ -722,10 +722,7 @@ const ReceiptProcessing: React.FC = () => {
   };
 
   // レシートの詳細情報を表示
-  const showReceiptDetails = (receipt: ReceiptData) => {
-    setSelectedReceipt(receipt);
-    setShowDetailModal(true);
-  };
+
 
   // フィルターされたレシートリスト
   const filteredReceipts = uploadedReceipts.filter(receipt => {
@@ -861,155 +858,7 @@ const ReceiptProcessing: React.FC = () => {
               onClose={stopCamera}
             />
           )}
-          {/* 詳細モーダル */}
-          {showDetailModal && selectedReceipt && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-surface rounded-lg w-full max-w-md">
-                <div className="p-4 border-b border-border flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">レシート詳細</h3>
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="text-text-muted hover:text-text-muted"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-                <div className="p-4">
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-text-muted">日付</label>
-                      <p className="text-text-main">{selectedReceipt.date}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-text-muted">店舗名</label>
-                      <p className="text-text-main">{selectedReceipt.merchant}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-text-muted">金額</label>
-                      <p className="text-text-main">¥{selectedReceipt.amount.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-text-muted">カテゴリ</label>
-                      <p className="text-text-main">{selectedReceipt.category}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-text-muted">説明</label>
-                      <p className="text-text-main">{selectedReceipt.description}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-text-muted">信頼度</label>
-                      <div className="flex items-center">
-                        <div className="w-16 bg-border rounded-full h-2 mr-2">
-                          <div
-                            className={`h - 2 rounded - full ${selectedReceipt.confidence >= 90 ? 'bg-green-500' :
-                              selectedReceipt.confidence >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                              } `}
-                            style={{ width: `${selectedReceipt.confidence}% ` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-text-muted">{selectedReceipt.confidence}%</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-text-muted">ステータス</label>
-                      <span className={`inline - flex px - 2 py - 1 text - xs font - semibold rounded - full ${selectedReceipt.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        selectedReceipt.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        } `}>
-                        {selectedReceipt.status === 'approved' ? '承認済み' :
-                          selectedReceipt.status === 'rejected' ? '却下' : '保留中'}
-                      </span>
-                    </div>
-                    {selectedReceipt.taxRate !== undefined && selectedReceipt.taxRate > 0 && (
-                      <div>
-                        <label className="text-sm font-medium text-text-muted">税率</label>
-                        <p className="text-text-main">{selectedReceipt.taxRate}%</p>
-                      </div>
-                    )}
-                    {selectedReceipt.confidenceScores && (
-                      <div>
-                        <label className="text-sm font-medium text-text-muted">信頼度詳細</label>
-                        <div className="text-xs text-text-muted mt-1">
-                          <div>店舗: {selectedReceipt.confidenceScores.merchant || 0}%</div>
-                          <div>日付: {selectedReceipt.confidenceScores.date || 0}%</div>
-                          <div>金額: {selectedReceipt.confidenceScores.amount || 0}%</div>
-                        </div>
-                      </div>
-                    )}
-                    {/* AI分析結果の表示 */}
-                    {selectedReceipt.aiAnalysis && (
-                      <div className="border-t border-border pt-3">
-                        <h4 className="text-sm font-medium text-text-muted mb-2">AI分析結果</h4>
-                        {selectedReceipt.aiAnalysis.category && (
-                          <div className="mb-2">
-                            <label className="text-xs font-medium text-text-muted">推定カテゴリ</label>
-                            <p className="text-sm text-text-main">{selectedReceipt.aiAnalysis.category}</p>
-                          </div>
-                        )}
-                        {selectedReceipt.aiAnalysis.expenseType && (
-                          <div className="mb-2">
-                            <label className="text-xs font-medium text-text-muted">支出種別</label>
-                            <p className="text-sm text-text-main">{selectedReceipt.aiAnalysis.expenseType}</p>
-                          </div>
-                        )}
-                        {selectedReceipt.aiAnalysis.confidence !== undefined && (
-                          <div className="mb-2">
-                            <label className="text-xs font-medium text-text-muted">AI信頼度</label>
-                            <div className="flex items-center">
-                              <div className="w-16 bg-border rounded-full h-1.5 mr-2">
-                                <div
-                                  className={`h - 1.5 rounded - full ${selectedReceipt.aiAnalysis.confidence >= 0.9 ? 'bg-green-500' :
-                                    selectedReceipt.aiAnalysis.confidence >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
-                                    } `}
-                                  style={{ width: `${selectedReceipt.aiAnalysis.confidence * 100}% ` }}
-                                ></div>
-                              </div>
-                              <span className="text-xs text-text-muted">
-                                {Math.round(selectedReceipt.aiAnalysis.confidence * 100)}%
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                        {selectedReceipt.aiAnalysis.insights && selectedReceipt.aiAnalysis.insights.length > 0 && (
-                          <div className="mb-2">
-                            <label className="text-xs font-medium text-text-muted">分析インサイト</label>
-                            <ul className="list-disc pl-4 space-y-1 mt-1">
-                              {selectedReceipt.aiAnalysis.insights.map((insight, index) => (
-                                <li key={index} className="text-xs text-text-muted">
-                                  {insight}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {selectedReceipt.aiAnalysis.items && selectedReceipt.aiAnalysis.items.length > 0 && (
-                          <div>
-                            <label className="text-xs font-medium text-text-muted">商品アイテム</label>
-                            <div className="mt-1 space-y-1">
-                              {selectedReceipt.aiAnalysis.items.map((item, index) => (
-                                <div key={index} className="flex justify-between text-xs">
-                                  <span className="text-text-muted">{item.name}</span>
-                                  <span className="text-text-main">¥{item.price.toLocaleString()}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="p-4 border-t border-border flex justify-end space-x-2">
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="px-4 py-2 bg-border text-text-main rounded-md hover:bg-gray-300 transition-colors"
-                  >
-                    閉じる
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+
           {/* フィルターと検索 */}
           <div className="bg-surface rounded-xl shadow-sm border border-border p-2.5 sm:p-3 mb-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -1057,7 +906,7 @@ const ReceiptProcessing: React.FC = () => {
             </div>
 
             {/* モバイル用カード表示 */}
-            <div className="md:hidden p-3 space-y-3">
+            <div className="md:hidden space-y-3 p-3">
               {filteredReceipts.length === 0 ? (
                 <div className="p-8 text-center text-text-muted border border-dashed border-border rounded-lg">
                   <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -1066,76 +915,80 @@ const ReceiptProcessing: React.FC = () => {
                 </div>
               ) : (
                 filteredReceipts.map((receipt) => (
-                  <div key={receipt.id} className="border border-border rounded-lg p-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1 mr-2" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                        {editingId === receipt.id ? (
-                          <div className="space-y-2">
-                            <input
-                              type="text"
-                              value={editData.merchant || receipt.merchant}
-                              onChange={(e) => setEditData(prev => ({ ...prev, merchant: e.target.value }))}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full px-2 py-1 border border-border rounded text-sm"
-                              placeholder="店舗名"
-                            />
-                            <input
-                              type="date"
-                              value={editData.date || receipt.date}
-                              onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full px-2 py-1 border border-border rounded text-sm"
-                            />
+                  <div key={receipt.id} className="bg-surface-highlight rounded-xl p-2.5 border border-border hover:border-primary/50 transition-all relative">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <div className="flex items-start flex-1 min-w-0">
+                        <div className="mr-2 mt-0.5">
+                          <TransactionIcon item={receipt.merchant} category={receipt.category} size="xs" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="mb-1">
+                            {editingId === receipt.id ? (
+                              <input
+                                type="text"
+                                value={editData.merchant || receipt.merchant}
+                                onChange={(e) => setEditData(prev => ({ ...prev, merchant: e.target.value }))}
+                                onBlur={() => !editData.date && !editData.amount && !editData.category && handleSave()}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full px-1.5 py-0.5 border border-border rounded text-sm font-medium bg-surface text-text-main"
+                                placeholder="店舗名"
+                                autoFocus
+                              />
+                            ) : (
+                              <div className="font-medium text-text-main text-sm truncate cursor-pointer" onClick={() => handleEdit(receipt)}>{receipt.merchant}</div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="cursor-pointer hover:bg-surface-hover rounded p-1 -m-1">
-                            <h3 className="font-medium text-text-main">{receipt.merchant}</h3>
-                            <p className="text-sm text-text-muted">{receipt.date}</p>
+                          <div className="text-xs text-text-muted">
+                            {editingId === receipt.id ? (
+                              <input
+                                type="date"
+                                value={editData.date || receipt.date}
+                                onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full px-1.5 py-0.5 border border-border rounded text-xs bg-surface text-text-main"
+                              />
+                            ) : (
+                              <span className="cursor-pointer" onClick={() => handleEdit(receipt)}>{receipt.date}</span>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
-                      <span className={`inline - flex px - 2 py - 1 text - xs font - semibold rounded - full ${receipt.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        receipt.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        } `}>
-                        {receipt.status === 'approved' ? '承認' :
-                          receipt.status === 'rejected' ? '却下' : '保留'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                      <div className="flex-1">
+
+                      <div className="text-right ml-2 shrink-0">
                         {editingId === receipt.id ? (
                           <input
                             type="number"
                             value={editData.amount || receipt.amount}
                             onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full px-2 py-1 border border-border rounded text-sm mb-1"
+                            className="w-20 px-1.5 py-0.5 border border-border rounded text-sm text-right bg-surface text-text-main"
                           />
                         ) : (
-                          <p className="text-base font-semibold text-text-main cursor-pointer hover:bg-surface-hover rounded px-1 -ml-1">¥{receipt.amount.toLocaleString()}</p>
-                        )}
-                        <div className="flex items-center mt-1">
-                          <div className="w-16 bg-border rounded-full h-1.5 mr-2">
-                            <div
-                              className={`h - 1.5 rounded - full ${receipt.confidence >= 90 ? 'bg-green-500' :
-                                receipt.confidence >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                                } `}
-                              style={{ width: `${receipt.confidence}% ` }}
-                            ></div>
+                          <div className="font-bold text-base text-text-main cursor-pointer" onClick={() => handleEdit(receipt)}>
+                            ¥{receipt.amount.toLocaleString()}
                           </div>
-                          <span className="text-xs text-text-muted">{receipt.confidence}%</span>
+                        )}
+                        {/* Status/Confidence Indicator */}
+                        <div className="flex justify-end gap-1 mt-1">
+                          {receipt.confidence >= 90 ? (
+                            <Sparkles className="w-3 h-3 text-purple-500" />
+                          ) : receipt.confidence >= 70 ? (
+                            <Sparkles className="w-3 h-3 text-indigo-500" />
+                          ) : (
+                            <AlertTriangle className="w-3 h-3 text-yellow-500" />
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div onClick={() => editingId !== receipt.id && handleEdit(receipt)} className="flex-1 mr-2">
+
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                      <div onClick={() => editingId !== receipt.id && handleEdit(receipt)} className="flex-1">
                         {editingId === receipt.id ? (
                           <select
                             value={editData.category || receipt.category}
                             onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full px-2 py-1 border border-border rounded text-sm"
+                            className="w-full max-w-[120px] px-1.5 py-0.5 border border-border rounded text-xs bg-surface text-text-main"
                           >
                             {categories.map(cat => (
                               <option key={cat} value={cat}>{cat}</option>
@@ -1147,54 +1000,47 @@ const ReceiptProcessing: React.FC = () => {
                             <option value="水道光熱費">水道光熱費</option>
                           </select>
                         ) : (
-                          <span className="text-sm text-text-muted cursor-pointer hover:underline">{receipt.category}</span>
+                          <span className="whitespace-nowrap inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full bg-surface text-text-secondary border border-white/5 cursor-pointer">
+                            {receipt.category}
+                          </span>
                         )}
                       </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => showReceiptDetails(receipt)}
-                          className="p-2 text-primary hover:text-blue-900 hover:bg-blue-50 rounded-full transition-colors duration-200"
-                          title="詳細"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </button>
 
+                      <div className="flex gap-2.5 ml-2">
                         {editingId === receipt.id ? (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSave();
                             }}
-                            className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-full transition-colors duration-200"
+                            className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-md active:scale-95"
                             title="保存"
                           >
                             <Save className="w-5 h-5" />
                           </button>
                         ) : (
-                          receipt.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleApprove(receipt.id);
-                                }}
-                                className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-full transition-colors duration-200"
-                                title="承認"
-                              >
-                                <Check className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleReject(receipt.id);
-                                }}
-                                className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-full transition-colors duration-200"
-                                title="却下"
-                              >
-                                <X className="w-5 h-5" />
-                              </button>
-                            </>
-                          )
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleApprove(receipt.id);
+                              }}
+                              className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
+                              title="承認"
+                            >
+                              <CheckCircle className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReject(receipt.id);
+                              }}
+                              className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
+                              title="削除"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -1204,169 +1050,177 @@ const ReceiptProcessing: React.FC = () => {
             </div>
 
             {/* デスクトップ用テーブル表示 */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-background">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">日付</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">店舗名</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">金額</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">信頼度</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-surface divide-y divide-gray-200">
-                  {filteredReceipts.length === 0 ? (
+            <div className="hidden md:block bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-surface-highlight/30 border-b border-border">
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-text-muted">
-                        <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p>処理済みのレシートはありません</p>
-                        <p className="text-sm mt-1">新しいレシートをアップロードしてください</p>
-                      </td>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">日付</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">店舗名</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">金額</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">カテゴリ</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">信頼度</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap opacity-0">操作</th>
                     </tr>
-                  ) : (
-                    filteredReceipts.map((receipt) => (
-                      <tr key={receipt.id} className="hover:bg-background">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                          {editingId === receipt.id ? (
-                            <input
-                              type="date"
-                              value={editData.date || receipt.date}
-                              onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full px-2 py-1 border border-border rounded text-sm"
-                            />
-                          ) : (
-                            <span className="cursor-pointer hover:underline decoration-text-muted/50">{receipt.date}</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                          {editingId === receipt.id ? (
-                            <input
-                              type="text"
-                              value={editData.merchant || receipt.merchant}
-                              onChange={(e) => setEditData(prev => ({ ...prev, merchant: e.target.value }))}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full px-2 py-1 border border-border rounded text-sm"
-                            />
-                          ) : (
-                            <span className="cursor-pointer hover:underline decoration-text-muted/50">{receipt.merchant}</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                          {editingId === receipt.id ? (
-                            <input
-                              type="number"
-                              value={editData.amount || receipt.amount}
-                              onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full px-2 py-1 border border-border rounded text-sm"
-                            />
-                          ) : (
-                            <span className="cursor-pointer hover:underline decoration-text-muted/50">¥{receipt.amount.toLocaleString()}</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                          {editingId === receipt.id ? (
-                            <select
-                              value={editData.category || receipt.category}
-                              onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full px-2 py-1 border border-border rounded text-sm"
-                            >
-                              {categories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                              ))}
-                              <option value="消耗品費">消耗品費</option>
-                              <option value="接待交際費">接待交際費</option>
-                              <option value="旅費交通費">旅費交通費</option>
-                              <option value="通信費">通信費</option>
-                              <option value="水道光熱費">水道光熱費</option>
-                            </select>
-                          ) : (
-                            <span className="cursor-pointer hover:underline decoration-text-muted/50">{receipt.category}</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex items-center">
-                            <div className="w-16 bg-border rounded-full h-2 mr-2">
-                              <div
-                                className={`h - 2 rounded - full ${receipt.confidence >= 90 ? 'bg-green-500' :
-                                  receipt.confidence >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                                  } `}
-                                style={{ width: `${receipt.confidence}% ` }}
-                              ></div>
-                            </div>
-                            <span className="text-xs text-text-muted">{receipt.confidence}%</span>
-                          </div>
-                          {/* AI分析の信頼度を表示 */}
-                          {receipt.aiAnalysis && receipt.aiAnalysis.confidence !== undefined && (
-                            <div className="text-xs text-text-muted mt-1">
-                              <div>AI信頼度: {Math.round(receipt.aiAnalysis.confidence * 100)}%</div>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                            {editingId === receipt.id ? (
-                              <button
-                                onClick={handleSave}
-                                className="p-2 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
-                                title="保存"
-                              >
-                                <Save className="w-4 h-4" />
-                                保存
-                              </button>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => handleApprove(receipt.id)}
-                                  className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
-                                  title="登録"
-                                >
-                                  <CheckCircle className="w-4 h-4" />
-                                  登録
-                                </button>
-                                <button
-                                  onClick={() => handleReject(receipt.id)}
-                                  className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
-                                  title="削除"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  削除
-                                </button>
-                              </>
-                            )}
-                          </div>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredReceipts.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center text-text-muted">
+                          <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                          <p>処理済みのレシートはありません</p>
+                          <p className="text-sm mt-1">新しいレシートをアップロードしてください</p>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      filteredReceipts.map((receipt) => (
+                        <tr key={receipt.id} className="hover:bg-surface-highlight/20 transition-colors group">
+                          <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
+                            {editingId === receipt.id ? (
+                              <input
+                                type="date"
+                                value={editData.date || receipt.date}
+                                onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full px-2 py-1 border border-border rounded text-xs"
+                              />
+                            ) : (
+                              <span className="cursor-pointer hover:underline decoration-text-muted/50">{receipt.date}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
+                            <div className="flex items-center gap-2">
+                              <TransactionIcon item={receipt.merchant} category={receipt.category} />
+                              {editingId === receipt.id ? (
+                                <input
+                                  type="text"
+                                  value={editData.merchant || receipt.merchant}
+                                  onChange={(e) => setEditData(prev => ({ ...prev, merchant: e.target.value }))}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-full px-2 py-1 border border-border rounded text-xs"
+                                />
+                              ) : (
+                                <span className="cursor-pointer hover:underline decoration-text-muted/50">{receipt.merchant}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
+                            {editingId === receipt.id ? (
+                              <input
+                                type="number"
+                                value={editData.amount || receipt.amount}
+                                onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full px-2 py-1 border border-border rounded text-xs"
+                              />
+                            ) : (
+                              <span className="cursor-pointer hover:underline decoration-text-muted/50">¥{receipt.amount.toLocaleString()}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
+                            {editingId === receipt.id ? (
+                              <select
+                                value={editData.category || receipt.category}
+                                onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full px-2 py-1 border border-border rounded text-xs"
+                              >
+                                {categories.map(cat => (
+                                  <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                                <option value="消耗品費">消耗品費</option>
+                                <option value="接待交際費">接待交際費</option>
+                                <option value="旅費交通費">旅費交通費</option>
+                                <option value="通信費">通信費</option>
+                                <option value="水道光熱費">水道光熱費</option>
+                              </select>
+                            ) : (
+                              <span className="cursor-pointer hover:underline decoration-text-muted/50">{receipt.category}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 whitespace-nowrap text-xs">
+                            <div className="flex items-center">
+                              <div className="w-16 bg-border rounded-full h-1.5 mr-2">
+                                <div
+                                  className={`h-1.5 rounded-full ${receipt.confidence >= 90 ? 'bg-green-500' :
+                                    receipt.confidence >= 70 ? 'bg-yellow-500' : 'bg-red-500'
+                                    }`}
+                                  style={{ width: `${receipt.confidence}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-[10px] text-text-muted">{receipt.confidence}%</span>
+                            </div>
+                            {/* AI分析の信頼度を表示 */}
+                            {receipt.aiAnalysis && receipt.aiAnalysis.confidence !== undefined && (
+                              <div className="text-[10px] text-text-muted mt-0.5">
+                                <div>AI信頼度: {Math.round(receipt.aiAnalysis.confidence * 100)}%</div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center gap-2">
+                              {editingId === receipt.id ? (
+                                <button
+                                  onClick={handleSave}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-sm active:scale-95 text-xs font-medium"
+                                  title="保存"
+                                >
+                                  <Save className="w-3.5 h-3.5" />
+                                  <span>保存</span>
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => handleApprove(receipt.id)}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-95 text-xs font-medium"
+                                    title="登録"
+                                  >
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                    <span>登録</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleReject(receipt.id)}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm active:scale-95 text-xs font-medium"
+                                    title="削除"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>削除</span>
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
 
-          {/* 結果モーダル */}
-          <AnimatePresence>
-            {
-              showResultModal && extractedData && (
-                <ReceiptResultModal
-                  receiptData={extractedData as any}
-                  onClose={() => {
-                    setShowResultModal(false);
-                    setExtractedData(null);
-                  }}
-                  onRetake={() => {
-                    setShowResultModal(false);
-                    setExtractedData(null);
-                    setShowCamera(true);
-                  }}
-                />
-              )
-            }
-          </AnimatePresence>
+            {/* 結果モーダル */}
+            <AnimatePresence>
+              {
+                showResultModal && extractedData && (
+                  <ReceiptResultModal
+                    receiptData={extractedData as any}
+                    onClose={() => {
+                      setShowResultModal(false);
+                      setExtractedData(null);
+                    }}
+                    onRetake={() => {
+                      setShowResultModal(false);
+                      setExtractedData(null);
+                      setShowCamera(true);
+                    }}
+                    onSave={() => {
+                      loadReceipts();
+                    }}
+                  />
+                )
+              }
+            </AnimatePresence>
+          </div>
         </div>
       </main >
     </div >

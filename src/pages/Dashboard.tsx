@@ -3,15 +3,15 @@ import { Link } from 'react-router-dom'
 import QuickActions from '../components/QuickActions'
 import { useTransactions } from '../hooks/useTransactions'
 import { useAuth } from '../hooks/useAuth'
-import { Plus, Sparkles, Inbox, FileText, TrendingUp, TrendingDown, Wallet } from 'lucide-react'
-import { AIStatusBadge } from '../components/AIStatusComponents'
-import { isAIEnabled } from '../services/geminiAIService'
+import { Plus, Inbox } from 'lucide-react'
 
 // Lazy load heavy components
 const RevenueChart = React.lazy(() => import('../components/RevenueChart'));
 const ExpenseChart = React.lazy(() => import('../components/ExpenseChart'));
 const TransactionTable = React.lazy(() => import('../components/TransactionTable'));
 const OmniEntryPortal = React.lazy(() => import('../components/OmniEntryPortal'));
+const DashboardChatbot = React.lazy(() => import('../components/DashboardChatbot'));
+import BudgetControlCard from '../components/BudgetControlCard';
 
 // Preload components
 // これらのコンポーネントはReact.lazyで遅延読み込みされるため、明示的なプリロードは不要です
@@ -281,56 +281,18 @@ const Dashboard: React.FC = () => {
 
       <QuickActions />
 
-      {/* 統計カード */}
-      <div className="bg-surface rounded-xl shadow-sm p-3 border border-border hover:shadow-md transition-shadow mb-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="border border-border rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] font-medium text-text-muted">総取引数</div>
-              <div className="rounded-lg bg-primary/5 p-1.5">
-                <FileText className="w-4 h-4 text-primary" />
-              </div>
-            </div>
-            <div className="text-lg font-bold text-primary mt-0.5">{stats.total}件</div>
-          </div>
-          <div className="border border-border rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] font-medium text-text-muted">収入</div>
-              <div className="rounded-lg bg-green-500/5 p-1.5">
-                <TrendingUp className="w-4 h-4 text-green-500" />
-              </div>
-            </div>
-            <div className="text-lg font-bold text-green-500 mt-0.5">¥{stats.income.toLocaleString()}</div>
-          </div>
-          <div className="border border-border rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] font-medium text-text-muted">支出</div>
-              <div className="rounded-lg bg-red-500/5 p-1.5">
-                <TrendingDown className="w-4 h-4 text-red-500" />
-              </div>
-            </div>
-            <div className="text-lg font-bold text-red-500 mt-0.5">¥{stats.expense.toLocaleString()}</div>
-          </div>
-          <div className="border border-border rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] font-medium text-text-muted">収支</div>
-              <div className={`rounded-lg p-1.5 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
-                <Wallet className={`w-4 h-4 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
-              </div>
-            </div>
-            <div className={`text-lg font-bold mt-0.5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              ¥{stats.balance.toLocaleString()}
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Suspense fallback={<div className="h-80 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <RevenueChart transactions={transactions} />
+        <Suspense fallback={<div className="h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-full lg:h-[580px]">
+            <RevenueChart transactions={transactions} />
+          </div>
         </Suspense>
-        <Suspense fallback={<div className="h-80 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <ExpenseChart transactions={transactions} />
+        <Suspense fallback={<div className="h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[500px] lg:h-[580px]">
+            <ExpenseChart transactions={transactions} />
+          </div>
         </Suspense>
       </div>
 
@@ -342,50 +304,9 @@ const Dashboard: React.FC = () => {
             showCreateButton={false}
           />
         </Suspense>
-        <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <Sparkles className={`w-5 h-5 ${isAIEnabled() ? 'text-primary' : 'text-gray-400'}`} />
-                <h3 className="text-lg font-semibold text-text-main">AI分析</h3>
-              </div>
-              <AIStatusBadge />
-            </div>
-
-            {isAIEnabled() ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-gradient-to-br from-primary/10 to-blue-500/10 rounded-xl border border-primary/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-sm font-medium text-text-main">AI分析 有効</span>
-                  </div>
-                  <p className="text-sm text-text-muted">
-                    レシートスキャン時にGemini AIが自動で勘定科目を分類します。
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="text-xs text-text-muted mb-1">高精度分類</div>
-                    <div className="text-sm font-semibold text-text-main">95%+</div>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="text-xs text-text-muted mb-1">処理時間</div>
-                    <div className="text-sm font-semibold text-text-main">〜3秒</div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
-                  <p className="text-sm text-text-muted">
-                    AIを有効にするとレシートの自動分類精度が向上します。
-                  </p>
-                </div>
-                <div className="text-xs text-text-muted">
-                  .envファイルにGemini API Keyを設定してください
-                </div>
-              </div>
-            )}
+        <Suspense fallback={<div className="h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[500px] lg:h-[580px]">
+            <BudgetControlCard transactions={transactions} />
           </div>
         </Suspense>
       </div>
@@ -398,6 +319,10 @@ const Dashboard: React.FC = () => {
           />
         </Suspense>
       )}
+
+      <Suspense fallback={null}>
+        <DashboardChatbot />
+      </Suspense>
     </div>
   )
 }

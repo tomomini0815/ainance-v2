@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { initialCorporateTaxInputData, CorporateTaxInputData } from '../../types/corporateTaxInput';
 import { CorporateTaxInputService } from '../../services/CorporateTaxInputService';
 import { generateCompleteCorporateTaxPDF } from '../../services/pdfJapaneseService';
@@ -137,43 +138,54 @@ export const CorporateTaxInputForm: React.FC = () => {
                 </div>
 
                 {/* Styled Tabs Section */}
-                <div className="bg-surface rounded-xl shadow-sm border border-border mb-6 overflow-hidden">
-                    <div className="overflow-x-auto scrollbar-hide">
-                        <nav className="flex min-w-max px-2">
-                            {Object.entries(tabDetails).map(([id, detail]) => {
-                                const Icon = detail.icon;
-                                const isActive = activeTab === id;
-                                // Split label
-                                const match = detail.label.match(/^(.+?)(（.+）)$/);
-                                const mainLabel = match ? match[1] : detail.label;
-                                const subLabel = match ? match[2] : null;
+                <div className="mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                    <nav className="inline-flex bg-[#1e293b]/80 backdrop-blur-md p-1 rounded-full border border-white/10 min-w-max items-stretch">
+                        {Object.entries(tabDetails).map(([id, detail]) => {
+                            const Icon = detail.icon;
+                            const isActive = activeTab === id;
 
-                                return (
-                                    <button
-                                        key={id}
-                                        onClick={() => setActiveTab(id as any)}
-                                        className={`
-                                            flex flex-col items-center justify-center py-3 px-4 min-w-[120px] transition-colors rounded-lg
-                                            ${isActive
-                                                ? 'bg-primary text-white shadow-md'
-                                                : 'text-text-muted hover:text-text-main hover:bg-surface-highlight'
-                                            }
-                                        `}
-                                    >
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-text-muted'}`} />
-                                            <span className="text-sm font-medium whitespace-nowrap">{mainLabel}</span>
+                            // Split label: Main + (Sub)
+                            const match = detail.label.match(/^(.+?)([（(].+[）)])$/);
+                            const mainLabel = match ? match[1] : detail.label;
+                            const subLabel = match ? match[2].replace(/[（()）]/g, '') : null; // Strip parens for cleaner 2nd line? 
+                            // User said "()の部分" (The part in parens). Usually implies keeping the content.
+                            // I will render it small.
+
+                            return (
+                                <button
+                                    key={id}
+                                    onClick={() => setActiveTab(id as any)}
+                                    className={`
+                                        relative flex flex-col items-center justify-center px-4 py-2 rounded-full transition-colors duration-200 min-h-[56px] min-w-[100px]
+                                        ${isActive
+                                            ? 'text-primary'
+                                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                                        }
+                                    `}
+                                >
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="activeTabIndicator"
+                                            className="absolute bottom-0 left-3 right-3 h-[3px] bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--color-primary),0.5)]"
+                                            transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+                                        />
+                                    )}
+
+                                    <div className="relative z-10 flex flex-col items-center leading-tight">
+                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-primary' : 'text-slate-500'}`} />
+                                            <span className="text-sm font-bold tracking-tight whitespace-nowrap">{mainLabel}</span>
                                         </div>
                                         {subLabel && (
-                                            <span className={`text-xs whitespace-nowrap ${isActive ? 'text-white/90' : 'text-text-muted/80'}`}>
+                                            <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-primary/80' : 'text-slate-500'}`}>
                                                 {subLabel}
                                             </span>
                                         )}
-                                    </button>
-                                );
-                            })}
-                        </nav>
-                    </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </nav>
                 </div>
 
                 {/* Unified Card Container (Form + Sidebar) */}

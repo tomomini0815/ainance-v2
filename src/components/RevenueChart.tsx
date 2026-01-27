@@ -33,7 +33,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
   const [period, setPeriod] = useState<Period>('monthly');
 
   const chartData = useMemo(() => {
-    const data: { [key: string]: { revenue: number; expense: number } } = {};
+    const data: { [key: string]: { revenue: number; expense: number; count: number } } = {};
     let labels: string[] = [];
 
     const now = new Date();
@@ -49,7 +49,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         const d = new Date(startYear, startMonth + i, 1);
         const key = `${d.getFullYear()}年${d.getMonth() + 1}月`;
         labels.push(key);
-        data[key] = { revenue: 0, expense: 0 };
+        data[key] = { revenue: 0, expense: 0, count: 0 };
       }
     } else if (period === 'quarterly') {
       // 過去4四半期 (例: 2024 Q1, 2024 Q2...)
@@ -65,7 +65,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         }
         const key = `${y}年 Q${q}`;
         labels.push(key);
-        data[key] = { revenue: 0, expense: 0 };
+        data[key] = { revenue: 0, expense: 0, count: 0 };
       }
     } else if (period === 'yearly') {
       // 過去5年
@@ -73,7 +73,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         const y = currentYear - i;
         const key = `${y}年`;
         labels.push(key);
-        data[key] = { revenue: 0, expense: 0 };
+        data[key] = { revenue: 0, expense: 0, count: 0 };
       }
     }
 
@@ -98,6 +98,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
       }
 
       if (data[key]) {
+        data[key].count += 1;
         if (transaction.type === 'income') {
           data[key].revenue += Math.abs(amount);
         } else if (transaction.type === 'expense') {
@@ -113,20 +114,23 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
     const revenueData = labels.map(label => data[label].revenue);
     const expenseData = labels.map(label => data[label].expense);
     const profitData = labels.map(label => data[label].revenue - data[label].expense);
+    const countData = labels.map(label => data[label].count);
 
     return {
       labels,
       revenue: revenueData,
       expense: expenseData,
-      profit: profitData
+      profit: profitData,
+      count: countData
     };
   }, [transactions, period]);
 
-  const { labels, revenue, expense, profit } = chartData;
+  const { labels, revenue, expense, profit, count } = chartData;
 
   const totalRevenue = revenue.reduce((sum, amount) => sum + amount, 0);
   const totalExpense = expense.reduce((sum, amount) => sum + amount, 0);
   const totalProfit = totalRevenue - totalExpense;
+  const totalCount = count.reduce((sum, c) => sum + c, 0);
 
   const data = {
     labels: labels,
@@ -252,8 +256,8 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-white dark:bg-surface rounded-2xl p-5 border border-border shadow-sm transition-all duration-200 hover:shadow-md h-full flex flex-col">
+      <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-text-main">収益・支出・利益推移</h3>
         <div className="flex space-x-1 bg-surface-highlight/50 rounded-lg p-1">
           <button
@@ -277,11 +281,20 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         </div>
       </div>
 
-      <div className="chart-container h-72 w-full flex-shrink-0">
+      <div className="chart-container h-64 w-full flex-shrink-0">
         <Line data={data} options={options} />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 flex-1 min-h-0">
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="card-metric border-l-primary bg-surface p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p className="text-xs text-text-muted font-medium">総取引数 ({period === 'monthly' ? '過去1年' : period === 'quarterly' ? '過去1年' : '過去5年'})</p>
+          </div>
+          <p className="text-lg font-bold text-text-main truncate" title={`${totalCount}件`}>{totalCount}件</p>
+        </div>
         <div className="card-metric border-l-[#06b6d4] bg-surface p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <svg className="w-4 h-4 text-[#06b6d4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Check, X, Edit2, FileText, RotateCcw } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
-import { approveReceiptAndCreateTransaction, saveReceipt } from '../services/receiptService';
+import { saveReceipt } from '../services/receiptService';
 
 interface ReceiptData {
     merchant: string;
@@ -18,6 +17,7 @@ interface ReceiptResultModalProps {
     receiptData: ReceiptData;
     onClose: () => void;
     onRetake: () => void;
+    onSave?: () => void;
 }
 
 // カテゴリのマスターデータ
@@ -36,12 +36,12 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
     receiptData,
     onClose,
     onRetake,
+    onSave,
 }) => {
     console.log('🎯 ReceiptResultModalが呼び出されました', { receiptData });
-    
+
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
-    const navigate = useNavigate();
 
     const [isEditing, setIsEditing] = useState(false);
     const [editedData, setEditedData] = useState(receiptData || {
@@ -95,7 +95,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 category: selectedCategory,
                 description: `${editedData.merchant}での購入`,
                 confidence: editedData.confidence,
-                status: 'approved' as const,
+                status: 'pending' as const, // 保留中で保存
                 tax_rate: editedData.taxRate,
                 confidence_scores: {
                     merchant: editedData.confidence,
@@ -112,29 +112,15 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 throw new Error('レシートの保存に失敗しました');
             }
 
-            // 保存されたレシートIDを使って取引を作成
-            // user.idを使用するように修正
-            const result = await approveReceiptAndCreateTransaction(
-                savedReceipt.id,
-                savedReceipt,
-                businessType,
-                user.id
-            );
-            console.log('取引作成結果:', { result });
+            // 成功通知
+            alert('✅ レシートが一覧に保存されました。内容を確認して承認を行ってください。');
 
-            if (result.success) {
-                // カスタムイベントを発火してダッシュボードのデータを更新
-                window.dispatchEvent(new CustomEvent('transactionRecorded'));
-
-                // 成功通知
-                alert('✅ レシートが記録されました！ダッシュボードに反映されています。');
-
-                // ダッシュボードに遷移
-                navigate('/dashboard');
-                onClose();
-            } else {
-                throw new Error(result.error || '保存に失敗しました');
+            // 一覧を更新するためのコールバック
+            if (onSave) {
+                onSave();
             }
+
+            onClose();
         } catch (error: any) {
             console.error('保存エラー:', error);
             alert(`❌ エラーが発生しました: ${error.message}`);

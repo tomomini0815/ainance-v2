@@ -15,6 +15,7 @@ import Layout from './components/Layout'
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const ReceiptProcessing = React.lazy(() => import('./pages/ReceiptProcessing'));
+const BudgetAnalysisPage = React.lazy(() => import('./pages/BudgetAnalysisPage'));
 const QuickReceiptScan = React.lazy(() => import('./pages/QuickReceiptScan'));
 const InvoiceCreation = React.lazy(() => import('./pages/InvoiceCreation'));
 const BusinessAnalysis = React.lazy(() => import('./pages/BusinessAnalysis'));
@@ -380,6 +381,7 @@ function App() {
 
               {/* デフォルトルート */}
               <Route path="/" element={<LandingPage />} />
+              <Route path="/budget-analysis" element={<React.Suspense fallback={<div className="flex justify-center p-8">Loading...</div>}><BudgetAnalysisPage /></React.Suspense>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </React.Suspense>
