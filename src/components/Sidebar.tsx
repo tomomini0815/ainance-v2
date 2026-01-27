@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles,
-    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload
+    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
@@ -47,6 +47,18 @@ const Sidebar: React.FC<SidebarProps> = ({
             label: isCorporation ? '法人税申告サポート' : '確定申告サポート',
             icon: Sparkles
         },
+        // 法人のみ：申告書直接編集機能（個人事業主の直接編集とは遷移先が異なる）
+        ...(isCorporation ? [{
+            path: '/corporate-tax-input',
+            label: '申告書直接編集',
+            icon: Edit
+        }] : []),
+        // 個人事業主のみ：申告書直接編集機能を追加
+        ...(!isCorporation ? [{
+            path: '/tax-return-input',
+            label: '申告書直接編集',
+            icon: Edit
+        }] : []),
     ];
 
     const handleSignOut = async () => {

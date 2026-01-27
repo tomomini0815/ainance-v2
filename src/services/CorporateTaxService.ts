@@ -404,9 +404,14 @@ export function calculateDepreciation(asset: DepreciationAsset): DepreciationRes
   currentDepreciation = Math.floor(currentDepreciation * (businessRatio / 100));
 
   // 3. 期末残高（未償却残高）の計算
-  // 簡易的に「取得価額 - 当期償却額」とする（過去分は考慮していないため、運用で調整が必要）
-  // ※本来は「期首残高 - 当期償却額」
-  const bookValue = Math.max(1, acquisitionCost - currentDepreciation); // 備忘価額1円を残す
+  // 少額特例（immediateSME）や一括償却（lumpSum）の場合は、全額償却可能なため0円になる
+  // 通常の減価償却資産は、備忘価額1円を残す
+  let bookValue = acquisitionCost - currentDepreciation;
+  if (depreciationMethod !== 'immediateSME' && depreciationMethod !== 'lumpSum') {
+    bookValue = Math.max(1, bookValue);
+  }
+  // 念のためマイナスにならないように
+  bookValue = Math.max(0, bookValue);
 
   return {
     assetId: asset.id,

@@ -76,24 +76,26 @@ export const BlueReturnInput: React.FC<BlueReturnInputProps> = ({ data, onChange
                     <div>
                         <label className="block text-sm font-medium text-text-muted mb-1">期首棚卸高（1月1日時点）</label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                             <input
                                 type="number"
-                                className="input-base pl-8"
-                                value={data.blue_return_pl.beginning_inventory}
-                                onChange={(e) => handleUpdatePL('beginning_inventory', Number(e.target.value))}
+                                className="input-base pl-14"
+                                value={data.blue_return_pl.beginning_inventory === 0 ? '' : data.blue_return_pl.beginning_inventory}
+                                onChange={(e) => handleUpdatePL('beginning_inventory', e.target.value === '' ? 0 : Number(e.target.value))}
+                                placeholder="0"
                             />
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-text-muted mb-1">期末棚卸高（12月31日時点）</label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                             <input
                                 type="number"
-                                className="input-base pl-8"
-                                value={data.blue_return_pl.ending_inventory}
-                                onChange={(e) => handleUpdatePL('ending_inventory', Number(e.target.value))}
+                                className="input-base pl-14"
+                                value={data.blue_return_pl.ending_inventory === 0 ? '' : data.blue_return_pl.ending_inventory}
+                                onChange={(e) => handleUpdatePL('ending_inventory', e.target.value === '' ? 0 : Number(e.target.value))}
+                                placeholder="0"
                             />
                         </div>
                     </div>
@@ -120,22 +122,22 @@ export const BlueReturnInput: React.FC<BlueReturnInputProps> = ({ data, onChange
                                 {item.account_name}
                             </div>
                             <div className="col-span-4 relative">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">¥</span>
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">¥ </span>
                                 <input
                                     type="number"
-                                    className="input-base py-1 pl-6 text-sm"
-                                    value={item.beginning_balance}
-                                    onChange={(e) => handleUpdateBSItem(index, { ...item, beginning_balance: Number(e.target.value) })}
+                                    className="input-base py-1 pl-12 text-sm"
+                                    value={item.beginning_balance === 0 ? '' : item.beginning_balance}
+                                    onChange={(e) => handleUpdateBSItem(index, { ...item, beginning_balance: e.target.value === '' ? 0 : Number(e.target.value) })}
                                     placeholder="期首残高"
                                 />
                             </div>
                             <div className="col-span-4 relative">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">¥</span>
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">¥ </span>
                                 <input
                                     type="number"
-                                    className="input-base py-1 pl-6 text-sm"
-                                    value={item.ending_balance}
-                                    onChange={(e) => handleUpdateBSItem(index, { ...item, ending_balance: Number(e.target.value) })}
+                                    className="input-base py-1 pl-12 text-sm"
+                                    value={item.ending_balance === 0 ? '' : item.ending_balance}
+                                    onChange={(e) => handleUpdateBSItem(index, { ...item, ending_balance: e.target.value === '' ? 0 : Number(e.target.value) })}
                                     placeholder="期末残高"
                                 />
                             </div>
@@ -185,36 +187,39 @@ export const BlueReturnInput: React.FC<BlueReturnInputProps> = ({ data, onChange
                             <div>
                                 <label className="text-xs text-text-muted">給料賃金（年額）</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-8"
-                                        value={item.salary_amount}
-                                        onChange={(e) => handleUpdateSalary(index, { ...item, salary_amount: Number(e.target.value) })}
+                                        className="input-base py-1.5 pl-14"
+                                        value={item.salary_amount === 0 ? '' : item.salary_amount}
+                                        onChange={(e) => handleUpdateSalary(index, { ...item, salary_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>
                             <div>
                                 <label className="text-xs text-text-muted">賞与</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-8"
-                                        value={item.bonus_amount}
-                                        onChange={(e) => handleUpdateSalary(index, { ...item, bonus_amount: Number(e.target.value) })}
+                                        className="input-base py-1.5 pl-14"
+                                        value={item.bonus_amount === 0 ? '' : item.bonus_amount}
+                                        onChange={(e) => handleUpdateSalary(index, { ...item, bonus_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>
                             <div>
                                 <label className="text-xs text-text-muted">源泉徴収税額</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-8"
-                                        value={item.withholding_tax}
-                                        onChange={(e) => handleUpdateSalary(index, { ...item, withholding_tax: Number(e.target.value) })}
+                                        className="input-base py-1.5 pl-14"
+                                        value={item.withholding_tax === 0 ? '' : item.withholding_tax}
+                                        onChange={(e) => handleUpdateSalary(index, { ...item, withholding_tax: e.target.value === '' ? 0 : Number(e.target.value) })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>

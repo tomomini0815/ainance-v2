@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mic, Send, Save, Trash2, Edit3, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Info, AlertCircle, Square } from 'lucide-react';
+import { Mic, Send, Save, Trash2, Edit3, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Info, AlertCircle, Square, ChevronDown } from 'lucide-react';
 import TransactionIcon from '../components/TransactionIcon';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessType } from '../hooks/useBusinessType';
@@ -39,6 +39,7 @@ const ChatToBook: React.FC = () => {
     key: 'created_at',
     direction: 'desc'
   });
+  const [isMobileUsageOpen, setIsMobileUsageOpen] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const { user } = useAuth();
@@ -179,7 +180,7 @@ const ChatToBook: React.FC = () => {
       // 承認された取引も表示するが、重複を避ける
       const mergedTransactions = [
         ...dbTransactions
-          .filter((t: any) => !t.tags?.includes('manual_created') && !t.tags?.includes('ai-chat')) // 手動作成とAIチャットデータを除外
+          .filter((t: any) => t.tags?.includes('voice')) // 音声記録データのみを表示
           .map((t: any) => ({
             id: t.id,
             date: t.date,
@@ -649,7 +650,8 @@ const ChatToBook: React.FC = () => {
           category: transaction.category,
           type: transaction.type,
           creator: user.id, // 認証されたユーザーのIDを使用
-          approval_status: 'approved' // 作成時に承認状態にする
+          approval_status: 'approved', // 作成時に承認状態にする
+          tags: ['voice'] // 音声入力タグを追加
         });
         console.log('新規取引作成結果:', result);
 
@@ -751,7 +753,7 @@ const ChatToBook: React.FC = () => {
           category: transaction.category,
           type: transaction.type,
           creator: user.id,
-          approval_status: 'pending', // 確認リストに表示するために一旦pendingにする
+          approval_status: 'approved', // 登録時はapprovedにする
           tags: ['voice']
         });
       });
@@ -941,7 +943,73 @@ const ChatToBook: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* 音声入力セクション */}
           <div className="lg:col-span-2 bg-surface rounded-xl shadow-sm border border-border p-6">
-            <h2 className="text-lg font-semibold text-text-main mb-4">音声で記録</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-text-main">音声で記録</h2>
+              <button
+                onClick={() => setIsMobileUsageOpen(!isMobileUsageOpen)}
+                className="lg:hidden flex items-center text-xs text-primary hover:text-primary/80 transition-colors bg-primary/10 px-3 py-1.5 rounded-full"
+              >
+                <Info className="w-3.5 h-3.5 mr-1.5" />
+                使い方
+                <ChevronDown className={`w-3.5 h-3.5 ml-1 transition-transform duration-200 ${isMobileUsageOpen ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {/* モバイル用：使い方の折りたたみ表示 */}
+            <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMobileUsageOpen ? 'max-h-[600px] opacity-100 mb-6' : 'max-h-0 opacity-0'}`}>
+              <div className="bg-surface-highlight/30 rounded-xl p-4 border border-border/50">
+                <h3 className="text-sm font-semibold text-text-main mb-3 flex items-center">
+                  <Info className="w-4 h-4 mr-2 text-primary" />
+                  音声記録の使い方
+                </h3>
+                <div className="space-y-3">
+                  <div className="border border-border rounded-lg p-3 bg-surface">
+                    <div className="flex items-start">
+                      <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                        <span className="text-primary font-bold text-xs">1</span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-text-main text-sm">音声記録開始</h3>
+                        <p className="text-xs text-text-muted">マイクボタンをクリックして、取引内容を話してください。</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border border-border rounded-lg p-3 bg-surface">
+                    <div className="flex items-start">
+                      <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                        <span className="text-primary font-bold text-xs">2</span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-text-main text-sm mb-1">テキスト確認</h3>
+                        <p className="text-xs text-text-muted">認識されたテキストを確認・編集してください。</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border border-border rounded-lg p-3 bg-surface">
+                    <div className="flex items-start">
+                      <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                        <span className="text-primary font-bold text-xs">3</span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-text-main text-sm mb-1">カテゴリ選択</h3>
+                        <p className="text-xs text-text-muted">必要に応じてカテゴリを選択してください。</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border border-border rounded-lg p-3 bg-surface">
+                    <div className="flex items-start">
+                      <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                        <span className="text-primary font-bold text-xs">4</span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-text-main text-sm mb-1">取引に変換</h3>
+                        <p className="text-xs text-text-muted">「取引に変換」ボタンをクリックして、取引を登録してください。</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="mb-4">
 
@@ -1063,7 +1131,7 @@ const ChatToBook: React.FC = () => {
           </div>
 
           {/* 使い方セクション */}
-          <div className="bg-surface rounded-xl shadow-sm border border-border p-4">
+          <div className="hidden lg:block bg-surface rounded-xl shadow-sm border border-border p-4">
             <h2 className="text-md font-semibold text-text-main mb-3">使い方</h2>
             <div className="space-y-3">
               <div className="border border-border rounded-lg p-3">

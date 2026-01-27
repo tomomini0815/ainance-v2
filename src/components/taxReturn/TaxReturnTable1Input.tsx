@@ -55,7 +55,7 @@ export const TaxReturnTable1Input: React.FC<TaxReturnTable1InputProps> = ({ data
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <InputGroup label="事業（農業）" value={data.income.business_agriculture} onChange={(v) => updateIncome('business_agriculture', v)} />
+                    <InputGroup label="事業" value={data.income.business_agriculture} onChange={(v) => updateIncome('business_agriculture', v)} />
                     <InputGroup label="不動産" value={data.income.real_estate} onChange={(v) => updateIncome('real_estate', v)} />
                     <InputGroup label="給与" value={data.income.employment} onChange={(v) => updateIncome('employment', v)} />
                     <InputGroup label="雑（公的年金等）" value={data.income.miscellaneous_public_pension} onChange={(v) => updateIncome('miscellaneous_public_pension', v)} />
@@ -164,13 +164,14 @@ const InputGroup: React.FC<{
     <div>
         <label className="block text-sm font-medium text-text-muted mb-1">{label}</label>
         <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
             <input
                 type="number"
-                className={`input-base pl-8 ${readOnly ? 'bg-surface-highlight cursor-not-allowed' : ''}`}
-                value={value}
-                onChange={(e) => onChange(Number(e.target.value))}
+                className={`input-base pl-14 ${readOnly ? 'bg-surface-highlight cursor-not-allowed' : ''}`}
+                value={value === 0 ? '' : value}
+                onChange={(e) => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                 readOnly={readOnly}
+                placeholder="0"
                 onFocus={(e) => e.target.select()}
             />
         </div>

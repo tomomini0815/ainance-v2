@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ExpensesInfo } from '../../types/quickTaxFiling';
-import { Sparkles, Calculator } from 'lucide-react';
-import { estimateExpenses } from '../../services/quickTaxFilingService';
+import { Calculator, Download } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { useTransactions } from '../../hooks/useTransactions';
+import toast from 'react-hot-toast';
+import { useBusinessTypeContext } from '../../context/BusinessTypeContext';
 
 interface Step3ExpensesProps {
     data: ExpensesInfo;
@@ -30,65 +33,103 @@ const Step3Expenses: React.FC<Step3ExpensesProps> = ({
     onNext,
     onBack
 }) => {
-    const [showEstimation, setShowEstimation] = useState(false);
+    const { user } = useAuth();
+    const { currentBusinessType } = useBusinessTypeContext();
+    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
 
     const handleChange = (field: keyof ExpensesInfo, value: string) => {
         onChange({ ...data, [field]: parseInt(value) || 0 });
     };
 
-    const handleEstimate = () => {
-        const estimated = estimateExpenses(businessType, totalRevenue);
-        onChange(estimated);
-        setShowEstimation(true);
+    const handleImportExpenses = () => {
+        if (!transactions || transactions.length === 0) {
+            toast.error('取引データが見つかりません');
+            return;
+        }
+
+        if (!window.confirm('現在の入力内容を、取引データから集計した内容で上書きしますか？')) {
+            return;
+        }
+
+        const newExpenses: ExpensesInfo = {
+            supplies: 0,
+            communication: 0,
+            transportation: 0,
+            entertainment: 0,
+            rent: 0,
+            utilities: 0,
+            other: 0
+        };
+
+        let count = 0;
+        transactions.filter(t => t.type === 'expense').forEach(t => {
+            const amount = typeof t.amount === 'number' ? t.amount : parseFloat(String(t.amount).replace(/,/g, '')) || 0;
+            const text = `${t.category || ''} ${t.item || ''} ${t.description || ''}`;
+
+            if (text.includes('消耗品') || text.includes('事務用品') || text.includes('雑費')) {
+                newExpenses.supplies += amount;
+            } else if (text.includes('通信') || text.includes('ネット') || text.includes('電話')) {
+                newExpenses.communication += amount;
+            } else if (text.includes('旅費') || text.includes('交通') || text.includes('電車') || text.includes('タクシー')) {
+                newExpenses.transportation += amount;
+            } else if (text.includes('接待') || text.includes('交際') || text.includes('飲食')) {
+                newExpenses.entertainment += amount;
+            } else if (text.includes('家賃') || text.includes('地代') || text.includes('駐車場')) {
+                newExpenses.rent += amount;
+            } else if (text.includes('水道') || text.includes('光熱') || text.includes('電気') || text.includes('ガス')) {
+                newExpenses.utilities += amount;
+            } else {
+                newExpenses.other += amount;
+            }
+            count++;
+        });
+
+        onChange(newExpenses);
+        toast.success(`${count}件の経費取引を集計しました`);
     };
+
+
 
     const totalExpenses = Object.values(data).reduce((sum, val) => sum + val, 0);
     const expenseRatio = totalRevenue > 0 ? (totalExpenses / totalRevenue) * 100 : 0;
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-xl sm:text-2xl font-bold text-text-main mb-2">経費情報を入力してください</h2>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-text-main mb-2 whitespace-nowrap">経費情報を入力してください</h2>
             <p className="text-sm sm:text-base text-text-muted mb-6 sm:mb-8">
                 2025年に使った経費をカテゴリ別に入力します
             </p>
 
-            {/* AI推定ボタン */}
-            <div className="mb-8 p-5 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-xl border border-primary/20 shadow-sm relative overflow-hidden">
+            {/* 取引データから集計エリア */}
+            <div className="mb-8 p-5 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-xl border border-primary/20 shadow-sm hover:shadow-md transition-all">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                            <h3 className="font-bold text-lg text-text-main">AI経費推定</h3>
+                            <Download className="w-5 h-5 text-primary" />
+                            <h3 className="font-bold text-lg text-text-main">取引データから集計</h3>
                         </div>
                         <p className="text-sm text-text-muted">
-                            業種「{businessType}」と売上から一般的な経費を自動算出します
+                            記帳済みの取引データから経費を自動集計して、現在の入力内容を上書きします
                         </p>
                     </div>
                     <button
-                        onClick={handleEstimate}
-                        className="w-full sm:w-auto px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all text-sm font-bold shadow-md active:scale-95"
+                        onClick={handleImportExpenses}
+                        className="w-full sm:w-auto px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all text-sm font-bold shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2"
                     >
-                        経費を推定する
+                        <Download className="w-4 h-4" />
+                        集計して上書き
                     </button>
                 </div>
-                {showEstimation && (
-                    <div className="mt-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg animate-in fade-in slide-in-from-top-2">
-                        <p className="text-sm text-green-600 font-medium flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-green-500" />
-                            推定値を入力しました。必要に応じて調整してください。
-                        </p>
-                    </div>
-                )}
             </div>
 
             {/* 経費入力フォーム */}
-            <div className="space-y-4">
+            <div className="space-y-3">
                 {expenseCategories.map((category) => (
-                    <div key={category.key} className="bg-surface-elevated p-4 sm:p-5 rounded-lg transition-colors border border-transparent hover:border-border">
+                    <div key={category.key} className="bg-surface-elevated p-3 sm:p-4 rounded-lg transition-colors border border-transparent hover:border-border">
                         <label className="block text-base font-medium text-text-main mb-1">
                             {category.label}
                         </label>
-                        <p className="text-xs text-text-muted mb-3">{category.description}</p>
+                        <p className="text-xs text-text-muted mb-2">{category.description}</p>
                         <div className="relative">
                             <input
                                 type="number"
@@ -96,7 +137,7 @@ const Step3Expenses: React.FC<Step3ExpensesProps> = ({
                                 onChange={(e) => handleChange(category.key as keyof ExpensesInfo, e.target.value)}
                                 placeholder="0"
                                 inputMode="numeric"
-                                className="w-full pl-4 pr-10 py-3 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base text-text-main"
+                                className="w-full pl-4 pr-10 py-2.5 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base text-text-main"
                             />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none">円</span>
                         </div>
@@ -140,13 +181,13 @@ const Step3Expenses: React.FC<Step3ExpensesProps> = ({
             <div className="mt-10 mb-6 flex gap-4">
                 <button
                     onClick={onBack}
-                    className="flex-1 sm:flex-none px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium bg-surface-elevated text-text-main hover:bg-surface transition-all border border-border"
+                    className="flex-1 sm:flex-none px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium bg-surface-elevated text-text-main hover:bg-surface transition-all border border-border whitespace-nowrap text-sm sm:text-base"
                 >
                     戻る
                 </button>
                 <button
                     onClick={onNext}
-                    className="flex-1 sm:flex-none sm:ml-auto px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium bg-primary text-white hover:bg-primary/90 transition-all shadow-sm"
+                    className="flex-1 sm:flex-none sm:ml-auto px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium bg-primary text-white hover:bg-primary/90 transition-all shadow-sm whitespace-nowrap text-sm sm:text-base"
                 >
                     次へ進む
                 </button>

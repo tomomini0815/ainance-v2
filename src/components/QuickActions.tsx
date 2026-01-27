@@ -51,7 +51,7 @@ const QuickActions: React.FC = () => {
     },
     {
       title: '即日確定申告',
-      description: '最短10分で書類作成完了',
+      description: 'ご自身で既にデータがある方向け',
       icon: Sparkles,
       link: '/quick-tax-filing',
       color: 'bg-orange-500/20',
@@ -60,7 +60,7 @@ const QuickActions: React.FC = () => {
     },
     {
       title: '確定申告サポート',
-      description: 'AIで確定申告をサポート',
+      description: 'Ainanceのデータで書類作成',
       icon: Sparkles,
       link: '/tax-filing-wizard',
       color: 'bg-indigo-500/20',

@@ -26,6 +26,7 @@ const AITransactionList = React.lazy(() => import('./pages/AITransactionList'));
 const SubsidyMatching = React.lazy(() => import('./pages/SubsidyMatching'));
 const TaxFilingWizard = React.lazy(() => import('./pages/TaxFilingWizard'));
 const TaxReturnInputForm = React.lazy(() => import('./components/taxReturn/TaxReturnInputForm').then(module => ({ default: module.TaxReturnInputForm })));
+const CorporateTaxInputForm = React.lazy(() => import('./components/corporateTax/CorporateTaxInputForm').then(module => ({ default: module.CorporateTaxInputForm })));
 const TaxFilingGuidePage = React.lazy(() => import('./pages/TaxFilingGuidePage'));
 const CorporateTaxFilingPage = React.lazy(() => import('./pages/CorporateTaxFilingPage'));
 const CorporateTaxGuidePage = React.lazy(() => import('./pages/CorporateTaxGuidePage'));
@@ -245,6 +246,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <TaxReturnInputForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/corporate-tax-input"
+                  element={
+                    <ProtectedRoute>
+                      <CorporateTaxInputForm />
                     </ProtectedRoute>
                   }
                 />

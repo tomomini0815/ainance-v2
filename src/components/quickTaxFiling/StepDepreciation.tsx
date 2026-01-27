@@ -25,7 +25,7 @@ const StepDepreciation: React.FC<StepDepreciationProps> = ({
                 </div>
             </div>
 
-            <div className="border border-border rounded-xl p-6 bg-surface-highlight/20">
+            <div className="border border-border rounded-xl p-3 md:p-6 bg-surface-highlight/20">
                 <DepreciationCalculator
                     onCalculate={(total) => onChange(total)}
                     initialAssets={[]} // TODO: Handle persistence if needed

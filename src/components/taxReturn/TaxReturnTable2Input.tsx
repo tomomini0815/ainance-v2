@@ -170,24 +170,166 @@ export const TaxReturnTable2Input: React.FC<TaxReturnTable2InputProps> = ({ data
                             <div>
                                 <label className="text-xs text-text-muted">収入金額</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-8"
-                                        value={item.revenue_amount}
-                                        onChange={(e) => handleUpdateWithholding(index, { ...item, revenue_amount: Number(e.target.value) })}
+                                        className="input-base py-1.5 pl-14"
+                                        value={item.revenue_amount === 0 ? '' : item.revenue_amount}
+                                        onChange={(e) => handleUpdateWithholding(index, { ...item, revenue_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>
                             <div>
                                 <label className="text-xs text-text-muted">源泉徴収税額</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-8"
-                                        value={item.tax_amount}
-                                        onChange={(e) => handleUpdateWithholding(index, { ...item, tax_amount: Number(e.target.value) })}
+                                        className="input-base py-1.5 pl-14"
+                                        value={item.tax_amount === 0 ? '' : item.tax_amount}
+                                        onChange={(e) => handleUpdateWithholding(index, { ...item, tax_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                />
+            </section>
+
+            {/* 保険料控除等に関する事項 */}
+            <section className="space-y-4">
+                <h3 className="text-lg font-semibold text-text-main border-b border-border pb-2">
+                    保険料控除等に関する事項
+                </h3>
+
+                {/* 生命保険料 */}
+                <DynamicListInput
+                    items={data.insurance_premium_details.life_insurance}
+                    onAdd={() => handleAddInsurance('life_insurance', 'general')}
+                    onRemove={(index) => handleRemoveInsurance('life_insurance', index)}
+                    onEdit={(index, item) => handleUpdateInsurance('life_insurance', index, item)}
+                    title="生命保険料控除"
+                    addButtonLabel="生命保険を追加"
+                    renderItem={(item, index) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div>
+                                <label className="text-xs text-text-muted">保険会社名</label>
+                                <input
+                                    type="text"
+                                    className="input-base py-1.5"
+                                    value={item.insurance_company}
+                                    onChange={(e) => handleUpdateInsurance('life_insurance', index, { ...item, insurance_company: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted">保険等の種類</label>
+                                <input
+                                    type="text"
+                                    className="input-base py-1.5"
+                                    value={item.insurance_type}
+                                    onChange={(e) => handleUpdateInsurance('life_insurance', index, { ...item, insurance_type: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted">期間</label>
+                                <input
+                                    type="text"
+                                    className="input-base py-1.5"
+                                    value={item.term}
+                                    onChange={(e) => handleUpdateInsurance('life_insurance', index, { ...item, term: e.target.value })}
+                                    placeholder="例: 10年"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted">受取人</label>
+                                <input
+                                    type="text"
+                                    className="input-base py-1.5"
+                                    value={item.beneficiary}
+                                    onChange={(e) => handleUpdateInsurance('life_insurance', index, { ...item, beneficiary: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted">新・旧の区分</label>
+                                <select
+                                    className="input-base py-1.5"
+                                    value={item.classification}
+                                    onChange={(e) => handleUpdateInsurance('life_insurance', index, { ...item, classification: e.target.value as any })}
+                                >
+                                    <option value="general">新生命保険</option>
+                                    <option value="old_long_term">旧生命保険</option>
+                                    <option value="nursing">介護医療保険</option>
+                                    <option value="pension">個人年金</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted">支払保険料</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
+                                    <input
+                                        type="number"
+                                        className="input-base py-1.5 pl-14"
+                                        value={item.payment_amount === 0 ? '' : item.payment_amount}
+                                        onChange={(e) => handleUpdateInsurance('life_insurance', index, { ...item, payment_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                />
+
+                {/* 地震保険料 */}
+                <DynamicListInput
+                    items={data.insurance_premium_details.earthquake_insurance}
+                    onAdd={() => handleAddInsurance('earthquake_insurance', 'earthquake')}
+                    onRemove={(index) => handleRemoveInsurance('earthquake_insurance', index)}
+                    onEdit={(index, item) => handleUpdateInsurance('earthquake_insurance', index, item)}
+                    title="地震保険料控除"
+                    addButtonLabel="地震保険を追加"
+                    renderItem={(item, index) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-xs text-text-muted">保険会社名</label>
+                                <input
+                                    type="text"
+                                    className="input-base py-1.5"
+                                    value={item.insurance_company}
+                                    onChange={(e) => handleUpdateInsurance('earthquake_insurance', index, { ...item, insurance_company: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted">保険等の種類</label>
+                                <input
+                                    type="text"
+                                    className="input-base py-1.5"
+                                    value={item.insurance_type}
+                                    onChange={(e) => handleUpdateInsurance('earthquake_insurance', index, { ...item, insurance_type: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted">区分</label>
+                                <select
+                                    className="input-base py-1.5"
+                                    value={item.classification}
+                                    onChange={(e) => handleUpdateInsurance('earthquake_insurance', index, { ...item, classification: e.target.value as any })}
+                                >
+                                    <option value="earthquake">地震</option>
+                                    <option value="old_long_term">旧長期</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted">支払保険料</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
+                                    <input
+                                        type="number"
+                                        className="input-base py-1.5 pl-14"
+                                        value={item.payment_amount === 0 ? '' : item.payment_amount}
+                                        onChange={(e) => handleUpdateInsurance('earthquake_insurance', index, { ...item, payment_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>
@@ -307,12 +449,13 @@ export const TaxReturnTable2Input: React.FC<TaxReturnTable2InputProps> = ({ data
                             <div>
                                 <label className="text-xs text-text-muted">所得金額</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-8"
-                                        value={item.income}
-                                        onChange={(e) => handleUpdateDependent(index, { ...item, income: Number(e.target.value) })}
+                                        className="input-base py-1.5 pl-14"
+                                        value={item.income === 0 ? '' : item.income}
+                                        onChange={(e) => handleUpdateDependent(index, { ...item, income: e.target.value === '' ? 0 : Number(e.target.value) })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>

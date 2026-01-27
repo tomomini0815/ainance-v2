@@ -330,7 +330,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
               startPage = Math.max(1, endPage - 4);
             }
 
-            return Array.from({ length: endPage - startPage + 1 }).map((_, i) => {
+            const buttons = Array.from({ length: endPage - startPage + 1 }).map((_, i) => {
               const pageNumber = startPage + i;
               return (
                 <button
@@ -345,6 +345,16 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                 </button>
               );
             });
+
+            if (endPage < totalPages) {
+              buttons.push(
+                <span key="ellipsis" className="w-8 h-8 flex items-center justify-center text-text-muted">
+                  ...
+                </span>
+              );
+            }
+
+            return buttons;
           })()}
 
           <button

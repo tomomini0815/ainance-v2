@@ -3,9 +3,10 @@
  * 日本語フォント（Noto Sans CJK JP）を埋め込んで日本語テキストを正しく表示
  */
 
-import { PDFDocument, rgb, PDFFont } from 'pdf-lib';
+import { PDFDocument, rgb, PDFFont, PDFPage } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { TaxReturnInputData } from '../types/taxReturnInput';
+import { CorporateTaxInputData } from '../types/corporateTaxInput';
 import { ApplicationDraft } from './subsidyMatchingService';
 
 // 経費カテゴリのマッピング（日本語）
@@ -933,4 +934,362 @@ export async function generateSubsidyApplicationPDF(draft: ApplicationDraft): Pr
   }
 
   return pdfDoc.save();
+}
+
+// ===== 法人税申告書一式 PDF生成機能 =====
+
+/**
+ * 法人税申告書一式（別表各種）のPDFを生成
+ */
+export async function generateCompleteCorporateTaxPDF(data: CorporateTaxInputData): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  // フォントロード
+  const { regular, bold } = await loadJapaneseFont(pdfDoc);
+  
+  // 共通設定
+  const colors = {
+    primary: rgb(0.1, 0.2, 0.4),    // 紺色
+    secondary: rgb(0.15, 0.3, 0.5), // 濃い青
+    text: rgb(0.1, 0.1, 0.1),
+    muted: rgb(0.45, 0.45, 0.45),
+    line: rgb(0.6, 0.6, 0.6),
+    headerBg: rgb(0.92, 0.94, 0.98),
+    highlight: rgb(0.94, 0.96, 1),
+    lightGreen: rgb(0.88, 0.96, 0.88),
+    lightRed: rgb(1, 0.93, 0.93),
+  };
+
+  // 描画ヘルパー
+  const createDrawHelper = (page: PDFPage) => ({
+    text: (text: string, x: number, y: number, options: { size?: number; font?: PDFFont; color?: typeof colors.text; align?: 'left' | 'right' | 'center' } = {}) => {
+      const size = options.size || 10;
+      const font = options.font || regular;
+      const color = options.color || colors.text;
+      
+      let xPos = x;
+      if (options.align === 'right') {
+        const width = font.widthOfTextAtSize(text, size);
+        xPos -= width;
+      } else if (options.align === 'center') {
+        const width = font.widthOfTextAtSize(text, size);
+        xPos -= width / 2;
+      }
+
+      page.drawText(text, { x: xPos, y, size, font, color });
+    },
+    line: (x1: number, y1: number, x2: number, y2: number, thickness = 0.5) => {
+      page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color: colors.line });
+    },
+    rect: (x: number, y: number, w: number, h: number, color: typeof colors.highlight) => {
+      page.drawRectangle({ x, y, width: w, height: h, color });
+    },
+    currency: (amount: number, x: number, y: number, size: number = 10) => {
+        const text = formatCurrency(amount);
+        const font = regular;
+        const width = font.widthOfTextAtSize(text, size);
+        page.drawText(text, { x: x - width, y, size, font, color: colors.text });
+    }
+  });
+
+  // ========== ページ生成処理 ==========
+  
+  // 1. 表紙・会社情報
+  const coverPage = pdfDoc.addPage([595.28, 841.89]);
+  const drawCover = createDrawHelper(coverPage);
+  const { width: pageWidth, height: pageHeight } = coverPage.getSize();
+
+  drawCover.rect(0, pageHeight - 150, pageWidth, 150, colors.primary);
+  drawCover.text('法人税申告書報告書', pageWidth / 2, pageHeight - 80, { size: 28, font: bold, color: rgb(1, 1, 1), align: 'center' });
+  drawCover.text(`${getJapaneseYear(new Date().getFullYear())}度版`, pageWidth / 2, pageHeight - 120, { size: 14, color: rgb(0.9, 0.9, 1), align: 'center' });
+
+  // 会社名は現在のデータ構造に含まれていないため、プレースホルダーまたは事業概況などから取得
+  // ここでは汎用的に表示
+  drawCover.text('会社名:', 100, pageHeight - 300, { size: 14, color: colors.muted });
+  // NOTE: 将来的にCorporateTaxInputDataに会社名フィールドを追加することを推奨
+  drawCover.text('（会社名未設定）', 200, pageHeight - 300, { size: 18, font: bold });
+  
+  drawCover.text('作成日:', 100, pageHeight - 350, { size: 14, color: colors.muted });
+  drawCover.text(new Date().toLocaleDateString('ja-JP'), 200, pageHeight - 350, { size: 18 });
+
+  drawCover.text('※ 本資料はAinanceで作成された参考資料です。', pageWidth / 2, 100, { size: 10, color: colors.muted, align: 'center' });
+  drawCover.text('正式な税務申告には、税理士の確認またはe-Taxをご利用ください。', pageWidth / 2, 80, { size: 10, color: colors.muted, align: 'center' });
+
+
+  // 2. 別表一（各事業年度の所得に係る申告書）
+  const p1 = pdfDoc.addPage([595.28, 841.89]);
+  const d1 = createDrawHelper(p1);
+  drawPageHeader(d1, '別表一（一）', '各事業年度の所得に係る申告書', pageHeight, pageWidth, colors, bold);
+  
+  let y = pageHeight - 100;
+  drawSectionBox(d1, '申告額の計算', y, pageWidth, colors, bold);
+  y -= 25;
+  
+  // 簡易グリッド描画
+  const drawGridRow = (d: any, label: string, val: number | string, yPos: number, isHeader = false) => {
+      d.rect(50, yPos - 20, 300, 20, isHeader ? colors.headerBg : rgb(1,1,1)); // ラベルセル
+      d.rect(350, yPos - 20, 195, 20, isHeader ? colors.headerBg : rgb(1,1,1)); // 値セル
+      d.line(50, yPos - 20, 545, yPos - 20); // 下線
+      d.line(50, yPos, 545, yPos); // 上線
+      d.line(50, yPos, 50, yPos - 20); // 左縦
+      d.line(350, yPos, 350, yPos - 20); // 中縦
+      d.line(545, yPos, 545, yPos - 20); // 右縦
+      
+      d.text(label, 60, yPos - 14, { size: 10, font: isHeader ? bold : regular });
+      if (typeof val === 'number') {
+           d.currency(val, 535, yPos - 14, 10);
+      } else {
+           d.text(val, 360, yPos - 14, { size: 10 });
+      }
+  };
+
+  drawGridRow(d1, '1. 別表四の所得金額又は欠損金額', data.beppyo4.taxableIncome, y); y -= 20;
+  drawGridRow(d1, '2. 欠損金又は災害損失金の控除額', 0, y); y -= 20;
+  drawGridRow(d1, '3. 翌期へ繰り越す欠損金又は災害損失金', 0, y); y -= 20;
+  drawGridRow(d1, '4. 課税標準額 (1-2)', Math.max(0, data.beppyo1.taxableIncome), y); y -= 20;
+  
+  y -= 10;
+  drawGridRow(d1, '5. 課税標準額に対する法人税額', data.beppyo1.corporateTaxAmount, y); y -= 20;
+  drawGridRow(d1, '6. 控除税額（所得税額等）', data.beppyo1.specialTaxCredit, y); y -= 20;
+  drawGridRow(d1, '7. 差引所得に対する法人税額 (5-6)', Math.max(0, data.beppyo1.corporateTaxAmount - data.beppyo1.specialTaxCredit), y); y -= 20;
+  
+  // 地方法人税
+  const localCorpTax = Math.floor(data.beppyo1.corporateTaxAmount * 0.103);
+  drawGridRow(d1, '8. 地方法人税額（課税標準法人税額 × 10.3%）', localCorpTax, y); y -= 20;
+  drawGridRow(d1, '9. 中間申告分の法人税額', data.beppyo1.interimPayment, y); y -= 20;
+  
+  const finalTax = Math.max(0, (data.beppyo1.corporateTaxAmount - data.beppyo1.specialTaxCredit + localCorpTax) - data.beppyo1.interimPayment);
+  drawGridRow(d1, '10. 差引確定法人税額', finalTax, y, true); y -= 20;
+
+  // 3. 別表四（所得の金額の計算に関する明細書）
+  const p4 = pdfDoc.addPage([595.28, 841.89]);
+  const d4 = createDrawHelper(p4);
+  drawPageHeader(d4, '別表四', '所得の金額の計算に関する明細書', pageHeight, pageWidth, colors, bold);
+  
+  y = pageHeight - 100;
+  drawSectionBox(d4, '損益の計算', y, pageWidth, colors, bold);
+  y -= 25;
+  
+  // ヘッダー
+  d4.rect(50, y - 20, 250, 20, colors.headerBg);
+  d4.rect(300, y - 20, 120, 20, colors.headerBg);
+  d4.rect(420, y - 20, 125, 20, colors.headerBg);
+  d4.text('区分', 150, y - 14, { size: 10, font: bold, align: 'center' });
+  d4.text('総額', 360, y - 14, { size: 10, font: bold, align: 'center' });
+  d4.text('処分（留保）', 480, y - 14, { size: 10, font: bold, align: 'center' });
+  d4.line(50, y, 545, y); d4.line(50, y - 20, 545, y - 20);
+  d4.line(50, y, 50, y - 20); d4.line(300, y, 300, y - 20); d4.line(420, y, 420, y - 20); d4.line(545, y, 545, y - 20);
+  y -= 20;
+
+  const drawTable4Row = (label: string, total: number, retained: number) => {
+       d4.line(50, y - 20, 545, y - 20);
+       d4.line(50, y, 50, y - 20); d4.line(300, y, 300, y - 20); d4.line(420, y, 420, y - 20); d4.line(545, y, 545, y - 20);
+       d4.text(label, 60, y - 14, { size: 9 });
+       d4.currency(total, 410, y - 14, 9);
+       d4.currency(retained, 535, y - 14, 9);
+       y -= 20;
+  };
+
+  drawTable4Row('1. 当期純利益', data.beppyo4.netIncomeFromPL, data.beppyo4.netIncomeFromPL);
+  
+  data.beppyo4.additions.forEach(item => {
+      drawTable4Row(`(加) ${item.description}`, item.amount, item.amount); // 簡易的に全て留保扱い
+  });
+  
+  data.beppyo4.subtractions.forEach(item => {
+      drawTable4Row(`(減) ${item.description}`, item.amount, item.amount); // 簡易的に全て留保扱い
+  });
+  
+  // 合計行
+  d4.rect(50, y - 20, 545 - 50, 20, colors.highlight);
+  drawTable4Row('所得金額 (総額 + 加算 - 減算)', data.beppyo4.taxableIncome, data.beppyo4.taxableIncome);
+
+  // 4. 別表五(一)（利益積立金額の計算に関する明細書）
+  const p51 = pdfDoc.addPage([595.28, 841.89]);
+  const d51 = createDrawHelper(p51);
+  drawPageHeader(d51, '別表五(一)', '利益積立金額の計算に関する明細書', pageHeight, pageWidth, colors, bold);
+  
+  y = pageHeight - 100;
+  const rowH = 20;
+
+  drawSectionBox(d51, '利益積立金額', y, pageWidth, colors, bold);
+  y -= 25;
+  
+  const drawGridRow51 = (label: string, val: number, yPos: number, isHeader = false) => {
+      d51.rect(50, yPos - 20, 250, 20, isHeader ? colors.headerBg : rgb(1,1,1));
+      d51.rect(300, yPos - 20, 245, 20, isHeader ? colors.headerBg : rgb(1,1,1));
+      d51.line(50, yPos - 20, 545, yPos - 20); d51.line(50, yPos, 545, yPos);
+      d51.line(50, yPos, 50, yPos - 20); d51.line(300, yPos, 300, yPos - 20); d51.line(545, yPos, 545, yPos - 20);
+      d51.text(label, 60, yPos - 14, { size: 10, font: isHeader ? bold : regular });
+      d51.currency(val, 535, yPos - 14, 10);
+  };
+
+  drawGridRow51('期首利益積立金額', data.beppyo5.retainedEarningsBegin, y); y -= 20;
+  drawGridRow51('当期増加額', data.beppyo5.currentIncrease, y); y -= 20;
+  drawGridRow51('当期減少額', data.beppyo5.currentDecrease, y); y -= 20;
+  drawGridRow51('期末利益積立金額', data.beppyo5.retainedEarningsEnd, y, true); y -= 20;
+
+  y -= 20;
+  drawSectionBox(d51, '資本金等の額', y, pageWidth, colors, bold);
+  y -= 25;
+  drawGridRow51('期首資本金等の額', data.beppyo5.capitalBegin, y); y -= 20;
+  drawGridRow51('期末資本金等の額', data.beppyo5.capitalEnd, y, true); y -= 20;
+
+  // 5. 別表五(二)（租税公課の納付状況等に関する明細書）
+  const p52 = pdfDoc.addPage([595.28, 841.89]);
+  const d52 = createDrawHelper(p52);
+  drawPageHeader(d52, '別表五(二)', '租税公課の納付状況等に関する明細書', pageHeight, pageWidth, colors, bold);
+  
+  y = pageHeight - 100;
+  drawSectionBox(d52, '納付状況', y, pageWidth, colors, bold);
+  y -= 25;
+  
+  // 当期納付税額計 (Grid style)
+  d52.rect(50, y - 20, 300, 20, rgb(1,1,1)); d52.rect(350, y - 20, 195, 20, rgb(1,1,1));
+  d52.line(50, y, 545, y); d52.line(50, y - 20, 545, y - 20);
+  d52.line(50, y, 50, y - 20); d52.line(350, y, 350, y - 20); d52.line(545, y, 545, y - 20);
+  d52.text('当期納付税額計', 60, y - 14, { size: 10 });
+  d52.currency(data.beppyo5_2.totalPaid, 535, y - 14, 10);
+  y -= 20;
+  
+  y -= 10;
+  // ヘッダー
+  d52.rect(50, y - 20, 190, 20, colors.headerBg);
+  d52.rect(240, y - 20, 150, 20, colors.headerBg);
+  d52.rect(390, y - 20, 155, 20, colors.headerBg);
+  d52.line(50, y, 545, y); d52.line(50, y - 20, 545, y - 20);
+  d52.line(50, y, 50, y - 20); d52.line(240, y, 240, y - 20); d52.line(390, y, 390, y - 20); d52.line(545, y, 545, y - 20);
+
+  d52.text('税目', 110, y - 15, { size: 9, font: bold, align: 'center' });
+  d52.text('納付日', 315, y - 15, { size: 9, font: bold, align: 'center' });
+  d52.text('金額', 460, y - 15, { size: 9, font: bold, align: 'center' });
+  y -= 20;
+  
+  data.beppyo5_2.items.forEach((item) => {
+      d52.rect(50, y - 20, 190, 20, rgb(1,1,1));
+      d52.rect(240, y - 20, 150, 20, rgb(1,1,1));
+      d52.rect(390, y - 20, 155, 20, rgb(1,1,1));
+      d52.line(50, y, 545, y); d52.line(50, y - 20, 545, y - 20);
+      d52.line(50, y, 50, y - 20); d52.line(240, y, 240, y - 20); d52.line(390, y, 390, y - 20); d52.line(545, y, 545, y - 20);
+
+      d52.text(item.description, 60, y - 15, { size: 9 });
+      d52.text(item.paymentDate, 315, y - 15, { size: 9, align: 'center' });
+      d52.currency(item.amount, 535, y - 15, 9);
+      y -= 20;
+  });
+
+  // 6. 別表二（同族会社等の判定に関する明細書）
+  const p2 = pdfDoc.addPage([595.28, 841.89]);
+  const d2 = createDrawHelper(p2);
+  drawPageHeader(d2, '別表二', '同族会社等の判定に関する明細書', pageHeight, pageWidth, colors, bold);
+  
+  y = pageHeight - 100;
+  drawSectionBox(d2, '基本情報', y, pageWidth, colors, bold);
+  y -= 25;
+  
+  // Basic info grid
+  d2.rect(50, y - 20, 300, 20, colors.headerBg); d2.rect(350, y - 20, 195, 20, rgb(1,1,1));
+  d2.line(50, y, 545, y); d2.line(50, y - 20, 545, y - 20);
+  d2.line(50, y, 50, y - 20); d2.line(350, y, 350, y - 20); d2.line(545, y, 545, y - 20);
+  d2.text('発行済株式総数', 60, y - 14, { size: 10, font: bold });
+  d2.currency(data.beppyo2.totalShares, 535, y - 14, 10);
+  y -= 20;
+
+  d2.rect(50, y - 20, 300, 20, colors.headerBg); d2.rect(350, y - 20, 195, 20, rgb(1,1,1));
+  d2.line(50, y, 545, y); d2.line(50, y - 20, 545, y - 20);
+  d2.line(50, y, 50, y - 20); d2.line(350, y, 350, y - 20); d2.line(545, y, 545, y - 20);
+  d2.text('同族会社判定', 60, y - 14, { size: 10, font: bold });
+  d2.text(data.beppyo2.isFamilyCompany ? '該当' : '非該当', 360, y - 14, { size: 10 });
+  y -= 40;
+
+  drawSectionBox(d2, '株主一覧', y, pageWidth, colors, bold);
+  y -= 25;
+
+  // 株主ヘッダー
+  d2.rect(50, y - 20, 190, 20, colors.headerBg);
+  d2.rect(240, y - 20, 100, 20, colors.headerBg);
+  d2.rect(340, y - 20, 100, 20, colors.headerBg);
+  d2.rect(440, y - 20, 105, 20, colors.headerBg);
+  d2.line(50, y, 545, y); d2.line(50, y - 20, 545, y - 20);
+  d2.line(50, y, 50, y - 20); d2.line(240, y, 240, y - 20); d2.line(340, y, 340, y - 20); d2.line(440, y, 440, y - 20); d2.line(545, y, 545, y - 20);
+  
+  d2.text('株主名', 60, y - 15, { size: 9, font: bold });
+  d2.text('持株数', 320, y - 15, { size: 9, font: bold, align: 'right' });
+  d2.text('割合', 420, y - 15, { size: 9, font: bold, align: 'right' });
+  d2.text('関係', 450, y - 15, { size: 9, font: bold });
+  y -= 20;
+
+  data.beppyo2.shareholders.forEach((sh) => {
+      d2.rect(50, y - 20, 190, 20, rgb(1,1,1));
+      d2.rect(240, y - 20, 100, 20, rgb(1,1,1));
+      d2.rect(340, y - 20, 100, 20, rgb(1,1,1));
+      d2.rect(440, y - 20, 105, 20, rgb(1,1,1));
+      d2.line(50, y, 545, y); d2.line(50, y - 20, 545, y - 20);
+      d2.line(50, y, 50, y - 20); d2.line(240, y, 240, y - 20); d2.line(340, y, 340, y - 20); d2.line(440, y, 440, y - 20); d2.line(545, y, 545, y - 20);
+
+      d2.text(sh.name, 60, y - 15, { size: 9 });
+      d2.currency(sh.shares, 330, y - 15, 9);
+      const ratio = data.beppyo2.totalShares > 0 ? (sh.shares / data.beppyo2.totalShares * 100).toFixed(1) + '%' : '-';
+      d2.text(ratio, 430, y - 15, { size: 9, align: 'right' });
+      d2.text(sh.relationship, 450, y - 15, { size: 9 });
+      y -= 20;
+  });
+
+  // 7. 別表十五（交際費等の損金算入に関する明細書）
+  const p15 = pdfDoc.addPage([595.28, 841.89]);
+  const d15 = createDrawHelper(p15);
+  drawPageHeader(d15, '別表十五', '交際費等の損金算入に関する明細書', pageHeight, pageWidth, colors, bold);
+  
+  y = pageHeight - 100;
+  drawRow(d15, '1. 交際費等の支出額', data.beppyo15.socialExpenses, y, pageWidth, colors, rowH); y -= rowH;
+  drawRow(d15, '2. うち接待飲食費', data.beppyo15.deductibleExpenses, y, pageWidth, colors, rowH); y -= rowH;
+  drawRow(d15, '3. 損金算入限度額', data.beppyo15.deductionLimit, y, pageWidth, colors, rowH, true); y -= rowH;
+  drawRow(d15, '4. 損金不算入額', data.beppyo15.excessAmount, y, pageWidth, colors, rowH, true); y -= rowH;
+
+  // 7. 別表十六（減価償却資産の償却額の計算に関する明細書）
+  const p16 = pdfDoc.addPage([595.28, 841.89]);
+  const d16 = createDrawHelper(p16);
+  drawPageHeader(d16, '別表十六', '減価償却資産の償却額の計算に関する明細書', pageHeight, pageWidth, colors, bold);
+  
+  y = pageHeight - 100;
+  drawRow(d16, '当期償却実施額計', data.beppyo16.totalDepreciation, y, pageWidth, colors, rowH); y -= rowH;
+  drawRow(d16, '償却限度額計', data.beppyo16.totalAllowable, y, pageWidth, colors, rowH); y -= rowH;
+  drawRow(d16, '償却超過額', data.beppyo16.excessAmount, y, pageWidth, colors, rowH, true); y -= rowH;
+  
+  y -= 20;
+  d16.rect(50, y - 20, pageWidth - 100, 20, colors.headerBg);
+  d16.text('資産名', 60, y - 15, { size: 9, font: bold });
+  d16.text('取得価額', 250, y - 15, { size: 9, font: bold });
+  d16.text('期末帳簿価額', 380, y - 15, { size: 9, font: bold });
+  y -= 20;
+  
+  data.beppyo16.assets.forEach((asset) => {
+      d16.line(50, y, pageWidth - 50, y);
+      d16.text(asset.name, 60, y - 15, { size: 9 });
+      d16.currency(asset.acquisitionCost, 320, y - 15, 9);
+      d16.currency(asset.bookValueEnd, 450, y - 15, 9);
+      y -= 20;
+  });
+
+  return pdfDoc.save();
+}
+
+// 共通描画関数
+function drawPageHeader(d: any, titleInfo: string, subTitle: string, pageHeight: number, pageWidth: number, colors: any, boldFont: any) {
+    d.rect(0, pageHeight - 70, pageWidth, 70, colors.primary);
+    d.text(titleInfo, 50, pageHeight - 45, { size: 24, font: boldFont, color: rgb(1,1,1) });
+    d.text(subTitle, 200, pageHeight - 45, { size: 12, color: rgb(0.9, 0.9, 1) });
+}
+
+function drawSectionBox(d: any, title: string, y: number, pageWidth: number, colors: any, boldFont: any) {
+    d.rect(50, y - 20, pageWidth - 100, 20, colors.secondary);
+    d.text(title, 60, y - 15, { size: 10, font: boldFont, color: rgb(1,1,1) });
+}
+
+function drawRow(d: any, label: string, amount: number, y: number, pageWidth: number, colors: any, height: number, isHighlight = false) {
+    if (isHighlight) d.rect(50, y - height, pageWidth - 100, height, colors.highlight);
+    d.line(50, y - height, pageWidth - 50, y - height);
+    d.text(label, 60, y - height + 6, { size: 10 });
+    d.currency(amount, pageWidth - 60, y - height + 6, 10);
+    d.line(50, y, 50, y - height);
+    d.line(pageWidth - 50, y, pageWidth - 50, y - height);
 }

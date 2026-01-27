@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { IncomeInfo } from '../../types/quickTaxFiling';
-import { TrendingUp, HelpCircle, Check } from 'lucide-react';
+import { TrendingUp, HelpCircle, Check, Download } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { useTransactions } from '../../hooks/useTransactions';
+import toast from 'react-hot-toast';
 
 interface Step2IncomeProps {
     data: IncomeInfo;
@@ -18,11 +21,40 @@ const incomeSources = [
     'その他'
 ];
 
+import { useBusinessTypeContext } from '../../context/BusinessTypeContext';
+
 const Step2Income: React.FC<Step2IncomeProps> = ({ data, onChange, onNext, onBack }) => {
     const [showMonthlyInput, setShowMonthlyInput] = useState(false);
+    const { user } = useAuth();
+    const { currentBusinessType } = useBusinessTypeContext();
+    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
 
     const handleChange = (field: keyof IncomeInfo, value: any) => {
         onChange({ ...data, [field]: value });
+    };
+
+    const handleImportRevenue = () => {
+        if (!transactions || transactions.length === 0) {
+            toast.error('取引データが見つかりません');
+            return;
+        }
+
+        const totalIncome = transactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => {
+                const amount = typeof t.amount === 'number' ? t.amount : parseFloat(String(t.amount).replace(/,/g, '')) || 0;
+                return sum + amount;
+            }, 0);
+
+        if (totalIncome === 0) {
+            toast('収入データが見つかりませんでした');
+            return;
+        }
+
+        if (window.confirm(`取引データから集計された収入合計: ¥${totalIncome.toLocaleString()} を入力しますか？`)) {
+            handleChange('totalRevenue', totalIncome);
+            toast.success('収入を入力しました');
+        }
     };
 
     const handleSourceToggle = (source: string) => {
@@ -46,7 +78,7 @@ const Step2Income: React.FC<Step2IncomeProps> = ({ data, onChange, onNext, onBac
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-xl sm:text-2xl font-bold text-text-main mb-2">収入情報を入力してください</h2>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-text-main mb-2 whitespace-nowrap">収入情報を入力してください</h2>
             <p className="text-sm sm:text-base text-text-muted mb-6 sm:mb-8">
                 2025年の総収入と収入源を入力します
             </p>
@@ -75,6 +107,15 @@ const Step2Income: React.FC<Step2IncomeProps> = ({ data, onChange, onNext, onBac
                             ¥{data.totalRevenue.toLocaleString()}
                         </p>
                     )}
+                    <div className="mt-2 text-right">
+                        <button
+                            onClick={handleImportRevenue}
+                            className="text-sm text-primary hover:text-primary-dark flex items-center justify-end gap-1 ml-auto"
+                        >
+                            <Download className="w-4 h-4" />
+                            取引データから収入を転記
+                        </button>
+                    </div>
                 </div>
 
                 {/* 月別入力オプション */}
@@ -155,14 +196,14 @@ const Step2Income: React.FC<Step2IncomeProps> = ({ data, onChange, onNext, onBac
             <div className="mt-8 sm:mt-10 flex gap-4">
                 <button
                     onClick={onBack}
-                    className="flex-1 sm:flex-none px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium bg-surface-elevated text-text-main hover:bg-surface transition-all border border-border"
+                    className="flex-1 sm:flex-none px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium bg-surface-elevated text-text-main hover:bg-surface transition-all border border-border whitespace-nowrap text-sm sm:text-base"
                 >
                     戻る
                 </button>
                 <button
                     onClick={onNext}
                     disabled={!isValid}
-                    className={`flex-1 sm:flex-none sm:ml-auto px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium transition-all shadow-sm ${isValid
+                    className={`flex-1 sm:flex-none sm:ml-auto px-6 sm:px-8 py-3.5 sm:py-3 rounded-lg font-medium transition-all shadow-sm whitespace-nowrap text-sm sm:text-base ${isValid
                         ? 'bg-primary text-white hover:bg-primary/90 hover:shadow'
                         : 'bg-surface-elevated text-text-muted cursor-not-allowed'
                         }`}

@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import ReceiptCamera from '../components/ReceiptCamera';
 import ReceiptResultModal from '../components/ReceiptResultModal';
-import { getReceipts, updateReceiptStatus, approveReceiptAndCreateTransaction } from '../services/receiptService'
+import { getReceipts, updateReceiptStatus } from '../services/receiptService'
 import { useAuth } from '../components/AuthProvider'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
+import { useTransactions } from '../hooks/useTransactions'
 
 interface ReceiptData {
   id: string
@@ -64,6 +65,7 @@ interface ExtractedReceiptData {
 const ReceiptProcessing: React.FC = () => {
   const { user } = useAuth(); // 認証されたユーザーを取得
   const { currentBusinessType } = useBusinessTypeContext(); // 事業タイプを取得
+  const { createTransaction } = useTransactions(user?.id, currentBusinessType?.business_type as 'individual' | 'corporation'); // トランザクション追加用フック
 
   const [uploadedReceipts, setUploadedReceipts] = useState<ReceiptData[]>([])
 
@@ -653,44 +655,33 @@ const ReceiptProcessing: React.FC = () => {
       return;
     }
 
-    // 事業タイプを取得（デフォルトは個人）
-    const businessType = currentBusinessType?.business_type || 'individual';
-
     // UIを先に更新（楽観的削除）
     setUploadedReceipts(prev => prev.filter(r => r.id !== id));
 
-    // レシートデータを作成
-    const receiptData = {
-      id: receipt.id,
-      user_id: user.id,
-      date: receipt.date,
-      merchant: receipt.merchant,
-      amount: receipt.amount,
-      category: receipt.category,
-      description: receipt.description,
-      confidence: receipt.confidence,
-      status: 'approved' as const,
-      tax_rate: receipt.taxRate,
-      confidence_scores: receipt.confidenceScores,
-    };
+    try {
+      // 1. レシートステータスを承認済みに更新
+      await updateReceiptStatus(id, 'approved');
 
-    // 各テーブルに保存
-    const result = await approveReceiptAndCreateTransaction(
-      id,
-      receiptData,
-      businessType,
-      user.id
-    );
+      // 2. トランザクションを作成 (Context経由で追加することで即座に反映)
+      await createTransaction({
+        item: receipt.merchant, // 店舗名を項目名として使用
+        amount: receipt.amount,
+        date: receipt.date,
+        category: receipt.category,
+        type: 'expense',
+        description: receipt.description || `${receipt.merchant}での購入`,
+        receipt_url: undefined,
+        creator: user.id,
+        tags: ['receipt_scan'],
+        recurring: false,
+        approval_status: 'approved' // 明示的にapprovedを設定
+      });
 
-    if (result.success) {
-      console.log('✅ レシート登録完了: 各テーブルに保存されました');
-      toast.success(`レシートが登録され、${businessType === 'individual' ? '個人' : '法人'}の取引として記録されました！`);
-    } else {
-      console.error('❌ レシート登録エラー:', result.error);
-      // エラー時は状態を元に戻す（再取得が必要だが、ここでは簡易的に通知のみ）
-      // 必要であればここでstateを巻き戻す処理を追加するが、複雑になるため再ロードを促すか、エラー通知に留める
-      toast.error(`エラーが発生しました: ${result.error}`);
-      // 失敗した場合はリストに戻す（楽観的削除のロールバック）
+      toast.success('レシートが登録され、取引履歴に反映されました');
+    } catch (error) {
+      console.error('レシート登録エラー:', error);
+      toast.error('登録に失敗しました');
+      // エラー時はリストに戻す（楽観的削除のロールバック）
       setUploadedReceipts(prev => [...prev, receipt]);
     }
   }
@@ -836,8 +827,19 @@ const ReceiptProcessing: React.FC = () => {
             )}
 
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              {/* カメラ撮影 */}
+              <div
+                className="group border border-primary border-dashed rounded-lg p-2.5 sm:p-4 text-center cursor-pointer bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
+                onClick={startCamera}
+              >
+                <Camera className="w-6 h-6 text-text-muted group-hover:text-primary mx-auto mb-1.5 transition-colors" />
+                <p className="text-[10px] sm:text-sm font-semibold text-text-main mb-0.5">カメラで撮影</p>
+                <p className="hidden sm:block text-[10px] text-text-muted">その場で撮影</p>
+                <p className="sm:hidden text-[9px] text-text-muted">撮影可能</p>
+              </div>
+
               {/* ファイルアップロード */}
-              <label className="group border border-dashed border-border rounded-lg p-2.5 sm:p-4 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-200">
+              <label className="group border border-primary border-dashed rounded-lg p-2.5 sm:p-4 text-center cursor-pointer bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200">
                 <input
                   type="file"
                   accept="image/*"
@@ -851,19 +853,8 @@ const ReceiptProcessing: React.FC = () => {
                 <p className="sm:hidden text-[9px] text-text-muted">画像・PDF</p>
               </label>
 
-              {/* カメラ撮影 */}
-              <div
-                className="group border border-dashed border-border rounded-lg p-2.5 sm:p-4 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-200"
-                onClick={startCamera}
-              >
-                <Camera className="w-6 h-6 text-text-muted group-hover:text-primary mx-auto mb-1.5 transition-colors" />
-                <p className="text-[10px] sm:text-sm font-semibold text-text-main mb-0.5">カメラで撮影</p>
-                <p className="hidden sm:block text-[10px] text-text-muted">その場で撮影</p>
-                <p className="sm:hidden text-[9px] text-text-muted">撮影可能</p>
-              </div>
-
               {/* ドラッグ&ドロップ */}
-              <div className="group border border-dashed border-border rounded-lg p-2.5 sm:p-4 text-center hover:border-primary hover:bg-primary/5 transition-all duration-200">
+              <div className="group border border-primary border-dashed rounded-lg p-2.5 sm:p-4 text-center bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200">
                 <FileImage className="w-6 h-6 text-text-muted group-hover:text-primary mx-auto mb-1.5 transition-colors" />
                 <p className="text-[10px] sm:text-sm font-semibold text-text-main mb-0.5">ドロップ</p>
                 <p className="hidden sm:block text-[10px] text-text-muted">ここに画像をドロップ</p>

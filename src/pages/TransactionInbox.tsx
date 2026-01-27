@@ -194,7 +194,7 @@ const TransactionInbox: React.FC = () => {
                                             </div>
                                             <div className="text-right">
                                                 <div className="flex justify-end mb-1">
-                                                    {t.receipt_url ? (
+                                                    {t.receipt_url || t.tags?.includes('receipt_created') ? (
                                                         <div className="flex items-center gap-1 p-1 bg-purple-100 dark:bg-purple-900/30 rounded text-purple-600 dark:text-purple-400">
                                                             <Sparkles className="w-3 h-3" />
                                                             <span className="text-[10px] font-medium">AI読取</span>
@@ -291,7 +291,7 @@ const TransactionInbox: React.FC = () => {
                                             </td>
                                             <td className="px-4 py-2.5 text-xs text-text-main whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
-                                                    {t.receipt_url ? (
+                                                    {t.receipt_url || t.tags?.includes('receipt_created') ? (
                                                         <>
                                                             <div className="p-1 bg-purple-100 dark:bg-purple-900/30 rounded-md text-purple-600 dark:text-purple-400">
                                                                 <Sparkles className="w-3 h-3" />

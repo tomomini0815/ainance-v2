@@ -129,8 +129,8 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                 </div>
             </div>
 
-            {/* 資産リスト（テーブル形式） */}
-            <div className="overflow-x-auto border border-border rounded-xl">
+            {/* 資産リスト（PC表示：テーブル形式） */}
+            <div className="hidden md:block overflow-x-auto border border-border rounded-xl">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-surface-highlight text-text-muted font-medium border-b border-border">
                         <tr>
@@ -173,7 +173,8 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                                     <td className="p-3 text-center text-text-muted">
                                         {asset.depreciationMethod === 'unitsOfProduction' ?
                                             `${asset.currentYearUnits}/${asset.totalEstimatedUnits}` :
-                                            res.depreciationRate.toFixed(3)}
+                                            asset.depreciationMethod === 'immediateSME' ? '-' :
+                                                res.depreciationRate.toFixed(3)}
                                     </td>
                                     <td className="p-3 text-center text-text-main">
                                         {asset.depreciationMethod === 'immediateSME' || asset.depreciationMethod === 'unitsOfProduction' ? '-' : `${asset.currentYearMonths}ヶ月`}
@@ -211,15 +212,89 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                 </table>
             </div>
 
+            {/* 資産リスト（モバイル表示：カード形式・2カラム） */}
+            <div className="md:hidden space-y-4">
+                {assets.map((asset, index) => {
+                    const res = results[index];
+                    return (
+                        <div key={asset.id} className="bg-surface border border-border rounded-xl p-3 shadow-sm relative">
+                            {/* 削除ボタン（右上） */}
+                            <button
+                                onClick={() => removeAsset(asset.id)}
+                                className="absolute top-4 right-4 text-text-muted hover:text-error transition-colors p-1"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+
+                            <h4 className="font-bold text-text-main mb-3 pr-8 text-lg">{asset.name}</h4>
+
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+                                <div>
+                                    <div className="text-xs text-text-muted mb-0.5">取得価額</div>
+                                    <div className="font-medium text-text-main">{formatCurrency(asset.acquisitionCost)}</div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-text-muted mb-0.5">取得年月</div>
+                                    <div className="font-medium text-text-main">{asset.acquisitionDate}</div>
+                                </div>
+
+                                <div>
+                                    <div className="text-xs text-text-muted mb-0.5">償却方法</div>
+                                    <div className="font-medium text-text-main">
+                                        {asset.depreciationMethod === 'straightLine' ? '定額法' :
+                                            asset.depreciationMethod === 'decliningBalance' ? '定率法' :
+                                                asset.depreciationMethod === 'lumpSum' ? '一括' :
+                                                    asset.depreciationMethod === 'unitsOfProduction' ? '生産高比例' :
+                                                        asset.depreciationMethod === 'leasePeriod' ? 'リース期間' : '少額特例'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-text-muted mb-0.5">耐用年数</div>
+                                    <div className="font-medium text-text-main">
+                                        {asset.depreciationMethod === 'immediateSME' ? '即時' :
+                                            asset.depreciationMethod === 'lumpSum' ? '3年' : `${asset.usefulLife}年`}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="text-xs text-text-muted mb-0.5">償却率</div>
+                                    <div className="font-medium text-text-main">
+                                        {asset.depreciationMethod === 'unitsOfProduction' || asset.depreciationMethod === 'immediateSME' ? '-' : res.depreciationRate.toFixed(3)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-text-muted mb-0.5">本年償却額</div>
+                                    <div className="font-bold text-primary">{formatCurrency(res.currentDepreciation)}</div>
+                                </div>
+
+                                <div>
+                                    <div className="text-xs text-text-muted mb-0.5">事業割合</div>
+                                    <div className="font-medium text-text-main">{asset.businessRatio}%</div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-text-muted mb-0.5">未償却残高</div>
+                                    <div className="font-medium text-text-muted">{formatCurrency(res.bookValue)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+                {assets.length === 0 && !isAdding && (
+                    <div className="p-8 text-center text-text-muted border border-dashed border-border rounded-xl">
+                        資産が登録されていません。<br />「資産を追加する」ボタンから登録してください。
+                    </div>
+                )}
+            </div>
+
             {/* 追加フォーム */}
             {isAdding ? (
-                <div className="bg-surface border border-primary/30 rounded-xl p-5 shadow-sm">
+                <div className="bg-surface border border-primary/30 rounded-xl p-3 shadow-sm">
                     <h4 className="font-medium text-text-main mb-4 flex items-center gap-2">
                         <Calculator className="w-5 h-5 text-primary" />
                         新規資産の登録
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="col-span-1 md:col-span-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="col-span-1 sm:col-span-2 lg:col-span-2">
                             <label className="text-xs text-text-muted block mb-1">資産名称 *</label>
                             <input
                                 type="text"
@@ -362,7 +437,7 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
             ) : (
                 <button
                     onClick={() => setIsAdding(true)}
-                    className="w-full py-3 border-2 border-dashed border-border rounded-xl flex items-center justify-center gap-2 text-text-muted hover:text-primary hover:border-primary hover:bg-primary/5 transition-all"
+                    className="w-full md:w-auto md:mx-auto md:px-12 py-3 md:py-2.5 border-2 border-dashed border-primary rounded-xl text-primary bg-primary-light transition-colors flex items-center justify-center gap-2"
                 >
                     <Plus className="w-5 h-5" />
                     資産を追加する

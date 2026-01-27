@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
     ArrowRight,
@@ -16,6 +16,7 @@ import {
     Wallet,
     PiggyBank,
     BookOpen,
+    Edit,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTransactions } from '../hooks/useTransactions';
@@ -29,12 +30,18 @@ import {
     formatPercentage,
     DepreciationAsset,
 } from '../services/CorporateTaxService';
+import { CorporateTaxInputService } from '../services/CorporateTaxInputService';
+import { initialCorporateTaxInputData } from '../types/corporateTaxInput';
 import DepreciationCalculator from '../components/DepreciationCalculator';
 import {
     generateCorporateTaxPDF,
     generateFinancialStatementPDF,
     JpTaxFormData,
 } from '../services/pdfJapaneseService';
+import { CsvExportService } from '../services/CsvExportService';
+import toast from 'react-hot-toast';
+
+import WizardProgress from '../components/quickTaxFiling/WizardProgress';
 
 // ステップ定義
 const WIZARD_STEPS = [
@@ -50,11 +57,23 @@ const CorporateTaxFilingPage: React.FC = () => {
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
     const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
+    const navigate = useNavigate();
 
     // ウィザード状態
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
+
+    const handleOpenInEditor = () => {
+        if (window.confirm('現在の計算結果を詳細エディタに転記して開きますか？\n（エディタの既存データは上書きされます）')) {
+            const calculatedData = CorporateTaxInputService.calculateDataFromTransactions(transactions);
+            CorporateTaxInputService.saveData({
+                ...initialCorporateTaxInputData,
+                ...calculatedData
+            });
+            navigate('/corporate-tax/input');
+        }
+    };
 
     // 会社情報
     const currentYear = new Date().getFullYear();
@@ -188,41 +207,7 @@ const CorporateTaxFilingPage: React.FC = () => {
         }
     };
 
-    // 進捗バー
-    const ProgressBar = () => (
-        <div className="mb-8">
-            <div className="flex items-center justify-between">
-                {WIZARD_STEPS.map((step, index) => (
-                    <React.Fragment key={step.id}>
-                        <div className="flex flex-col items-center">
-                            <div
-                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${currentStep > step.id
-                                    ? 'bg-success text-white'
-                                    : currentStep === step.id
-                                        ? 'bg-primary text-white'
-                                        : 'bg-surface-highlight text-text-muted'
-                                    }`}
-                            >
-                                {currentStep > step.id ? (
-                                    <Check className="w-5 h-5" />
-                                ) : (
-                                    <step.icon className="w-5 h-5" />
-                                )}
-                            </div>
-                            <span className={`text-xs mt-2 hidden sm:block ${currentStep >= step.id ? 'text-text-main font-medium' : 'text-text-muted'
-                                }`}>
-                                {step.title}
-                            </span>
-                        </div>
-                        {index < WIZARD_STEPS.length - 1 && (
-                            <div className={`flex-1 h-1 mx-2 rounded ${currentStep > step.id ? 'bg-success' : 'bg-surface-highlight'
-                                }`} />
-                        )}
-                    </React.Fragment>
-                ))}
-            </div>
-        </div>
-    );
+
 
     // ステップ1: 会社情報
     const Step1CompanyInfo = () => (
@@ -621,8 +606,32 @@ const CorporateTaxFilingPage: React.FC = () => {
                         <FileText className="w-6 h-6 text-primary" />
                     )}
                     <div className="text-left">
-                        <p className="font-medium text-text-main">決算報告書</p>
                         <p className="text-sm text-text-muted">損益計算書・貸借対照表</p>
+                    </div>
+                </button>
+                <button
+                    onClick={() => {
+                        // JpTaxFormData から CSV生成
+                        if (financialData) {
+                            // JpTaxFormData型に合わせるための変換が必要なら行うが、ここでは簡易的にキャスト
+                            const csv = CsvExportService.generateFinancialStatementCSV({
+                                ...corporateInfo,
+                                ...financialData,
+                                fiscalYear: corporateInfo.fiscalYear,
+                                taxableIncome: taxResult.taxableIncome,
+                                estimatedTax: taxResult.totalTax
+                            } as any);
+                            CsvExportService.downloadCSV(csv, `financial_statements_${corporateInfo.companyName}_${corporateInfo.fiscalYear}.csv`);
+                            toast.success('財務諸表CSVを出力しました');
+                        }
+                    }}
+                    disabled={isLoading}
+                    className="flex items-center justify-center gap-2 p-6 bg-surface border border-border rounded-xl hover:border-primary hover:bg-primary-light transition-colors"
+                >
+                    <BookOpen className="w-6 h-6 text-primary" />
+                    <div className="text-left">
+                        <p className="font-medium text-text-main">財務諸表データ(CSV)</p>
+                        <p className="text-sm text-text-muted">e-Tax取込用</p>
                     </div>
                 </button>
                 <button
@@ -640,6 +649,28 @@ const CorporateTaxFilingPage: React.FC = () => {
                         <p className="text-sm text-text-muted">法人税の概要</p>
                     </div>
                 </button>
+            </div>
+
+            {/* 詳細エディタへのリンク */}
+            <div className="bg-surface-highlight rounded-xl p-5 border border-border">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h4 className="font-bold text-text-main flex items-center gap-2">
+                            <Edit className="w-5 h-5 text-primary" />
+                            申告書を詳細に編集する
+                        </h4>
+                        <p className="text-sm text-text-muted mt-1">
+                            別表の調整や、細かい数字の修正が必要な場合は、詳細エディタをご利用ください。
+                        </p>
+                    </div>
+                    <button
+                        onClick={handleOpenInEditor}
+                        className="btn-secondary whitespace-nowrap"
+                    >
+                        詳細エディタで開く
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                    </button>
+                </div>
             </div>
 
             {/* 注意事項 */}
@@ -701,35 +732,38 @@ const CorporateTaxFilingPage: React.FC = () => {
                 </div>
 
                 {/* 進捗バー */}
-                <ProgressBar />
+                <WizardProgress
+                    currentStep={currentStep}
+                    steps={WIZARD_STEPS.map(s => ({ number: s.id, title: s.title, description: s.description }))}
+                />
 
                 {/* ステップコンテンツ */}
-                <div className="bg-surface rounded-xl border border-border p-6 mb-6">
+                <div className="bg-surface rounded-xl border border-border p-6 md:p-8 mb-8 shadow-sm">
                     {renderStepContent()}
                 </div>
 
                 {/* ナビゲーションボタン */}
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center max-w-2xl mx-auto">
                     <button
                         onClick={goToPreviousStep}
                         disabled={currentStep === 1}
-                        className={`btn-secondary ${currentStep === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`btn-ghost ${currentStep === 1 ? 'invisible' : ''}`}
                     >
-                        <ArrowLeft className="w-5 h-5" />
+                        <ArrowLeft className="w-5 h-5 mr-2" />
                         戻る
                     </button>
                     {currentStep < WIZARD_STEPS.length ? (
                         <button
                             onClick={goToNextStep}
-                            className="btn-primary"
+                            className="btn-primary min-w-[200px]"
                         >
-                            次へ
-                            <ArrowRight className="w-5 h-5" />
+                            次へ進む
+                            <ArrowRight className="w-5 h-5 ml-2" />
                         </button>
                     ) : (
-                        <Link to="/dashboard" className="btn-primary">
-                            <CheckCircle className="w-5 h-5" />
-                            完了
+                        <Link to="/dashboard" className="btn-primary min-w-[200px]">
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            ダッシュボードへ
                         </Link>
                     )}
                 </div>

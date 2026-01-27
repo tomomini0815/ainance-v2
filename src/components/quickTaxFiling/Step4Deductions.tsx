@@ -165,10 +165,10 @@ const Step4Deductions: React.FC<Step4DeductionsProps> = ({
             </p>
 
             {/* 控除入力フォーム */}
-            <div className="space-y-4">
+            <div className="space-y-3">
                 {deductionCategories.map((category) => (
-                    <div key={category.key} className="bg-surface-elevated p-4 sm:p-5 rounded-lg border border-transparent transition-colors hover:border-border">
-                        <div className="flex items-start justify-between mb-3">
+                    <div key={category.key} className="bg-surface-elevated p-3 sm:p-4 rounded-lg border border-transparent transition-colors hover:border-border">
+                        <div className="flex items-start justify-between mb-2">
                             <div className="flex-1 cursor-pointer" onClick={() => toggleHelp(category.key)}>
                                 <div className="flex items-center gap-2">
                                     <label className="block text-base font-medium text-text-main pointer-events-none">
@@ -204,7 +204,7 @@ const Step4Deductions: React.FC<Step4DeductionsProps> = ({
                                 onChange={(e) => handleChange(category.key as keyof DeductionsInfo, e.target.value)}
                                 placeholder="0"
                                 inputMode="numeric"
-                                className="w-full pl-4 pr-10 py-3 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base text-text-main"
+                                className="w-full pl-4 pr-10 py-2.5 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base text-text-main"
                             />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none">
                                 円
@@ -214,8 +214,8 @@ const Step4Deductions: React.FC<Step4DeductionsProps> = ({
                 ))}
 
                 {/* 扶養親族の詳細入力 */}
-                <div className="bg-surface-elevated p-4 sm:p-5 rounded-lg border border-transparent transition-colors hover:border-border">
-                    <div className="flex items-start justify-between mb-3">
+                <div className="bg-surface-elevated p-3 sm:p-4 rounded-lg border border-transparent transition-colors hover:border-border">
+                    <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 cursor-pointer" onClick={() => toggleHelp('dependents')}>
                             <div className="flex items-center gap-2">
                                 <label className="block text-base font-medium text-text-main pointer-events-none">

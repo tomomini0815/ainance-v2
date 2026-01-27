@@ -172,7 +172,7 @@ export const approveReceiptAndCreateTransaction = async (
       description: receipt.description || `${receipt.merchant}でのレシート`,
       receipt_url: null, // 必要に応じて画像URLを設定
       creator: userId,
-      tags: [],
+      tags: ['receipt_created'],
       location: null,
       recurring: false,
       recurring_frequency: null as any,
