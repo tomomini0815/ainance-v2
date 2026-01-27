@@ -112,7 +112,7 @@ const DashboardChatbot: React.FC = () => {
     };
 
     return (
-        <div className={`fixed bottom-24 right-6 z-40 flex flex-col items-end transition-all duration-300 ${isOpen ? 'translate-y-0' : 'translate-y-0'}`}>
+        <div className={`fixed bottom-6 md:bottom-24 right-6 z-40 flex flex-col items-end transition-all duration-300 ${isOpen ? 'translate-y-0' : 'translate-y-0'}`}>
             {/* Chat Window */}
             {isOpen && (
                 <div className="relative bg-white dark:bg-surface border border-border shadow-2xl rounded-2xl w-80 sm:w-96 h-[500px] mb-4 flex flex-col overflow-visible animate-in slide-in-from-bottom-5 duration-200">
