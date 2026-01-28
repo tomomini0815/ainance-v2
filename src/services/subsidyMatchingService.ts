@@ -81,7 +81,7 @@ const SAMPLE_SUBSIDIES: Subsidy[] = [
   {
     id: '1',
     name: 'ものづくり補助金',
-    description: '中小企業・小規模事業者等が今後複数年にわたり相次いで直面する制度変更等に対応するため、中小企業・小規模事業者等が取り組む革新的サービス開発・試作品開発・生産プロセスの改善を行うための設備投資等を支援',
+    description: '中小企業・小規模事業者等が取り組む革新的サービス開発・試作品開発・生産プロセスの改善を行うための設備投資等を支援。',
     eligibilityCriteria: {
       businessTypes: ['corporation', 'sole_proprietor'],
       maxRevenue: 1000000000,
@@ -102,8 +102,8 @@ const SAMPLE_SUBSIDIES: Subsidy[] = [
   },
   {
     id: '2',
-    name: 'IT導入補助金',
-    description: '中小企業・小規模事業者等のITツール導入による業務効率化・売上アップをサポート',
+    name: 'IT導入補助金（通常枠）',
+    description: '中小企業・小規模事業者等のITツール導入による業務効率化・売上アップを支援。ソフトウェアやクラウド利用料が対象。',
     eligibilityCriteria: {
       businessTypes: ['corporation', 'sole_proprietor'],
       maxRevenue: 500000000,
@@ -117,14 +117,14 @@ const SAMPLE_SUBSIDIES: Subsidy[] = [
     deadline: '2026-02-28',
     category: 'IT・デジタル化',
     applicationUrl: 'https://www.it-hojo.jp/',
-    requiredDocuments: ['ITツール導入計画書', '見積書'],
+    requiredDocuments: ['ITツール導入計画書', '見積書', '納税証明書'],
     processingTime: '約3ヶ月',
     successRate: 65,
   },
   {
     id: '3',
-    name: '小規模事業者持続化補助金',
-    description: '小規模事業者が経営計画を作成し、販路開拓等に取り組む費用を支援',
+    name: '小規模事業者持続化補助金（一般枠）',
+    description: '販路開拓や業務効率化に取り組む小規模事業者を支援。個人事業主の採択実績が非常に豊富。',
     eligibilityCriteria: {
       businessTypes: ['sole_proprietor', 'corporation'],
       employeeCount: { max: 20 },
@@ -144,7 +144,7 @@ const SAMPLE_SUBSIDIES: Subsidy[] = [
   {
     id: '4',
     name: '事業再構築補助金',
-    description: 'ポストコロナ・ウィズコロナ時代の経済社会の変化に対応するため、中小企業等の思い切った事業再構築を支援',
+    description: '新分野展開、業態転換、事業・業種転換など、思い切った事業の再構築を支援（大規模投資向け）。',
     eligibilityCriteria: {
       businessTypes: ['corporation'],
       minRevenue: 10000000,
@@ -164,24 +164,44 @@ const SAMPLE_SUBSIDIES: Subsidy[] = [
   },
   {
     id: '5',
-    name: '創業補助金',
-    description: '新たに創業する者に対して、創業等に要する経費の一部を助成',
+    name: '東京都 創業助成金',
+    description: '都内で創業予定または創業後5年未満の方を対象。賃借料、広告費、人件費等を幅広く支援。',
     eligibilityCriteria: {
       businessTypes: ['sole_proprietor', 'corporation'],
-      industries: ['全業種'],
+      regions: ['東京都'],
     },
     amountRange: {
-      min: 500000,
-      max: 3000000,
+      min: 1000000,
+      max: 4000000,
       type: 'percentage',
     },
     deadline: '2026-06-30',
     category: '創業支援',
-    applicationUrl: 'https://www.chusho.meti.go.jp/keiei/sogyo/',
-    requiredDocuments: ['創業計画書', '資金計画書'],
+    applicationUrl: 'https://www.startup-station.jp/',
+    requiredDocuments: ['創業計画書', '資金計画書', '履歴事項全部証明書'],
     processingTime: '約5ヶ月',
     successRate: 55,
   },
+  {
+    id: '6',
+    name: 'フリーランス・個人事業主活動支援給付',
+    description: 'デジタルスキルの習得や機材導入を行う個人事業主・フリーランスを支援。申請が非常に簡略化されています。',
+    eligibilityCriteria: {
+      businessTypes: ['sole_proprietor'],
+      maxRevenue: 10000000,
+    },
+    amountRange: {
+      min: 100000,
+      max: 500000,
+      type: 'fixed',
+    },
+    deadline: '2026-05-15',
+    category: '活動支援',
+    applicationUrl: 'https://www.example.go.jp/freelance-support',
+    requiredDocuments: ['活動報告書', '身分証明書'],
+    processingTime: '約1ヶ月',
+    successRate: 85,
+  }
 ];
 
 /**
@@ -207,8 +227,12 @@ export const matchSubsidies = async (
 
     // 事業形態のチェック
     if (subsidy.eligibilityCriteria.businessTypes.includes(profile.businessType)) {
-      matchScore += 20;
-      matchReasons.push('事業形態が適合しています');
+      matchScore += 30;
+      if (profile.businessType === 'sole_proprietor') {
+        matchReasons.push('個人事業主でも申請可能な枠です');
+      } else {
+        matchReasons.push('法人格を活かした申請が可能です');
+      }
     } else {
       continue; // 事業形態が合わない場合はスキップ
     }
@@ -221,8 +245,8 @@ export const matchSubsidies = async (
       continue;
     }
     if (subsidy.eligibilityCriteria.minRevenue || subsidy.eligibilityCriteria.maxRevenue) {
-      matchScore += 20;
-      matchReasons.push('売上規模が適合しています');
+      matchScore += 15;
+      matchReasons.push('売上規模が要件に適合しています');
     }
 
     // 従業員数のチェック
@@ -235,57 +259,56 @@ export const matchSubsidies = async (
         continue;
       }
       matchScore += 15;
-      matchReasons.push('従業員数が適合しています');
+      matchReasons.push('従業員数が規模に適合しています');
     }
 
     // 業種のチェック
     if (subsidy.eligibilityCriteria.industries) {
       if (subsidy.eligibilityCriteria.industries.includes(profile.industry) ||
-          subsidy.eligibilityCriteria.industries.includes('全業種')) {
+          subsidy.eligibilityCriteria.industries.includes('全業種') ||
+          subsidy.eligibilityCriteria.industries.includes('IT')) {
         matchScore += 25;
-        matchReasons.push('業種が適合しています');
-      } else {
-        matchScore -= 10;
+        matchReasons.push('業種が重点対象に該当します');
       }
+    } else {
+      matchScore += 10;
     }
 
     // 地域のチェック
     if (subsidy.eligibilityCriteria.regions) {
       if (subsidy.eligibilityCriteria.regions.includes(profile.region)) {
-        matchScore += 10;
-        matchReasons.push('対象地域に該当します');
+        matchScore += 15;
+        matchReasons.push('対象地域（' + profile.region + '）の公募です');
       }
     }
 
     // 設立年数による加点
     const yearsInBusiness = new Date().getFullYear() - profile.establishedYear;
-    if (subsidy.category === '創業支援' && yearsInBusiness <= 3) {
+    if (subsidy.category === '創業支援' && yearsInBusiness <= 5) {
       matchScore += 20;
-      matchReasons.push('創業間もない企業向けの補助金です');
+      matchReasons.push('創業初期の支援が手厚い補助金です');
     }
 
     // 推定金額の計算
     let estimatedAmount = subsidy.amountRange.min;
     if (subsidy.amountRange.type === 'percentage') {
-      // 売上の一定割合と仮定
-      estimatedAmount = Math.min(profile.revenue * 0.1, subsidy.amountRange.max);
+      estimatedAmount = Math.min(profile.revenue * 0.15, subsidy.amountRange.max);
     } else if (subsidy.amountRange.type === 'variable') {
-      // 中間値を使用
-      estimatedAmount = (subsidy.amountRange.min + subsidy.amountRange.max) / 2;
+      estimatedAmount = (subsidy.amountRange.min + subsidy.amountRange.max) / 3;
     }
 
     // 申請難易度の判定
     let applicationDifficulty: 'easy' | 'medium' | 'hard' = 'medium';
     if (subsidy.requiredDocuments.length <= 2) {
       applicationDifficulty = 'easy';
-    } else if (subsidy.requiredDocuments.length >= 4) {
+    } else if (subsidy.requiredDocuments.length >= 5) {
       applicationDifficulty = 'hard';
     }
 
     // 採択確率の計算（成功率とマッチスコアを考慮）
     const adoptionProbability = Math.min(
-      100,
-      (subsidy.successRate || 50) * (matchScore / 100)
+      95,
+      (subsidy.successRate || 50) * (matchScore / 80)
     );
 
     matches.push({
