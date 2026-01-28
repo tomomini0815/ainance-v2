@@ -52,7 +52,7 @@ import {
 
 // ステップ定義
 const WIZARD_STEPS = [
-    { id: 1, title: '基本情報', icon: FileText, description: '確定申告の基本設定' },
+    { id: 1, title: '基本情報', icon: FileText, description: '申告の基本設定' },
     { id: 2, title: '収支確認', icon: Calculator, description: '売上・経費の確認' },
     { id: 3, title: '減価償却', icon: Calculator, description: '固定資産の償却計算' },
     { id: 4, title: '控除入力', icon: Plus, description: '各種控除の入力' },
@@ -63,6 +63,7 @@ const WIZARD_STEPS = [
 const TaxFilingWizard: React.FC = () => {
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
+    const isCorporation = currentBusinessType?.business_type === 'corporation';
     const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
 
     // ウィザード状態
@@ -162,7 +163,7 @@ const TaxFilingWizard: React.FC = () => {
         // 申告書の内容を作成
         const content = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-           確定申告書（${fiscalYear}年度）
+           ${isCorporation ? '法人税申告書' : '確定申告書'}（${fiscalYear}年度）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 申告方法: ${hasBlueReturn ? '青色申告' : '白色申告'}
@@ -367,9 +368,9 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
     const Step1BasicInfo = () => (
         <div className="space-y-6">
             <div>
-                <h3 className="text-lg font-semibold text-text-main mb-4">確定申告の基本設定</h3>
+                <h3 className="text-lg font-semibold text-text-main mb-4">{isCorporation ? '法人税申告' : '確定申告'}の基本設定</h3>
                 <p className="text-text-muted mb-6">
-                    確定申告を行う年度と申告方法を選択してください。
+                    {isCorporation ? '法人税申告' : '確定申告'}を行う年度と申告方法を選択してください。
                 </p>
             </div>
 
@@ -768,7 +769,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                 <div>
                     <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center gap-2">
                         <FileText className="w-5 h-5 text-primary" />
-                        確定申告書の作成
+                        {isCorporation ? '法人税申告書' : '確定申告書'}の作成
                     </h3>
                     <p className="text-text-muted mb-2">
                         入力内容を確認して、書類を作成してください。

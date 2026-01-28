@@ -1,8 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, BarChart2, Camera, Mic, Link as LinkIcon, Sparkles } from 'lucide-react';
+import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 
 const QuickActions: React.FC = () => {
+  const { currentBusinessType } = useBusinessTypeContext();
+  const isCorporation = currentBusinessType?.business_type === 'corporation';
+
   const actions = [
     {
       title: '音声で記録',
@@ -50,16 +54,7 @@ const QuickActions: React.FC = () => {
       borderColor: 'border-rose-500/30'
     },
     {
-      title: '即日確定申告',
-      description: 'ご自身で既にデータがある方向け',
-      icon: Sparkles,
-      link: '/quick-tax-filing',
-      color: 'bg-orange-500/20',
-      iconColor: 'text-orange-500',
-      borderColor: 'border-orange-500/30'
-    },
-    {
-      title: '確定申告サポート',
+      title: isCorporation ? '法人税申告サポート' : '確定申告サポート',
       description: 'Ainanceのデータで書類作成',
       icon: Sparkles,
       link: '/tax-filing-wizard',
