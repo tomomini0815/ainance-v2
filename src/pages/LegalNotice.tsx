@@ -10,28 +10,28 @@ const LegalNotice: React.FC = () => {
         {
             icon: Building2,
             label: '販売業者',
-            value: ''
+            value: '株式会社ユーザーバリュー(User Value Inc.)'
         },
         {
             icon: User,
             label: '運営統括責任者',
-            value: ''
+            value: '惠良友美'
         },
         {
             icon: MapPin,
             label: '所在地',
-            value: ''
+            value: '神奈川県秦野市渋沢'
         },
         {
             icon: Phone,
             label: '電話番号',
-            value: '03-1234-5678',
+            value: '090-5889-0815',
             note: '※受付時間 10:00-18:00（土日祝を除く）'
         },
         {
             icon: Mail,
             label: 'メールアドレス',
-            value: 'support@ainance.jp'
+            value: 'uservalue2021@gmail.com'
         },
         {
             icon: CreditCard,
