@@ -54,6 +54,15 @@ const QuickActions: React.FC = () => {
       borderColor: 'border-rose-500/30'
     },
     {
+      title: isCorporation ? '即日法人税申告' : '即日確定申告',
+      description: 'ご自身で既にデータがある方向け',
+      icon: Sparkles,
+      link: '/quick-tax-filing',
+      color: 'bg-orange-500/20',
+      iconColor: 'text-orange-500',
+      borderColor: 'border-orange-500/30'
+    },
+    {
       title: isCorporation ? '法人税申告サポート' : '確定申告サポート',
       description: 'Ainanceのデータで書類作成',
       icon: Sparkles,
