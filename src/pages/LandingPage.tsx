@@ -522,27 +522,27 @@ const LandingPage: React.FC = () => {
               <div>
                 <h4 className="text-white font-bold mb-6">サービス</h4>
                 <ul className="space-y-4">
-                  {['機能紹介', '使い方', '料金プラン'].map((item) => (
-                    <li key={item}><Link to="#" className="text-slate-400 hover:text-white transition-colors text-sm">{item}</Link></li>
-                  ))}
+                  <li><Link to="/features" className="text-slate-400 hover:text-white transition-colors text-sm">機能紹介</Link></li>
+                  <li><Link to="/how-to-use" className="text-slate-400 hover:text-white transition-colors text-sm">使い方</Link></li>
+                  <li><Link to="/pricing" className="text-slate-400 hover:text-white transition-colors text-sm">料金プラン</Link></li>
                 </ul>
               </div>
 
               <div>
                 <h4 className="text-white font-bold mb-6">サポート</h4>
                 <ul className="space-y-4">
-                  {['ヘルプセンター', 'お問い合わせ', '公式ガイド'].map((item) => (
-                    <li key={item}><Link to="#" className="text-slate-400 hover:text-white transition-colors text-sm">{item}</Link></li>
-                  ))}
+                  <li><Link to="/support" className="text-slate-400 hover:text-white transition-colors text-sm">ヘルプセンター</Link></li>
+                  <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors text-sm">お問い合わせ</Link></li>
+                  <li><Link to="/tax-filing-guide" className="text-slate-400 hover:text-white transition-colors text-sm">公式ガイド</Link></li>
                 </ul>
               </div>
 
               <div>
                 <h4 className="text-white font-bold mb-6">法的情報</h4>
                 <ul className="space-y-4">
-                  {['利用規約', 'プライバシーポリシー', '特定商取引法に基づく表記'].map((item) => (
-                    <li key={item}><Link to="#" className="text-slate-400 hover:text-white transition-colors text-sm">{item}</Link></li>
-                  ))}
+                  <li><Link to="/terms" className="text-slate-400 hover:text-white transition-colors text-sm">利用規約</Link></li>
+                  <li><Link to="/privacy" className="text-slate-400 hover:text-white transition-colors text-sm">プライバシーポリシー</Link></li>
+                  <li><Link to="/legal" className="text-slate-400 hover:text-white transition-colors text-sm">特定商取引法に基づく表記</Link></li>
                 </ul>
               </div>
             </div>

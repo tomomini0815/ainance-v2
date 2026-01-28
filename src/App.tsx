@@ -45,6 +45,7 @@ const LegalNotice = React.lazy(() => import('./pages/LegalNotice'));
 const Signup = React.lazy(() => import('./pages/Signup'));
 const Features = React.lazy(() => import('./pages/Features'));
 const HowToUse = React.lazy(() => import('./pages/HowToUse'));
+const Pricing = React.lazy(() => import('./pages/Pricing'));
 const Support = React.lazy(() => import('./pages/Support'));
 const ReceiptTips = React.lazy(() => import('./pages/support/ReceiptTips'));
 const InvoiceCompliance = React.lazy(() => import('./pages/support/InvoiceCompliance'));
@@ -327,6 +328,7 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/features" element={<Features />} />
               <Route path="/how-to-use" element={<HowToUse />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/support" element={<Support />} />
               <Route path="/support/receipt-tips" element={<ReceiptTips />} />
               <Route path="/support/invoice-compliance" element={<InvoiceCompliance />} />
@@ -386,7 +388,7 @@ function App() {
               <Route path="/support/troubleshooting/system-requirements" element={<SystemRequirements />} />
               <Route path="/support/troubleshooting/clear-cache" element={<ClearCache />} />
               <Route path="/support/troubleshooting/bug-report" element={<BugReport />} />
-              {/* <Route path="/legal" element={<LegalNotice />} /> */}
+              <Route path="/legal" element={<LegalNotice />} />
 
               {/* デフォルトルート */}
               <Route path="/" element={<LandingPage />} />
