@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Sparkles, Menu, X, Play, FileText, MessageSquare, Receipt, TrendingUp, Check, ChevronRight, Calculator } from 'lucide-react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { ArrowRight, Sparkles, Menu, X, Play, FileText, MessageSquare, Receipt, TrendingUp, Check, ChevronRight, Calculator, LogIn } from 'lucide-react';
 import { SmoothScroll } from '../components/ui/SmoothScroll';
 import { CustomCursor } from '../components/ui/CustomCursor';
 import { MagneticButton } from '../components/ui/MagneticButton';
@@ -13,6 +13,17 @@ const LandingPage: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { scrollYProgress } = useScroll();
+
+  // ... (rest of logic up to line 125)
+  // (Skipping to keep context clear, but I'll make sure the file remains valid)
+  // Wait, I need to provide the full replacement or a good chunk.
+
+  // Let's re-view the file to see where the benefits end and navigation starts to ensure I don't break anything.
+  // Benefits end at line 123. Navigation starts at 143.
+
+  // I will replace from line 1 to line 203 to include the new import and menu logic.
+  // Actually, I should probably use multi_replace for better precision if I want to keep the benefit array etc.
+  // But replace_file_content is okay if I provide the correct range.
 
   // Parallax effects
   const yHero = useTransform(scrollYProgress, [0, 0.5], [0, -150]);
@@ -141,34 +152,41 @@ const LandingPage: React.FC = () => {
         </div>
 
         {/* Navigation */}
-        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-slate-950/80 backdrop-blur-2xl border-b border-white/5 py-4' : 'bg-transparent py-6'}`}>
+        <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'bg-slate-950/40 backdrop-blur-2xl border-b border-white/5 py-3' : 'bg-transparent py-5'}`}>
           <div className="max-w-[1400px] mx-auto px-6 flex justify-between items-center">
             <MagneticButton className="cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <div className="flex items-center space-x-3">
-                <img src="/ainance-logo-header.png" alt="Ainance Logo" className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
+                <img src="/ainance-logo-header.png" alt="Ainance Logo" className="w-10 h-10 sm:w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
                 <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Ainance</span>
               </div>
             </MagneticButton>
 
             <div className="hidden md:flex items-center space-x-1">
-              <button onClick={() => navigate('/features')} className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
-                機能
-              </button>
-              <button onClick={() => navigate('/how-to-use')} className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
-                使い方
-              </button>
-              <button onClick={() => navigate('/support')} className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
-                サポート
-              </button>
+              {[
+                { label: '機能', path: '/features' },
+                { label: '使い方', path: '/how-to-use' },
+                { label: 'サポート', path: '/support' }
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => navigate(item.path)}
+                  className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-all rounded-full hover:bg-white/5 active:scale-95"
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
-              <button onClick={() => navigate('/login')} className="text-sm font-medium text-slate-400 hover:text-white transition-colors px-4 py-2">
+              <button onClick={() => navigate('/login')} className="text-sm font-medium text-slate-400 hover:text-white transition-colors px-4 py-2 hover:bg-white/5 rounded-full">
                 ログイン
               </button>
               <MagneticButton onClick={() => navigate('/signup')}>
                 <div className="group relative px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full font-medium text-sm text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 overflow-hidden">
-                  <span className="relative z-10">無料で始める</span>
+                  <span className="relative z-10 flex items-center">
+                    無料で始める
+                    <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
               </MagneticButton>
@@ -176,30 +194,77 @@ const LandingPage: React.FC = () => {
 
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 text-white z-50"
+              className="md:hidden p-2.5 text-white z-[110] bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
             >
-              {isMenuOpen ? <X /> : <Menu />}
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
 
-          {/* Mobile Menu */}
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="md:hidden absolute top-full left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-b border-white/5 p-6"
-            >
-              <div className="flex flex-col space-y-4">
-                <button onClick={() => navigate('/features')} className="text-left py-2 text-slate-300 hover:text-white transition-colors">機能</button>
-                <button onClick={() => navigate('/how-to-use')} className="text-left py-2 text-slate-300 hover:text-white transition-colors">使い方</button>
-                <button onClick={() => navigate('/support')} className="text-left py-2 text-slate-300 hover:text-white transition-colors">サポート</button>
-                <hr className="border-white/10" />
-                <button onClick={() => navigate('/login')} className="py-2 text-slate-300 hover:text-white transition-colors text-left">ログイン</button>
-                <button onClick={() => navigate('/signup')} className="py-3 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full font-medium text-white">無料で始める</button>
-              </div>
-            </motion.div>
-          )}
+          {/* Mobile Menu Overlay */}
+          <AnimatePresence>
+            {isMenuOpen && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[101]"
+                />
+                <motion.div
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="fixed top-0 right-0 bottom-0 w-[280px] bg-slate-900/90 backdrop-blur-3xl border-l border-white/10 z-[102] p-8 pt-24 shadow-2xl"
+                >
+                  <div className="flex flex-col space-y-6">
+                    {[
+                      { label: '機能', path: '/features', icon: Sparkles },
+                      { label: '使い方', path: '/how-to-use', icon: Play },
+                      { label: 'サポート', path: '/support', icon: MessageSquare },
+                      { label: 'ログイン', path: '/login', icon: LogIn }
+                    ].map((item, idx) => (
+                      <motion.button
+                        key={item.label}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 + idx * 0.05 }}
+                        onClick={() => {
+                          navigate(item.path);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center space-x-4 text-slate-300 hover:text-white transition-colors group"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                          <item.icon className="w-5 h-5" />
+                        </div>
+                        <span className="text-lg font-medium">{item.label}</span>
+                      </motion.button>
+                    ))}
+
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.35 }}
+                      className="pt-8 border-t border-white/10"
+                    >
+                      <button
+                        onClick={() => {
+                          navigate('/signup');
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full py-4 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-2xl font-bold text-white shadow-xl shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
+                      >
+                        <span>無料で始める</span>
+                        <ArrowRight className="w-5 h-5" />
+                      </button>
+                    </motion.div>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </nav>
 
         {/* Hero Section */}
@@ -255,18 +320,20 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+              className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-6"
             >
               <button
                 onClick={() => navigate('/signup')}
-                className="group relative w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full font-semibold text-lg text-white shadow-2xl shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 flex items-center justify-center space-x-2 overflow-hidden"
+                className="group relative w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-2xl font-bold text-lg text-white shadow-2xl shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 flex items-center justify-center space-x-3 overflow-hidden active:scale-95"
               >
                 <span className="relative z-10">無料で始める</span>
-                <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1.5 transition-transform duration-300" />
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
-              <button className="group w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 text-white rounded-full font-semibold text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center space-x-2 backdrop-blur-sm">
-                <Play className="w-5 h-5 fill-current" />
+              <button className="group relative w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center space-x-3 backdrop-blur-sm active:scale-95">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <Play className="w-4 h-4 fill-white text-white" />
+                </div>
                 <span>使い方を見る</span>
               </button>
             </motion.div>
@@ -438,30 +505,59 @@ const LandingPage: React.FC = () => {
         </section>
 
         {/* Footer */}
-        <footer className="py-12 border-t border-white/5 bg-slate-950">
-          <div className="max-w-[1200px] mx-auto px-6">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-              {/* Logo */}
-              <div className="flex items-center space-x-3">
-                <img src="/ainance-logo-header.png" alt="Ainance Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
-                <span className="font-bold text-white">Ainance</span>
+        <footer className="py-16 sm:py-20 border-t border-white/5 bg-slate-950/50 backdrop-blur-3xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/5 to-transparent pointer-events-none"></div>
+          <div className="max-w-[1400px] mx-auto px-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+              <div className="col-span-1 md:col-span-1">
+                <div className="flex items-center space-x-3 mb-6">
+                  <img src="/ainance-logo-header.png" alt="Ainance Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
+                  <span className="text-xl font-bold text-white tracking-tight">Ainance</span>
+                </div>
+                <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+                  AIが一人ひとりの経理を支える、次世代のパートナー。面倒な事務作業から解放され、豊かに働く未来を創ります。
+                </p>
               </div>
 
-              {/* Links */}
-              <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
-                <Link to="/privacy" className="hover:text-white transition-colors">プライバシーポリシー</Link>
-                <Link to="/terms" className="hover:text-white transition-colors">利用規約</Link>
-                <Link to="/contact" className="hover:text-white transition-colors">お問い合わせ</Link>
-                {/* <Link to="/legal" className="hover:text-white transition-colors">特定商取引法に基づく表記</Link> */}
+              <div>
+                <h4 className="text-white font-bold mb-6">サービス</h4>
+                <ul className="space-y-4">
+                  {['機能紹介', '使い方', '料金プラン'].map((item) => (
+                    <li key={item}><Link to="#" className="text-slate-400 hover:text-white transition-colors text-sm">{item}</Link></li>
+                  ))}
+                </ul>
               </div>
 
-              {/* Copyright */}
-              <div className="text-sm text-slate-600">
+              <div>
+                <h4 className="text-white font-bold mb-6">サポート</h4>
+                <ul className="space-y-4">
+                  {['ヘルプセンター', 'お問い合わせ', '公式ガイド'].map((item) => (
+                    <li key={item}><Link to="#" className="text-slate-400 hover:text-white transition-colors text-sm">{item}</Link></li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-white font-bold mb-6">法的情報</h4>
+                <ul className="space-y-4">
+                  {['利用規約', 'プライバシーポリシー', '特定商取引法に基づく表記'].map((item) => (
+                    <li key={item}><Link to="#" className="text-slate-400 hover:text-white transition-colors text-sm">{item}</Link></li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-white/5 gap-6">
+              <div className="text-sm text-slate-500">
                 © 2025 Ainance. All rights reserved.
+              </div>
+              <div className="flex items-center space-x-6">
+                {/* Social icons could go here */}
+                <span className="text-xs text-slate-600">Built with precision for specialists.</span>
               </div>
             </div>
           </div>
-        </footer >
+        </footer>
 
       </div >
     </SmoothScroll >
