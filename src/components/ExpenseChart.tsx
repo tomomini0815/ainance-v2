@@ -17,7 +17,8 @@ interface ExpenseChartProps {
 
 const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
   const calculateExpenseByCategory = () => {
-    const expenseTransactions = transactions.filter(t => t.type === 'expense' && t.approval_status !== 'pending');
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    // 保留中も含めて表示するように変更 (t.approval_status !== 'pending' を削除)
     const categoryTotals: { [key: string]: number } = {};
 
     expenseTransactions.forEach(transaction => {
