@@ -172,36 +172,42 @@ const SubsidyMatching: React.FC = () => {
                 ) : (
                     <>
                         {/* サマリーカード */}
-                        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-                            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-xl p-3 sm:p-6 border border-blue-500/20">
-                                <div className="flex items-center justify-between mb-1 sm:mb-2">
-                                    <span className="text-[10px] sm:text-sm font-medium text-text-muted">マッチ</span>
-                                    <Search className="w-3 h-3 sm:w-5 h-5 text-blue-500" />
+                        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-5">
+                            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-xl p-2.5 sm:p-4 border border-blue-500/20">
+                                <div className="flex items-center justify-between mb-0.5">
+                                    <span className="text-[10px] sm:text-xs font-medium text-text-muted">マッチ</span>
+                                    <Search className="w-3.5 h-3.5 sm:w-4 h-4 text-blue-500" />
                                 </div>
-                                <p className="text-xl sm:text-3xl font-bold text-text-main">{matches.length}</p>
-                                <p className="text-[9px] sm:text-xs text-text-muted mt-1">件</p>
+                                <div className="flex items-baseline gap-1">
+                                    <p className="text-lg sm:text-2xl font-bold text-text-main">{matches.length}</p>
+                                    <span className="text-[9px] sm:text-xs text-text-muted">件</span>
+                                </div>
                             </div>
 
-                            <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-3 sm:p-6 border border-green-500/20">
-                                <div className="flex items-center justify-between mb-1 sm:mb-2">
-                                    <span className="text-[10px] sm:text-sm font-medium text-text-muted">推定総額</span>
-                                    <JapaneseYen className="w-3 h-3 sm:w-5 h-5 text-green-500" />
+                            <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-2.5 sm:p-4 border border-green-500/20">
+                                <div className="flex items-center justify-between mb-0.5">
+                                    <span className="text-[10px] sm:text-xs font-medium text-text-muted">推定総額</span>
+                                    <JapaneseYen className="w-3.5 h-3.5 sm:w-4 h-4 text-green-500" />
                                 </div>
-                                <p className="text-xl sm:text-3xl font-bold text-text-main">
-                                    ¥{Math.round(matches.reduce((sum, m) => sum + m.estimatedAmount, 0) / 10000).toLocaleString()}
-                                </p>
-                                <p className="text-[8px] sm:text-xs text-text-muted mt-1">万円相当</p>
+                                <div className="flex items-baseline gap-1">
+                                    <p className="text-lg sm:text-2xl font-bold text-text-main">
+                                        ¥{Math.round(matches.reduce((sum, m) => sum + m.estimatedAmount, 0) / 10000).toLocaleString()}
+                                    </p>
+                                    <span className="text-[9px] sm:text-xs text-text-muted">万円相当</span>
+                                </div>
                             </div>
 
-                            <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-xl p-3 sm:p-6 border border-purple-500/20">
-                                <div className="flex items-center justify-between mb-1 sm:mb-2">
-                                    <span className="text-[10px] sm:text-sm font-medium text-text-muted">高マッチ</span>
-                                    <TrendingUp className="w-3 h-3 sm:w-5 h-5 text-purple-500" />
+                            <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-xl p-2.5 sm:p-4 border border-purple-500/20">
+                                <div className="flex items-center justify-between mb-0.5">
+                                    <span className="text-[10px] sm:text-xs font-medium text-text-muted">高マッチ</span>
+                                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 h-4 text-purple-500" />
                                 </div>
-                                <p className="text-xl sm:text-3xl font-bold text-text-main">
-                                    {matches.filter(m => m.matchScore >= 70).length}
-                                </p>
-                                <p className="text-[9px] sm:text-xs text-text-muted mt-1">件</p>
+                                <div className="flex items-baseline gap-1">
+                                    <p className="text-lg sm:text-2xl font-bold text-text-main">
+                                        {matches.filter(m => m.matchScore >= 70).length}
+                                    </p>
+                                    <span className="text-[9px] sm:text-xs text-text-muted">件</span>
+                                </div>
                             </div>
                         </div>
 
