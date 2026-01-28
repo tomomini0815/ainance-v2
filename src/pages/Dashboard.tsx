@@ -131,9 +131,6 @@ const Dashboard: React.FC = () => {
 
     // 金額を確実に数値に変換して計算
     const incomeTransactions = transactions.filter(t => {
-      // 承認待ちの取引は統計に含めない
-      if (t.approval_status === 'pending') return false;
-
       // typeが'income'の場合を優先
       if (t.type === 'income') {
         return true;
@@ -152,9 +149,6 @@ const Dashboard: React.FC = () => {
     });
 
     const expenseTransactions = transactions.filter(t => {
-      // 承認待ちの取引は統計に含めない
-      if (t.approval_status === 'pending') return false;
-
       // typeが'expense'の場合を優先
       if (t.type === 'expense') {
         return true;

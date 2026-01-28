@@ -53,9 +53,10 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions }) =
 
         const currentMonthExpenses = transactions.filter(t => {
             const d = new Date(t.date);
-            return d.getMonth() === currentMonth &&
-                d.getFullYear() === currentYear &&
-                (t.type === 'expense' || (t.type !== 'income' && typeof t.amount === 'number' && t.amount < 0));
+            // new Date("YYYY-MM-DD") is UTC. We need to compare it with local current month/year.
+            const isThisMonth = d.getUTCMonth() === currentMonth && d.getUTCFullYear() === currentYear;
+            const isExpense = t.type === 'expense' || (t.type !== 'income' && getAmount(t.amount) > 0 && Number(t.amount) < 0);
+            return isThisMonth && isExpense;
         });
 
         const getAmount = (val: string | number) => typeof val === 'number' ? Math.abs(val) : Math.abs(parseInt(val) || 0);
