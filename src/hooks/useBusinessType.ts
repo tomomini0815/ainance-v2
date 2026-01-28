@@ -12,6 +12,7 @@ interface BusinessType {
   phone: string
   email: string
   representative_name: string
+  established_date?: string
   is_active: boolean
   created_at: string
   updated_at: string
@@ -84,36 +85,6 @@ export const useBusinessType = (userId?: string) => {
       setLoading(false)
     }
   }, [userId])
-
-  // ユーザーの全業態形態を取得
-  const fetchAllBusinessTypes = useCallback(() => {
-    if (!userId) return
-
-    supabase
-      .from('business_type')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('業態形態リストの取得に失敗しました:', error)
-          return
-        }
-
-        setBusinessTypes(data || [])
-
-        // アクティブな業態形態がリストになければ更新
-        if (data && data.length > 0) {
-          const activeBusinessType = data.find((bt) => bt.is_active)
-          if (activeBusinessType) {
-            setCurrentBusinessType(activeBusinessType)
-          } else if (!currentBusinessType && data.length > 0) {
-            // 現在の業態がなく、リストに業態がある場合は最初のものを設定
-            setCurrentBusinessType(data[0])
-          }
-        }
-      })
-  }, [userId, currentBusinessType])
 
   // 業態形態を作成
   const createBusinessType = async (data: Omit<BusinessType, 'id' | 'user_id' | 'is_active' | 'created_at' | 'updated_at'>) => {

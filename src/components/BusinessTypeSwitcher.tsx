@@ -148,7 +148,8 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
         address: address,
         phone: formData.get('phone') as string || '',
         email: formData.get('email') as string || '',
-        representative_name: representativeName
+        representative_name: representativeName,
+        established_date: formData.get('established_date') as string || ''
       }
 
       console.log('Creating business type with data:', businessTypeData)
@@ -177,7 +178,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
         details: error.details,
         hint: error.hint
       });
-      
+
       // より詳細なエラーメッセージを表示
       let errorMessage = '不明なエラー';
       if (error.message) {
@@ -185,7 +186,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
       } else if (error.error_description) {
         errorMessage = error.error_description;
       }
-      
+
       alert(`エラーが発生しました: ${errorMessage}`)
     } finally {
       setIsSubmitting(false)
@@ -204,7 +205,8 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
       address: formData.get('address') as string,
       phone: formData.get('phone') as string,
       email: formData.get('email') as string,
-      representative_name: formData.get('representative_name') as string
+      representative_name: formData.get('representative_name') as string,
+      established_date: formData.get('established_date') as string
     }
 
     const result = await updateBusinessType(editingBusinessType.id, updates)
@@ -419,7 +421,6 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
       {showCreateModal && createPortal(
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
-          onClick={() => setShowCreateModal(false)}
         >
           <div
             className="bg-surface rounded-2xl shadow-2xl w-[95%] max-w-md max-h-[85vh] border border-border animate-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
@@ -483,14 +484,24 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
               </div>
 
               {selectedBusinessType === 'corporation' && (
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">法人番号</label>
-                  <input
-                    type="text"
-                    name="tax_number"
-                    className="input-base"
-                    placeholder="1234567890123"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1.5">法人番号</label>
+                    <input
+                      type="text"
+                      name="tax_number"
+                      className="input-base"
+                      placeholder="1234567890123"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1.5">設立日</label>
+                    <input
+                      type="date"
+                      name="established_date"
+                      className="input-base"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -584,10 +595,6 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
       {showEditModal && editingBusinessType && createPortal(
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
-          onClick={() => {
-            setShowEditModal(false)
-            setEditingBusinessType(null)
-          }}
         >
           <div
             className="bg-surface rounded-2xl shadow-2xl w-[95%] max-w-md max-h-[85vh] border border-border animate-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
@@ -632,14 +639,25 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
               </div>
 
               {editingBusinessType.business_type === 'corporation' && (
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">法人番号</label>
-                  <input
-                    type="text"
-                    name="tax_number"
-                    defaultValue={editingBusinessType.tax_number}
-                    className="input-base"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1.5">法人番号</label>
+                    <input
+                      type="text"
+                      name="tax_number"
+                      defaultValue={editingBusinessType.tax_number}
+                      className="input-base"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1.5">設立日</label>
+                    <input
+                      type="date"
+                      name="established_date"
+                      defaultValue={editingBusinessType.established_date}
+                      className="input-base"
+                    />
+                  </div>
                 </div>
               )}
 

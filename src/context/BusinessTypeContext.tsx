@@ -12,6 +12,7 @@ interface BusinessType {
     phone: string;
     email: string;
     representative_name: string;
+    established_date?: string;
     is_active: boolean;
     created_at: string;
     updated_at: string;
