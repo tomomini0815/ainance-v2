@@ -57,7 +57,7 @@ const QuickActions: React.FC = () => {
       title: isCorporation ? '法人税申告サポート' : '確定申告サポート',
       description: 'Ainanceのデータで書類作成',
       icon: Sparkles,
-      link: '/tax-filing-wizard',
+      link: isCorporation ? '/corporate-tax' : '/tax-filing-wizard',
       color: 'bg-indigo-500/20',
       iconColor: 'text-indigo-500',
       borderColor: 'border-indigo-500/30'
