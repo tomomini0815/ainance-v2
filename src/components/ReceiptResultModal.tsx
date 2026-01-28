@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, X, Edit2, FileText, RotateCcw } from 'lucide-react';
 import { useAuth } from '../components/AuthProvider';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
+import { useTransactions } from '../hooks/useTransactions';
 import { saveReceipt } from '../services/receiptService';
 
 interface ReceiptData {
@@ -42,8 +43,8 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
 
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
+    const { createTransaction, loading: isTransactionLoading } = useTransactions(user?.id, currentBusinessType?.business_type);
 
-    const [isEditing, setIsEditing] = useState(false);
     const [editedData, setEditedData] = useState(receiptData || {
         merchant: '',
         date: new Date().toISOString().split('T')[0],
@@ -85,8 +86,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
             console.log('ユーザー認証情報:', user);
             console.log('現在の業態:', currentBusinessType);
 
-            // レシートデータを作成（IDはデータベースで自動生成）
-            // user.idを使用するように修正
+            // 1. レシートテーブルに保存
             const receiptToSave = {
                 user_id: user.id,
                 date: editedData.date,
@@ -95,7 +95,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 category: selectedCategory,
                 description: `${editedData.merchant}での購入`,
                 confidence: editedData.confidence,
-                status: 'pending' as const, // 保留中で保存
+                status: 'pending' as const,
                 tax_rate: editedData.taxRate,
                 confidence_scores: {
                     merchant: editedData.confidence,
@@ -112,13 +112,41 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 throw new Error('レシートの保存に失敗しました');
             }
 
+            // 2. トランザクションとして保存（approval_status: 'pending'で保存してInboxに表示させる）
+            // レシートURLやIDがあれば紐付けることも可能だが、現状は独立して保存
+            const transactionToSave = {
+                item: editedData.merchant,
+                amount: editedData.amount,
+                date: editedData.date,
+                category: selectedCategory,
+                type: 'expense' as const,
+                description: `${editedData.merchant}での購入（レシート読取）`,
+                approval_status: 'pending' as const, // 保留中で保存
+                tags: ['receipt_created', `receipt_id:${savedReceipt.id}`],
+                creator: user.id,
+                // receipt_id: savedReceipt.id // もしトランザクションテーブルにカラムがあれば追加
+            };
+
+            // トランザクションを保存
+            const result = await createTransaction(transactionToSave);
+            console.log('トランザクション保存結果:', result);
+
+            if (result.error) {
+                // トランザクション保存に失敗した場合のロールバック（今回は簡易的にログ出力のみ）
+                console.error('トランザクション保存失敗:', result.error);
+                throw result.error;
+            }
+
             // 成功通知
-            alert('✅ レシートが一覧に保存されました。内容を確認して承認を行ってください。');
+            alert('✅ レシートがインボックスとレシート一覧に保存されました。内容を確認して承認を行ってください。');
 
             // 一覧を更新するためのコールバック
             if (onSave) {
                 onSave();
             }
+
+            // 完了イベントを発火
+            window.dispatchEvent(new CustomEvent('transactionRecorded'));
 
             onClose();
         } catch (error: any) {
@@ -177,25 +205,6 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                 <div className="w-1 h-4 bg-blue-600 rounded-full mr-2" />
                                 抽出データ
                             </h3>
-                            <button
-                                onClick={() => setIsEditing(!isEditing)}
-                                className={`flex items-center px-2.5 py-1.5 text-xs rounded-lg font-medium transition-all ${isEditing
-                                    ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800'
-                                    : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
-                                    }`}
-                            >
-                                {isEditing ? (
-                                    <>
-                                        <Check className="w-3 h-3 mr-1" />
-                                        完了
-                                    </>
-                                ) : (
-                                    <>
-                                        <Edit2 className="w-3 h-3 mr-1" />
-                                        編集
-                                    </>
-                                )}
-                            </button>
                         </div>
 
                         <div className="grid grid-cols-1 gap-3">
@@ -207,19 +216,13 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                     </span>
                                     店舗名
                                 </label>
-                                {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={editedData.merchant}
-                                        onChange={(e) => handleFieldEdit('merchant', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                                        placeholder="店舗名を入力"
-                                    />
-                                ) : (
-                                    <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/50 rounded-lg text-sm font-medium text-gray-900 dark:text-white border border-blue-100 dark:border-blue-800/50">
-                                        {editedData.merchant}
-                                    </div>
-                                )}
+                                <input
+                                    type="text"
+                                    value={editedData.merchant}
+                                    onChange={(e) => handleFieldEdit('merchant', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                    placeholder="店舗名を入力"
+                                />
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -231,18 +234,12 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                         </span>
                                         日付
                                     </label>
-                                    {isEditing ? (
-                                        <input
-                                            type="date"
-                                            value={editedData.date}
-                                            onChange={(e) => handleFieldEdit('date', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                                        />
-                                    ) : (
-                                        <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm font-medium text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600">
-                                            {editedData.date}
-                                        </div>
-                                    )}
+                                    <input
+                                        type="date"
+                                        value={editedData.date}
+                                        onChange={(e) => handleFieldEdit('date', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                    />
                                 </div>
 
                                 {/* 金額 */}
@@ -253,19 +250,13 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                         </span>
                                         金額
                                     </label>
-                                    {isEditing ? (
-                                        <input
-                                            type="number"
-                                            value={editedData.amount}
-                                            onChange={(e) => handleFieldEdit('amount', parseInt(e.target.value))}
-                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                                            placeholder="金額を入力"
-                                        />
-                                    ) : (
-                                        <div className="px-3 py-2 bg-yellow-50 dark:bg-yellow-900/50 rounded-lg text-sm font-bold text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800/50">
-                                            ¥{editedData.amount.toLocaleString()}
-                                        </div>
-                                    )}
+                                    <input
+                                        type="number"
+                                        value={editedData.amount}
+                                        onChange={(e) => handleFieldEdit('amount', parseInt(e.target.value))}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                        placeholder="金額を入力"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -326,7 +317,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                         disabled={isSaving || !selectedCategory}
                         className={`w-full sm:w-auto px-4 py-2.5 rounded-lg font-medium text-sm flex items-center justify-center transition-all ${isSaving || !selectedCategory
                             ? 'bg-gray-300 dark:bg-gray-500 text-gray-500 dark:text-gray-300 cursor-not-allowed'
-                            : 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-400 shadow-sm'
+                            : 'bg-primary text-white hover:bg-primary/90 shadow-sm'
                             }`}
                     >
                         {isSaving ? (

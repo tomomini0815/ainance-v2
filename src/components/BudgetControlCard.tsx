@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Target, CheckCircle2, Search, ArrowRight, Settings } from 'lucide-react';
+import { CheckCircle2, Search, ArrowRight, Settings } from 'lucide-react';
 import { Transaction } from '../types/transaction';
 import {
     Chart as ChartJS,
@@ -78,7 +78,31 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions }) =
             .sort(([, a], [, b]) => b - a)
             .slice(0, 7); // Top 7 for compact chart
 
-        const maxY = sortedCats.length > 0 ? sortedCats[0][1] : 0;
+        // Calculate weighted total for Yamawake with boosts (重み付け山分け)
+        // 特定のカテゴリ（接待交際費、消耗品費）の配分を多くするため、重みを2倍にする
+        let totalWeight = 0;
+        Object.entries(categoryTotals).forEach(([cat, amount]) => {
+            let weight = amount;
+            if (cat.includes('接待') || cat.includes('交際') || cat.includes('消耗品')) {
+                weight = amount * 2.0; // Boost share by 2x
+            }
+            totalWeight += weight;
+        });
+
+        // Calculate proportional budget estimates
+        const budgetEstimates = sortedCats.map(([name, amount]) => {
+            if (totalWeight === 0) return 0;
+            let weight = amount;
+            if (name.includes('接待') || name.includes('交際') || name.includes('消耗品')) {
+                weight = amount * 2.0;
+            }
+            return Math.round(budget * (weight / totalWeight));
+        });
+
+        const actualMax = sortedCats.length > 0 ? sortedCats[0][1] : 0;
+        const budgetMax = Math.max(...budgetEstimates, 0);
+        const maxY = Math.max(actualMax, budgetMax);
+
         const top = sortedCats.length > 0 ? { name: sortedCats[0][0], amount: sortedCats[0][1] } : null;
 
         const data = {
@@ -93,7 +117,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions }) =
                 },
                 {
                     label: '予算目安',
-                    data: sortedCats.map(() => budget * 0.15), // Mock budget line
+                    data: budgetEstimates,
                     backgroundColor: '#e5e7eb',
                     borderRadius: 4,
                     barThickness: 10,
@@ -142,9 +166,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions }) =
             {/* Header */}
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                        <Target className="w-4 h-4 text-primary" />
-                    </div>
+
                     <div>
                         <h3 className="text-base font-bold text-text-main leading-tight">経営管理コックピット</h3>
                         <p className="text-[10px] text-text-muted">リアルタイム予実管理</p>

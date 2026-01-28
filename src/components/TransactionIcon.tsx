@@ -56,6 +56,7 @@ const TransactionIcon: React.FC<TransactionIconProps> = ({ item, category, size 
         case '売上':
         case '業務委託収入':
             return <span className={`${badgeClass} bg-emerald-500/20 text-emerald-500`}>売</span>;
+        case '給与':
         case '給料':
         case '役員報酬':
             return <span className={`${badgeClass} bg-indigo-500/20 text-indigo-500`}>給</span>;

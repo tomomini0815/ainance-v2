@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import ReceiptCamera from '../components/ReceiptCamera';
 import ReceiptResultModal from '../components/ReceiptResultModal';
-import { getReceipts, updateReceiptStatus } from '../services/receiptService'
+import { getReceipts, updateReceiptStatus, approveReceiptAndCreateTransaction } from '../services/receiptService'
 import { useAuth } from '../components/AuthProvider'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useTransactions } from '../hooks/useTransactions'
@@ -659,25 +659,32 @@ const ReceiptProcessing: React.FC = () => {
     setUploadedReceipts(prev => prev.filter(r => r.id !== id));
 
     try {
-      // 1. レシートステータスを承認済みに更新
-      await updateReceiptStatus(id, 'approved');
+      const businessType = currentBusinessType?.business_type || 'individual';
 
-      // 2. トランザクションを作成 (Context経由で追加することで即座に反映)
-      await createTransaction({
-        item: receipt.merchant, // 店舗名を項目名として使用
-        amount: receipt.amount,
-        date: receipt.date,
-        category: receipt.category,
-        type: 'expense',
-        description: receipt.description || `${receipt.merchant} での購入`,
-        receipt_url: undefined,
-        creator: user.id,
-        tags: ['receipt_scan'],
-        recurring: false,
-        approval_status: 'approved' // 明示的にapprovedを設定
-      });
+      // サービス関数を使用して承認とトランザクション作成（同期処理を含む）
+      const result = await approveReceiptAndCreateTransaction(
+        id,
+        {
+          ...receipt,
+          user_id: user.id,
+          // 必要なフィールドをマッピング
+          confidence_scores: receipt.confidenceScores,
+          tax_rate: receipt.taxRate
+        } as any,
+        businessType,
+        user.id
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       toast.success('レシートが登録され、取引履歴に反映されました');
+
+      // イベント発行して他のコンポーネント（Inboxなど）を更新
+      window.dispatchEvent(new CustomEvent('transactionApproved'));
+      window.dispatchEvent(new CustomEvent('transactionRecorded'));
+
     } catch (error) {
       console.error('レシート登録エラー:', error);
       toast.error('登録に失敗しました');
@@ -812,7 +819,7 @@ const ReceiptProcessing: React.FC = () => {
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {/* カメラ撮影 */}
               <div
-                className="group border border-primary border-dashed rounded-lg p-2.5 sm:p-4 text-center cursor-pointer bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
+                className="group border-[1.5px] border-primary border-dashed rounded-lg p-2.5 sm:p-4 text-center cursor-pointer bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
                 onClick={startCamera}
               >
                 <Camera className="w-6 h-6 text-text-muted group-hover:text-primary mx-auto mb-1.5 transition-colors" />
@@ -822,7 +829,7 @@ const ReceiptProcessing: React.FC = () => {
               </div>
 
               {/* ファイルアップロード */}
-              <label className="group border border-primary border-dashed rounded-lg p-2.5 sm:p-4 text-center cursor-pointer bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200">
+              <label className="group border-[1.5px] border-primary border-dashed rounded-lg p-2.5 sm:p-4 text-center cursor-pointer bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200">
                 <input
                   type="file"
                   accept="image/*"
@@ -837,7 +844,7 @@ const ReceiptProcessing: React.FC = () => {
               </label>
 
               {/* ドラッグ&ドロップ */}
-              <div className="group border border-primary border-dashed rounded-lg p-2.5 sm:p-4 text-center bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200">
+              <div className="group border-[1.5px] border-primary border-dashed rounded-lg p-2.5 sm:p-4 text-center bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200">
                 <FileImage className="w-6 h-6 text-text-muted group-hover:text-primary mx-auto mb-1.5 transition-colors" />
                 <p className="text-[10px] sm:text-sm font-semibold text-text-main mb-0.5">ドロップ</p>
                 <p className="hidden sm:block text-[10px] text-text-muted">ここに画像をドロップ</p>
@@ -964,7 +971,7 @@ const ReceiptProcessing: React.FC = () => {
                             className="w-20 px-1.5 py-0.5 border border-border rounded text-sm text-right bg-surface text-text-main"
                           />
                         ) : (
-                          <div className="font-bold text-base text-text-main cursor-pointer" onClick={() => handleEdit(receipt)}>
+                          <div className="font-bold text-base text-white cursor-pointer" onClick={() => handleEdit(receipt)}>
                             ¥{receipt.amount.toLocaleString()}
                           </div>
                         )}
@@ -1114,7 +1121,7 @@ const ReceiptProcessing: React.FC = () => {
                                 className="w-full px-2 py-1 border border-border rounded text-xs"
                               />
                             ) : (
-                              <span className="cursor-pointer hover:underline decoration-text-muted/50">¥{receipt.amount.toLocaleString()}</span>
+                              <span className="cursor-pointer hover:underline decoration-text-muted/50 text-white">¥{receipt.amount.toLocaleString()}</span>
                             )}
                           </td>
                           <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>

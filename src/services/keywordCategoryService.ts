@@ -26,7 +26,8 @@ export type StandardCategory =
   | '雑費'
   | '仕入'
   | '売上'
-  | '業務委託収入';
+  | '業務委託収入'
+  | '給与';
 
 export const STANDARD_CATEGORIES: StandardCategory[] = [
   '旅費交通費',
@@ -48,7 +49,8 @@ export const STANDARD_CATEGORIES: StandardCategory[] = [
   '雑費',
   '仕入',
   '売上',
-  '業務委託収入'
+  '業務委託収入',
+  '給与'
 ];
 
 // キーワードとカテゴリのマッピング
@@ -59,6 +61,11 @@ const KEYWORD_RULES: { keyword: string; category: StandardCategory }[] = [
   { keyword: '入金', category: '売上' },
   { keyword: '報酬', category: '売上' },
   { keyword: '業務委託', category: '売上' },
+  { keyword: '給与', category: '給与' },
+  { keyword: '給料', category: '給与' },
+  { keyword: '賞与', category: '給与' },
+  { keyword: 'ボーナス', category: '給与' },
+  { keyword: '収入', category: '給与' },
 
   // 通信費・クラウドサービス
   { keyword: 'AWS', category: '通信費' },

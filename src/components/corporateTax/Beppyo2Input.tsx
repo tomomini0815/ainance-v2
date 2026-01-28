@@ -91,7 +91,7 @@ export const Beppyo2Input: React.FC<Props> = ({ data, onChange }) => {
                         <MoneyInput
                             value={beppyo2.totalShares}
                             onChange={(val) => handleChange('totalShares', val)}
-                            className="w-full px-4 py-2 border border-border rounded-lg text-right font-mono focus:ring-2 focus:ring-primary focus:border-transparent"
+                            className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                         />
                     </div>
                     <div>
@@ -137,7 +137,7 @@ export const Beppyo2Input: React.FC<Props> = ({ data, onChange }) => {
                                     value={item.name}
                                     onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
                                     placeholder="氏名・会社名"
-                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                 />
                             </div>
                             <div>
@@ -146,7 +146,7 @@ export const Beppyo2Input: React.FC<Props> = ({ data, onChange }) => {
                                     type="text"
                                     value={item.address}
                                     onChange={(e) => handleItemChange(item.id, 'address', e.target.value)}
-                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -173,7 +173,7 @@ export const Beppyo2Input: React.FC<Props> = ({ data, onChange }) => {
                                     type="text"
                                     value={item.relationship}
                                     onChange={(e) => handleItemChange(item.id, 'relationship', e.target.value)}
-                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                 />
                             </div>
                         </div>
@@ -214,7 +214,7 @@ export const Beppyo2Input: React.FC<Props> = ({ data, onChange }) => {
                                                     value={item.name}
                                                     onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
                                                     placeholder="氏名・会社名"
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
@@ -222,7 +222,7 @@ export const Beppyo2Input: React.FC<Props> = ({ data, onChange }) => {
                                                     type="text"
                                                     value={item.address}
                                                     onChange={(e) => handleItemChange(item.id, 'address', e.target.value)}
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
@@ -241,7 +241,7 @@ export const Beppyo2Input: React.FC<Props> = ({ data, onChange }) => {
                                                     value={item.relationship}
                                                     onChange={(e) => handleItemChange(item.id, 'relationship', e.target.value)}
                                                     placeholder="本人、妻、父など"
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2 text-center">

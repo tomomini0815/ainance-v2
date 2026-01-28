@@ -61,7 +61,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo5.retainedEarningsBegin}
                                     onChange={(val) => handleChange('retainedEarningsBegin', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                 />
                             </div>
                             <p className="text-xs text-text-muted mt-2">
@@ -98,7 +98,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                     <MoneyInput
                                         value={beppyo5.currentIncrease}
                                         onChange={(val) => handleChange('currentIncrease', val)}
-                                        className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-success focus:border-transparent text-right font-mono"
+                                        className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-success focus:border-transparent text-right font-mono bg-surface"
                                     />
                                 </div>
                                 <p className="text-xs text-text-muted mt-1">
@@ -115,7 +115,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                     <MoneyInput
                                         value={beppyo5.currentDecrease}
                                         onChange={(val) => handleChange('currentDecrease', val)}
-                                        className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-error focus:border-transparent text-right font-mono"
+                                        className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-error focus:border-transparent text-right font-mono bg-surface"
                                     />
                                 </div>
                                 <p className="text-xs text-text-muted mt-1">
@@ -146,7 +146,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo5.capitalBegin}
                                     onChange={(val) => handleChange('capitalBegin', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                 />
                             </div>
                         </div>
@@ -176,7 +176,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                     <MoneyInput
                                         value={beppyo5.capitalIncrease}
                                         onChange={(val) => handleChange('capitalIncrease', val)}
-                                        className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                        className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                     />
                                 </div>
                                 <p className="text-xs text-text-muted mt-1">
@@ -192,7 +192,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                     <MoneyInput
                                         value={beppyo5.capitalDecrease}
                                         onChange={(val) => handleChange('capitalDecrease', val)}
-                                        className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                        className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                     />
                                 </div>
                                 <p className="text-xs text-text-muted mt-1">

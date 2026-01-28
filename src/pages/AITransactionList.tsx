@@ -687,7 +687,10 @@ const AITransactionList: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium text-text-main text-lg">
+                        <div className={`font-medium text-lg ${transaction.ai_category === '売上' || transaction.ai_category === '給与' || transaction.ai_category === '雑収入'
+                            ? 'text-green-500'
+                            : 'text-white'
+                          }`}>
                           ¥{transaction.amount.toLocaleString()}
                         </div>
                         <div className="mt-1">
@@ -741,15 +744,15 @@ const AITransactionList: React.FC = () => {
                           <>
                             <button
                               onClick={() => handleVerification(transaction.id, true)}
-                              className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-100"
+                              className="p-3 bg-green-50 text-green-600 rounded-full hover:bg-green-100"
                             >
-                              <Check size={16} />
+                              <Check size={18} />
                             </button>
                             <button
                               onClick={() => handleVerification(transaction.id, false)}
-                              className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100"
+                              className="p-3 bg-red-50 text-red-600 rounded-full hover:bg-red-100"
                             >
-                              <X size={16} />
+                              <X size={18} />
                             </button>
                           </>
                         ) : (
@@ -845,7 +848,10 @@ const AITransactionList: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="font-medium text-text-main text-lg">
+                          <span className={`font-medium text-lg ${transaction.ai_category === '売上' || transaction.ai_category === '給与' || transaction.ai_category === '雑収入'
+                              ? 'text-green-500'
+                              : 'text-white'
+                            }`}>
                             ¥{transaction.amount.toLocaleString()}
                           </span>
                         </td>
@@ -918,17 +924,17 @@ const AITransactionList: React.FC = () => {
                             <div className="flex justify-center space-x-2">
                               <button
                                 onClick={() => handleVerification(transaction.id, true)}
-                                className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-2 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-colors"
+                                className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-colors"
                                 title="承認"
                               >
-                                <Check size={16} />
+                                <Check size={18} />
                               </button>
                               <button
                                 onClick={() => handleVerification(transaction.id, false)}
-                                className="bg-gradient-to-r from-red-500 to-pink-500 text-white p-2 rounded-lg hover:from-red-600 hover:to-pink-600 transition-colors"
+                                className="bg-gradient-to-r from-red-500 to-pink-500 text-white p-3 rounded-lg hover:from-red-600 hover:to-pink-600 transition-colors"
                                 title="却下"
                               >
-                                <X size={16} />
+                                <X size={18} />
                               </button>
                             </div>
                           )}

@@ -95,7 +95,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       setLoading(false);
     } catch (error: any) {
       console.error(`取引データの取得に失敗しました ${getTableName()}:`, error);
-      toast.error(`取引データの取得に失敗しました: ${error.message || '不明なエラー'}`);
+      toast.error(`取引データの取得に失敗しました: ${error.message || '不明なエラー'}`, { id: 'fetch-transactions' });
       setTransactions([]);
       setLoading(false);
     }
@@ -175,7 +175,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
             throw error;
         }
         createdData = data;
-        toast.success(`${bulkData.length}件の取引を記録しました`);
+        toast.success(`${bulkData.length}件の取引を記録しました`, { id: 'transaction-create' });
       } else {
         const { data, error } = await supabase
           .from(tableName)
@@ -188,7 +188,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
         }
         console.log('createTransaction - 挿入成功:', data);
         createdData = data; 
-        toast.success('取引を記録しました');
+        toast.success('取引を記録しました', { id: 'transaction-create' });
       }
 
       // ローカル状態も正規化して追加
@@ -210,7 +210,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       return { data: normalizedNew[0] || null, error: null };
     } catch (error: any) {
       console.error('取引の作成に失敗しました (useTransactions):', error);
-      toast.error('取引の作成に失敗しました: ' + (error.message || '不明なエラー'));
+      toast.error('取引の作成に失敗しました: ' + (error.message || '不明なエラー'), { id: 'transaction-create' });
       return { data: null, error };
     }
   };
@@ -254,11 +254,11 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       setTransactions(prev =>
         prev.map(t => t.id === id ? { ...updatedTransaction, amount: Number(updatedTransaction.amount) } : t)
       );
-      toast.success('取引を更新しました');
+      toast.success('取引を更新しました', { id: 'transaction-update' });
       return { data: updatedTransaction, error: null };
     } catch (error) {
       console.error('取引の更新に失敗しました:', error);
-      toast.error('取引の更新に失敗しました');
+      toast.error('取引の更新に失敗しました', { id: 'transaction-update' });
       return { data: null, error: error as Error };
     }
   };
@@ -279,14 +279,15 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       if (error) throw error;
 
       setTransactions(prev => prev.filter(t => t.id !== id));
-      toast.success('取引を削除しました');
+      toast.success('取引を削除しました', { id: 'transaction-delete' });
       return { error: null };
     } catch (error) {
       console.error('取引の削除に失敗しました:', error);
-      toast.error('取引の削除に失敗しました');
+      toast.error('取引の削除に失敗しました', { id: 'transaction-delete' });
       return { error: error as Error };
     }
   };
+
 
   // 取引を承認
   const approveTransaction = async (id: string): Promise<UpdateTransactionResult> => {
@@ -310,11 +311,29 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       setTransactions(prev =>
         prev.map(t => t.id === id ? { ...updatedTransaction, amount: Number(updatedTransaction.amount) } : t)
       );
-      toast.success('取引を承認しました');
+      toast.success('取引を承認しました', { id: 'transaction-approve' });
+
+      // 関連するレシートがあれば、それも承認する
+      if (updatedTransaction.tags && Array.isArray(updatedTransaction.tags)) {
+        const receiptIdTag = updatedTransaction.tags.find(tag => tag.startsWith('receipt_id:'));
+        if (receiptIdTag) {
+          const receiptId = receiptIdTag.split(':')[1];
+          if (receiptId) {
+             console.log('関連するレシートを承認します:', receiptId);
+             // 動的にインポートして循環参照を回避、またはsupabase直接実行
+             // ここではsupabase直接実行で対応
+             await supabase
+               .from('receipts')
+               .update({ status: 'approved', updated_at: new Date().toISOString() })
+               .eq('id', receiptId);
+          }
+        }
+      }
+
       return { data: updatedTransaction, error: null };
     } catch (error) {
       console.error('取引の承認に失敗しました:', error);
-      toast.error('取引の承認に失敗しました');
+      toast.error('取引の承認に失敗しました', { id: 'transaction-approve' });
       return { data: null, error: error as Error };
     }
   };

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowLeft, Search, Filter, Plus, ChevronDown, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat } from 'lucide-react'
+import { ArrowLeft, Search, Filter, Plus, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat, ChevronLeft, ChevronRight } from 'lucide-react'
 import TransactionIcon from '../components/TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionForm from '../components/TransactionForm'
@@ -88,6 +88,9 @@ const TransactionHistory: React.FC = () => {
     let result = [...transactions]
 
     // 検索フィルタ
+    // 未承認の取引（Voice入力など）を除外
+    result = result.filter(transaction => transaction.approval_status !== 'pending')
+
     if (searchTerm) {
       result = result.filter(transaction =>
         (transaction.item && transaction.item.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -265,67 +268,63 @@ const TransactionHistory: React.FC = () => {
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* ヘッダー */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <div className="flex items-center mb-2">
-              <Link to="/dashboard" className="mr-4 p-2 rounded-lg hover:bg-surface-highlight transition-colors">
-                <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-text-main">取引履歴</h1>
-                <p className="text-xs text-text-muted mt-0.5">すべての取引履歴を確認・管理できます</p>
-              </div>
+        <div className="flex flex-row justify-between items-center mb-6 gap-4">
+          <div className="flex items-center">
+            <Link to="/dashboard" className="mr-3 p-1.5 rounded-lg hover:bg-surface-highlight transition-colors">
+              <ArrowLeft className="w-5 h-5 text-text-muted hover:text-text-main" />
+            </Link>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-text-main">取引履歴</h1>
+              <p className="hidden sm:block text-xs text-text-muted mt-0.5">すべての取引履歴を確認・管理できます</p>
             </div>
           </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="btn-primary flex items-center"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              新規取引
-            </button>
-          </div>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="btn-primary flex items-center px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            新規取引
+          </button>
         </div>
 
         {/* 統計カード */}
-        <div className="bg-surface rounded-xl shadow-sm p-3 border border-border hover:shadow-md transition-shadow mb-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="border border-border rounded-lg p-2.5">
+        <div className="bg-surface rounded-xl shadow-sm p-2 border border-border hover:shadow-md transition-shadow mb-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+            <div className="border border-border rounded-lg p-2">
               <div className="flex items-center justify-between">
                 <div className="text-[10px] font-medium text-text-muted">総取引数</div>
-                <div className="rounded-lg bg-primary/5 p-1.5">
-                  <FileText className="w-4 h-4 text-primary" />
+                <div className="rounded-lg bg-primary/5 p-1">
+                  <FileText className="w-3.5 h-3.5 text-primary" />
                 </div>
               </div>
-              <div className="text-lg font-bold text-primary mt-0.5">{stats.total}</div>
+              <div className="text-base sm:text-lg font-bold text-primary mt-0.5">{stats.total}</div>
             </div>
-            <div className="border border-border rounded-lg p-2.5">
+            <div className="border border-border rounded-lg p-2">
               <div className="flex items-center justify-between">
                 <div className="text-[10px] font-medium text-text-muted">収入</div>
-                <div className="rounded-lg bg-green-500/5 p-1.5">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
+                <div className="rounded-lg bg-green-500/5 p-1">
+                  <TrendingUp className="w-3.5 h-3.5 text-green-500" />
                 </div>
               </div>
-              <div className="text-lg font-bold text-green-500 mt-0.5">¥{stats.income.toLocaleString()}</div>
+              <div className="text-base sm:text-lg font-bold text-green-500 mt-0.5">¥{stats.income.toLocaleString()}</div>
             </div>
-            <div className="border border-border rounded-lg p-2.5">
+            <div className="border border-border rounded-lg p-2">
               <div className="flex items-center justify-between">
                 <div className="text-[10px] font-medium text-text-muted">支出</div>
-                <div className="rounded-lg bg-red-500/5 p-1.5">
-                  <TrendingDown className="w-4 h-4 text-red-500" />
+                <div className="rounded-lg bg-red-500/5 p-1">
+                  <TrendingDown className="w-3.5 h-3.5 text-red-500" />
                 </div>
               </div>
-              <div className="text-lg font-bold text-red-500 mt-0.5">¥{stats.expense.toLocaleString()}</div>
+              <div className="text-base sm:text-lg font-bold text-red-500 mt-0.5">¥{stats.expense.toLocaleString()}</div>
             </div>
-            <div className="border border-border rounded-lg p-2.5">
+            <div className="border border-border rounded-lg p-2">
               <div className="flex items-center justify-between">
                 <div className="text-[10px] font-medium text-text-muted">収支</div>
-                <div className={`rounded-lg p-1.5 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
-                  <JapaneseYen className={`w-4 h-4 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                <div className={`rounded-lg p-1 ${stats.balance >= 0 ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
+                  <JapaneseYen className={`w-3.5 h-3.5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
                 </div>
               </div>
-              <div className={`text-lg font-bold mt-0.5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`text-base sm:text-lg font-bold mt-0.5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 ¥{stats.balance.toLocaleString()}
               </div>
             </div>
@@ -334,88 +333,83 @@ const TransactionHistory: React.FC = () => {
 
         {/* 操作パネル（検索・検索・ソート） */}
         <div className="bg-surface rounded-xl shadow-sm border border-border mb-4 overflow-hidden">
-          <div className="p-2 sm:p-2.5">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-              {/* ソート・一括操作エリア */}
-              <div className="flex items-center justify-between lg:justify-start gap-4 lg:border-r lg:border-border lg:pr-4">
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center">
-                    <label className="text-[10px] text-text-muted mr-1.5 whitespace-nowrap">ソート:</label>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
-                      className="px-2 py-1 border border-border rounded-lg bg-background text-[11px] text-text-main focus:ring-1 focus:ring-primary outline-none"
-                    >
-                      <option value="date">日付</option>
-                      <option value="amount">金額</option>
-                      <option value="item">項目</option>
-                      <option value="created_at">追加日</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    className="p-1 px-1.5 text-[10px] bg-surface-highlight text-text-muted rounded hover:bg-border transition-colors"
+          <div className="p-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {/* ソート・フィルターグループ */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="px-2 py-1.5 border border-border rounded-lg bg-background text-[11px] text-text-main focus:ring-1 focus:ring-primary outline-none"
                   >
-                    {sortOrder === 'asc' ? '昇順' : '降順'}
-                  </button>
+                    <option value="date">日付</option>
+                    <option value="amount">金額</option>
+                    <option value="item">項目</option>
+                    <option value="created_at">追加日</option>
+                  </select>
                 </div>
+                <button
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  className="p-1.5 text-[10px] bg-surface-highlight text-text-muted rounded hover:bg-border transition-colors border border-transparent hover:border-border"
+                >
+                  {sortOrder === 'asc' ? '昇順' : '降順'}
+                </button>
 
-                {selectedTransactions.length > 0 && (
-                  <div className="flex items-center space-x-2 pl-3 border-l border-border">
-                    <span className="text-[10px] text-text-muted whitespace-nowrap">{selectedTransactions.length}件選択</span>
-                    <button
-                      onClick={handleBulkDelete}
-                      className="px-2 py-1 text-[10px] bg-red-500/10 text-red-600 rounded hover:bg-red-500 hover:text-white transition-colors flex items-center"
-                    >
-                      <Trash2 className="w-3 h-3 mr-1" />
-                      削除
-                    </button>
-                  </div>
+                <div className="h-6 w-px bg-border mx-0.5"></div>
+
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`px-2.5 py-1.5 text-xs rounded-lg transition-colors flex items-center space-x-1.5 border ${showFilters
+                    ? 'bg-primary/10 text-primary border-primary/20'
+                    : 'bg-surface-highlight text-text-muted border-transparent hover:bg-border'
+                    }`}
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">フィルター</span>
+                  {activeFilterCount > 0 && (
+                    <span className="bg-primary text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={resetFilters}
+                    className="px-2 py-1.5 text-xs bg-surface-highlight text-text-muted rounded-lg hover:bg-border transition-colors flex items-center"
+                    title="フィルターをクリア"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 )}
               </div>
 
-              {/* 検索・フィルターエリア */}
-              <div className="flex flex-col sm:flex-row flex-1 sm:items-center gap-2 lg:justify-end">
-                <div className="relative flex-1 max-w-md lg:max-w-xs">
-                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="検索..."
-                    className="w-full pl-8 pr-3 py-1.5 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background focus:bg-surface transition-colors text-xs text-text-main placeholder-text-muted"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`px-2.5 py-1.5 text-xs rounded-lg transition-colors flex items-center space-x-1.5 ${showFilters
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-surface-highlight text-text-muted hover:bg-border'
-                      }`}
-                  >
-                    <Filter className="w-3.5 h-3.5" />
-                    <span>フィルター</span>
-                    {activeFilterCount > 0 && (
-                      <span className="bg-primary text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                    <ChevronDown className={`w-3 h-3 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-                  </button>
-                  {activeFilterCount > 0 && (
-                    <button
-                      onClick={resetFilters}
-                      className="px-2 py-1.5 text-xs bg-surface-highlight text-text-muted rounded-lg hover:bg-border transition-colors flex items-center"
-                      title="フィルターをクリア"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
+              {/* 検索バー (右端に配置) */}
+              <div className="relative flex-1 min-w-[140px] sm:max-w-xs ml-auto">
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-text-muted w-3.5 h-3.5" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="検索..."
+                  className="w-full pl-8 pr-3 py-1.5 border border-border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary bg-background focus:bg-surface transition-colors text-xs text-text-main placeholder-text-muted"
+                />
               </div>
             </div>
+
+            {/* 一括操作エリア (選択時のみ表示) */}
+            {selectedTransactions.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-border flex items-center justify-between">
+                <span className="text-[10px] text-text-muted">{selectedTransactions.length}件選択中</span>
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-2 py-1 text-[10px] bg-red-500/10 text-red-600 rounded hover:bg-red-500 hover:text-white transition-colors flex items-center"
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  削除
+                </button>
+              </div>
+            )}
 
             {showFilters && (
               <div className="mt-3 pt-3 border-t border-border">
@@ -516,34 +510,36 @@ const TransactionHistory: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`font - bold ${transaction.type === 'income' ? 'text-green-500' : 'text-red-500'} `}>
+                      <div className={`font-bold ${transaction.type === 'income' ? 'text-green-500' : 'text-white'}`}>
                         {transaction.type === 'expense' ? '-' : ''}¥{transaction.amount.toLocaleString()}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-3">
-                    <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full bg-slate-500/10 text-text-muted">
+                  <div className="flex items-center justify-between mt-2.5 gap-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-secondary border border-border whitespace-nowrap">
                       {transaction.category}
                     </span>
 
-                    <div className="flex items-center gap-2 mt-3">
+                    <div className="flex items-center gap-2.5">
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation()
                           setEditingTransaction(transaction)
                           setShowCreateForm(true)
                         }}
-                        className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                        className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95"
                       >
-                        <Edit className="w-4 h-4" />
-                        編集
+                        <Edit className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => deleteTransaction(transaction.id)}
-                        className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteTransaction(transaction.id)
+                        }}
+                        className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
                       >
-                        <Trash2 className="w-4 h-4" />
-                        削除
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
@@ -612,7 +608,7 @@ const TransactionHistory: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium">
-                        <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+                        <span className={transaction.type === 'income' ? 'text-green-500' : 'text-white'}>
                           {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
                         </span>
                       </td>
@@ -624,7 +620,7 @@ const TransactionHistory: React.FC = () => {
                         })}
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
-                        <span className="whitespace-nowrap px-2 py-0.5 inline-flex text-[10px] leading-4 font-medium rounded-full bg-slate-500/10 text-text-muted">
+                        <span className="whitespace-nowrap px-2 py-0.5 inline-flex text-[10px] leading-4 font-medium rounded-full bg-slate-500/10 text-text-secondary">
                           {transaction.category}
                         </span>
                       </td>
@@ -635,14 +631,14 @@ const TransactionHistory: React.FC = () => {
                               setEditingTransaction(transaction)
                               setShowCreateForm(true)
                             }}
-                            className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                            className="px-3 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-sm whitespace-nowrap"
                           >
                             <Edit className="w-4 h-4" />
                             編集
                           </button>
                           <button
                             onClick={() => deleteTransaction(transaction.id)}
-                            className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                            className="px-3 py-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-sm whitespace-nowrap"
                           >
                             <Trash2 className="w-4 h-4" />
                             削除
@@ -669,70 +665,64 @@ const TransactionHistory: React.FC = () => {
           {/* ページネーション */}
           {
             paginatedTransactions.length > 0 && (
-              <div className="bg-surface px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-text-muted bg-surface hover:bg-surface-highlight disabled:opacity-50"
-                  >
-                    前へ
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-text-muted bg-surface hover:bg-surface-highlight disabled:opacity-50"
-                  >
-                    次へ
-                  </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-text-muted">
-                      <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredAndSortedTransactions.length)}</span>
-                      &nbsp;件から&nbsp;
-                      <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredAndSortedTransactions.length)}</span>
-                      &nbsp;件までを表示中（全&nbsp;
-                      <span className="font-medium">{filteredAndSortedTransactions.length}</span>
-                      &nbsp;件）
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <div className="flex items-center justify-center mt-6 space-x-2 pb-8">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`p-2 rounded-lg transition-colors ${currentPage === 1
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-text-muted hover:text-text-secondary hover:bg-surface-highlight'
+                    }`}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {(() => {
+                  let startPage = Math.max(1, currentPage - 2);
+                  let endPage = Math.min(totalPages, startPage + 4);
+
+                  if (endPage - startPage < 4) {
+                    startPage = Math.max(1, endPage - 4);
+                  }
+
+                  const buttons = Array.from({ length: endPage - startPage + 1 }).map((_, i) => {
+                    const pageNumber = startPage + i;
+                    if (pageNumber <= 0 || pageNumber > totalPages) return null;
+                    return (
                       <button
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border bg-surface text-sm font-medium text-text-muted hover:bg-surface-highlight disabled:opacity-50"
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${currentPage === pageNumber
+                          ? 'bg-primary text-white shadow-lg shadow-primary/25 hover:bg-primary/90'
+                          : 'bg-surface text-text-muted hover:bg-surface-highlight hover:text-text-main border border-border'
+                          }`}
                       >
-                        <span className="sr-only">前へ</span>
-                        &lt;
+                        {pageNumber}
                       </button>
-                      {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                        const pageNum = Math.max(1, Math.min(currentPage - 2, totalPages - 4)) + i;
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
-                              ? 'z-10 bg-primary/10 border-primary text-primary'
-                              : 'bg-surface border-border text-text-muted hover:bg-surface-highlight'
-                              } `}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-                      <button
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border bg-surface text-sm font-medium text-text-muted hover:bg-surface-highlight disabled:opacity-50"
-                      >
-                        <span className="sr-only">次へ</span>
-                        &gt;
-                      </button>
-                    </nav>
-                  </div>
-                </div>
+                    );
+                  });
+
+                  if (endPage < totalPages) {
+                    buttons.push(
+                      <span key="ellipsis" className="w-8 h-8 flex items-center justify-center text-text-muted">
+                        ...
+                      </span>
+                    );
+                  }
+
+                  return buttons;
+                })()}
+
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`p-2 rounded-lg transition-colors ${currentPage === totalPages
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-text-muted hover:text-text-secondary hover:bg-surface-highlight'
+                    }`}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             )
           }

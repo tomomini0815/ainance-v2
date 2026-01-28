@@ -94,7 +94,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                                     value={item.name}
                                     onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
                                     placeholder="例: パソコン"
-                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -104,7 +104,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                                         type="date"
                                         value={item.acquisitionDate}
                                         onChange={(e) => handleItemChange(item.id, 'acquisitionDate', e.target.value)}
-                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                     />
                                 </div>
                                 <div>
@@ -112,7 +112,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                                     <MoneyInput
                                         value={item.acquisitionCost}
                                         onChange={(val) => handleItemChange(item.id, 'acquisitionCost', val)}
-                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                     />
                                 </div>
                             </div>
@@ -122,7 +122,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                                     <MoneyInput
                                         value={item.allowableLimit}
                                         onChange={(val) => handleItemChange(item.id, 'allowableLimit', val)}
-                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                     />
                                 </div>
                                 <div>
@@ -130,7 +130,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                                     <MoneyInput
                                         value={item.currentDepreciation}
                                         onChange={(val) => handleItemChange(item.id, 'currentDepreciation', val)}
-                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                     />
                                 </div>
                             </div>
@@ -181,7 +181,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                                                     value={item.name}
                                                     onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
                                                     placeholder="例: パソコン"
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
@@ -189,35 +189,35 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                                                     type="date"
                                                     value={item.acquisitionDate}
                                                     onChange={(e) => handleItemChange(item.id, 'acquisitionDate', e.target.value)}
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
                                                 <MoneyInput
                                                     value={item.acquisitionCost}
                                                     onChange={(val) => handleItemChange(item.id, 'acquisitionCost', val)}
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
                                                 <MoneyInput
                                                     value={item.allowableLimit}
                                                     onChange={(val) => handleItemChange(item.id, 'allowableLimit', val)}
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
                                                 <MoneyInput
                                                     value={item.currentDepreciation}
                                                     onChange={(val) => handleItemChange(item.id, 'currentDepreciation', val)}
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
                                                 <MoneyInput
                                                     value={item.bookValueEnd}
                                                     onChange={(val) => handleItemChange(item.id, 'bookValueEnd', val)}
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2 text-center">

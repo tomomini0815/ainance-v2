@@ -69,6 +69,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
   // getItemIcon logic replaced by shared TransactionIcon component
 
   const latestTransactions = [...(transactions.length > 0 ? transactions : fetchedTransactions)]
+    .filter(t => t.approval_status !== 'pending')
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -138,7 +139,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
       {/* モバイル: カード表示 */}
       <div className="block md:hidden space-y-3">
         {paginatedTransactions.length > 0 ? (
-          paginatedTransactions.map((transaction) => {
+          paginatedTransactions.slice(0, 5).map((transaction) => {
             // amountの型を確実に数値に変換
             let amount = transaction.amount;
             if (typeof transaction.amount === 'string') {
@@ -189,7 +190,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                     </div>
                   </div>
                   <div className="text-right ml-3">
-                    <div className={`font-bold text-base ${isFinalIncome ? 'text-green-500' : isFinalExpense ? 'text-red-500' : 'text-text-muted'}`}>
+                    <div className={`font-bold text-base ${isFinalIncome ? 'text-green-500' : 'text-white'}`}>
                       {isFinalIncome ? '+' : isFinalExpense ? '-' : ''}¥{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}
                     </div>
                   </div>
@@ -271,7 +272,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                       </div>
                     </td>
                     <td className="py-2.5 px-3 text-right font-medium">
-                      <span className={`${isFinalIncome ? 'text-green-500' : isFinalExpense ? 'text-red-500' : 'text-text-muted'}`}>
+                      <span className={`${isFinalIncome ? 'text-green-500' : 'text-white'}`}>
                         {isFinalIncome ? '+' : isFinalExpense ? '-' : ''}¥{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}
                       </span>
                     </td>

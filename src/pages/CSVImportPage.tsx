@@ -420,7 +420,7 @@ const CSVImportPage: React.FC = () => {
                                                     <td className="px-4 py-3 text-text-main">{row.date}</td>
                                                     <td className="px-4 py-3 text-text-main max-w-xs truncate">{row.description}</td>
                                                     <td className="px-4 py-3 text-right font-mono">
-                                                        <span className={row.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+                                                        <span className="text-white">
                                                             {row.type === 'income' ? '+' : '-'}¥{row.amount.toLocaleString()}
                                                         </span>
                                                     </td>

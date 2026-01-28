@@ -743,7 +743,7 @@ const CorporateTaxFilingPage: React.FC = () => {
                 </div>
 
                 {/* ナビゲーションボタン */}
-                <div className="flex justify-between items-center max-w-2xl mx-auto">
+                <div className="flex justify-between items-center w-full">
                     <button
                         onClick={goToPreviousStep}
                         disabled={currentStep === 1}

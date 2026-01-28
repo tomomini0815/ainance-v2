@@ -183,32 +183,70 @@ export const approveReceiptAndCreateTransaction = async (
       ? 'individual_transactions' 
       : 'corporation_transactions';
 
-    const transactionPayload = businessType === 'corporation'
-      ? {
-          ...transactionData,
-          department: null,
-          project_code: null,
-          approval_status: 'approved' as const,
-        }
-      : transactionData;
-
-    console.log('トランザクションを保存中:', { tableName, transactionPayload });
-    
-    // トランザクションを保存
-    const { data: transactionResult, error: transactionError } = await supabase
+    // 既存の保留中トランザクションを検索（receipt_idタグで検索）
+    // NOTE: tagsカラムは配列なので、contains演算子などを使用する必要があるが、
+    // Supabaseのフィルタリングで配列内の文字列検索を行う
+    const { data: existingTransactions } = await supabase
       .from(tableName)
-      .insert([transactionPayload])
-      .select()
-      .single();
+      .select('*')
+      .contains('tags', [`receipt_id:${receiptId}`])
+      .eq('approval_status', 'pending');
 
-    if (transactionError) {
-      console.error('トランザクション保存エラー:', transactionError);
-      console.error('テーブル名:', tableName);
-      console.error('ペイロード:', transactionPayload);
-      throw new Error(`${tableName}への保存に失敗しました: ${transactionError.message}`);
+    let transactionResult;
+
+    if (existingTransactions && existingTransactions.length > 0) {
+      console.log('既存の保留中トランザクションが見つかりました。承認ステータスを更新します:', existingTransactions[0]);
+      // 既存のトランザクションを更新
+      const { data: updatedTx, error: updateError } = await supabase
+        .from(tableName)
+        .update({ 
+          approval_status: 'approved',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingTransactions[0].id)
+        .select()
+        .single();
+
+      if (updateError) {
+         console.error('既存トランザクションの更新エラー:', updateError);
+         throw new Error(`${tableName}の更新に失敗しました: ${updateError.message}`);
+      }
+      transactionResult = updatedTx;
+      console.log(`${tableName}の更新成功:`, transactionResult);
+
+    } else {
+      // 新規作成（既存が見つからない場合）
+      const transactionPayload = businessType === 'corporation'
+        ? {
+            ...transactionData,
+            tags: ['receipt_created', `receipt_id:${receiptId}`], // タグにIDを含める
+            department: null,
+            project_code: null,
+            approval_status: 'approved' as const,
+          }
+        : {
+            ...transactionData,
+            tags: ['receipt_created', `receipt_id:${receiptId}`], // タグにIDを含める
+        };
+
+      console.log('トランザクションを保存中（新規）:', { tableName, transactionPayload });
+      
+      // トランザクションを保存
+      const { data: newTx, error: transactionError } = await supabase
+        .from(tableName)
+        .insert([transactionPayload])
+        .select()
+        .single();
+
+      if (transactionError) {
+        console.error('トランザクション保存エラー:', transactionError);
+        console.error('テーブル名:', tableName);
+        console.error('ペイロード:', transactionPayload);
+        throw new Error(`${tableName}への保存に失敗しました: ${transactionError.message}`);
+      }
+      transactionResult = newTx;
+      console.log(`${tableName}に保存成功:`, transactionResult);
     }
-
-    console.log(`${tableName}に保存成功:`, transactionResult);
 
     // 4. AI処理結果をai_transactionsテーブルに保存
     const aiTransactionData = {

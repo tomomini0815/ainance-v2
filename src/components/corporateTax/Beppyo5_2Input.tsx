@@ -100,7 +100,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                     <select
                                         value={item.taxType}
                                         onChange={(e) => handleItemChange(item.id, 'taxType', e.target.value)}
-                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-background"
+                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                     >
                                         <option value="corporate">法人税</option>
                                         <option value="inhabitant">道府県民税・市町村民税</option>
@@ -114,7 +114,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                     <select
                                         value={item.category}
                                         onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-background"
+                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                     >
                                         <option value="interim">中間納付</option>
                                         <option value="final">確定納付</option>
@@ -130,7 +130,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                     value={item.description}
                                     onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                                     placeholder="例: ○○税務署"
-                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -140,7 +140,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                         type="date"
                                         value={item.paymentDate}
                                         onChange={(e) => handleItemChange(item.id, 'paymentDate', e.target.value)}
-                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                        className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                     />
                                 </div>
                                 <div>
@@ -188,7 +188,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                                 <select
                                                     value={item.taxType}
                                                     onChange={(e) => handleItemChange(item.id, 'taxType', e.target.value)}
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-background"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                                 >
                                                     <option value="corporate">法人税</option>
                                                     <option value="inhabitant">道府県民税・市町村民税</option>
@@ -201,7 +201,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                                 <select
                                                     value={item.category}
                                                     onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-background"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                                 >
                                                     <option value="interim">中間納付</option>
                                                     <option value="final">確定納付</option>
@@ -215,7 +215,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                                     value={item.description}
                                                     onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                                                     placeholder="例: ○○税務署"
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
@@ -223,7 +223,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                                     type="date"
                                                     value={item.paymentDate}
                                                     onChange={(e) => handleItemChange(item.id, 'paymentDate', e.target.value)}
-                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    className="w-full p-2 border border-border rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-surface"
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
@@ -279,7 +279,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo5_2.taxesPayable.corporate}
                                     onChange={(val) => handleSummaryChange('corporate', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg text-right font-mono"
+                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg text-right font-mono bg-surface"
                                 />
                             </div>
                         </div>
@@ -290,7 +290,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo5_2.taxesPayable.localCorporate}
                                     onChange={(val) => handleSummaryChange('localCorporate', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg text-right font-mono"
+                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg text-right font-mono bg-surface"
                                 />
                             </div>
                         </div>
@@ -301,7 +301,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo5_2.taxesPayable.inhabitant}
                                     onChange={(val) => handleSummaryChange('inhabitant', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg text-right font-mono"
+                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg text-right font-mono bg-surface"
                                 />
                             </div>
                         </div>
@@ -312,7 +312,7 @@ export const Beppyo5_2Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo5_2.taxesPayable.enterprise}
                                     onChange={(val) => handleSummaryChange('enterprise', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg text-right font-mono"
+                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg text-right font-mono bg-surface"
                                 />
                             </div>
                         </div>

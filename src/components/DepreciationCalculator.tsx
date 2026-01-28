@@ -157,7 +157,7 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                                     <td className="p-3 font-medium text-text-main">{asset.name}</td>
                                     <td className="p-3 text-text-main">{asset.quantity}{asset.unit}</td>
                                     <td className="p-3 text-text-muted">{asset.acquisitionDate}</td>
-                                    <td className="p-3 text-text-main font-mono">{formatCurrency(asset.acquisitionCost)}</td>
+                                    <td className="p-3 text-white font-mono">{formatCurrency(asset.acquisitionCost)}</td>
                                     <td className="p-3 text-text-main">
                                         {asset.depreciationMethod === 'straightLine' ? '定額法' :
                                             asset.depreciationMethod === 'decliningBalance' ? '定率法' :
@@ -179,14 +179,14 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                                     <td className="p-3 text-center text-text-main">
                                         {asset.depreciationMethod === 'immediateSME' || asset.depreciationMethod === 'unitsOfProduction' ? '-' : `${asset.currentYearMonths}ヶ月`}
                                     </td>
-                                    <td className="p-3 text-right font-medium text-text-main bg-primary/5">
+                                    <td className="p-3 text-right font-medium text-white bg-primary/5">
                                         {formatCurrency(res.currentDepreciation)}
                                     </td>
                                     <td className="p-3 text-center text-text-main">{asset.businessRatio}%</td>
-                                    <td className="p-3 text-right font-bold text-primary">
+                                    <td className="p-3 text-right font-bold text-white">
                                         {formatCurrency(res.currentDepreciation)}
                                     </td>
-                                    <td className="p-3 text-right text-text-muted">
+                                    <td className="p-3 text-right text-white">
                                         {formatCurrency(res.bookValue)}
                                     </td>
                                     <td className="p-3 text-center">
@@ -231,7 +231,7 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                             <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
                                 <div>
                                     <div className="text-xs text-text-muted mb-0.5">取得価額</div>
-                                    <div className="font-medium text-text-main">{formatCurrency(asset.acquisitionCost)}</div>
+                                    <div className="font-medium text-white">{formatCurrency(asset.acquisitionCost)}</div>
                                 </div>
                                 <div>
                                     <div className="text-xs text-text-muted mb-0.5">取得年月</div>
@@ -264,7 +264,7 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                                 </div>
                                 <div>
                                     <div className="text-xs text-text-muted mb-0.5">本年償却額</div>
-                                    <div className="font-bold text-primary">{formatCurrency(res.currentDepreciation)}</div>
+                                    <div className="font-bold text-white">{formatCurrency(res.currentDepreciation)}</div>
                                 </div>
 
                                 <div>
@@ -273,7 +273,7 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                                 </div>
                                 <div>
                                     <div className="text-xs text-text-muted mb-0.5">未償却残高</div>
-                                    <div className="font-medium text-text-muted">{formatCurrency(res.bookValue)}</div>
+                                    <div className="font-medium text-white">{formatCurrency(res.bookValue)}</div>
                                 </div>
                             </div>
                         </div>
@@ -287,162 +287,164 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
             </div>
 
             {/* 追加フォーム */}
-            {isAdding ? (
-                <div className="bg-surface border border-primary/30 rounded-xl p-3 shadow-sm">
-                    <h4 className="font-medium text-text-main mb-4 flex items-center gap-2">
-                        <Calculator className="w-5 h-5 text-primary" />
-                        新規資産の登録
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="col-span-1 sm:col-span-2 lg:col-span-2">
-                            <label className="text-xs text-text-muted block mb-1">資産名称 *</label>
-                            <input
-                                type="text"
-                                value={newAsset.name}
-                                onChange={e => setNewAsset({ ...newAsset, name: e.target.value })}
-                                className="input-base w-full"
-                                placeholder="例: パソコン、営業車"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs text-text-muted block mb-1">取得価額 *</label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xs">¥</span>
+            {
+                isAdding ? (
+                    <div className="bg-surface border border-primary/30 rounded-xl p-3 shadow-sm">
+                        <h4 className="font-medium text-text-main mb-4 flex items-center gap-2">
+                            <Calculator className="w-5 h-5 text-primary" />
+                            新規資産の登録
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="col-span-1 sm:col-span-2 lg:col-span-2">
+                                <label className="text-xs text-text-muted block mb-1">資産名称 *</label>
+                                <input
+                                    type="text"
+                                    value={newAsset.name}
+                                    onChange={e => setNewAsset({ ...newAsset, name: e.target.value })}
+                                    className="input-base w-full"
+                                    placeholder="例: パソコン、営業車"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted block mb-1">取得価額 *</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xs">¥</span>
+                                    <input
+                                        type="number"
+                                        value={newAsset.acquisitionCost || ''}
+                                        onChange={e => setNewAsset({ ...newAsset, acquisitionCost: Number(e.target.value) })}
+                                        className="input-base w-full pl-6"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted block mb-1">取得年月</label>
+                                <input
+                                    type="month"
+                                    value={newAsset.acquisitionDate}
+                                    onChange={e => setNewAsset({ ...newAsset, acquisitionDate: e.target.value })}
+                                    className="input-base w-full"
+                                    min={`${new Date().getFullYear() - 10}-01`}
+                                    max={`${new Date().getFullYear() + 1}-12`}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted block mb-1">償却方法</label>
+                                <select
+                                    value={newAsset.depreciationMethod}
+                                    onChange={e => setNewAsset({ ...newAsset, depreciationMethod: e.target.value as any })}
+                                    className="input-base w-full"
+                                >
+                                    <option value="straightLine">定額法</option>
+                                    <option value="decliningBalance">定率法</option>
+                                    <option value="lumpSum">一括償却（3年）</option>
+                                    <option value="unitsOfProduction">生産高比例法</option>
+                                    <option value="leasePeriod">リース期間定額法</option>
+                                    <option value="immediateSME">少額減価償却資産（特例）</option>
+                                </select>
+                            </div>
+                            {newAsset.depreciationMethod === 'unitsOfProduction' ? (
+                                <>
+                                    <div>
+                                        <label className="text-xs text-text-muted block mb-1">推定総利用量</label>
+                                        <input
+                                            type="number"
+                                            value={newAsset.totalEstimatedUnits || ''}
+                                            onChange={e => setNewAsset({ ...newAsset, totalEstimatedUnits: Number(e.target.value) })}
+                                            className="input-base w-full"
+                                            placeholder="例: 100000"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-text-muted block mb-1">本年利用量</label>
+                                        <input
+                                            type="number"
+                                            value={newAsset.currentYearUnits || ''}
+                                            onChange={e => setNewAsset({ ...newAsset, currentYearUnits: Number(e.target.value) })}
+                                            className="input-base w-full"
+                                            placeholder="例: 1000"
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    {newAsset.depreciationMethod !== 'immediateSME' && newAsset.depreciationMethod !== 'lumpSum' && (
+                                        <div>
+                                            <label className="text-xs text-text-muted block mb-1">耐用年数 (年)</label>
+                                            <input
+                                                type="number"
+                                                value={newAsset.usefulLife}
+                                                onChange={e => setNewAsset({ ...newAsset, usefulLife: Number(e.target.value) })}
+                                                className="input-base w-full"
+                                                min="1"
+                                            />
+                                        </div>
+                                    )}
+                                    {newAsset.depreciationMethod === 'lumpSum' && (
+                                        <div>
+                                            <label className="text-xs text-text-muted block mb-1">耐用年数 (年)</label>
+                                            <input
+                                                type="text"
+                                                value="3"
+                                                disabled
+                                                className="input-base w-full bg-surface-highlight cursor-not-allowed"
+                                            />
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                            {newAsset.depreciationMethod !== 'immediateSME' &&
+                                newAsset.depreciationMethod !== 'lumpSum' &&
+                                newAsset.depreciationMethod !== 'unitsOfProduction' && (
+                                    <div>
+                                        <label className="text-xs text-text-muted block mb-1">本年中の償却期間 (月)</label>
+                                        <input
+                                            type="number"
+                                            value={newAsset.currentYearMonths}
+                                            onChange={e => setNewAsset({ ...newAsset, currentYearMonths: Math.min(12, Math.max(1, Number(e.target.value))) })}
+                                            className="input-base w-full"
+                                            min="1" max="12"
+                                        />
+                                    </div>
+                                )}
+                            <div>
+                                <label className="text-xs text-text-muted block mb-1">事業専用割合 (%)</label>
                                 <input
                                     type="number"
-                                    value={newAsset.acquisitionCost || ''}
-                                    onChange={e => setNewAsset({ ...newAsset, acquisitionCost: Number(e.target.value) })}
-                                    className="input-base w-full pl-6"
+                                    value={newAsset.businessRatio}
+                                    onChange={e => setNewAsset({ ...newAsset, businessRatio: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                                    className="input-base w-full"
+                                    min="0" max="100"
                                 />
                             </div>
                         </div>
-                        <div>
-                            <label className="text-xs text-text-muted block mb-1">取得年月</label>
-                            <input
-                                type="month"
-                                value={newAsset.acquisitionDate}
-                                onChange={e => setNewAsset({ ...newAsset, acquisitionDate: e.target.value })}
-                                className="input-base w-full"
-                                min={`${new Date().getFullYear() - 10}-01`}
-                                max={`${new Date().getFullYear() + 1}-12`}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs text-text-muted block mb-1">償却方法</label>
-                            <select
-                                value={newAsset.depreciationMethod}
-                                onChange={e => setNewAsset({ ...newAsset, depreciationMethod: e.target.value as any })}
-                                className="input-base w-full"
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button
+                                onClick={() => setIsAdding(false)}
+                                className="btn-secondary py-2 px-4"
                             >
-                                <option value="straightLine">定額法</option>
-                                <option value="decliningBalance">定率法</option>
-                                <option value="lumpSum">一括償却（3年）</option>
-                                <option value="unitsOfProduction">生産高比例法</option>
-                                <option value="leasePeriod">リース期間定額法</option>
-                                <option value="immediateSME">少額減価償却資産（特例）</option>
-                            </select>
-                        </div>
-                        {newAsset.depreciationMethod === 'unitsOfProduction' ? (
-                            <>
-                                <div>
-                                    <label className="text-xs text-text-muted block mb-1">推定総利用量</label>
-                                    <input
-                                        type="number"
-                                        value={newAsset.totalEstimatedUnits || ''}
-                                        onChange={e => setNewAsset({ ...newAsset, totalEstimatedUnits: Number(e.target.value) })}
-                                        className="input-base w-full"
-                                        placeholder="例: 100000"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-text-muted block mb-1">本年利用量</label>
-                                    <input
-                                        type="number"
-                                        value={newAsset.currentYearUnits || ''}
-                                        onChange={e => setNewAsset({ ...newAsset, currentYearUnits: Number(e.target.value) })}
-                                        className="input-base w-full"
-                                        placeholder="例: 1000"
-                                    />
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                {newAsset.depreciationMethod !== 'immediateSME' && newAsset.depreciationMethod !== 'lumpSum' && (
-                                    <div>
-                                        <label className="text-xs text-text-muted block mb-1">耐用年数 (年)</label>
-                                        <input
-                                            type="number"
-                                            value={newAsset.usefulLife}
-                                            onChange={e => setNewAsset({ ...newAsset, usefulLife: Number(e.target.value) })}
-                                            className="input-base w-full"
-                                            min="1"
-                                        />
-                                    </div>
-                                )}
-                                {newAsset.depreciationMethod === 'lumpSum' && (
-                                    <div>
-                                        <label className="text-xs text-text-muted block mb-1">耐用年数 (年)</label>
-                                        <input
-                                            type="text"
-                                            value="3"
-                                            disabled
-                                            className="input-base w-full bg-surface-highlight cursor-not-allowed"
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        )}
-                        {newAsset.depreciationMethod !== 'immediateSME' &&
-                            newAsset.depreciationMethod !== 'lumpSum' &&
-                            newAsset.depreciationMethod !== 'unitsOfProduction' && (
-                                <div>
-                                    <label className="text-xs text-text-muted block mb-1">本年中の償却期間 (月)</label>
-                                    <input
-                                        type="number"
-                                        value={newAsset.currentYearMonths}
-                                        onChange={e => setNewAsset({ ...newAsset, currentYearMonths: Math.min(12, Math.max(1, Number(e.target.value))) })}
-                                        className="input-base w-full"
-                                        min="1" max="12"
-                                    />
-                                </div>
-                            )}
-                        <div>
-                            <label className="text-xs text-text-muted block mb-1">事業専用割合 (%)</label>
-                            <input
-                                type="number"
-                                value={newAsset.businessRatio}
-                                onChange={e => setNewAsset({ ...newAsset, businessRatio: Math.min(100, Math.max(0, Number(e.target.value))) })}
-                                className="input-base w-full"
-                                min="0" max="100"
-                            />
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={handleAddAsset}
+                                disabled={!newAsset.name || newAsset.acquisitionCost <= 0}
+                                className="btn-primary py-2 px-4 flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" />
+                                追加する
+                            </button>
                         </div>
                     </div>
-                    <div className="flex justify-end gap-3 mt-4">
-                        <button
-                            onClick={() => setIsAdding(false)}
-                            className="btn-secondary py-2 px-4"
-                        >
-                            キャンセル
-                        </button>
-                        <button
-                            onClick={handleAddAsset}
-                            disabled={!newAsset.name || newAsset.acquisitionCost <= 0}
-                            className="btn-primary py-2 px-4 flex items-center gap-2"
-                        >
-                            <Plus className="w-4 h-4" />
-                            追加する
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                <button
-                    onClick={() => setIsAdding(true)}
-                    className="w-full md:w-auto md:mx-auto md:px-12 py-3 md:py-2.5 border-2 border-dashed border-primary rounded-xl text-primary bg-primary-light transition-colors flex items-center justify-center gap-2"
-                >
-                    <Plus className="w-5 h-5" />
-                    資産を追加する
-                </button>
-            )}
+                ) : (
+                    <button
+                        onClick={() => setIsAdding(true)}
+                        className="w-full md:w-auto md:mx-auto md:px-12 py-3 md:py-2.5 border-2 border-dashed border-primary rounded-xl text-primary bg-primary-light transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Plus className="w-5 h-5" />
+                        資産を追加する
+                    </button>
+                )
+            }
 
             <div className="bg-info-light border border-info/20 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
@@ -454,7 +456,7 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                     </p>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

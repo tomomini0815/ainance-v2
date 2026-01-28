@@ -59,7 +59,7 @@ export const Beppyo4Input: React.FC<Props> = ({ data, onChange }) => {
                 <MoneyInput
                     value={data.beppyo4.netIncomeFromPL}
                     onChange={handleNetIncomeChange}
-                    className="input-base w-full md:w-1/2"
+                    className="input-base flex-1 min-w-0 bg-surface"
                 />
             </div>
 

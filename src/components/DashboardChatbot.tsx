@@ -76,13 +76,22 @@ const DashboardChatbot: React.FC = () => {
                 }
                 const detectedCategory = determineCategoryByKeyword(userMessage) || '未分類';
 
+                const incomeKeywords = ['売上', '売り上げ', '収入', '入金', '給与', '給料', '賞与', 'ボーナス', '受取'];
+                const isIncome = incomeKeywords.some(keyword => userMessage.includes(keyword));
+
+                // 金額部分を説明から除去
+                let cleanDescription = userMessage;
+                if (amountTextMatch) {
+                    cleanDescription = userMessage.replace(amountTextMatch[0], '').trim();
+                }
+
                 transactionData = {
-                    item: userMessage,
-                    description: userMessage,
+                    item: cleanDescription || userMessage, // 空になった場合は元に戻す
+                    description: cleanDescription || userMessage,
                     amount: amount,
                     date: selectedDate,
                     category: detectedCategory,
-                    type: 'expense' as 'income' | 'expense',
+                    type: isIncome ? 'income' : 'expense',
                     creator: user.id,
                     approval_status: 'pending' as const,
                     tags: ['ai-chat', 'fallback']
@@ -182,7 +191,7 @@ const DashboardChatbot: React.FC = () => {
                                         ref={dateInputRef}
                                         value={selectedDate}
                                         onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none"
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
                                     />
                                 </div>
 

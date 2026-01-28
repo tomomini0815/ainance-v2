@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mic, Send, Save, Trash2, Edit3, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Info, AlertCircle, Square, ChevronDown } from 'lucide-react';
+import { Mic, Send, Save, Trash2, Edit, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Info, AlertCircle, Square, ChevronDown } from 'lucide-react';
 import TransactionIcon from '../components/TransactionIcon';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessType } from '../hooks/useBusinessType';
@@ -31,7 +31,7 @@ const ChatToBook: React.FC = () => {
   const [editData, setEditData] = useState<Partial<Transaction>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
-  // const [approvedTransactions, setApprovedTransactions] = useState<string[]>([]); // 承認された取引のIDを管理
+  // const [approvedTransactions, setApprovedTransactions] = useState<string[]>(); // 承認された取引のIDを管理
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 選択されたカテゴリを管理
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージを管理
   // ソート設定（デフォルトは作成日時降順＝新しいものが上）
@@ -369,8 +369,8 @@ const ChatToBook: React.FC = () => {
     // TransactionForm.tsxのカテゴリオプションを参考にカテゴリマッピングを作成
     const categoryMapping: Array<{ keywords: string[]; category: string; type: 'income' | 'expense'; priority: number }> = [
       // 収入系（高優先度）
-      { keywords: ['売上'], category: '業務委託収入', type: 'income', priority: 10 },
-      { keywords: ['給与'], category: '給与', type: 'income', priority: 9 },
+      { keywords: ['売上', '売り上げ', '収入', '入金', '振込'], category: '業務委託収入', type: 'income', priority: 10 },
+      { keywords: ['給与', '賞与', 'ボーナス'], category: '給与', type: 'income', priority: 9 },
 
       // 支出系（高優先度 - 消耗品費、接待交際費）
       { keywords: ['消耗品', '文具', 'コピー', 'オフィス用品'], category: '消耗品費', type: 'expense', priority: 10 },
@@ -416,7 +416,7 @@ const ChatToBook: React.FC = () => {
     let dateDisplay = '今日';
     if (text.includes('昨日')) dateDisplay = '昨日';
     else if (text.includes('一昨日') || text.includes('おととい')) dateDisplay = '一昨日';
-    else if (dateMatch) dateDisplay = `${dateMatch[1]}月${dateMatch[2]}日`;
+    else if (dateMatch) dateDisplay = `${dateMatch[1]}月${dateMatch[2]} 日`;
 
     return {
       date: formattedDate,
@@ -646,7 +646,7 @@ const ChatToBook: React.FC = () => {
         const result = await createTransaction({
           item: cleanedDescription,
           amount: transaction.amount,
-          date: transaction.date,
+          date: transaction.date.trim(),
           category: transaction.category,
           type: transaction.type,
           creator: user.id, // 認証されたユーザーのIDを使用
@@ -749,7 +749,7 @@ const ChatToBook: React.FC = () => {
         return createTransaction({
           item: cleanedDescription,
           amount: transaction.amount,
-          date: transaction.date,
+          date: transaction.date.trim(),
           category: transaction.category,
           type: transaction.type,
           creator: user.id,
@@ -777,7 +777,7 @@ const ChatToBook: React.FC = () => {
       // 失敗した取引のエラー情報をコンソールに出力
       approveResults.forEach((result, index) => {
         if (result.status === 'rejected') {
-          console.error(`取引承認失敗 (${index + 1}):`, result.reason);
+          console.error(`取引承認失敗(${index + 1}): `, result.reason);
           // 認証エラーの場合、ログインページにリダイレクト
           if (result.reason.message.includes('認証セッションが切れました')) {
             alert('認証セッションが切れました。ログインページにリダイレクトします。');
@@ -789,7 +789,7 @@ const ChatToBook: React.FC = () => {
 
       createResults.forEach((result, index) => {
         if (result.status === 'rejected') {
-          console.error(`新規取引作成失敗 (${index + 1}):`, result.reason);
+          console.error(`新規取引作成失敗(${index + 1}): `, result.reason);
           // 認証エラーの場合、ログインページにリダイレクト
           if (result.reason.message.includes('認証セッションが切れました')) {
             alert('認証セッションが切れました。ログインページにリダイレクトします。');
@@ -800,12 +800,12 @@ const ChatToBook: React.FC = () => {
       });
 
       if (totalFailed > 0) {
-        toast.error(`${totalSuccessful}件の取引が記録されましたが、${totalFailed}件に失敗しました。`, {
+        toast.error(`${totalSuccessful} 件の取引が記録されましたが、${totalFailed} 件に失敗しました。`, {
           id: 'transaction-registration',
           duration: 6000
         });
       } else {
-        toast.success(`${totalSuccessful}件の取引を登録しました。取引履歴から確認できます。`, {
+        toast.success(`${totalSuccessful} 件の取引を登録しました。取引履歴から確認できます。`, {
           id: 'transaction-registration',
           duration: 6000
         });
@@ -848,7 +848,7 @@ const ChatToBook: React.FC = () => {
       return;
     }
 
-    if (!window.confirm(`${selectedTransactions.length}件の取引を削除してもよろしいですか？`)) {
+    if (!window.confirm(`${selectedTransactions.length} 件の取引を削除してもよろしいですか？`)) {
       return;
     }
 
@@ -863,14 +863,14 @@ const ChatToBook: React.FC = () => {
       // 失敗した取引のエラー情報をコンソールに出力
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          console.error(`取引削除失敗 (${index + 1}):`, result.reason);
+          console.error(`取引削除失敗(${index + 1}): `, result.reason);
         }
       });
 
       if (failed > 0) {
-        alert(`${successful}件の取引が正常に削除されましたが、${failed}件の取引の削除に失敗しました。詳細はコンソールを確認してください。`);
+        alert(`${successful} 件の取引が正常に削除されましたが、${failed} 件の取引の削除に失敗しました。詳細はコンソールを確認してください。`);
       } else {
-        alert(`${successful}件の取引が正常に削除されました`);
+        alert(`${successful} 件の取引が正常に削除されました`);
       }
 
       // 成功した取引をローカルリストから削除
@@ -920,7 +920,7 @@ const ChatToBook: React.FC = () => {
   //   const url = URL.createObjectURL(blob);
   //   const link = document.createElement('a');
   //   link.setAttribute('href', url);
-  //   link.setAttribute('download', `取引データ_${new Date().toISOString().split('T')[0]}.csv`);
+  //   link.setAttribute('download', `取引データ_${ new Date().toISOString().split('T')[0] }.csv`);
   //   link.style.visibility = 'hidden';
   //   document.body.appendChild(link);
   //   link.click();
@@ -946,7 +946,7 @@ const ChatToBook: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-text-main">音声で記録</h2>
               <button
-                onClick={() => setIsMobileUsageOpen(!isMobileUsageOpen)}
+                onClick={isMobileUsageOpen ? () => setIsMobileUsageOpen(false) : () => setIsMobileUsageOpen(true)}
                 className="lg:hidden flex items-center text-xs text-primary hover:text-primary/80 transition-colors bg-primary/10 px-3 py-1.5 rounded-full"
               >
                 <Info className="w-3.5 h-3.5 mr-1.5" />
@@ -1278,7 +1278,7 @@ const ChatToBook: React.FC = () => {
                           className="w-24 px-2 py-1 bg-background border border-border rounded text-sm text-text-main text-right"
                         />
                       ) : (
-                        <span className={`font-medium ${transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'}`}>
+                        <span className={`font-medium ${transaction.type === 'income' ? 'text-green-500' : 'text-white'}`}>
                           {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
                         </span>
                       )}
@@ -1311,36 +1311,45 @@ const ChatToBook: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="flex space-x-2">
+                    <div className="flex gap-2.5">
                       {editingId === transaction.id ? (
                         <button
                           onClick={handleSave}
-                          className="p-2 text-green-500 hover:text-green-600 bg-surface-highlight rounded-full"
+                          className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
                         >
-                          <Save className="w-4 h-4" />
+                          <Save className="w-5 h-5" />
                         </button>
                       ) : (
                         <>
                           <button
                             onClick={() => recordTransaction(transaction)}
-                            className={`p-2 rounded-full bg-surface-highlight ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-green-500 hover:text-green-600'}`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 ${transaction.approval_status === 'approved'
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                              : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'
+                              }`}
                             disabled={transaction.approval_status === 'approved'}
                           >
-                            <CheckCircle className="w-4 h-4" />
+                            <CheckCircle className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleEdit(transaction)}
-                            className={`p-2 rounded-full bg-surface-highlight ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-primary/80'}`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 ${transaction.approval_status === 'approved'
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                              : 'bg-primary/10 text-primary hover:bg-primary hover:text-white'
+                              }`}
                             disabled={transaction.approval_status === 'approved'}
                           >
-                            <Edit3 className="w-4 h-4" />
+                            <Edit className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleDelete(transaction.id)}
-                            className={`p-2 rounded-full bg-surface-highlight ${transaction.approval_status === 'approved' ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:text-red-600'}`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 ${transaction.approval_status === 'approved'
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                              : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white'
+                              }`}
                             disabled={transaction.approval_status === 'approved'}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </>
                       )}
@@ -1446,7 +1455,7 @@ const ChatToBook: React.FC = () => {
                             className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                           />
                         ) : (
-                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-white'}>
                             {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
                           </span>
                         )}
@@ -1507,7 +1516,7 @@ const ChatToBook: React.FC = () => {
                                 }`}
                               disabled={transaction.approval_status === 'approved'}
                             >
-                              <Edit3 className="w-4 h-4" />
+                              <Edit className="w-4 h-4" />
                               編集
                             </button>
                             <button

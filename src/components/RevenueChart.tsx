@@ -257,24 +257,24 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
 
   return (
     <div className="bg-white dark:bg-surface rounded-2xl p-5 border border-border shadow-sm transition-all duration-200 hover:shadow-md h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-text-main">収益・支出・利益推移</h3>
-        <div className="flex space-x-1 bg-surface-highlight/50 rounded-lg p-1">
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <h3 className="text-sm sm:text-lg font-semibold text-text-main whitespace-nowrap">収益・支出・利益推移</h3>
+        <div className="flex space-x-1 bg-surface-highlight/50 rounded-lg p-1 border border-gray-400 dark:border-gray-600">
           <button
             onClick={() => setPeriod('monthly')}
-            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'monthly' ? 'bg-primary/20 text-primary' : 'text-text-muted hover:text-text-main'}`}
+            className={`whitespace-nowrap text-xs px-2 sm:px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'monthly' ? 'bg-primary/20 text-primary' : 'text-text-muted hover:text-text-main'}`}
           >
             月次
           </button>
           <button
             onClick={() => setPeriod('quarterly')}
-            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'quarterly' ? 'bg-primary/20 text-primary' : 'text-text-muted hover:text-text-main'}`}
+            className={`whitespace-nowrap text-xs px-2 sm:px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'quarterly' ? 'bg-primary/20 text-primary' : 'text-text-muted hover:text-text-main'}`}
           >
             四半期
           </button>
           <button
             onClick={() => setPeriod('yearly')}
-            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'yearly' ? 'bg-primary/20 text-primary' : 'text-text-muted hover:text-text-main'}`}
+            className={`whitespace-nowrap text-xs px-2 sm:px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'yearly' ? 'bg-primary/20 text-primary' : 'text-text-muted hover:text-text-main'}`}
           >
             年次
           </button>

@@ -342,7 +342,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
             >
               <option value="" className="bg-surface-highlight text-text-muted">カテゴリを選択</option>
               <option value="業務委託収入" className="bg-surface-highlight">業務委託収入</option>
-              {categoryOptions.filter(category => category !== '業務委託収入').map(category => (
+              <option value="給与" className="bg-surface-highlight">給与</option>
+              {categoryOptions.filter(category => category !== '業務委託収入' && category !== '給与').map(category => (
                 <option key={category} value={category} className="bg-surface-highlight text-text-main">{category}</option>
               ))}
             </select>

@@ -2,12 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
-import { Check, X, Edit2, Info, Inbox, Sparkles, Filter, ArrowLeft, Mic, MessageSquare } from 'lucide-react';
+import { Check, X, Edit2, Info, Inbox, Sparkles, Filter, ArrowLeft, Mic, MessageSquare, CheckCircle, Trash2 } from 'lucide-react';
 import TransactionIcon from '../components/TransactionIcon';
 import TransactionForm from '../components/TransactionForm';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import toast from 'react-hot-toast';
 import { findPotentialDuplicates } from '../utils/duplicateCheckUtils';
 
 const TransactionInbox: React.FC = () => {
@@ -39,10 +38,8 @@ const TransactionInbox: React.FC = () => {
         try {
             const result = await approveTransaction(id);
             if (result.error) throw result.error;
-            toast.success('取引を承認しました！');
         } catch (error: any) {
             console.error('取引の承認に失敗しました:', error);
-            toast.error('取引の承認に失敗しました: ' + (error.message || '不明なエラー'));
         } finally {
             setProcessingId(null);
         }
@@ -88,13 +85,11 @@ const TransactionInbox: React.FC = () => {
 
             if (result.error) throw result.error;
 
-            toast.success('取引情報を更新しました');
             setIsEditModalOpen(false);
             setEditingTransaction(null);
             fetchTransactions();
         } catch (error: any) {
             console.error('更新エラー:', error);
-            toast.error('更新に失敗しました: ' + (error.message || '不明なエラー'));
         }
     };
 
@@ -181,7 +176,11 @@ const TransactionInbox: React.FC = () => {
                     {/* モバイル表示（カードレイアウト） */}
                     <div className="md:hidden space-y-3">
                         {pendingTransactions.map((t) => (
-                            <div key={t.id} className="bg-surface border border-border rounded-xl p-4 shadow-sm relative">
+                            <div
+                                key={t.id}
+                                onClick={() => handleEditClick(t)}
+                                className="bg-surface border border-border rounded-xl p-4 shadow-sm relative cursor-pointer hover:bg-surface-highlight/50 transition-colors"
+                            >
                                 <div className="flex items-start gap-3 mb-3">
                                     <TransactionIcon item={t.item} category={t.category} />
                                     <div className="flex-1 min-w-0">
@@ -216,7 +215,7 @@ const TransactionInbox: React.FC = () => {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div className={`text-xl font-bold leading-none ${t.type === 'expense' ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                <div className={`text-xl font-bold leading-none ${t.type === 'expense' ? 'text-white' : 'text-green-500'}`}>
                                                     {t.type === 'expense' ? '-' : '+'}¥{Math.abs(t.amount).toLocaleString()}
                                                 </div>
                                             </div>
@@ -234,34 +233,32 @@ const TransactionInbox: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center justify-between mt-2.5 gap-2">
-                                    <span className="inline-flex items-center px-1.5 h-4.5 rounded-full text-[9px] font-medium bg-surface-highlight text-text-secondary border border-border whitespace-nowrap">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-secondary border border-border whitespace-nowrap">
                                         {t.category}
                                     </span>
 
                                     <div className="flex gap-2.5">
                                         <button
-                                            onClick={() => handleApprove(t.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleApprove(t.id);
+                                            }}
                                             disabled={!!processingId}
-                                            className="w-9 h-9 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
+                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
                                             title="承認"
                                         >
-                                            <Check className="w-4.5 h-4.5" />
+                                            <CheckCircle className="w-5 h-5" />
                                         </button>
                                         <button
-                                            onClick={() => handleEditClick(t)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleReject(t.id);
+                                            }}
                                             disabled={!!processingId}
-                                            className="w-9 h-9 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95"
-                                            title="編集"
-                                        >
-                                            <Edit2 className="w-4.5 h-4.5" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleReject(t.id)}
-                                            disabled={!!processingId}
-                                            className="w-9 h-9 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
+                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
                                             title="削除"
                                         >
-                                            <X className="w-4.5 h-4.5" />
+                                            <Trash2 className="w-5 h-5" />
                                         </button>
                                     </div>
                                 </div>
@@ -354,8 +351,8 @@ const TransactionInbox: React.FC = () => {
                                                     {t.category}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-2.5 text-xs text-right font-bold whitespace-nowrap">
-                                                <span className={t.type === 'expense' ? 'text-red-500' : 'text-emerald-500'}>
+                                            <td className="px-4 py-2.5 text-lg text-right font-bold whitespace-nowrap">
+                                                <span className={t.type === 'expense' ? 'text-white' : 'text-green-500'}>
                                                     {t.type === 'expense' ? '-' : '+'}¥{Math.abs(t.amount).toLocaleString()}
                                                 </span>
                                             </td>

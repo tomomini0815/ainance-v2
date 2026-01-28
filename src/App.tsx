@@ -23,6 +23,7 @@ const ChatToBook = React.lazy(() => import('./pages/ChatToBook'));
 const BusinessConversion = React.lazy(() => import('./pages/BusinessConversion'));
 const IntegrationSettings = React.lazy(() => import('./pages/IntegrationSettings'));
 const TransactionHistory = React.lazy(() => import('./pages/TransactionHistory'));
+const ExpenseCategoryDetailsPage = React.lazy(() => import('./pages/ExpenseCategoryDetailsPage'));
 const AITransactionList = React.lazy(() => import('./pages/AITransactionList'));
 const SubsidyMatching = React.lazy(() => import('./pages/SubsidyMatching'));
 const TaxFilingWizard = React.lazy(() => import('./pages/TaxFilingWizard'));
@@ -207,6 +208,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <TransactionHistory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/expense-breakdown"
+                  element={
+                    <ProtectedRoute>
+                      <ExpenseCategoryDetailsPage />
                     </ProtectedRoute>
                   }
                 />

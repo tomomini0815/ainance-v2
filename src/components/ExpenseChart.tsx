@@ -1,4 +1,6 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
 import { Doughnut } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -102,7 +104,10 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
     <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-text-main">支出カテゴリ</h3>
-        <button className="text-sm text-primary hover:text-primary/80 transition-colors">詳細を見る</button>
+        <Link to="/expense-breakdown" className="flex items-center text-sm text-primary hover:text-primary/80 transition-colors">
+          詳細を見る
+          <ChevronRight className="w-4 h-4 ml-1" />
+        </Link>
       </div>
 
       <div className="chart-container h-64 w-full relative flex-shrink-0">

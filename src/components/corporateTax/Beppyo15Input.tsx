@@ -68,7 +68,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo15.socialExpenses}
                                     onChange={(val) => handleChange('socialExpenses', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono text-lg"
+                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono text-lg bg-surface"
                                 />
                             </div>
                             <p className="text-xs text-text-muted mt-1">
@@ -86,7 +86,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo15.deductibleExpenses}
                                     onChange={(val) => handleChange('deductibleExpenses', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono"
+                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                 />
                             </div>
                             <p className="text-xs text-text-muted mt-1">
