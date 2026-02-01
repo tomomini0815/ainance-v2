@@ -141,7 +141,7 @@ const MoneyFlowCard: React.FC<MoneyFlowCardProps> = ({ transactions }) => {
                                 収入
                             </text>
                             <text x="-15" y={sourceHeight / 2 + 16} dominantBaseline="middle" textAnchor="end" className="fill-text-muted text-[10px] font-sans">
-                                ¥{income.toLocaleString()}
+                                {income.toLocaleString()}円
                             </text>
                         </g>
 
@@ -195,7 +195,7 @@ const MoneyFlowCard: React.FC<MoneyFlowCardProps> = ({ transactions }) => {
                                             {node.name}
                                         </text>
                                         <text x="20" y={node.h / 2 + 14} dominantBaseline="middle" className="fill-text-muted text-[10px] font-sans">
-                                            ¥{node.amount.toLocaleString()}
+                                            {node.amount.toLocaleString()}円
                                         </text>
                                     </g>
                                 </g>

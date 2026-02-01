@@ -543,15 +543,15 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                         </div>
                         <div className="flex items-center gap-3 ml-7 sm:ml-0">
                             <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
                                 <input
                                     type="number"
                                     value={deduction.amount}
                                     onChange={(e) => updateDeductionAmount(deduction.id, Number(e.target.value))}
-                                    className="input-base pl-8 w-40"
+                                    className="input-base pr-8 w-40"
                                     placeholder="金額"
                                     disabled={deduction.type === 'basic' || deduction.type === 'blue_return'}
                                 />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">円</span>
                             </div>
                             {deduction.type !== 'basic' && deduction.type !== 'blue_return' && (
                                 <button

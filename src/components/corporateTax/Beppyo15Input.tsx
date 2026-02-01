@@ -64,12 +64,12 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                                 1. 支出した交際費等の額
                             </label>
                             <div className="relative max-w-md">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
                                 <MoneyInput
                                     value={beppyo15.socialExpenses}
                                     onChange={(val) => handleChange('socialExpenses', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono text-lg bg-surface"
+                                    className="w-full pr-12 pl-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono text-lg bg-surface"
                                 />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">円</span>
                             </div>
                             <p className="text-xs text-text-muted mt-1">
                                 決算書の「交際費」の金額を入力してください
@@ -82,12 +82,12 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                                 2. うち接待飲食費の額
                             </label>
                             <div className="relative max-w-md">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
                                 <MoneyInput
                                     value={beppyo15.deductibleExpenses}
                                     onChange={(val) => handleChange('deductibleExpenses', val)}
-                                    className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
+                                    className="w-full pr-12 pl-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-right font-mono bg-surface"
                                 />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">円</span>
                             </div>
                             <p className="text-xs text-text-muted mt-1">
                                 飲食等のために支出した費用（1人あたり5000円超のものなど）
@@ -101,7 +101,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                             <div className="flex justify-between items-center">
                                 <span className="text-sm font-medium text-text-muted">損金算入限度額 (A)</span>
                                 <span className="text-lg font-mono font-bold text-success">
-                                    ¥{beppyo15.deductionLimit.toLocaleString()}
+                                    {beppyo15.deductionLimit.toLocaleString()}円
                                 </span>
                             </div>
                             <p className="text-xs text-text-muted text-right -mt-2">
@@ -115,7 +115,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                                     <span className="text-xs text-text-muted bg-surface px-2 py-1 rounded border border-border">別表四で加算</span>
                                 </div>
                                 <span className={`text-xl font-mono font-bold ${beppyo15.excessAmount > 0 ? 'text-error' : 'text-text-main'}`}>
-                                    ¥{beppyo15.excessAmount.toLocaleString()}
+                                    {beppyo15.excessAmount.toLocaleString()}円
                                 </span>
                             </div>
                             <p className="text-xs text-text-muted text-right -mt-1">

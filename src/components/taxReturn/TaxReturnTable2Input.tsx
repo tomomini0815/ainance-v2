@@ -170,27 +170,27 @@ export const TaxReturnTable2Input: React.FC<TaxReturnTable2InputProps> = ({ data
                             <div>
                                 <label className="text-xs text-text-muted">収入金額</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-14"
+                                        className="input-base py-1.5 pr-8"
                                         value={item.revenue_amount === 0 ? '' : item.revenue_amount}
                                         onChange={(e) => handleUpdateWithholding(index, { ...item, revenue_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
                                         placeholder="0"
                                     />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">円</span>
                                 </div>
                             </div>
                             <div>
                                 <label className="text-xs text-text-muted">源泉徴収税額</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-14"
+                                        className="input-base py-1.5 pr-8"
                                         value={item.tax_amount === 0 ? '' : item.tax_amount}
                                         onChange={(e) => handleUpdateWithholding(index, { ...item, tax_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
                                         placeholder="0"
                                     />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">円</span>
                                 </div>
                             </div>
                         </div>
@@ -267,14 +267,14 @@ export const TaxReturnTable2Input: React.FC<TaxReturnTable2InputProps> = ({ data
                             <div>
                                 <label className="text-xs text-text-muted">支払保険料</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-14"
+                                        className="input-base py-1.5 pr-8"
                                         value={item.payment_amount === 0 ? '' : item.payment_amount}
                                         onChange={(e) => handleUpdateInsurance('life_insurance', index, { ...item, payment_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
                                         placeholder="0"
                                     />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">円</span>
                                 </div>
                             </div>
                         </div>
@@ -323,14 +323,14 @@ export const TaxReturnTable2Input: React.FC<TaxReturnTable2InputProps> = ({ data
                             <div>
                                 <label className="text-xs text-text-muted">支払保険料</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-14"
+                                        className="input-base py-1.5 pr-8"
                                         value={item.payment_amount === 0 ? '' : item.payment_amount}
                                         onChange={(e) => handleUpdateInsurance('earthquake_insurance', index, { ...item, payment_amount: e.target.value === '' ? 0 : Number(e.target.value) })}
                                         placeholder="0"
                                     />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">円</span>
                                 </div>
                             </div>
                         </div>
@@ -449,14 +449,14 @@ export const TaxReturnTable2Input: React.FC<TaxReturnTable2InputProps> = ({ data
                             <div>
                                 <label className="text-xs text-text-muted">所得金額</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
                                     <input
                                         type="number"
-                                        className="input-base py-1.5 pl-14"
+                                        className="input-base py-1.5 pr-8"
                                         value={item.income === 0 ? '' : item.income}
                                         onChange={(e) => handleUpdateDependent(index, { ...item, income: e.target.value === '' ? 0 : Number(e.target.value) })}
                                         placeholder="0"
                                     />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">円</span>
                                 </div>
                             </div>
                         </div>

@@ -688,8 +688,8 @@ const AITransactionList: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <div className={`font-medium text-lg ${transaction.ai_category === '売上' || transaction.ai_category === '給与' || transaction.ai_category === '雑収入'
-                            ? 'text-green-500'
-                            : 'text-white'
+                          ? 'text-green-500'
+                          : 'text-text-main'
                           }`}>
                           ¥{transaction.amount.toLocaleString()}
                         </div>
@@ -849,8 +849,8 @@ const AITransactionList: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className={`font-medium text-lg ${transaction.ai_category === '売上' || transaction.ai_category === '給与' || transaction.ai_category === '雑収入'
-                              ? 'text-green-500'
-                              : 'text-white'
+                            ? 'text-green-500'
+                            : 'text-text-main'
                             }`}>
                             ¥{transaction.amount.toLocaleString()}
                           </span>

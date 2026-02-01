@@ -359,8 +359,8 @@ const AutoImport: React.FC = () => {
                   onClick={handleStartImport}
                   disabled={uploadedFiles.length === 0 || isOcrProcessing}
                   className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${uploadedFiles.length > 0 && !isOcrProcessing
-                      ? 'bg-blue-600 hover:bg-blue-700'
-                      : 'bg-gray-400 cursor-not-allowed'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-gray-400 cursor-not-allowed'
                     }`}
                 >
                   {isOcrProcessing ? (
@@ -443,6 +443,7 @@ const AutoImport: React.FC = () => {
                           </div>
 
                           <div className="space-y-1 text-sm">
+                            <div className="text-gray-900 font-medium">{result.value}</div>
                             <div className="flex justify-between">
                               <span className="text-gray-500">値:</span>
                               <span className="text-gray-900">{result.value}</span>
@@ -457,7 +458,8 @@ const AutoImport: React.FC = () => {
                       ))}
                     </div>
 
-                    <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden">
+                    <div
+                      className="hidden md:block border border-gray-200 rounded-lg overflow-hidden">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
@@ -564,8 +566,8 @@ const AutoImport: React.FC = () => {
                   onClick={handleDownloadTemplate}
                   disabled={!selectedTemplate}
                   className={`w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center ${selectedTemplate
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     }`}
                 >
                   <Download className="h-4 w-4 mr-2" />

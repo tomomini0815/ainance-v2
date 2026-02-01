@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
-import { Check, X, Edit2, Info, Inbox, Sparkles, Filter, ArrowLeft, Mic, MessageSquare, CheckCircle, Trash2 } from 'lucide-react';
+import { Check, X, Edit2, Info, Inbox, Sparkles, Filter, ArrowLeft, Mic, MessageSquare, CheckCircle, Trash2, Calendar } from 'lucide-react';
 import TransactionIcon from '../components/TransactionIcon';
 import TransactionForm from '../components/TransactionForm';
 import { format } from 'date-fns';
@@ -181,43 +181,45 @@ const TransactionInbox: React.FC = () => {
                                 onClick={() => handleEditClick(t)}
                                 className="bg-surface border border-border rounded-xl p-4 shadow-sm relative cursor-pointer hover:bg-surface-highlight/50 transition-colors"
                             >
-                                <div className="flex items-start gap-3 mb-3">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                                        <Calendar className="w-2.5 h-2.5 opacity-40" />
+                                        <span>
+                                            {format(new Date(t.date), 'yyyy年M月d日', { locale: ja })}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        {t.receipt_url || t.tags?.includes('receipt_created') ? (
+                                            <div className="flex items-center gap-1 p-1 bg-purple-100 dark:bg-purple-900/30 rounded text-purple-600 dark:text-purple-400 scale-90 origin-right">
+                                                <Sparkles className="w-3 h-3" />
+                                                <span className="text-[10px] font-medium">AI読取</span>
+                                            </div>
+                                        ) : t.tags?.includes('ai-chat') ? (
+                                            <div className="flex items-center gap-1 p-1 bg-indigo-100 dark:bg-indigo-900/30 rounded text-indigo-600 dark:text-indigo-100 scale-90 origin-right">
+                                                <MessageSquare className="w-3 h-3" />
+                                                <span className="text-[10px] font-medium text-white">AIチャット</span>
+                                            </div>
+                                        ) : t.tags?.includes('voice') ? (
+                                            <div className="flex items-center gap-1 p-1 bg-blue-100 dark:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 scale-90 origin-right">
+                                                <Mic className="w-3 h-3" />
+                                                <span className="text-[10px] font-medium">音声入力</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-400 scale-90 origin-right">
+                                                <Edit2 className="w-3 h-3" />
+                                                <span className="text-[10px] font-medium">手入力</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-3 mb-2">
                                     <TransactionIcon item={t.item} category={t.category} />
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <div className="font-bold text-text-main truncate text-base mb-1">{t.item}</div>
-                                                <div className="text-xs text-text-muted">
-                                                    {format(new Date(t.date), 'yyyy年M月d日', { locale: ja })}
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="flex justify-end mb-1">
-                                                    {t.receipt_url || t.tags?.includes('receipt_created') ? (
-                                                        <div className="flex items-center gap-1 p-1 bg-purple-100 dark:bg-purple-900/30 rounded text-purple-600 dark:text-purple-400">
-                                                            <Sparkles className="w-3 h-3" />
-                                                            <span className="text-[10px] font-medium">AI読取</span>
-                                                        </div>
-                                                    ) : t.tags?.includes('ai-chat') ? (
-                                                        <div className="flex items-center gap-1 p-1 bg-indigo-100 dark:bg-indigo-900/30 rounded text-indigo-600 dark:text-indigo-100">
-                                                            <MessageSquare className="w-3 h-3" />
-                                                            <span className="text-[10px] font-medium text-white">AIチャット</span>
-                                                        </div>
-                                                    ) : t.tags?.includes('voice') ? (
-                                                        <div className="flex items-center gap-1 p-1 bg-blue-100 dark:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400">
-                                                            <Mic className="w-3 h-3" />
-                                                            <span className="text-[10px] font-medium">音声入力</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-400">
-                                                            <Edit2 className="w-3 h-3" />
-                                                            <span className="text-[10px] font-medium">手入力</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className={`text-xl font-bold leading-none ${t.type === 'expense' ? 'text-white' : 'text-green-500'}`}>
-                                                    {t.type === 'expense' ? '-' : '+'}¥{Math.abs(t.amount).toLocaleString()}
-                                                </div>
+                                        <div className="flex justify-between items-center">
+                                            <div className="font-bold text-text-main truncate text-base">{t.item}</div>
+                                            <div className={`text-xl font-bold leading-none ${t.type === 'expense' ? 'text-text-main' : 'text-green-500'} ml-2`}>
+                                                {t.type === 'expense' ? '-' : '+'}¥{Math.abs(t.amount).toLocaleString()}
                                             </div>
                                         </div>
 
@@ -237,17 +239,28 @@ const TransactionInbox: React.FC = () => {
                                         {t.category}
                                     </span>
 
-                                    <div className="flex gap-2.5">
+                                    <div className="flex gap-3">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleApprove(t.id);
                                             }}
                                             disabled={!!processingId}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
+                                            className="w-11 h-11 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
                                             title="承認"
                                         >
-                                            <CheckCircle className="w-5 h-5" />
+                                            <CheckCircle className="w-6 h-6" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEditClick(t);
+                                            }}
+                                            disabled={!!processingId}
+                                            className="w-11 h-11 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95"
+                                            title="編集"
+                                        >
+                                            <Edit2 className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={(e) => {
@@ -255,10 +268,10 @@ const TransactionInbox: React.FC = () => {
                                                 handleReject(t.id);
                                             }}
                                             disabled={!!processingId}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
+                                            className="w-11 h-11 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
                                             title="削除"
                                         >
-                                            <Trash2 className="w-5 h-5" />
+                                            <Trash2 className="w-6 h-6" />
                                         </button>
                                     </div>
                                 </div>
@@ -352,7 +365,7 @@ const TransactionInbox: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-2.5 text-lg text-right font-bold whitespace-nowrap">
-                                                <span className={t.type === 'expense' ? 'text-white' : 'text-green-500'}>
+                                                <span className={t.type === 'expense' ? 'text-text-main' : 'text-green-500'}>
                                                     {t.type === 'expense' ? '-' : '+'}¥{Math.abs(t.amount).toLocaleString()}
                                                 </span>
                                             </td>
@@ -361,28 +374,28 @@ const TransactionInbox: React.FC = () => {
                                                     <button
                                                         onClick={() => handleApprove(t.id)}
                                                         disabled={!!processingId}
-                                                        className="p-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-[10px] whitespace-nowrap"
+                                                        className="px-3 py-2 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1.5 text-xs font-bold whitespace-nowrap"
                                                         title="承認する"
                                                     >
-                                                        <Check className="w-3.5 h-3.5" />
+                                                        <Check className="w-4 h-4" />
                                                         承認
                                                     </button>
                                                     <button
                                                         onClick={() => handleEditClick(t)}
                                                         disabled={!!processingId}
-                                                        className="p-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-[10px] whitespace-nowrap"
+                                                        className="px-3 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1.5 text-xs font-bold whitespace-nowrap"
                                                         title="編集する"
                                                     >
-                                                        <Edit2 className="w-3.5 h-3.5" />
+                                                        <Edit2 className="w-4 h-4" />
                                                         編集
                                                     </button>
                                                     <button
                                                         onClick={() => handleReject(t.id)}
                                                         disabled={!!processingId}
-                                                        className="p-1.5 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-[10px] whitespace-nowrap"
+                                                        className="px-3 py-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1.5 text-xs font-bold whitespace-nowrap"
                                                         title="削除する"
                                                     >
-                                                        <X className="w-3.5 h-3.5" />
+                                                        <X className="w-4 h-4" />
                                                         削除
                                                     </button>
                                                 </div>
@@ -394,37 +407,40 @@ const TransactionInbox: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* AI Tips */}
 
             {/* 編集モーダル */}
-            {isEditModalOpen && editingTransaction && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                        <div className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-surface/95 backdrop-blur z-10">
-                            <h3 className="text-xl font-bold text-text-main flex items-center gap-2">
-                                <Edit2 className="w-5 h-5 text-primary" />
-                                取引情報の編集
-                            </h3>
-                            <button
-                                onClick={() => setIsEditModalOpen(false)}
-                                className="p-2 hover:bg-surface-highlight rounded-full transition-colors"
-                            >
-                                <X className="w-5 h-5 text-text-muted" />
-                            </button>
-                        </div>
-                        <div className="p-6">
-                            <TransactionForm
-                                transaction={editingTransaction}
-                                onSubmit={handleEditSubmit}
-                                onCancel={() => setIsEditModalOpen(false)}
-                            />
+            {
+                isEditModalOpen && editingTransaction && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                            <div className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-surface/95 backdrop-blur z-10">
+                                <h3 className="text-xl font-bold text-text-main flex items-center gap-2">
+                                    <Edit2 className="w-5 h-5 text-primary" />
+                                    取引情報の編集
+                                </h3>
+                                <button
+                                    onClick={() => setIsEditModalOpen(false)}
+                                    className="p-2 hover:bg-surface-highlight rounded-full transition-colors"
+                                >
+                                    <X className="w-5 h-5 text-text-muted" />
+                                </button>
+                            </div>
+                            <div className="p-6">
+                                <TransactionForm
+                                    transaction={editingTransaction}
+                                    onSubmit={handleEditSubmit}
+                                    onCancel={() => setIsEditModalOpen(false)}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

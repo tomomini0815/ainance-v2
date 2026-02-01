@@ -1003,7 +1003,10 @@ const ChatToBook: React.FC = () => {
               />
 
               {/* カテゴリタグ */}
-              <label className="block text-sm font-medium text-text-muted mt-3 mb-2">カテゴリ選択</label>
+              <label className="block text-sm font-medium text-text-muted mt-3 mb-2">
+                カテゴリ選択
+                <span className="ml-2 text-xs text-primary font-normal">未選択でも認識可</span>
+              </label>
               <div className="flex flex-wrap gap-2">
                 {STANDARD_CATEGORIES.map((category) => (
                   <button
@@ -1221,7 +1224,7 @@ const ChatToBook: React.FC = () => {
                           className="w-24 px-2 py-1 bg-background border border-border rounded text-sm text-text-main text-right"
                         />
                       ) : (
-                        <span className={`font-medium ${transaction.type === 'income' ? 'text-green-500' : 'text-white'}`}>
+                        <span className={`font-medium ${transaction.type === 'income' ? 'text-green-500' : 'text-text-main'}`}>
                           {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
                         </span>
                       )}
@@ -1392,7 +1395,7 @@ const ChatToBook: React.FC = () => {
                             className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                           />
                         ) : (
-                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-white'}>
+                          <span className={transaction.type === 'income' ? 'text-green-500' : 'text-text-main'}>
                             {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
                           </span>
                         )}

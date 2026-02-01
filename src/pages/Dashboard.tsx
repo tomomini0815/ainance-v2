@@ -4,6 +4,8 @@ import QuickActions from '../components/QuickActions'
 import { useTransactions } from '../hooks/useTransactions'
 import { useAuth } from '../hooks/useAuth'
 import { Plus, Inbox } from 'lucide-react'
+import { getReceipts } from '../services/receiptService'
+import { Receipt } from '../services/receiptService'
 
 // Lazy load heavy components
 const RevenueChart = React.lazy(() => import('../components/RevenueChart'));
@@ -22,6 +24,7 @@ const Dashboard: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext();
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
   const { transactions, loading, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   console.log('ダッシュボード - currentBusinessType:', currentBusinessType);
@@ -50,6 +53,21 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     console.log('ダッシュボード - transactions状態が更新されました:', transactions);
   }, [transactions]);
+
+  // レシートデータの取得
+  const fetchReceiptsData = async () => {
+    if (authUser?.id) {
+      const data = await getReceipts(authUser.id);
+      // 未承認・未却下のもののみ
+      setReceipts(data.filter(r => r.status === 'pending'));
+    }
+  };
+
+  useEffect(() => {
+    if (!authLoading && authUser?.id) {
+      fetchReceiptsData();
+    }
+  }, [authLoading, authUser?.id]);
 
   // カスタムイベントリスナーを追加して、取引が記録されたときにデータを再取得
   useEffect(() => {
@@ -291,16 +309,18 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Suspense fallback={<div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <TransactionTable
-            transactions={transactions}
-            onOpenCreateModal={() => setShowCreateForm(true)}
-            showCreateButton={false}
-          />
+        <Suspense fallback={<div className="h-[500px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[500px] lg:h-[580px]">
+            <TransactionTable
+              transactions={transactions}
+              onOpenCreateModal={() => setShowCreateForm(true)}
+              showCreateButton={false}
+            />
+          </div>
         </Suspense>
         <Suspense fallback={<div className="h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
           <div className="h-[500px] lg:h-[580px]">
-            <BudgetControlCard transactions={transactions} />
+            <BudgetControlCard transactions={transactions} receipts={receipts} />
           </div>
         </Suspense>
       </div>

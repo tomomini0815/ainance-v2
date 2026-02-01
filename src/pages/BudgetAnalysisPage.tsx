@@ -168,14 +168,14 @@ const BudgetAnalysisPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     <div className="bg-white dark:bg-surface p-5 rounded-xl border border-border shadow-sm">
                         <div className="text-xs text-text-muted mb-1">総予算</div>
-                        <div className="text-2xl font-bold text-text-main">¥{budget.toLocaleString()}</div>
+                        <div className="text-2xl font-bold text-text-main">{budget.toLocaleString()}円</div>
                         <div className="mt-2 text-xs text-text-muted flex items-center gap-1">
                             <Target className="w-3 h-3" /> 設定目標
                         </div>
                     </div>
                     <div className="bg-white dark:bg-surface p-5 rounded-xl border border-border shadow-sm">
                         <div className="text-xs text-text-muted mb-1">実績累計</div>
-                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">¥{analysis.totalExpense.toLocaleString()}</div>
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{analysis.totalExpense.toLocaleString()}円</div>
                         <div className="mt-2 text-xs text-blue-600/70 font-medium">
                             消化率 {analysis.progress.toFixed(1)}%
                         </div>
@@ -183,7 +183,7 @@ const BudgetAnalysisPage: React.FC = () => {
                     <div className="bg-white dark:bg-surface p-5 rounded-xl border border-border shadow-sm">
                         <div className="text-xs text-text-muted mb-1">予算残高</div>
                         <div className={`text-2xl font-bold ${analysis.variance < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                            ¥{Math.abs(analysis.variance).toLocaleString()}
+                            {Math.abs(analysis.variance).toLocaleString()}円
                         </div>
                         <div className="mt-2 text-xs text-text-muted">
                             {analysis.variance < 0 ? '超過' : '残り'}
@@ -225,7 +225,7 @@ const BudgetAnalysisPage: React.FC = () => {
                                         <div className="text-xs text-text-muted">予算比: {cat.actual > cat.budget ? '+' : ''}{(cat.actual - cat.budget).toLocaleString()}</div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="font-bold text-text-main">¥{cat.actual.toLocaleString()}</div>
+                                        <div className="font-bold text-text-main">{cat.actual.toLocaleString()}円</div>
                                         <div className={`text-xs ${cat.actual > cat.budget ? 'text-red-500' : 'text-green-500'}`}>
                                             {((cat.actual / analysis.totalExpense) * 100).toFixed(1)}%
                                         </div>

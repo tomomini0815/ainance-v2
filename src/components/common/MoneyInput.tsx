@@ -63,6 +63,8 @@ export const MoneyInput: React.FC<Props> = ({ value, onChange, className = "inpu
             onChange={handleChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            onWheel={(e) => (e.target as HTMLInputElement).blur()}
+            autoComplete="off"
             className={className}
         />
     );

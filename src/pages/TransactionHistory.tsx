@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowLeft, Search, Filter, Plus, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Search, Filter, Plus, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import TransactionIcon from '../components/TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionForm from '../components/TransactionForm'
@@ -306,7 +306,7 @@ const TransactionHistory: React.FC = () => {
                   <TrendingUp className="w-3.5 h-3.5 text-green-500" />
                 </div>
               </div>
-              <div className="text-base sm:text-lg font-bold text-green-500 mt-0.5">¥{stats.income.toLocaleString()}</div>
+              <div className="text-base sm:text-lg font-bold text-green-500 mt-0.5">{stats.income.toLocaleString()}円</div>
             </div>
             <div className="border border-border rounded-lg p-2">
               <div className="flex items-center justify-between">
@@ -315,7 +315,7 @@ const TransactionHistory: React.FC = () => {
                   <TrendingDown className="w-3.5 h-3.5 text-red-500" />
                 </div>
               </div>
-              <div className="text-base sm:text-lg font-bold text-red-500 mt-0.5">¥{stats.expense.toLocaleString()}</div>
+              <div className="text-base sm:text-lg font-bold text-red-500 mt-0.5">{stats.expense.toLocaleString()}円</div>
             </div>
             <div className="border border-border rounded-lg p-2">
               <div className="flex items-center justify-between">
@@ -325,7 +325,7 @@ const TransactionHistory: React.FC = () => {
                 </div>
               </div>
               <div className={`text-base sm:text-lg font-bold mt-0.5 ${stats.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                ¥{stats.balance.toLocaleString()}
+                {stats.balance.toLocaleString()}円
               </div>
             </div>
           </div>
@@ -475,71 +475,91 @@ const TransactionHistory: React.FC = () => {
           <div className="block md:hidden divide-y divide-border">
             {paginatedTransactions.length > 0 ? (
               paginatedTransactions.map((transaction) => (
-                <div key={transaction.id} className="p-4 hover:bg-surface-highlight transition-colors">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-3">
+                <div
+                  key={transaction.id}
+                  className="p-4 hover:bg-surface-highlight transition-colors cursor-pointer"
+                  onClick={() => {
+                    setEditingTransaction(transaction)
+                    setShowCreateForm(true)
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center">
                       <input
                         type="checkbox"
                         checked={selectedTransactions.includes(transaction.id)}
-                        onChange={() => toggleSelectTransaction(transaction.id)}
-                        className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          toggleSelectTransaction(transaction.id)
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background mr-3"
                       />
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <TransactionIcon item={transaction.item} category={transaction.category} size="sm" />
-                          <div className="font-medium text-text-main">{transaction.item}</div>
-                          {transaction.recurring && (
-                            <div className="flex items-center gap-1 px-1 py-0.5 rounded bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">
-                              <Repeat className="w-2 h-2" />
-                              <span>{{
-                                'daily': '毎日',
-                                'weekly': '毎週',
-                                'monthly': '毎月',
-                                'yearly': '毎年'
-                              }[transaction.recurring_frequency || 'monthly']}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-xs text-text-muted">
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                        <Calendar className="w-2.5 h-2.5 opacity-40" />
+                        <span>
                           {new Date(transaction.date).toLocaleDateString('ja-JP', {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric'
                           })}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`font-bold ${transaction.type === 'income' ? 'text-green-500' : 'text-white'}`}>
-                        {transaction.type === 'expense' ? '-' : ''}¥{transaction.amount.toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2.5 gap-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-secondary border border-border whitespace-nowrap">
-                      {transaction.category}
-                    </span>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <TransactionIcon item={transaction.item} category={transaction.category} size="sm" />
+                      <div className="flex flex-wrap items-center gap-2 min-w-0 ml-2">
+                        <div className="font-medium text-text-main truncate text-sm">{transaction.item}</div>
+                        {transaction.recurring && (
+                          <div className="flex items-center gap-1 px-1 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20 shrink-0">
+                            <Repeat className="w-2.5 h-2.5" />
+                            <span>{{
+                              'daily': '毎日',
+                              'weekly': '毎週',
+                              'monthly': '毎月',
+                              'yearly': '毎年'
+                            }[transaction.recurring_frequency || 'monthly']}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right ml-3 shrink-0">
+                      <div className={`font-bold text-sm ${transaction.type === 'income' ? 'text-green-500' : 'text-text-main'}`}>
+                        {transaction.type === 'expense' ? '-' : transaction.type === 'income' ? '+' : ''}{transaction.amount.toLocaleString()}円
+                      </div>
+                    </div>
+                  </div>
 
-                    <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-between mt-2.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 shrink-0" /> {/* Spacer for alignment */}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface-highlight text-text-secondary border border-border truncate">
+                        {transaction.category}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           setEditingTransaction(transaction)
                           setShowCreateForm(true)
                         }}
-                        className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95"
+                        className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-sm"
                       >
-                        <Edit className="w-5 h-5" />
+                        <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           deleteTransaction(transaction.id)
                         }}
-                        className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
+                        className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -608,8 +628,8 @@ const TransactionHistory: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium">
-                        <span className={transaction.type === 'income' ? 'text-green-500' : 'text-white'}>
-                          {transaction.type === 'income' ? '+' : '-'}¥{transaction.amount.toLocaleString()}
+                        <span className={transaction.type === 'income' ? 'text-green-500' : 'text-text-main'}>
+                          {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()}円
                         </span>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-muted hidden sm:table-cell">

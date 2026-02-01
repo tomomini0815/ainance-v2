@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
-import { Upload, FileText, ArrowLeft, Camera, RefreshCw, FileImage, Search, Save, AlertTriangle, CheckCircle, Trash2, Sparkles } from 'lucide-react';
+import { Upload, FileText, ArrowLeft, Camera, RefreshCw, FileImage, Search, Save, AlertTriangle, CheckCircle, Trash2, Sparkles, Edit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import ReceiptCamera from '../components/ReceiptCamera';
@@ -66,7 +66,7 @@ interface ExtractedReceiptData {
 const ReceiptProcessing: React.FC = () => {
   const { user } = useAuth(); // 認証されたユーザーを取得
   const { currentBusinessType } = useBusinessTypeContext(); // 事業タイプを取得
-  const { createTransaction } = useTransactions(user?.id, currentBusinessType?.business_type as 'individual' | 'corporation'); // トランザクション追加用フック
+  useTransactions(user?.id, currentBusinessType?.business_type as 'individual' | 'corporation'); // トランザクション追加用フック
 
   const [uploadedReceipts, setUploadedReceipts] = useState<ReceiptData[]>([])
 
@@ -751,13 +751,13 @@ const ReceiptProcessing: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
 
-        <div className="flex items-center mb-4">
-          <Link to="/dashboard" className="mr-3">
-            <ArrowLeft className="w-5 h-5 text-text-muted hover:text-text-main" />
+        <div className="flex items-center mb-6">
+          <Link to="/dashboard" className="mr-4">
+            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-text-main">レシート処理</h1>
-            <p className="text-xs text-text-muted">AI解析で自動仕訳データを作成します</p>
+            <h1 className="text-2xl font-bold text-text-main">レシート処理</h1>
+            <p className="text-text-muted">レシートのアップロードで簡単に取引を記録できます</p>
           </div>
         </div>
 
@@ -908,8 +908,11 @@ const ReceiptProcessing: React.FC = () => {
 
           {/* 処理済みレシート一覧 */}
           <div className="bg-surface rounded-xl shadow-sm border border-border">
-            <div className="p-3 border-b border-border">
-              <h2 className="text-base font-semibold text-text-main">処理済みレシート</h2>
+            <div className="p-6 border-b border-border">
+              <h2 className="text-lg font-semibold text-text-main">処理済みレシート</h2>
+              <p className="text-sm text-text-muted mt-1">
+                内容を確認し、表の「登録」ボタンをクリックして記帳を確定してください。
+              </p>
             </div>
 
             {/* モバイル用カード表示 */}
@@ -922,37 +925,36 @@ const ReceiptProcessing: React.FC = () => {
                 </div>
               ) : (
                 filteredReceipts.map((receipt) => (
-                  <div key={receipt.id} className="bg-surface-highlight rounded-xl p-2.5 border border-border hover:border-primary/50 transition-all relative">
-                    <div className="flex items-start justify-between mb-1.5">
+                  <div key={receipt.id} className="bg-surface p-3 rounded-lg shadow-sm border border-border">
+                    <div className="flex justify-between items-start mb-1">
                       <div className="flex items-start flex-1 min-w-0">
-                        <div className="mr-2 mt-0.5">
-                          <TransactionIcon item={receipt.merchant} category={receipt.category} size="xs" />
+                        <div className="mr-3 mt-1">
+                          <TransactionIcon item={receipt.merchant} category={receipt.category} size="sm" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="mb-1">
+                          <div className="font-medium text-text-main text-base mb-1">
                             {editingId === receipt.id ? (
                               <input
                                 type="text"
                                 value={editData.merchant || receipt.merchant}
                                 onChange={(e) => setEditData(prev => ({ ...prev, merchant: e.target.value }))}
-                                onBlur={() => !editData.date && !editData.amount && !editData.category && handleSave()}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full px-1.5 py-0.5 border border-border rounded text-sm font-medium bg-surface text-text-main"
+                                className="w-full px-2 py-1 border border-border rounded text-sm bg-background text-text-main"
                                 placeholder="店舗名"
                                 autoFocus
                               />
                             ) : (
-                              <div className="font-medium text-text-main text-sm truncate cursor-pointer" onClick={() => handleEdit(receipt)}>{receipt.merchant}</div>
+                              <div className="cursor-pointer" onClick={() => handleEdit(receipt)}>{receipt.merchant}</div>
                             )}
                           </div>
-                          <div className="text-xs text-text-muted">
+                          <div className="text-sm text-text-muted">
                             {editingId === receipt.id ? (
                               <input
                                 type="date"
                                 value={editData.date || receipt.date}
                                 onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full px-1.5 py-0.5 border border-border rounded text-xs bg-surface text-text-main"
+                                className="w-full px-2 py-1 border border-border rounded text-sm bg-background text-text-main"
                               />
                             ) : (
                               <span className="cursor-pointer" onClick={() => handleEdit(receipt)}>{receipt.date}</span>
@@ -968,34 +970,33 @@ const ReceiptProcessing: React.FC = () => {
                             value={editData.amount || receipt.amount}
                             onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-20 px-1.5 py-0.5 border border-border rounded text-sm text-right bg-surface text-text-main"
+                            className="w-24 px-2 py-1 border border-border rounded text-sm text-right bg-background text-text-main"
                           />
                         ) : (
-                          <div className="font-bold text-base text-white cursor-pointer" onClick={() => handleEdit(receipt)}>
+                          <div className="font-medium text-lg text-text-main cursor-pointer" onClick={() => handleEdit(receipt)}>
                             ¥{receipt.amount.toLocaleString()}
                           </div>
                         )}
-                        {/* Status/Confidence Indicator */}
                         <div className="flex justify-end gap-1 mt-1">
                           {receipt.confidence >= 90 ? (
-                            <Sparkles className="w-3 h-3 text-purple-500" />
+                            <Sparkles className="w-3.5 h-3.5 text-purple-500" />
                           ) : receipt.confidence >= 70 ? (
-                            <Sparkles className="w-3 h-3 text-indigo-500" />
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
                           ) : (
-                            <AlertTriangle className="w-3 h-3 text-yellow-500" />
+                            <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />
                           )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
                       <div onClick={() => editingId !== receipt.id && handleEdit(receipt)} className="flex-1">
                         {editingId === receipt.id ? (
                           <select
                             value={editData.category || receipt.category}
                             onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-[120px] px-1.5 py-0.5 border border-border rounded text-xs bg-surface text-text-main"
+                            className="w-full max-w-[140px] px-2 py-1 border border-border rounded text-sm bg-background text-text-main"
                           >
                             {categories.map(cat => (
                               <option key={cat} value={cat}>{cat}</option>
@@ -1007,20 +1008,20 @@ const ReceiptProcessing: React.FC = () => {
                             <option value="水道光熱費">水道光熱費</option>
                           </select>
                         ) : (
-                          <span className="whitespace-nowrap inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full bg-surface text-text-secondary border border-white/5 cursor-pointer">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border cursor-pointer">
                             {receipt.category}
                           </span>
                         )}
                       </div>
 
-                      <div className="flex gap-2.5 ml-2">
+                      <div className="flex gap-2.5">
                         {editingId === receipt.id ? (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSave();
                             }}
-                            className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-md active:scale-95"
+                            className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95"
                             title="保存"
                           >
                             <Save className="w-5 h-5" />
@@ -1036,6 +1037,16 @@ const ReceiptProcessing: React.FC = () => {
                               title="承認"
                             >
                               <CheckCircle className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(receipt);
+                              }}
+                              className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95"
+                              title="編集"
+                            >
+                              <Edit className="w-5 h-5" />
                             </button>
                             <button
                               onClick={(e) => {
@@ -1060,14 +1071,14 @@ const ReceiptProcessing: React.FC = () => {
             <div className="hidden md:block bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
-                  <thead className="bg-surface-highlight/30 border-b border-border">
+                  <thead className="bg-surface-highlight">
                     <tr>
-                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">日付</th>
-                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">店舗名</th>
-                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">金額</th>
-                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">カテゴリ</th>
-                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">信頼度</th>
-                      <th className="px-4 py-3 text-[10px] font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap opacity-0">操作</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider whitespace-nowrap">日付</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider whitespace-nowrap">店舗名</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider whitespace-nowrap">金額</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider whitespace-nowrap">カテゴリ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider whitespace-nowrap">信頼度</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider whitespace-nowrap">操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -1081,56 +1092,56 @@ const ReceiptProcessing: React.FC = () => {
                       </tr>
                     ) : (
                       filteredReceipts.map((receipt) => (
-                        <tr key={receipt.id} className="hover:bg-surface-highlight/20 transition-colors group">
-                          <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
+                        <tr key={receipt.id} className="hover:bg-surface-highlight transition-colors">
+                          <td className="px-4 py-3 text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
                             {editingId === receipt.id ? (
                               <input
                                 type="date"
                                 value={editData.date || receipt.date}
                                 onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full px-2 py-1 border border-border rounded text-xs"
+                                className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                               />
                             ) : (
-                              <span className="cursor-pointer hover:underline decoration-text-muted/50">{receipt.date}</span>
+                              <span className="cursor-pointer">{receipt.date}</span>
                             )}
                           </td>
-                          <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
+                          <td className="px-4 py-3 text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
                             <div className="flex items-center gap-2">
-                              <TransactionIcon item={receipt.merchant} category={receipt.category} />
+                              <TransactionIcon item={receipt.merchant} category={receipt.category} size="sm" />
                               {editingId === receipt.id ? (
                                 <input
                                   type="text"
                                   value={editData.merchant || receipt.merchant}
                                   onChange={(e) => setEditData(prev => ({ ...prev, merchant: e.target.value }))}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="w-full px-2 py-1 border border-border rounded text-xs"
+                                  className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                                 />
                               ) : (
-                                <span className="cursor-pointer hover:underline decoration-text-muted/50">{receipt.merchant}</span>
+                                <span className="cursor-pointer">{receipt.merchant}</span>
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
+                          <td className="px-4 py-3 text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
                             {editingId === receipt.id ? (
                               <input
                                 type="number"
                                 value={editData.amount || receipt.amount}
                                 onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full px-2 py-1 border border-border rounded text-xs"
+                                className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                               />
                             ) : (
-                              <span className="cursor-pointer hover:underline decoration-text-muted/50 text-white">¥{receipt.amount.toLocaleString()}</span>
+                              <span className="cursor-pointer font-medium text-text-main">¥{receipt.amount.toLocaleString()}</span>
                             )}
                           </td>
-                          <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
+                          <td className="px-4 py-3 text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
                             {editingId === receipt.id ? (
                               <select
                                 value={editData.category || receipt.category}
                                 onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full px-2 py-1 border border-border rounded text-xs"
+                                className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                               >
                                 {categories.map(cat => (
                                   <option key={cat} value={cat}>{cat}</option>
@@ -1142,10 +1153,12 @@ const ReceiptProcessing: React.FC = () => {
                                 <option value="水道光熱費">水道光熱費</option>
                               </select>
                             ) : (
-                              <span className="cursor-pointer hover:underline decoration-text-muted/50">{receipt.category}</span>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border whitespace-nowrap cursor-pointer">
+                                {receipt.category}
+                              </span>
                             )}
                           </td>
-                          <td className="px-4 py-2.5 whitespace-nowrap text-xs">
+                          <td className="px-4 py-3 text-sm">
                             <div className="flex items-center">
                               <div className="w-16 bg-border rounded-full h-1.5 mr-2">
                                 <div
@@ -1157,41 +1170,35 @@ const ReceiptProcessing: React.FC = () => {
                               </div>
                               <span className="text-[10px] text-text-muted">{receipt.confidence}%</span>
                             </div>
-                            {/* AI分析の信頼度を表示 */}
-                            {receipt.aiAnalysis && receipt.aiAnalysis.confidence !== undefined && (
-                              <div className="text-[10px] text-text-muted mt-0.5">
-                                <div>AI信頼度: {Math.round(receipt.aiAnalysis.confidence * 100)}%</div>
-                              </div>
-                            )}
                           </td>
-                          <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium">
+                          <td className="px-4 py-3 text-sm font-medium">
                             <div className="flex items-center gap-2">
                               {editingId === receipt.id ? (
                                 <button
                                   onClick={handleSave}
-                                  className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-sm active:scale-95 text-xs font-medium"
+                                  className="p-2 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
                                   title="保存"
                                 >
-                                  <Save className="w-3.5 h-3.5" />
-                                  <span>保存</span>
+                                  <Save className="w-4 h-4" />
+                                  保存
                                 </button>
                               ) : (
                                 <>
                                   <button
                                     onClick={() => handleApprove(receipt.id)}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-95 text-xs font-medium"
+                                    className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
                                     title="登録"
                                   >
-                                    <CheckCircle className="w-3.5 h-3.5" />
-                                    <span>登録</span>
+                                    <CheckCircle className="w-4 h-4" />
+                                    登録
                                   </button>
                                   <button
                                     onClick={() => handleReject(receipt.id)}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm active:scale-95 text-xs font-medium"
+                                    className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
                                     title="削除"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    <span>削除</span>
+                                    <Trash2 className="w-4 h-4" />
+                                    削除
                                   </button>
                                 </>
                               )}

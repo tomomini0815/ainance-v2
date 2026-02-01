@@ -164,16 +164,16 @@ const InputGroup: React.FC<{
     <div>
         <label className="block text-sm font-medium text-text-muted mb-1">{label}</label>
         <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥ </span>
             <input
                 type="number"
-                className={`input-base pl-14 ${readOnly ? 'bg-surface-highlight cursor-not-allowed' : ''}`}
+                className={`input-base pr-8 ${readOnly ? 'bg-surface-highlight cursor-not-allowed' : ''}`}
                 value={value === 0 ? '' : value}
                 onChange={(e) => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                 readOnly={readOnly}
                 placeholder="0"
                 onFocus={(e) => e.target.select()}
             />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">円</span>
         </div>
         {helper && <p className="text-xs text-text-muted mt-1">{helper}</p>}
     </div>

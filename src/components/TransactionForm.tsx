@@ -447,13 +447,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
               onChange={handleChange}
               onFocus={() => setIsAmountFocused(true)}
               onBlur={() => setTimeout(() => setIsAmountFocused(false), 200)}
-              className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main placeholder-text-muted transition-all"
+              className="w-full pl-4 pr-10 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main placeholder-text-muted transition-all"
               required
               min="0"
               step="1"
             />
+            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none">円</span>
             {isAmountFocused && (
-              <div className="absolute top-full left-0 mt-2 w-full bg-surface border border-border rounded-xl shadow-xl z-10 p-3 animate-in fade-in zoom-in-95 duration-200">
+              <div className="absolute top-full left-0 mt-2 w-full bg-surface border border-border rounded-xl shadow-xl z-20 p-3 animate-in fade-in zoom-in-95 duration-200">
                 <div className="text-xs text-text-muted mb-2">クイック入力:</div>
                 <div className="flex flex-wrap gap-2">
                   {quickAmountOptions.map(amount => (
@@ -466,7 +467,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                         : 'bg-surface-highlight text-text-secondary hover:bg-surface-highlight border border-border'
                         }`}
                     >
-                      ¥{amount.toLocaleString()}
+                      {amount.toLocaleString()}円
                     </button>
                   ))}
                 </div>

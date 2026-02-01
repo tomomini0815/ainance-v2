@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Search, Bell, Menu, Settings, LogOut, Sun, Moon, Building, User } from 'lucide-react'
 import BusinessTypeSwitcher from './BusinessTypeSwitcher'
@@ -174,7 +174,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                               <div className="text-xs text-text-muted truncate">{t.date} • {t.category}</div>
                             </div>
                             <div className={`text-sm font-medium ${t.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
-                              ¥{t.amount.toLocaleString()}
+                              {t.amount.toLocaleString()}円
                             </div>
                           </button>
                         ))}

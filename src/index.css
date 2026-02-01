@@ -142,10 +142,14 @@
 }
 
 /* ============== ベーススタイル ============== */
-html {
+html,
+body {
   font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
 }
 
 body {
@@ -206,6 +210,21 @@ body {
 /* ============== インプットスタイル ============== */
 .input-base {
   @apply w-full px-4 py-2.5 bg-surface border border-border rounded-lg text-text-main placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all;
+}
+
+/* Remove Chrome/Safari/Edge/Opera spinners */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  margin: 0 !important;
+  display: none !important;
+}
+
+/* Remove Firefox spinners */
+input[type=number] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
 }
 
 .input-error {

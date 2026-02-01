@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { Doughnut } from 'react-chartjs-2'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -19,24 +20,24 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
   const calculateExpenseByCategory = () => {
     const expenseTransactions = transactions.filter(t => t.type === 'expense');
     // 保留中も含めて表示するように変更 (t.approval_status !== 'pending' を削除)
-    const categoryTotals: { [key: string]: number } = {};
+    const categoryTotals: { [key: string]: { amount: number; count: number } } = {};
 
     expenseTransactions.forEach(transaction => {
-      // 金額を絶対値として計算（支出は正の値として扱う）
       const amount = Math.abs(typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount);
+      const category = transaction.category || 'その他';
 
-      if (categoryTotals[transaction.category]) {
-        categoryTotals[transaction.category] += amount;
-      } else {
-        categoryTotals[transaction.category] = amount;
+      if (!categoryTotals[category]) {
+        categoryTotals[category] = { amount: 0, count: 0 };
       }
+      categoryTotals[category].amount += amount;
+      categoryTotals[category].count += 1;
     });
 
-    const totalAmount = Object.values(categoryTotals).reduce((sum, amount) => sum + amount, 0);
+    const totalAmount = Object.values(categoryTotals).reduce((sum, data) => sum + data.amount, 0);
 
     const percentages: { [key: string]: number } = {};
     Object.keys(categoryTotals).forEach(category => {
-      percentages[category] = Math.round((categoryTotals[category] / totalAmount) * 100);
+      percentages[category] = Math.round((categoryTotals[category].amount / totalAmount) * 100);
     });
 
     return { categoryTotals, percentages, totalAmount };
@@ -46,7 +47,7 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
 
   const labels = Object.keys(percentages);
   const percentageData = Object.values(percentages);
-  const amountData = Object.values(categoryTotals);
+  const amountData = labels.map(label => categoryTotals[label].amount);
 
   // Ainanceのグラデーションから始まり、青系を中心に展開
   const colorPalette = [
@@ -120,24 +121,49 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
         </div>
       </div>
 
-      <div className="mt-6 flex-1 min-h-0 flex flex-col">
-        <h4 className="font-medium text-text-secondary mb-3 text-sm flex-shrink-0">カテゴリ別支出内訳</h4>
-        <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
-          {labels.map((label, index) => (
-            <div key={label} className="flex items-center justify-between group p-2 rounded-lg hover:bg-surface-highlight transition-colors">
-              <div className="flex items-center">
-                <div
-                  className="w-[9px] h-[9px] rounded-full mr-3 shadow-sm"
-                  style={{ backgroundColor: backgroundColors[index] }}
-                ></div>
-                <span className="text-sm text-text-secondary group-hover:text-text-main transition-colors">{label}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-text-muted bg-surface-highlight px-2 py-1 rounded-full">{percentageData[index]}%</span>
-                <span className="text-sm font-bold text-text-main">¥{amountData[index].toLocaleString()}</span>
-              </div>
-            </div>
-          ))}
+      <div className="mt-8 flex-1 min-h-0 flex flex-col">
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+          <h4 className="font-bold text-text-main text-sm">カテゴリ別支出内訳</h4>
+        </div>
+
+        <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-1 -mr-2">
+          <AnimatePresence mode="popLayout">
+            {labels.map((label, index) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ delay: index * 0.05 }}
+                className="flex items-center justify-between group p-3 rounded-xl hover:bg-surface-highlight/80 border border-transparent hover:border-border/50 transition-all duration-300 backdrop-blur-sm"
+              >
+                <div className="flex items-center min-w-0">
+                  <div
+                    className="w-2 h-2 rounded-full mr-4 shadow-lg group-hover:scale-125 transition-transform"
+                    style={{ backgroundColor: backgroundColors[index] }}
+                  ></div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-semibold text-text-main truncate group-hover:text-primary transition-colors">{label}</span>
+                    <span className="text-[10px] text-text-muted">{categoryTotals[label].count || 0}件の取引</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 shrink-0">
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-black text-text-main tracking-tight">¥{amountData[index].toLocaleString()}</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-12 bg-surface-highlight rounded-full h-1 overflow-hidden">
+                        <div
+                          className="h-full bg-current opacity-80"
+                          style={{ width: `${percentageData[index]}%`, color: backgroundColors[index] }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold text-text-muted">{percentageData[index]}%</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
     </div>

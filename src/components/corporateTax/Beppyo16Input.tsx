@@ -249,7 +249,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                     <Box size={20} />
                     <div>
                         <span className="font-bold">償却超過額が発生しています: </span>
-                        <span className="font-mono text-lg">¥{excessAmount.toLocaleString()}</span>
+                        <span className="font-mono text-lg">{excessAmount.toLocaleString()}円</span>
                         <p className="text-sm mt-1">この金額は別表四で加算（損金不算入）する必要があります。</p>
                     </div>
                 </div>

@@ -106,7 +106,7 @@ const AITransactionTable: React.FC<AITransactionTableProps> = ({ aiTransactions,
                   {transaction.item}
                 </div>
                 <div className="text-right">
-                  <div className="font-medium text-white">¥{Math.abs(transaction.amount).toLocaleString()}</div>
+                  <div className="font-medium text-text-main">{Math.abs(transaction.amount).toLocaleString()}円</div>
                   <div className="mt-1 flex justify-end">{getStatusIcon(transaction.manual_verified)}</div>
                 </div>
               </div>
@@ -157,7 +157,7 @@ const AITransactionTable: React.FC<AITransactionTableProps> = ({ aiTransactions,
                     </div>
                     <div className="text-xs text-text-muted sm:hidden mt-0.5">{transaction.ai_category}</div>
                   </td>
-                  <td className="py-4 px-4 text-right font-medium text-white">¥{Math.abs(transaction.amount).toLocaleString()}</td>
+                  <td className="py-4 px-4 text-right font-medium text-text-main">{Math.abs(transaction.amount).toLocaleString()}円</td>
                   <td className="py-4 px-4 text-sm text-text-muted hidden sm:table-cell">{transaction.ai_category}</td>
                   <td className="py-4 px-4 text-center">
                     <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${getConfidenceColor(transaction.confidence)}`}>

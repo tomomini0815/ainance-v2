@@ -16,7 +16,7 @@ const GEMINI_MODELS = [
 // デフォルトのAPI URL
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODELS[0]}:generateContent`;
 
-const getApiUrl = (model: string) => 
+const getApiUrl = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 import { determineCategoryByKeyword, standardizeItemName } from './keywordCategoryService';
@@ -261,15 +261,15 @@ export async function analyzeReceiptWithVision(
     const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!textContent) {
-        console.warn('Gemini Vision API returned empty text content.');
-        return null;
+      console.warn('Gemini Vision API returned empty text content.');
+      return null;
     }
 
     // JSON extraction fix for potential markdown wrapping
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-        console.error('Failed to extract JSON from Gemini Vision response:', textContent);
-        return null;
+      console.error('Failed to extract JSON from Gemini Vision response:', textContent);
+      return null;
     }
 
     const result = JSON.parse(jsonMatch[0]) as AIReceiptAnalysis;
@@ -280,27 +280,27 @@ export async function analyzeReceiptWithVision(
         if (!item.category || item.category === 'その他' || item.category === '未分類' || item.category === 'Unclassified') {
           const keywordCategory = determineCategoryByKeyword(item.name);
           if (keywordCategory) {
-             console.log(`Keyword Category Fallback (Item): ${item.name} -> ${keywordCategory}`);
-             item.category = keywordCategory;
+            console.log(`Keyword Category Fallback (Item): ${item.name} -> ${keywordCategory}`);
+            item.category = keywordCategory;
           }
         }
       });
     }
-    
+
     // 全体の分類もチェック
     if (result && result.classification) {
-       const cls = result.classification;
-       if (!cls.category || cls.category === 'その他' || cls.category === '未分類' || cls.category === 'Unclassified' || cls.category === '雑費') {
-          // 店名や品目から推測
-          const textToAnalyze = `${result.storeName} ${result.items?.map(i => i.name).join(' ')}`;
-          const keywordCategory = determineCategoryByKeyword(textToAnalyze);
-          if (keywordCategory) {
-              console.log(`Keyword Category Fallback (Main): ${result.storeName} -> ${keywordCategory}`);
-              cls.category = keywordCategory;
-              cls.accountTitle = keywordCategory; // 簡易的に勘定科目も同じにする
-              cls.reasoning += " (キーワードマッチングにより修正)";
-          }
-       }
+      const cls = result.classification;
+      if (!cls.category || cls.category === 'その他' || cls.category === '未分類' || cls.category === 'Unclassified' || cls.category === '雑費') {
+        // 店名や品目から推測
+        const textToAnalyze = `${result.storeName} ${result.items?.map(i => i.name).join(' ')}`;
+        const keywordCategory = determineCategoryByKeyword(textToAnalyze);
+        if (keywordCategory) {
+          console.log(`Keyword Category Fallback (Main): ${result.storeName} -> ${keywordCategory}`);
+          cls.category = keywordCategory;
+          cls.accountTitle = keywordCategory; // 簡易的に勘定科目も同じにする
+          cls.reasoning += " (キーワードマッチングにより修正)";
+        }
+      }
     }
 
     // 項目名の標準化を適用 (ランチ -> 飲食代)
@@ -448,7 +448,7 @@ ${recentExpenses.slice(0, 10).map(e => `- ${e.date}: ${e.storeName} ¥${e.amount
     const data = await response.json();
     const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
     const jsonMatch = textContent?.match(/\{[\s\S]*\}/);
-    
+
     if (!jsonMatch) {
       return null;
     }
@@ -562,12 +562,12 @@ ${data.topIncomeCategories.map(c => `- ${c.category}: ¥${c.amount.toLocaleStrin
 
   // 複数のモデルでフォールバック
   let lastError: Error | null = null;
-  
+
   for (const model of GEMINI_MODELS) {
     try {
       console.log(`🤖 Gemini AI: モデル「${model}」でアドバイス生成を試行中...`);
       console.log('🤖 送信データ:', data);
-      
+
       const apiUrl = getApiUrl(model);
       const response = await fetch(`${apiUrl}?key=${GEMINI_API_KEY}`, {
         method: 'POST',
@@ -594,7 +594,7 @@ ${data.topIncomeCategories.map(c => `- ${c.category}: ¥${c.amount.toLocaleStrin
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error(`❌ モデル「${model}」がエラー:`, response.status, errorData);
-        
+
         // APIキーのエラーかどうかを判定
         if (response.status === 400 || response.status === 401 || response.status === 403) {
           const errorMessage = errorData?.error?.message || 'API認証エラー';
@@ -603,22 +603,22 @@ ${data.topIncomeCategories.map(c => `- ${c.category}: ¥${c.amount.toLocaleStrin
           // 認証エラーの場合は他のモデルを試しても無駄なのでループを抜ける
           break;
         }
-        
+
         // 次のモデルを試す
         continue;
       }
 
       const result = await response.json();
       console.log('🤖 Gemini API 生のレスポンス:', result);
-      
+
       const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
       console.log('🤖 抽出されたテキスト:', text);
-      
+
       if (!text) {
         console.warn(`モデル「${model}」: テキストが空です`);
         continue;
       }
-      
+
       // JSONを抽出
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -628,7 +628,7 @@ ${data.topIncomeCategories.map(c => `- ${c.category}: ¥${c.amount.toLocaleStrin
 
       const advice = JSON.parse(jsonMatch[0]) as BusinessAdvice;
       console.log(`✅ Gemini AI (${model}): アドバイス生成完了`, advice);
-      
+
       return advice;
     } catch (error: any) {
       console.error(`❌ モデル「${model}」でエラー:`, error.message);
@@ -636,13 +636,13 @@ ${data.topIncomeCategories.map(c => `- ${c.category}: ¥${c.amount.toLocaleStrin
       // 次のモデルを試す
     }
   }
-  
+
   console.error('❌ すべてのモデルでアドバイス生成に失敗しました');
-  
+
   if (lastError) {
     throw lastError;
   }
-  
+
   throw new Error('AIアドバイスの生成に失敗しました。しばらくしてから再度お試しください。');
 }
 /**
@@ -670,27 +670,27 @@ export async function parseChatTransactionWithAI(
  チャットメッセージ: "${text}"
  
  ### 抽出ルール:
- 1. **品目**: 具体的な内容を抽出（"ランチ" → "昼食代"など）。
- 2. **金額**: 数値を抽出。万円、千円などの単位も考慮。
- 3. **日付**: "昨日"、"一昨日"、"先週の金曜日"などの相対日時を、今日(${today})を基準に"YYYY-MM-DD"形式に変換。指定がなければ"${today}"とする。
- 4. **カテゴリルール**: 以下のカテゴリから最も適切なものを選択。
-    - **旅費交通費**: 電車、バス、タクシー、ガソリン、駐車場、宿泊費
-    - **接待交際費**: ランチ、ディナー、飲み会、レストラン、居酒屋、取引先との会食、手土産、ゴルフ、慶弔費
-    - **消耗品費**: 文房具、PC周辺機器(<10万円)、日用雑貨、作業用具
-    - **会議費**: 打ち合わせ時のカフェ代、会議室利用料、弁当代
-    - **通信費**: 携帯電話、インターネット、切手、配送料
-    - **水道光熱費**: 電気、ガス、水道
-    - **新聞図書費**: 書籍、新聞、雑誌、セミナー参加費
-    - **広告宣伝費**: 広告掲載、チラシ、Web広告
-    - **外注費**: 業務委託、デザイン料、ライティング料
-    - **福利厚生費**: 従業員の慰安、健康診断、慶弔見舞金
-    - **地代家賃**: 事務所家賃、月極駐車場、コワーキングスペース
-    - **租税公課**: 印紙代、固定資産税、自動車税
-    - **支払手数料**: 振込手数料、仲介手数料、システム利用料
-    - **仕入**: 商品の仕入れ、原材料
-    - **給与**: 会社からの給料、賞与、残業代、手当など
-    - **売上**: 商品やサービスの対価として受け取ったお金、副業収入、業務委託料
-    - **雑費**: その他分類できない少額の費用
+  1. **品目**: 具体的な内容を抽出（"ランチ" → "昼食代"など）。
+  2. **金額**: 数値を抽出。万円、千円などの単位も考慮。
+  3. **日付**: "昨日"、"一昨日"、"先週の金曜日"などの相対日時を、今日(${today})を基準に"YYYY-MM-DD"形式に変換。指定がなければ"${today}"とする。
+  4. **カテゴリルール**: 以下のカテゴリから最も適切なものを一意に選択。
+     - **接待交際費 (優先)**: 取引先とのランチ、ディナー、飲み会、レストラン、居酒屋、会食、手土産、ゴルフ、慶弔費。※一人の食事でも、仕事に関連する場合はここ。
+     - **会議費**: 打ち合わせ時のカフェ代、会議室利用料、弁当代。
+     - **旅費交通費**: 電車、バス、タクシー、ガソリン、駐車場、宿泊費。
+     - **消耗品費**: 文房具、PC周辺機器(<10万円)、日用雑貨、作業用具。
+     - **通信費**: 携帯電話、インターネット、切手、配送料。
+     - **水道光熱費**: 電気、ガス、水道。
+     - **新聞図書費**: 書籍、新聞、雑誌、セミナー参加費。
+     - **広告宣伝費**: 広告掲載、チラシ、Web広告。
+     - **外注費**: 業務委託、デザイン料、ライティング料。
+     - **福利厚生費**: 従業員の慰安、健康診断、慶弔見舞金。
+     - **地代家賃**: 事務所家賃、月極駐車場、コワーキングスペース。
+     - **租税公課**: 印紙代、固定資産税、自動車税。
+     - **支払手数料**: 振込手数料、仲介手数料、システム利用料。
+     - **仕入**: 商品の仕入れ、原材料。
+     - **給与**: 会社からの給料、賞与、残業代、手当など。
+     - **売上**: 商品やサービスの対価として受け取ったお金、副業収入、業務委託料。
+     - **雑費**: その他分類できない少額の費用。
  
  ### 重要: 収支区分の判定ルール
   - **売上、収入、給料、給与、賞与、ボーナス**などは必ず "type": "income" にしてください。
@@ -729,41 +729,41 @@ export async function parseChatTransactionWithAI(
 
     const data = await response.json();
     const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
+
     if (!textContent) return null;
 
     // Remove markdown code blocks if present
     const cleanedText = textContent.replace(/```json\n|\n```/g, '').trim();
-    
+
     let result;
     try {
-        result = JSON.parse(cleanedText);
+      result = JSON.parse(cleanedText);
     } catch (e) {
-        // Fallback: try regex extraction if direct parse fails
-        const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            result = JSON.parse(jsonMatch[0]);
-        } else {
-            return null;
-        }
+      // Fallback: try regex extraction if direct parse fails
+      const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        result = JSON.parse(jsonMatch[0]);
+      } else {
+        return null;
+      }
     }
 
     // キーワードによるカテゴリ修正のフォールバック
     if (result) {
-        if (!result.category || result.category === 'その他' || result.category === '未分類' || result.category === 'Unclassified' || result.category === '雑費') {
-            // 品目やDescriptionから推測
-            const textToAnalyze = `${result.item} ${result.description || ''}`;
-            const keywordCategory = determineCategoryByKeyword(textToAnalyze);
-            if (keywordCategory) {
-                console.log(`Keyword Category Fallback (Chat): ${result.item} -> ${keywordCategory}`);
-                result.category = keywordCategory;
-            }
+      if (!result.category || result.category === 'その他' || result.category === '未分類' || result.category === 'Unclassified' || result.category === '雑費') {
+        // 品目やDescriptionから推測
+        const textToAnalyze = `${result.item} ${result.description || ''}`;
+        const keywordCategory = determineCategoryByKeyword(textToAnalyze);
+        if (keywordCategory) {
+          console.log(`Keyword Category Fallback (Chat): ${result.item} -> ${keywordCategory}`);
+          result.category = keywordCategory;
         }
+      }
     }
 
     // 項目名の標準化を適用 (ランチ -> 飲食代)
     if (result) {
-        result.item = standardizeItemName(result.item, result.category);
+      result.item = standardizeItemName(result.item, result.category);
     }
 
     return result;

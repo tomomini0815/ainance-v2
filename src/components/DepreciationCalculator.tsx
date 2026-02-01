@@ -308,13 +308,13 @@ const DepreciationCalculator: React.FC<DepreciationCalculatorProps> = ({
                             <div>
                                 <label className="text-xs text-text-muted block mb-1">取得価額 *</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xs">¥</span>
                                     <input
                                         type="number"
                                         value={newAsset.acquisitionCost || ''}
                                         onChange={e => setNewAsset({ ...newAsset, acquisitionCost: Number(e.target.value) })}
-                                        className="input-base w-full pl-6"
+                                        className="input-base w-full pr-8"
                                     />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-xs pointer-events-none">円</span>
                                 </div>
                             </div>
                             <div>
