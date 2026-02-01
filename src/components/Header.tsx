@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, Bell, Menu, Settings, LogOut, Sun, Moon, Building, User } from 'lucide-react'
+import { Search, Bell, Menu, Settings, LogOut, Building, User } from 'lucide-react'
 import BusinessTypeSwitcher from './BusinessTypeSwitcher'
 import CreateBusinessTypeModal from './CreateBusinessTypeModal'
 import { useAuth } from '../hooks/useAuth'
@@ -19,7 +19,6 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const navigate = useNavigate()
   const { user, signOut, loading } = useAuth()
-  const { theme, toggleTheme } = useTheme()
   const { currentBusinessType } = useBusinessTypeContext()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 })
@@ -184,14 +183,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 )}
               </div>
 
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 text-text-muted hover:text-primary rounded-full hover:bg-white/5 transition-colors"
-                title={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
-              >
-                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
+
 
               {/* Notifications */}
               <button className="relative p-2 text-text-muted hover:text-primary rounded-full hover:bg-white/5 transition-colors">

@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 
 const Layout: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+    const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const { user } = useAuth();
 
     const userId = useMemo(() => {

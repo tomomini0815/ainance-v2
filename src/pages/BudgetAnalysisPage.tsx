@@ -165,41 +165,41 @@ const BudgetAnalysisPage: React.FC = () => {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white dark:bg-surface p-5 rounded-xl border border-border shadow-sm">
-                        <div className="text-xs text-text-muted mb-1">総予算</div>
-                        <div className="text-2xl font-bold text-text-main">{budget.toLocaleString()}円</div>
-                        <div className="mt-2 text-xs text-text-muted flex items-center gap-1">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+                    <div className="bg-white dark:bg-surface p-3 rounded-xl border border-border shadow-sm">
+                        <div className="text-[10px] text-text-muted mb-0.5">総予算</div>
+                        <div className="text-lg font-bold text-text-main">{budget.toLocaleString()}円</div>
+                        <div className="mt-1 text-[10px] text-text-muted flex items-center gap-1">
                             <Target className="w-3 h-3" /> 設定目標
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-surface p-5 rounded-xl border border-border shadow-sm">
-                        <div className="text-xs text-text-muted mb-1">実績累計</div>
-                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{analysis.totalExpense.toLocaleString()}円</div>
-                        <div className="mt-2 text-xs text-blue-600/70 font-medium">
+                    <div className="bg-white dark:bg-surface p-3 rounded-xl border border-border shadow-sm">
+                        <div className="text-[10px] text-text-muted mb-0.5">実績累計</div>
+                        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{analysis.totalExpense.toLocaleString()}円</div>
+                        <div className="mt-1 text-[10px] text-blue-600/70 font-medium">
                             消化率 {analysis.progress.toFixed(1)}%
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-surface p-5 rounded-xl border border-border shadow-sm">
-                        <div className="text-xs text-text-muted mb-1">予算残高</div>
-                        <div className={`text-2xl font-bold ${analysis.variance < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                    <div className="bg-white dark:bg-surface p-3 rounded-xl border border-border shadow-sm">
+                        <div className="text-[10px] text-text-muted mb-0.5">予算残高</div>
+                        <div className={`text-lg font-bold ${analysis.variance < 0 ? 'text-red-500' : 'text-green-500'}`}>
                             {Math.abs(analysis.variance).toLocaleString()}円
                         </div>
-                        <div className="mt-2 text-xs text-text-muted">
+                        <div className="mt-1 text-[10px] text-text-muted">
                             {analysis.variance < 0 ? '超過' : '残り'}
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-surface p-5 rounded-xl border border-border shadow-sm">
-                        <div className="text-xs text-text-muted mb-1">ステータス</div>
+                    <div className="bg-white dark:bg-surface p-3 rounded-xl border border-border shadow-sm">
+                        <div className="text-[10px] text-text-muted mb-0.5">ステータス</div>
                         {analysis.variance >= 0 ? (
-                            <div className="flex items-center gap-2 text-green-500 mt-1">
-                                <TrendingUp className="w-8 h-8" />
-                                <span className="text-lg font-bold">順調</span>
+                            <div className="flex items-center gap-1.5 text-green-500 mt-0.5">
+                                <TrendingUp className="w-5 h-5" />
+                                <span className="text-base font-bold">順調</span>
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 text-red-500 mt-1">
-                                <AlertCircle className="w-8 h-8" />
-                                <span className="text-lg font-bold">注意</span>
+                            <div className="flex items-center gap-1.5 text-red-500 mt-0.5">
+                                <AlertCircle className="w-5 h-5" />
+                                <span className="text-base font-bold">注意</span>
                             </div>
                         )}
                     </div>

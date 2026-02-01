@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, BarChart2, Camera, Mic, Link as LinkIcon, Sparkles } from 'lucide-react';
+import { FileText, BarChart2, Camera, Mic, Link as LinkIcon, Sparkles, PieChart, FileSpreadsheet } from 'lucide-react';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 
 const QuickActions: React.FC = () => {
@@ -25,6 +25,14 @@ const QuickActions: React.FC = () => {
       iconColor: 'text-blue-500',
     },
     {
+      title: '取引履歴',
+      description: 'すべての取引を確認',
+      icon: BarChart2,
+      link: '/transaction-history',
+      color: 'bg-blue-500/20',
+      iconColor: 'text-blue-500',
+    },
+    {
       title: '請求書作成',
       description: '新しい請求書を作成',
       icon: FileText,
@@ -33,10 +41,18 @@ const QuickActions: React.FC = () => {
       iconColor: 'text-blue-500',
     },
     {
-      title: '取引履歴',
-      description: 'すべての取引を確認',
-      icon: BarChart2,
-      link: '/transaction-history',
+      title: 'CSV入出力管理',
+      description: 'データの一括取込・出力',
+      icon: FileSpreadsheet,
+      link: '/csv-import',
+      color: 'bg-blue-500/20',
+      iconColor: 'text-blue-500',
+    },
+    {
+      title: '経営分析',
+      description: '事業の状況を分析',
+      icon: PieChart,
+      link: '/business-analysis',
       color: 'bg-blue-500/20',
       iconColor: 'text-blue-500',
     },
@@ -67,7 +83,7 @@ const QuickActions: React.FC = () => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-8">
+    <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-4 mb-8">
       {actions.map((action, index) => (
         <Link
           key={index}

@@ -137,7 +137,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
       </div>
 
       {/* モバイル: カード表示 */}
-      <div className="block md:hidden space-y-3">
+      <div className="block md:hidden flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-3">
         {paginatedTransactions.length > 0 ? (
           paginatedTransactions.slice(0, 5).map((transaction) => {
             // amountの型を確実に数値に変換
@@ -191,7 +191,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                     </div>
                   </div>
                   <div className="text-right ml-3 shrink-0">
-                    <div className={`font-bold text-base ${isFinalIncome ? 'text-green-500' : 'text-white'}`}>
+                    <div className={`font-bold text-base ${isFinalIncome ? 'text-green-500' : 'text-slate-900 dark:text-white'}`}>
                       {isFinalIncome ? '+' : isFinalExpense ? '-' : ''}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}円
                     </div>
                   </div>

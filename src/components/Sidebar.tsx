@@ -2,10 +2,11 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles,
-    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit
+    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -25,6 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const location = useLocation();
     const navigate = useNavigate();
     const { signOut } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     // BusinessTypeContextから現在のビジネスタイプを取得
     const { currentBusinessType } = useBusinessTypeContext();
 
@@ -143,6 +145,15 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* Bottom Actions */}
                     <div className="pt-4 border-t border-white/5 space-y-2">
+                        <button
+                            onClick={toggleTheme}
+                            className={getLinkClasses('theme-toggle')}
+                            title={!isExpanded ? (theme === 'dark' ? 'ライトモード' : 'ダークモード') : undefined}
+                        >
+                            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+                            {isExpanded && <span className="ml-3 font-medium">{theme === 'dark' ? 'ライトモード' : 'ダークモード'}</span>}
+                        </button>
+
                         <Link
                             to="/integration-settings"
                             className={getLinkClasses('/integration-settings')}

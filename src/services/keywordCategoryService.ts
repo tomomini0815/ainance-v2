@@ -321,30 +321,9 @@ export function determineCategoryByKeyword(text: string): string | null {
 export function standardizeItemName(itemName: string, category: string): string {
   if (!itemName) return itemName;
 
-  // 接待交際費、会議費、食費に関連するキーワードがあれば「飲食代」に統一
-  const diningKeywords = ['ランチ', '昼食', '夕食', 'ディナー', 'レストラン', '居酒屋', '会食', '食事', '飲食'];
-  const normalizedItem = itemName.toLowerCase();
-
-  const isDining = diningKeywords.some(kw => normalizedItem.includes(kw)) ||
-    category === '接待交際費' ||
-    category === '会議費' ||
-    category === '食費';
-
-  if (isDining && (category === '接待交際費' || category === '会議費' || category === '食費')) {
-    // コンビニやスーパー、弁当、贈答品、プレゼントなどの場合はそのまま（個別の品目として扱う）
-    const ignoreKeywords = ['コンビニ', 'セブン', 'ローソン', 'ファミマ', 'スーパー', '弁当', '食品', '飲料', '贈答', 'プレゼント', '土産', '祝い', '菓子'];
-    const shouldIgnore = ignoreKeywords.some(kw => normalizedItem.includes(kw));
-
-    if (!shouldIgnore) {
-      return '飲食代';
-    }
-  }
-
-  // 燃料費の標準化
-  if (category === '燃料費') {
-    return '燃料代';
-  }
-
+  // 以前は「飲食代」などに統一していましたが、
+  // ユーザー要望により店名や具体的な品目名をそのまま記録するため、
+  // 標準化処理を無効化し、元のテキストをそのまま返します。
   return itemName;
 }
 
