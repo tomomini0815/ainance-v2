@@ -1,0 +1,84 @@
+{
+  "name": "ai_transactions",
+  "options": {
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["item", "amount", "category", "confidence", "ai_category", "createdAt"],
+        "properties": {
+          "item": {
+            "bsonType": "string",
+            "description": "取引項目名"
+          },
+          "amount": {
+            "bsonType": "number",
+            "description": "取引金額"
+          },
+          "category": {
+            "bsonType": "string",
+            "description": "AI分類カテゴリ"
+          },
+          "confidence": {
+            "bsonType": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "AI信頼度パーセンテージ"
+          },
+          "ai_category": {
+            "bsonType": "string",
+            "enum": ["交通費", "食費", "消耗品費", "通信費", "光熱費", "その他"],
+            "description": "AI自動分類カテゴリ"
+          },
+          "manual_verified": {
+            "bsonType": "bool",
+            "description": "手動確認済みフラグ"
+          },
+          "original_text": {
+            "bsonType": "string",
+            "description": "元のレシートテキスト"
+          },
+          "receipt_url": {
+            "bsonType": "string",
+            "description": "レシート画像URL"
+          },
+          "location": {
+            "bsonType": "string",
+            "description": "取引場所"
+          },
+          "creator": {
+            "bsonType": "string",
+            "description": "作成者"
+          },
+          "createdAt": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "作成日時 ISO 8601形式"
+          },
+          "updatedAt": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "更新日時 ISO 8601形式"
+          },
+          "ai_suggestions": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "string"
+            },
+            "description": "AIの提案カテゴリ"
+          },
+          "learning_feedback": {
+            "bsonType": "string",
+            "description": "学習用フィードバック"
+          },
+          "processing_time": {
+            "bsonType": "number",
+            "description": "AI処理時間（秒）"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "validationLevel": "moderate",
+    "validationAction": "warn"
+  }
+}

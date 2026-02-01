@@ -1,0 +1,61 @@
+
+{
+  "name": "transactions",
+  "options": {
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["item", "amount", "date", "category", "type", "createdAt"],
+        "properties": {
+          "item": {
+            "bsonType": "string",
+            "description": "取引項目名"
+          },
+          "amount": {
+            "bsonType": "number",
+            "description": "取引金額"
+          },
+          "date": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "取引日時 ISO 8601形式"
+          },
+          "category": {
+            "bsonType": "string",
+            "enum": ["収入", "支出"],
+            "description": "取引種別"
+          },
+          "type": {
+            "bsonType": "string",
+            "description": "取引タイプ（交通費、食費、売上など）"
+          },
+          "description": {
+            "bsonType": "string",
+            "description": "取引詳細説明"
+          },
+          "receipt_url": {
+            "bsonType": "string",
+            "description": "レシート画像URL"
+          },
+          "creator": {
+            "bsonType": "string",
+            "description": "作成者"
+          },
+          "createdAt": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "作成日時 ISO 8601形式"
+          },
+          "updatedAt": {
+            "bsonType": "string",
+            "title": "datetime",
+            "description": "更新日時 ISO 8601形式"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "validationLevel": "moderate",
+    "validationAction": "warn"
+  }
+}

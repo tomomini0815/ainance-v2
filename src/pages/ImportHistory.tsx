@@ -1,0 +1,213 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, FileText, Calendar, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { getImportHistory } from '../services/TaxFilingService';
+
+const ImportHistory: React.FC = () => {
+  // const navigate = useNavigate();
+  const [importHistory, setImportHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // ユーザーIDの取得
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUserId(userData.id);
+      } catch (error) {
+        console.error('ユーザー情報の解析に失敗しました:', error);
+      }
+    }
+  }, []);
+
+  // インポート履歴の取得
+  useEffect(() => {
+    if (userId) {
+      fetchImportHistory();
+    }
+  }, [userId]);
+
+  const fetchImportHistory = async () => {
+    if (!userId) return;
+
+    try {
+      setLoading(true);
+      const history = await getImportHistory(userId);
+      setImportHistory(history);
+    } catch (error) {
+      console.error('インポート履歴の取得に失敗しました:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRetryImport = (historyItem: any) => {
+    // インポートの再試行ロジックをここに実装
+    console.log('インポートを再試行:', historyItem);
+    alert('インポートの再試行機能はまだ実装中です。');
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex items-center mb-6">
+          <Link to="/tax-filing-support" className="mr-4">
+            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
+          </Link>
+          <h1 className="text-2xl font-bold text-text-main">インポート履歴</h1>
+        </div>
+
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-text-muted">データを読み込んでいます...</p>
+            </div>
+          ) : (
+            <>
+              <div className="block md:hidden space-y-4">
+                {importHistory.length > 0 ? (
+                  importHistory.map((historyItem) => (
+                    <div key={historyItem.id} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center">
+                          <FileText className="h-5 w-5 text-text-muted mr-3" />
+                          <div>
+                            <div className="font-medium text-text-main">{historyItem.file_name}</div>
+                            <div className="text-sm text-text-muted flex items-center mt-1">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {new Date(historyItem.created_at).toLocaleString('ja-JP')}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
+                        <div className="flex items-center space-x-3">
+                          {historyItem.status === 'success' ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              成功
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                              <XCircle className="h-3 w-3 mr-1" />
+                              失敗
+                            </span>
+                          )}
+
+                          <span className="text-sm text-text-muted">
+                            {historyItem.details?.errors !== undefined ? (
+                              historyItem.details.errors > 0 ?
+                                `${historyItem.details.errors}件の警告` :
+                                '正常に完了'
+                            ) : '-'}
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={() => handleRetryImport(historyItem)}
+                          className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight hover:text-text-main"
+                        >
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                          再試行
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-text-muted">
+                    <FileText className="mx-auto h-12 w-12 text-text-muted" />
+                    <h3 className="mt-2 text-sm font-medium text-text-main">インポート履歴がありません</h3>
+                    <p className="mt-1 text-sm text-text-muted">まだファイルのインポートが行われていません。</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-surface-highlight">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">ファイル名</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">日時</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">ステータス</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">詳細</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-surface divide-y divide-border">
+                    {importHistory.length > 0 ? (
+                      importHistory.map((historyItem) => (
+                        <tr key={historyItem.id} className="hover:bg-surface-highlight">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <FileText className="h-5 w-5 text-text-muted mr-3" />
+                              <div>
+                                <div className="text-sm font-medium text-text-main">{historyItem.file_name}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 text-text-muted mr-2" />
+                              {new Date(historyItem.created_at).toLocaleString('ja-JP')}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {historyItem.status === 'success' ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                成功
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                失敗
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
+                            {historyItem.details?.errors !== undefined ? (
+                              <span>
+                                {historyItem.details.errors > 0 ?
+                                  `${historyItem.details.errors}件の警告` :
+                                  '正常に完了'}
+                              </span>
+                            ) : (
+                              <span>-</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => handleRetryImport(historyItem)}
+                              className="inline-flex items-center px-3 py-1 border border-border rounded-md text-sm text-text-muted bg-surface hover:bg-surface-highlight hover:text-text-main"
+                            >
+                              <RefreshCw className="h-4 w-4 mr-1" />
+                              再試行
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center">
+                          <FileText className="mx-auto h-12 w-12 text-text-muted" />
+                          <h3 className="mt-2 text-sm font-medium text-text-main">インポート履歴がありません</h3>
+                          <p className="mt-1 text-sm text-text-muted">まだファイルのインポートが行われていません。</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default ImportHistory;
