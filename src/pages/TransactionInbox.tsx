@@ -348,6 +348,9 @@ const TransactionInbox: React.FC = () => {
                                                         ) : (
                                                             <div className="font-medium text-text-main whitespace-nowrap">{t.item}</div>
                                                         )}
+                                                        <div className="text-[10px] text-text-muted mt-0.5 truncate max-w-[200px] font-medium">
+                                                            {t.category}
+                                                        </div>
                                                         {duplicateMap[t.id] && (
                                                             <div className="flex items-center gap-1.5 mt-0.5">
                                                                 <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">

@@ -1118,7 +1118,10 @@ const ReceiptProcessing: React.FC = () => {
                                   className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
                                 />
                               ) : (
-                                <span className="cursor-pointer">{receipt.merchant}</span>
+                                <div className="flex flex-col">
+                                  <span className="cursor-pointer">{receipt.merchant}</span>
+                                  <span className="text-[10px] text-text-muted mt-0.5">{receipt.category}</span>
+                                </div>
                               )}
                             </div>
                           </td>

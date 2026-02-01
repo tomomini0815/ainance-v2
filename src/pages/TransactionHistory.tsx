@@ -606,14 +606,16 @@ const TransactionHistory: React.FC = () => {
                           className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-background"
                         />
                       </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap">
-                        <div className="flex items-center">
+                      <td className="px-4 py-3 text-left">
+                        <div className="flex items-center gap-2 min-w-0">
                           <TransactionIcon item={transaction.item} category={transaction.category} size="xs" />
-                          <div>
+                          <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2">
-                              <div className="text-xs font-medium text-text-main">{transaction.item}</div>
+                              <span className="text-sm font-medium text-text-main truncate max-w-[200px]" title={transaction.item}>
+                                {transaction.item}
+                              </span>
                               {transaction.recurring && (
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
+                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20 shrink-0">
                                   <Repeat className="w-2.5 h-2.5" />
                                   <span>{{
                                     'daily': '毎日',
@@ -624,8 +626,12 @@ const TransactionHistory: React.FC = () => {
                                 </div>
                               )}
                             </div>
+                            <span className="text-[10px] text-text-muted truncate max-w-[200px] font-medium">
+                              {transaction.category}
+                            </span>
                           </div>
                         </div>
+
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium">
                         <span className={transaction.type === 'income' ? 'text-green-500' : 'text-text-main'}>

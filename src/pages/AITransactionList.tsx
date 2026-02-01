@@ -825,11 +825,14 @@ const AITransactionList: React.FC = () => {
                               {transaction.item}
                               <div className={`ml-2 w-2 h-2 rounded-full ${confidenceBadge.color}`}></div>
                             </div>
-                            {transaction.original_text && (
-                              <div className="text-sm text-text-muted mt-1 bg-background px-2 py-1 rounded">
-                                元: {transaction.original_text}
-                              </div>
+                            <div className="text-sm text-text-muted mt-1 bg-background px-2 py-1 rounded">
+                              元: {transaction.original_text}
+                            </div>
                             )}
+                            <div className="text-[10px] text-text-muted mt-0.5 font-medium">
+                              {transaction.ai_category}
+                            </div>
+
                             {transaction.ai_suggestions && transaction.ai_suggestions.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {transaction.ai_suggestions.slice(0, 2).map((suggestion, idx) => (

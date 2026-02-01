@@ -1373,7 +1373,10 @@ const ChatToBook: React.FC = () => {
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
                               <TransactionIcon item={transaction.description || ''} category={transaction.category || ''} size="sm" />
-                              <span>{transaction.description}</span>
+                              <div className="flex flex-col">
+                                <span>{transaction.description}</span>
+                                <span className="text-[10px] text-text-muted mt-0.5">{transaction.category}</span>
+                              </div>
                             </div>
                             {dbTransactions && findPotentialDuplicates(transaction as any, dbTransactions).length > 0 && (
                               <div className="flex items-center gap-1">
