@@ -828,7 +828,6 @@ const AITransactionList: React.FC = () => {
                             <div className="text-sm text-text-muted mt-1 bg-background px-2 py-1 rounded">
                               元: {transaction.original_text}
                             </div>
-                            )}
                             <div className="text-[10px] text-text-muted mt-0.5 font-medium">
                               {transaction.ai_category}
                             </div>
