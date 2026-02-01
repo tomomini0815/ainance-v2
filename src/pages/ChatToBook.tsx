@@ -915,7 +915,7 @@ const ChatToBook: React.FC = () => {
                       </div>
                       <div>
                         <h3 className="font-medium text-text-main text-sm mb-1">カテゴリ選択</h3>
-                        <p className="text-xs text-text-muted">必要に応じてカテゴリを選択してください。</p>
+                        <p className="text-xs text-text-muted">未選択でもAIが自動認識しますが、選択した方が確実です。</p>
                       </div>
                     </div>
                   </div>
@@ -1106,7 +1106,7 @@ const ChatToBook: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-text-main text-sm mb-1">カテゴリ選択</h3>
-                    <p className="text-xs text-text-muted">必要に応じてカテゴリを選択してください。</p>
+                    <p className="text-xs text-text-muted">未選択でもAIが自動認識しますが、選択した方が確実です。</p>
                   </div>
                 </div>
               </div>
