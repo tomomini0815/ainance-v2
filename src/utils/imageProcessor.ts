@@ -574,6 +574,24 @@ export class ImageProcessor {
     }
 
     /**
+     * AI認識用（Gemini Vision）の最小限の前処理
+     * ロゴの色情報などを維持するため、グレー変換や二値化を行わない
+     */
+    async processImageForAI(imageData: string): Promise<string> {
+        console.log('🤖 AI用前処理開始（カラー維持・最小加工）');
+        let processed = imageData;
+
+        // 傾き補正のみ実行（これは色を変えないため安全）
+        processed = await this.deskewImage(processed);
+
+        // シャープ化は文字認識助けるのでONでも良いが、過度は禁物。今回はOFFで原画重視。
+
+        console.log('🤖 AI用前処理完了');
+        return processed;
+    }
+
+
+    /**
      * レシート専用の軽量処理パイプライン
      * 処理速度を優先し、必要最小限の前処理のみ実行
      */

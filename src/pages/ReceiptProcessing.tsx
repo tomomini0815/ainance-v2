@@ -206,7 +206,7 @@ const ReceiptProcessing: React.FC = () => {
       // 抽出したデータを設定
       setExtractedData({
         merchant: extractedReceiptData.merchant || '不明',
-        date: extractedReceiptData.date || new Date().toISOString().split('T')[0],
+        date: extractedReceiptData.date || '',
         amount: extractedReceiptData.amount || 0,
         category: extractedReceiptData.category || '雑費',
         taxRate: extractedReceiptData.taxRate || 0,

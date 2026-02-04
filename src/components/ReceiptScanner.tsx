@@ -218,16 +218,10 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
         const imageData = canvas.toDataURL('image/jpeg', 0.9);
         console.log('画像データを取得しました。データURLの長さ:', imageData.length);
 
-        // AI認識のためには、過度な前処理（特に二値化）は避ける
-        // ただし、傾き補正などは有効
-        console.log('画像処理を開始...');
-        const processedImage = await imageProcessor.processImage(imageData, {
-          deskew: true,
-          binarize: false, // AIにはカラー/グレースケールの方が情報量が多い
-          enhanceContrast: true,
-          removeNoise: true,
-          sharpen: true
-        });
+        // AI認識のためには、過度な前処理（特に二値化・グレー化）は避ける
+        // 新しい processImageForAI を使用してカラー情報を保持
+        console.log('画像処理を開始（AI最適化モード）...');
+        const processedImage = await imageProcessor.processImageForAI(imageData);
         console.log('画像処理完了');
         setCapturedImage(processedImage);
         stopCamera();
@@ -482,7 +476,14 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = (props) => {
             // CLOVAライクな構造化データから優先的に読み取り、なければ互換フィールドへフォールバック
             store_name: aiResult.store_info?.name || aiResult.store_name || '',
             date: aiResult.summary?.transaction_date || aiResult.transaction_date || '',
-            total_amount: aiResult.summary?.total_amount ?? aiResult.total_amount ?? null,
+            total_amount: (() => {
+              const amount = aiResult.summary?.total_amount ?? aiResult.total_amount;
+              if (typeof amount === 'number') return amount;
+              if (typeof amount === 'string') {
+                return parseInt((amount as string).replace(/[^0-9-]/g, ''), 10);
+              }
+              return null;
+            })(),
             category: validatedCategory,
             tax_classification: aiResult.tax_classification || '不明',
             confidence: aiResult.summary?.confidence ?? aiResult.confidence ?? 0,
