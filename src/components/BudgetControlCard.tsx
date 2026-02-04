@@ -153,16 +153,20 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                     data: sortedCats.map(([, amount]) => amount),
                     backgroundColor: '#3b82f6',
                     borderRadius: 4,
-                    barThickness: 16,
-                    maxBarThickness: 24,
+                    barThickness: 12,
+                    maxBarThickness: 12,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9,
                 },
                 {
                     label: '目安',
                     data: budgetEstimates,
                     backgroundColor: 'rgba(156, 163, 175, 0.3)',
                     borderRadius: 4,
-                    barThickness: 16,
-                    maxBarThickness: 24,
+                    barThickness: 12,
+                    maxBarThickness: 12,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9,
                 }
             ]
         };
@@ -234,8 +238,10 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                     data: sortedCats.map(([, amount]) => amount),
                     backgroundColor: '#10b981', // 緑色
                     borderRadius: 4,
-                    barThickness: 16,
-                    maxBarThickness: 24,
+                    barThickness: 12,
+                    maxBarThickness: 12,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9,
                 }
             ]
         };
@@ -383,7 +389,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded bg-gray-300"></div>目安</div>
                                 </div>
                             </div>
-                            <div className="flex-1 min-h-0 relative">
+                            <div className="h-[330px] relative">
                                 <Bar data={budgetData.chartData} options={chartOptions} />
                             </div>
                         </div>
@@ -442,7 +448,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded bg-emerald-500"></div>累計実績</div>
                                 </div>
                             </div>
-                            <div className="flex-1 min-h-0 relative">
+                            <div className="h-[330px] relative">
                                 <Bar data={totalBudgetData.chartData} options={chartOptions} />
                             </div>
                         </div>
