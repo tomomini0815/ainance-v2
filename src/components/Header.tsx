@@ -4,7 +4,6 @@ import { Search, Bell, Menu, Settings, LogOut, Building, User } from 'lucide-rea
 import BusinessTypeSwitcher from './BusinessTypeSwitcher'
 import CreateBusinessTypeModal from './CreateBusinessTypeModal'
 import { useAuth } from '../hooks/useAuth'
-import { useTheme } from '../context/ThemeContext'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 
 import { useGlobalSearch } from '../hooks/useGlobalSearch'

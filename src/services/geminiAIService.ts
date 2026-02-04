@@ -5,12 +5,10 @@
 
 // Gemini API設定
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-// 利用可能なモデル（優先順位順）- 2024年12月時点の最新モデル
+// 利用可能なモデル（優先順位順）
 const GEMINI_MODELS = [
-  'gemini-2.0-flash',        // 最新の高速モデル
-  'gemini-2.0-flash-lite',   // 軽量版
-  'gemini-1.5-flash',        // 旧バージョン（フォールバック）
-  'gemini-1.5-pro',          // 高性能版
+  'gemini-1.5-pro',          // 最高精度（推奨）
+  'gemini-1.5-flash',        // 高速・低コスト
 ];
 
 // デフォルトのAPI URL
@@ -30,67 +28,115 @@ export interface AIClassificationResult {
   suggestions: string[];
 }
 
+// ユーザー指定の出力形式に合わせたインターフェース
+// CLOVA OCR（LINEレシート）の仕様を模倣した高度な構造化データ
 export interface AIReceiptAnalysis {
-  storeName: string;
-  storeCategory: string;
-  totalAmount: number;
-  date: string;
-  invoiceRegistrationNumber?: string; // インボイス登録番号 (T1234567890123)
-  taxBreakdown?: {
-    rate: number;
-    amount: number;
-    targetAmount: number;
-  }[];
+  summary: {
+    transaction_date: string | null;
+    total_amount: number | null;
+    confidence: number;
+  };
+  store_info: {
+    name: string;
+    branch?: string;
+    tel?: string;
+    address?: string;
+  };
+  payment_info: {
+    method: 'cash' | 'credit_card' | 'electronic_money' | 'qr_code' | 'other';
+    amount: number | null;
+  };
+  tax_info: {
+    tax_amount_8: number | null;
+    tax_amount_10: number | null;
+    tax_excluded_amount: number | null;
+  };
+  category: {
+    primary: '消耗品費' | '交際費' | '旅費交通費' | '通信費' | '会議費' | '事務用品費' | '雑費' | '不明' | string;
+    confidence: number;
+  };
   items: {
     name: string;
-    price: number;
-    category: string;
-    taxRate?: number;
+    price: number | null;
+    qty: number | null;
+    line_total: number | null;
   }[];
-  classification: AIClassificationResult;
-  warnings: string[];
+  // 互換性のためのフラットフィールド（マッピング用）
+  transaction_date?: string; // summary.transaction_dateへのエイリアス
+  store_name?: string; // store_info.nameへのエイリアス
+  total_amount?: number; // summary.total_amountへのエイリアス
+  tax_classification?: string; // 推論フィールド
 }
+
+// ... helper logic to map flat fields ...
 
 /**
  * Gemini AIを使用してレシートを分析
  */
+/**
+ * Gemini AIを使用してレシートを分析（テキストベース）
+ */
 export async function analyzeReceiptWithAI(
   ocrText: string,
-  _imageBase64?: string // 将来の画像分析用（現在はテキストのみ）
+  _imageBase64?: string // 将来の画像分析用
 ): Promise<AIReceiptAnalysis | null> {
   if (!GEMINI_API_KEY) {
     console.warn('Gemini API Keyが設定されていません。ルールベースの分析にフォールバックします。');
     return null;
   }
 
-  const prompt = `あなたは日本の経理・会計の専門家です。以下のレシートのOCRテキストを分析し、JSON形式で情報を抽出してください。
+  const today = new Date().toISOString().split('T')[0];
 
-レシートテキスト:
+  const currentYear = new Date().getFullYear();
+
+  const prompt = `あなたは「CLOVA OCR」のような最高峰の日本語レシート認識エンジンをシミュレートするAIです。
+以下のOCRテキストを分析し、高度な構造化データとして抽出してください。
+
+OCRテキスト:
 """
 ${ocrText}
 """
 
-以下の形式でJSONを返してください（JSONのみ、説明不要）:
+### 抽出ルール（CLOVA仕様）:
+1.  **階層構造化**: 店名、日付、金額、税情報を明確に分離する。
+2.  **キーバリュー抽出**: テキストの配置から「項目: 値」の関係を特定する。
+3.  **誤字補正**: OCR特有のミス（例: 8とB）を文脈で補正する。
+
+### 出力形式（Strict JSON）:
 {
-  "storeName": "店舗名",
-  "storeCategory": "店舗の業種（コンビニ、飲食店、文具店など）",
-  "totalAmount": 数値（合計金額）,
-  "date": "YYYY-MM-DD形式の日付",
-  "items": [
-    {"name": "商品名", "price": 数値, "category": "食品/飲料/事務用品/日用品/その他"}
-  ],
-  "classification": {
-    "category": "経費カテゴリ（消耗品費/旅費交通費/接待交際費/通信費/水道光熱費/会議費/福利厚生費/新聞図書費/外注費/食費/地代家賃/租税公課/雑費/その他）",
-    "accountTitle": "勘定科目",
-    "confidence": 0.0-1.0の信頼度,
-    "reasoning": "この分類にした理由",
-    "taxDeductible": true/false（経費計上可能か）,
-    "suggestions": ["経費処理に関するアドバイス"]
+  "summary": {
+    "transaction_date": "YYYY-MM-DD" | null,
+    "total_amount": number | null,
+    "confidence": 0-100
   },
-  "warnings": ["注意事項があればここに"]
+  "store_info": {
+    "name": "店舗名",
+    "branch": "支店名",
+    "tel": "電話番号",
+    "address": "住所"
+  },
+  "payment_info": {
+    "method": "cash/credit/other",
+    "amount": number
+  },
+  "tax_info": {
+    "tax_amount_8": number,
+    "tax_amount_10": number,
+    "tax_excluded_amount": number
+  },
+  "category": {
+    "primary": "消耗品費/交際費/旅費交通費/通信費/会議費/雑費/その他",
+    "confidence": 0-100
+  },
+  "items": [
+    { "name": "品名", "price": number, "qty": number, "line_total": number }
+  ]
 }
 
-注意: 店名や品目名（「マクドナルド」、「ガソリン」、「ランチ」、「居酒屋」など）は、抽象的な言葉（「飲食代」など）に置き換えずに、レシートや入力にある言葉をそのまま出力してください。`;
+**特記事項**:
+- 基準日: ${today} (今日の日付)
+- 年補完: ${currentYear}年を優先して解釈してください。
+`;
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -106,48 +152,47 @@ ${ocrText}
         }],
         generationConfig: {
           temperature: 0.2,
-          topK: 40,
-          topP: 0.95,
           maxOutputTokens: 2048,
+          response_mime_type: "application/json"
         }
       })
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Gemini API エラー:', errorData);
+      // ... error handling ...
       return null;
     }
 
     const data = await response.json();
     const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!textContent) {
-      console.error('Gemini APIからの応答が空です');
-      return null;
-    }
+    if (!textContent) return null;
 
-    // JSONを抽出（マークダウンコードブロックを除去）
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('JSONを抽出できませんでした:', textContent);
-      return null;
-    }
+    if (!jsonMatch) return null;
 
     const result = JSON.parse(jsonMatch[0]) as AIReceiptAnalysis;
-    console.log('Gemini AI分析結果:', result);
 
-    // 項目名の標準化を適用
+    // 項目名の標準化
     if (result && result.items) {
       result.items.forEach(item => {
-        item.name = standardizeItemName(item.name, result.classification?.category || '');
+        item.name = standardizeItemName(item.name, result.category?.primary || '');
       });
+    }
+
+    // フラットフィールドへのマッピング（互換性確保）
+    if (result) {
+      result.transaction_date = result.summary?.transaction_date || '';
+      // @ts-ignore
+      result.store_name = result.store_info?.name;
+      // @ts-ignore
+      result.total_amount = result.summary?.total_amount;
     }
 
     return result;
 
   } catch (error) {
-    console.error('Gemini AI分析エラー:', error);
+    console.error('Gemini AI Analysis Exception:', error);
     return null;
   }
 }
@@ -175,49 +220,60 @@ export async function analyzeReceiptWithVision(
   const today = new Date().toISOString().split('T')[0];
   const currentYear = new Date().getFullYear();
 
-  const prompt = `あなたは日本の経理・会計および税務の専門家です。提供されたレシートまたは領収書の画像を細部まで詳細に分析し、最高精度の情報を抽出してください。
+  const prompt = `あなたは勤続20年のベテラン経理担当者であり、データ入力のプロフェッショナルです。
+提供されたレシート・領収書画像を、日本の税法（インボイス制度・電子帳簿保存法）に準拠した形式で完璧にデジタル化してください。
+あなたの任務は、OCRの不完全さを補い、人間がダブルチェックしたかのような高精度なデータを抽出することです。
 
-### 解析ルール (日本市場向け最適化):
-1. **店舗名**: 正確な正式名称を抽出してください。ロゴや電話番号、住所、さらにはインボイス登録番号から推測が必要な場合も、最も可能性の高い名称を特定してください。
-2. **登録番号 (重要)**: インボイス制度に基づく登録番号（T+13桁の数字）を探して抽出してください。見つからない場合は null としてください。
-3. **日付**: "YYYY-MM-DD"形式で抽出してください。
-   - 年が明記されていない場合（例: "1月25日"）、現在の年（${currentYear}年）を補完してください。ただし、現在1月でレシートが11月や12月の場合は前年と判断してください。
-   - 和暦（令和、平成など）は西暦に変換してください（例: 令和6年 -> 2024年）。
-4. **合計金額**: 最終的な支払い金額（税込、値引き後）を抽出してください。
-   - **重要**: 「お預かり（Cash Received）」や「お釣り（Change）」、「対象計」などの数値を誤って合計金額としないでください。
-5. **税率の内訳**: 8%（軽減税率）と10%（標準税率）それぞれの対象金額と税額を抽出してください。
-6. **品目**: 各行の商品名、金額、税率、カテゴリを抽出してください。
-   - 値引きやポイント利用がある場合は、それらも正確に反映させて合計と一致するか内部で検証してください。
-7. **分類**: 日本の標準的な勘定科目に基いて分類してください。
-   - 消耗品費、旅費交通費、接待交際費、会議費、通信費、福利厚生費、外注費、地代家賃、雑費、事業主貸など。
-   - **重要**: 店名や品目名（「マクドナルド」、「ガソリン」、「ランチ」、「居酒屋」など）は、抽象的な言葉（「飲食代」など）に置き換えずに、画像にある言葉をそのまま出力してください。カテゴリは適切に分類してください。
+### 思考プロセス（内部で実行してください）:
+1. **画像の全体像を把握**: 縦書き/横書き、手書き/印字、ノイズ（影、折り目）の有無を確認し、最適な読み取り戦略を立てる。
+2. **主要項目の特定**:
+   - **日付**: "R"などの和暦略称や、年が省略されているケースを文脈（現在: ${currentYear}年）から補完。
+   - **金額**: 「合計」「小計」「お預かり」を混同せず、必ず**最終支払額（税込）**を特定。
+   - **店名**: ロゴマークや電話番号横の表記も含めて正式名称を特定。
+3. **論理チェック（自己検証）**:
+   - (税抜金額 + 消費税) が (税込合計金額) と一致するか？
+   - 品目の合計が総合計と一致するか？
+   - 日付は未来の日付になっていないか？（${today} より未来ならアラート）
+   - インボイス番号は "T" + 13桁の数字か？
 
-### 回答形式:
-必ず以下の純粋なJSON形式のみで回答してください:
+### 抽出ルール（厳格）:
+1. **店舗名**: ロゴ、住所、電話番号から法人名を特定。判読不能ならNULL。
+2. **日付**: "YYYY-MM-DD" 形式。**推測禁止**。印字がない場合は完全一致するまで探すが、なければNULL。今日の日付(${today})を代用することは**厳禁**。
+3. **登録番号**: インボイス番号が見つからない場合はNULL。
+4. **品目詳細**: "飲食代"などの要約ではなく、可能な限りレシート上の品目名（例："生ビール", "ランチセット"）をそのまま抽出。
+
+### 分類選択（以下のリストから1つのみ選択）:
+- 食費
+- 交通費
+- 消耗品費
+- 接待交際費
+- 水道光熱費
+- 通信費
+- 会議費
+- 雑費
+- その他
+
+### 出力形式（純粋なJSONのみ）:
 {
-  "storeName": "店舗名",
-  "storeCategory": "店舗の業種",
-  "totalAmount": 数値,
-  "date": "YYYY-MM-DD",
-  "invoiceRegistrationNumber": "T1234567890123 または null",
-  "taxBreakdown": [
-    {"rate": 10, "amount": 100, "targetAmount": 1000},
-    {"rate": 8, "amount": 40, "targetAmount": 500}
-  ],
+  "transaction_date": "YYYY-MM-DD または null",
+  "store_name": "店舗名",
+  "total_amount": 数値,
+  "category": "食費/交通費/消耗品費/接待交際費/水道光熱費/通信費/会議費/雑費/その他",
+  "tax_classification": "課税仕入10%/課税仕入8%/非課税/不課税/不明",
+  "confidence": 0-100の数値（80未満は要確認）,
   "items": [
-    {"name": "商品名", "price": 数値, "taxRate": 8|10, "category": "食品/飲料/事務用品/日用品/その他"}
-  ],
-  "classification": {
-    "category": "勘定科目カテゴリ名（消耗品費/旅費交通費/接待交際費/通信費/水道光熱費/会議費/福利厚生費/新聞図書費/外注費/地代家賃/租税公課/支払手数料/仕入/売上/給与/食費/雑費/事業主貸など）",
-    "accountTitle": "勘定科目詳細",
-    "confidence": 0.0-1.0,
-    "reasoning": "分類の理由",
-    "taxDeductible": true/false
-  },
-  "warnings": []
+    {
+      "name": "品目名",
+      "price": 数値,
+      "qty": 数値,
+      "line_total": 数値
+    }
+  ]
 }
 
-現在の今日の日付: ${today}`;
+**特記事項**:
+- 画像が不鮮明で読み取れない項目は無理に埋めず \`null\` にしてください。
+- ノイズ（背景の木目、指、影）はデータとして扱わないでください。`;
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -274,31 +330,25 @@ export async function analyzeReceiptWithVision(
 
     const result = JSON.parse(jsonMatch[0]) as AIReceiptAnalysis;
 
-    // キーワードによるカテゴリ修正のフォールバック
-    if (result && result.items) {
-      result.items.forEach(item => {
-        if (!item.category || item.category === 'その他' || item.category === '未分類' || item.category === 'Unclassified') {
-          const keywordCategory = determineCategoryByKeyword(item.name);
-          if (keywordCategory) {
-            console.log(`Keyword Category Fallback (Item): ${item.name} -> ${keywordCategory}`);
-            item.category = keywordCategory;
-          }
-        }
-      });
-    }
+    // キーワードによるカテゴリ修正のフォールバック (itemsにcategoryがないため、この処理は削除または変更が必要)
+    // 今回の要件ではitemsにcategoryを含めないため、このブロックは削除します。
 
-    // 全体の分類もチェック
-    if (result && result.classification) {
-      const cls = result.classification;
-      if (!cls.category || cls.category === 'その他' || cls.category === '未分類' || cls.category === 'Unclassified' || cls.category === '雑費') {
+    // 全体のカテゴリチェック
+    if (result) {
+      const currentCategory = result.category?.primary;
+      if (!currentCategory || currentCategory === 'その他' || currentCategory === '未分類' || currentCategory === 'Unclassified' || currentCategory === '雑費') {
         // 店名や品目から推測
-        const textToAnalyze = `${result.storeName} ${result.items?.map(i => i.name).join(' ')}`;
+        const textToAnalyze = `${result.store_info?.name || ''} ${result.items?.map(i => i.name).join(' ')}`;
         const keywordCategory = determineCategoryByKeyword(textToAnalyze);
         if (keywordCategory) {
-          console.log(`Keyword Category Fallback (Main): ${result.storeName} -> ${keywordCategory}`);
-          cls.category = keywordCategory;
-          cls.accountTitle = keywordCategory; // 簡易的に勘定科目も同じにする
-          cls.reasoning += " (キーワードマッチングにより修正)";
+          console.log(`Keyword Category Fallback (Main): ${result.store_info?.name} -> ${keywordCategory}`);
+          if (result.category) {
+            // @ts-ignore: Updating readonly property if any
+            result.category.primary = keywordCategory;
+          } else {
+            // @ts-ignore
+            result.category = { primary: keywordCategory, confidence: 0.8 };
+          }
         }
       }
     }
@@ -306,8 +356,18 @@ export async function analyzeReceiptWithVision(
     // 項目名の標準化を適用 (ランチ -> 飲食代)
     if (result && result.items) {
       result.items.forEach(item => {
-        item.name = standardizeItemName(item.name, result.classification?.category || '');
+        item.name = standardizeItemName(item.name, result.category?.primary || '');
       });
+    }
+
+    // フラットフィールドへのマッピング（互換性確保）
+    if (result) {
+      result.transaction_date = result.summary.transaction_date || '';
+      // @ts-ignore
+      result.store_name = result.store_info.name;
+      // @ts-ignore
+      result.total_amount = result.summary.total_amount;
+      // category.primary is used by caller
     }
 
     return result;
