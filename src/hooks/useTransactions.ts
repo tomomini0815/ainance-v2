@@ -18,6 +18,7 @@ interface Transaction {
   location?: string;
   recurring?: boolean;
   recurring_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurring_start_date?: string; // Added this line
   recurring_end_date?: string;
   // 法人用追加フィールド
   department?: string;
@@ -72,25 +73,26 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       if (error) throw error;
 
       console.log('取引データ取得成功:', { count: data?.length, data, tableName });
-      
+
       // データの正規化: amountを数値に変換し、descriptionをマッピング
       const normalizedTransactions = (data || []).map((t: any) => {
         let amount = t.amount;
         if (typeof amount === 'string') {
-          // カンマを除去してパース
-          amount = parseFloat(amount.replace(/,/g, ''));
+          // カンマ、円記号、スペースなどを除去してパース
+          amount = parseFloat(amount.replace(/[^\d.-]/g, ''));
         } else if (typeof amount === 'object' && amount !== null) {
           // オブジェクトの場合はvalueやamountプロパティを探す
-          amount = parseFloat(String(amount.value || amount.amount || amount.number || 0).replace(/,/g, ''));
+          const val = String(amount.value || amount.amount || amount.number || 0);
+          amount = parseFloat(val.replace(/[^\d.-]/g, ''));
         }
-        
+
         return {
           ...t,
           amount: isNaN(amount) ? 0 : amount,
           description: t.description || t.item
         };
       });
-      
+
       setTransactions(normalizedTransactions);
       setLoading(false);
     } catch (error: any) {
@@ -110,14 +112,21 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
     }
 
     try {
-      const { recurring_end_date, ...restOfTransaction } = transaction;
+      const { recurring_end_date, recurring_start_date, ...restOfTransaction } = transaction; // recurring_start_dateも除外
       const tableName = getTableName();
-      
+
       const amountValue = Number(transaction.amount);
+
+      // 開始日が指定されている場合はそれを使用、なければ取引日を使用
+      const effectiveDate = transaction.recurring && recurring_start_date
+        ? recurring_start_date
+        : transaction.date;
+
       const transactionPayload: any = {
         ...restOfTransaction,
         item: transaction.item || '名称未設定',
         amount: isNaN(amountValue) ? 0 : amountValue,
+        date: effectiveDate, // 開始日を適用
         creator: creatorId,
       };
 
@@ -130,18 +139,18 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
         delete transactionPayload.project_code;
       } */
 
-      console.log('createTransaction - 実行詳細:', { 
-          tableName, 
-          payload: transactionPayload, 
-          originalTransaction: transaction 
+      console.log('createTransaction - 実行詳細:', {
+        tableName,
+        payload: transactionPayload,
+        originalTransaction: transaction
       });
-      
+
       let createdData;
-      
+
       if (transaction.recurring && transaction.recurring_end_date) {
         // 繰り返しデータの生成
         const bulkData = [transactionPayload];
-        const startDate = new Date(transaction.date);
+        const startDate = new Date(effectiveDate); // effectiveDateを使用
         const endDate = new Date(transaction.recurring_end_date);
         let nextDate = new Date(startDate);
 
@@ -169,10 +178,10 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
           .from(tableName)
           .insert(bulkData)
           .select();
-        
+
         if (error) {
-            console.error('createTransaction (bulk) - Supabaseエラー:', error);
-            throw error;
+          console.error('createTransaction (bulk) - Supabaseエラー:', error);
+          throw error;
         }
         createdData = data;
         toast.success(`${bulkData.length}件の取引を記録しました`, { id: 'transaction-create' });
@@ -183,20 +192,20 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
           .select();
 
         if (error) {
-            console.error('createTransaction - Supabase挿入エラー:', error);
-            throw error;
+          console.error('createTransaction - Supabase挿入エラー:', error);
+          throw error;
         }
         console.log('createTransaction - 挿入成功:', data);
-        createdData = data; 
+        createdData = data;
         toast.success('取引を記録しました', { id: 'transaction-create' });
       }
 
       // ローカル状態も正規化して追加
       if (!createdData || createdData.length === 0) {
-          console.warn('createTransaction - 挿入されたデータが返されませんでした');
-          // 最新データを再取得して同期を図る
-          fetchTransactions();
-          return { data: null, error: null };
+        console.warn('createTransaction - 挿入されたデータが返されませんでした');
+        // 最新データを再取得して同期を図る
+        fetchTransactions();
+        return { data: null, error: null };
       }
       const normalizedNew = (createdData || []).map((d: any) => ({
         ...d,
@@ -205,7 +214,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
       }));
 
       console.log('createTransaction - 正規化後の新規データ:', normalizedNew);
-      
+
       setTransactions(prev => [...normalizedNew, ...prev]);
       return { data: normalizedNew[0] || null, error: null };
     } catch (error: any) {
@@ -223,14 +232,17 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
 
     try {
       const tableName = getTableName();
-      
-      // creatorとrecurring_end_dateはDBカラムにないので除外
+
+      // creatorとrecurring_end_date, recurring_start_dateはDBカラムにないので除外
       const finalUpdates = { ...updates };
       if (finalUpdates.creator) {
         delete (finalUpdates as any).creator;
       }
       if ((finalUpdates as any).recurring_end_date) {
         delete (finalUpdates as any).recurring_end_date;
+      }
+      if ((finalUpdates as any).recurring_start_date) {
+        delete (finalUpdates as any).recurring_start_date;
       }
 
       // 金額の正規化（もしあれば）
@@ -247,6 +259,7 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
         .eq('id', id)
         .select()
         .single();
+
 
       if (error) throw error;
 
@@ -319,13 +332,13 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
         if (receiptIdTag) {
           const receiptId = receiptIdTag.split(':')[1];
           if (receiptId) {
-             console.log('関連するレシートを承認します:', receiptId);
-             // 動的にインポートして循環参照を回避、またはsupabase直接実行
-             // ここではsupabase直接実行で対応
-             await supabase
-               .from('receipts')
-               .update({ status: 'approved', updated_at: new Date().toISOString() })
-               .eq('id', receiptId);
+            console.log('関連するレシートを承認します:', receiptId);
+            // 動的にインポートして循環参照を回避、またはsupabase直接実行
+            // ここではsupabase直接実行で対応
+            await supabase
+              .from('receipts')
+              .update({ status: 'approved', updated_at: new Date().toISOString() })
+              .eq('id', receiptId);
           }
         }
       }

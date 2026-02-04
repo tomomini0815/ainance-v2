@@ -16,6 +16,7 @@ interface Transaction {
   tags?: string[]
   recurring?: boolean
   recurring_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly'
+  recurring_start_date?: string
   recurring_end_date?: string
   creator?: string
 }
@@ -40,9 +41,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     tags: transaction?.tags || [],
     recurring: transaction?.recurring || false,
     recurring_frequency: transaction?.recurring_frequency || 'monthly',
+    recurring_start_date: transaction?.recurring_start_date || new Date().toISOString().split('T')[0],
     recurring_end_date: transaction?.recurring_end_date || new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
     creator: transaction?.creator || ''
   })
+
+  // Placeholder for component logic
+
 
   const [tagInput, setTagInput] = useState('')
   const [locationHistory, setLocationHistory] = useState<string[]>([])
@@ -88,6 +93,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         tags: transaction.tags || [],
         recurring: transaction.recurring || false,
         recurring_frequency: transaction.recurring_frequency || 'monthly',
+        recurring_start_date: transaction.recurring_start_date || new Date().toISOString().split('T')[0],
         recurring_end_date: transaction.recurring_end_date || new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
         creator: transaction.creator || ''
       })
@@ -644,7 +650,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
           </div>
 
           {formData.recurring && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1.5">繰り返し頻度</label>
                 <select
@@ -659,15 +665,28 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   <option value="yearly" className="bg-surface-highlight">年次</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">終了日</label>
-                <input
-                  type="date"
-                  name="recurring_end_date"
-                  value={formData.recurring_end_date}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
-                />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1.5">開始日</label>
+                  <input
+                    type="date"
+                    name="recurring_start_date"
+                    value={formData.recurring_start_date}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1.5">終了日</label>
+                  <input
+                    type="date"
+                    name="recurring_end_date"
+                    value={formData.recurring_end_date}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                  />
+                </div>
               </div>
             </div>
           )}

@@ -20,8 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     isOpen,
     isExpanded,
     onToggleExpand,
-    onCloseMobile,
-    userId
+    onCloseMobile
 }) => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -79,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             ? 'bg-primary/10 text-primary shadow-[0_0_20px_rgba(99,102,241,0.3)]'
             : 'text-text-muted hover:bg-white/5 hover:text-text-main'
         }
-    ${!isExpanded ? 'justify-center' : ''}
+    ${(!isExpanded && !isOpen) ? 'justify-center' : ''}
   `;
 
     return (
@@ -99,13 +98,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           bg-[#0f172a] border-r border-white/5
           transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          ${isExpanded ? 'w-72' : 'w-20'}
+          ${(isExpanded || isOpen) ? 'w-72' : 'w-20'}
         `}
             >
                 <div className="flex flex-col h-full p-4">
                     {/* Header / Logo Area */}
-                    <div className={`flex items-center h-16 mb-6 ${isExpanded ? 'justify-between' : 'justify-center'}`}>
-                        {isExpanded ? (
+                    <div className={`flex items-center h-16 mb-6 ${(isExpanded || isOpen) ? 'justify-between' : 'justify-center'}`}>
+                        {(isExpanded || isOpen) ? (
                             <div className="flex items-center space-x-3">
                                 <img src="/ainance-logo-header.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
                                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -133,10 +132,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 to={item.path}
                                 className={getLinkClasses(item.path)}
                                 onClick={onCloseMobile}
-                                title={!isExpanded ? item.label : undefined}
+                                title={(!isExpanded && !isOpen) ? item.label : undefined}
                             >
                                 <item.icon size={24} className={`transition-transform duration-200 ${isActive(item.path) ? 'scale-110' : 'group-hover:scale-110'}`} />
-                                {isExpanded && (
+                                {(isExpanded || isOpen) && (
                                     <span className="ml-3 font-medium">{item.label}</span>
                                 )}
                             </Link>
@@ -148,29 +147,29 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <button
                             onClick={toggleTheme}
                             className={getLinkClasses('theme-toggle')}
-                            title={!isExpanded ? (theme === 'dark' ? 'ライトモード' : 'ダークモード') : undefined}
+                            title={(!isExpanded && !isOpen) ? (theme === 'dark' ? 'ライトモード' : 'ダークモード') : undefined}
                         >
                             {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
-                            {isExpanded && <span className="ml-3 font-medium">{theme === 'dark' ? 'ライトモード' : 'ダークモード'}</span>}
+                            {(isExpanded || isOpen) && <span className="ml-3 font-medium">{theme === 'dark' ? 'ライトモード' : 'ダークモード'}</span>}
                         </button>
 
                         <Link
                             to="/integration-settings"
                             className={getLinkClasses('/integration-settings')}
                             onClick={onCloseMobile}
-                            title={!isExpanded ? '設定' : undefined}
+                            title={(!isExpanded && !isOpen) ? '設定' : undefined}
                         >
                             <Settings size={24} />
-                            {isExpanded && <span className="ml-3 font-medium">設定</span>}
+                            {(isExpanded || isOpen) && <span className="ml-3 font-medium">設定</span>}
                         </Link>
 
                         <button
                             onClick={handleSignOut}
                             className={`w-full ${getLinkClasses('')}`}
-                            title={!isExpanded ? 'ログアウト' : undefined}
+                            title={(!isExpanded && !isOpen) ? 'ログアウト' : undefined}
                         >
                             <LogOut size={24} />
-                            {isExpanded && <span className="ml-3 font-medium">ログアウト</span>}
+                            {(isExpanded || isOpen) && <span className="ml-3 font-medium">ログアウト</span>}
                         </button>
                     </div>
 
