@@ -254,7 +254,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
     };
 
     return (
-        <div className="bg-white dark:bg-surface rounded-2xl p-4 border border-border shadow-sm h-full flex flex-col relative overflow-hidden">
+        <div className="bg-white dark:bg-surface rounded-2xl p-4 border border-border shadow-sm h-full flex flex-col relative overflow-auto custom-scrollbar">
             {/* Header & Tabs */}
             <div className="flex flex-col gap-3 mb-3">
                 <div className="flex items-center justify-between">

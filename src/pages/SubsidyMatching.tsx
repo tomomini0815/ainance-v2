@@ -149,8 +149,8 @@ const SubsidyMatching: React.FC = () => {
     };
 
     return (
-        <div className="bg-background min-h-full">
-            <div className="mx-auto py-2">
+        <div className="bg-background min-h-full p-4 sm:p-0">
+            <div className="mx-auto">
                 {/* ヘッダー */}
                 <div className="flex items-center mb-6">
                     <Link to="/dashboard" className="mr-4">

@@ -67,6 +67,27 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
     const [selectedCategory, setSelectedCategory] = useState(receiptData?.category || '雑費');
     const [isSaving, setIsSaving] = useState(false);
 
+    // モバイルでのズーム問題を解決するためのEffect
+    React.useEffect(() => {
+        // iOSで入力フォーカス時にズームされるのを防ぐため、またモーダルを閉じた時にズームをリセットするために
+        // metaタグを一時的に調整する、または単にマウント時に現在のスクロール/ズーム状態を意識する処理
+
+        // 16px未満のフォントサイズでフォーカスするとiOSは自動ズームするため、CSSで解決するのが基本だが
+        // ここではモーダルが閉じたときに確実に元の状態を示唆するようにする
+        return () => {
+            // モーダルが閉じるときに、もしズームされていたらリセットを試みる
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                const content = viewport.getAttribute('content');
+                // 一旦別の値をセットして戻すことで再描画を促す（ハック的だが有効な場合がある）
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0');
+                setTimeout(() => {
+                    viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+                }, 100);
+            }
+        };
+    }, []);
+
     const handleCategoryChange = (category: string) => {
         setSelectedCategory(category);
         setEditedData({ ...editedData, category });
@@ -200,8 +221,8 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden touch-none animate-in fade-in duration-300">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto touch-auto animate-in zoom-in-95 duration-300">
                 {/* ヘッダー */}
                 <div className="sticky top-0 bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl z-10">
                     <div className="flex justify-between items-center">
@@ -283,7 +304,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                     type="text"
                                     value={editedData.merchant}
                                     onChange={(e) => handleFieldEdit('merchant', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-base sm:text-sm"
                                     placeholder="店舗名を入力"
                                 />
                             </div>
@@ -301,7 +322,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                         type="date"
                                         value={editedData.date}
                                         onChange={(e) => handleFieldEdit('date', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-base sm:text-sm"
                                     />
                                 </div>
 
@@ -317,7 +338,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                         type="number"
                                         value={editedData.amount}
                                         onChange={(e) => handleFieldEdit('amount', parseInt(e.target.value))}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-base sm:text-sm"
                                         placeholder="金額を入力"
                                     />
                                 </div>
@@ -396,7 +417,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                                             newItems[index] = { ...item, name: e.target.value };
                                                             setEditedData({ ...editedData, items: newItems });
                                                         }}
-                                                        className="w-full px-2 py-1 bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded text-xs"
+                                                        className="w-full px-2 py-1 bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded text-base sm:text-xs"
                                                     />
                                                 </td>
                                                 <td className="px-1 py-1 text-xs text-right text-gray-900 dark:text-gray-300">
@@ -411,7 +432,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                                                                 newItems[index] = { ...item, line_total: val, price: val };
                                                                 setEditedData({ ...editedData, items: newItems });
                                                             }}
-                                                            className="w-20 px-1 py-1 bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded text-right text-xs font-mono"
+                                                            className="w-20 px-1 py-1 bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded text-right text-base sm:text-xs font-mono"
                                                         />
                                                     </div>
                                                 </td>

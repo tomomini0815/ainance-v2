@@ -49,7 +49,7 @@ const CsvImport: React.FC = () => {
                             <h3 className="text-lg font-bold mb-2 text-green-400">注意点</h3>
                             <ul className="list-disc list-inside text-slate-300 text-sm space-y-2">
                                 <li>一度にインポートできる件数は最大500件までです。</li>
-                                <li>日付の形式（YYYY/MM/DDなど）が正しいかご確認ください。</li>
+                                <li>日付の形式が正しいかご確認ください。</li>
                             </ul>
                         </div>
                     </div>

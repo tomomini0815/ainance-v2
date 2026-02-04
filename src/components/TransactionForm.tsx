@@ -280,27 +280,27 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     <form onSubmit={handleSubmit} className="space-y-6 text-text-main">
       {/* Tabs */}
       {/* Tabs */}
-      <div className="flex bg-slate-800 p-1.5 rounded-full mb-8 border border-slate-700 w-full shadow-lg shadow-black/20">
+      <div className="flex bg-slate-900/60 p-1 rounded-full mb-8 border border-slate-700/50 w-full shadow-inner backdrop-blur-md">
         <button
           type="button"
           onClick={() => setActiveTab('normal')}
-          className={`flex-1 flex items-center justify-center py-2 px-6 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === 'normal'
-            ? 'bg-primary text-white shadow-md shadow-primary/30'
-            : 'text-slate-400 hover:text-white hover:bg-white/10'
+          className={`flex-1 flex items-center justify-center py-2.5 px-4 rounded-full text-sm font-bold transition-all duration-500 whitespace-nowrap ${activeTab === 'normal'
+            ? 'bg-slate-800 text-primary shadow-lg shadow-black/20 transform scale-[1.02]'
+            : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
             }`}
         >
-          <Wallet className="w-4 h-4 mr-2" />
+          <Wallet className={`w-4 h-4 mr-2 transition-colors duration-500 ${activeTab === 'normal' ? 'text-primary' : 'text-slate-500'}`} />
           通常取引
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('depreciation')}
-          className={`flex-1 flex items-center justify-center py-2 px-6 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === 'depreciation'
-            ? 'bg-primary text-white shadow-md shadow-primary/30'
-            : 'text-slate-400 hover:text-white hover:bg-white/10'
+          className={`flex-1 flex items-center justify-center py-2.5 px-4 rounded-full text-sm font-bold transition-all duration-500 whitespace-nowrap ${activeTab === 'depreciation'
+            ? 'bg-slate-800 text-primary shadow-lg shadow-black/20 transform scale-[1.02]'
+            : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
             }`}
         >
-          <Clock className="w-4 h-4 mr-2" />
+          <Clock className={`w-4 h-4 mr-2 transition-colors duration-500 ${activeTab === 'depreciation' ? 'text-primary' : 'text-slate-500'}`} />
           減価償却資産
         </button>
       </div>

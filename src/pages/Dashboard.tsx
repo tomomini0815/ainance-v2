@@ -217,7 +217,7 @@ const Dashboard: React.FC = () => {
 
   // Skeleton Loader Component
   const DashboardSkeleton = () => (
-    <div className="min-h-screen">
+    <div className="min-h-screen p-4 sm:p-0">
       <div className="p-4 bg-red-500 text-white text-center mb-4">
         <p>ダッシュボードのローディング中...</p>
         <p>authLoading: {authLoading ? 'true' : 'false'}</p>
@@ -251,7 +251,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen p-4 sm:p-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div className="flex items-center">
           <div>
@@ -296,21 +296,21 @@ const Dashboard: React.FC = () => {
 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Suspense fallback={<div className="h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="h-full lg:h-[580px]">
+        <Suspense fallback={<div className="h-[620px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[620px] lg:h-[580px]">
             <RevenueChart transactions={transactions} />
           </div>
         </Suspense>
-        <Suspense fallback={<div className="h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="h-[500px] lg:h-[580px]">
+        <Suspense fallback={<div className="h-[620px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[620px] lg:h-[580px]">
             <ExpenseChart transactions={transactions} />
           </div>
         </Suspense>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Suspense fallback={<div className="h-[500px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="h-[500px] lg:h-[580px]">
+        <Suspense fallback={<div className="h-[650px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[650px] lg:h-[580px]">
             <TransactionTable
               transactions={transactions}
               onOpenCreateModal={() => setShowCreateForm(true)}
@@ -318,8 +318,8 @@ const Dashboard: React.FC = () => {
             />
           </div>
         </Suspense>
-        <Suspense fallback={<div className="h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="h-[500px] lg:h-[580px]">
+        <Suspense fallback={<div className="h-[650px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[650px] lg:h-[580px]">
             <BudgetControlCard
               transactions={transactions}
               receipts={receipts}

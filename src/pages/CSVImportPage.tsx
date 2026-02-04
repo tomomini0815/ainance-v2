@@ -318,7 +318,7 @@ const CSVImportPage: React.FC = () => {
                                     <div>
                                         <h4 className="font-medium text-text-main mb-2">必須カラム</h4>
                                         <ul className="text-text-muted text-sm space-y-1">
-                                            <li>• <strong>日付</strong>: YYYY/MM/DD または YYYY-MM-DD</li>
+                                            <li>• <strong>日付</strong>: 2024/01/01 形式など</li>
                                             <li>• <strong>摘要</strong>: 取引の説明</li>
                                             <li>• <strong>金額</strong>: 数値（カンマ区切り可）</li>
                                             <li>• <strong>種別</strong>: 収入 or 支出</li>

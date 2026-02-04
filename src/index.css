@@ -515,3 +515,33 @@ input[type=number] {
 .hover-glow:hover {
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
 }
+
+/* ============== 日付入力のプレースホルダ非表示 ============== */
+/* Chrome, Safari, Edge などの Webkit 系ブラウザで yyyy/mm/dd を非表示にする */
+input[type="date"]::-webkit-datetime-edit-year-field,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="month"]::-webkit-datetime-edit-year-field,
+input[type="month"]::-webkit-datetime-edit-month-field,
+input[type="month"]::-webkit-datetime-edit-text {
+  color: transparent;
+}
+
+/* フォーカス時、または値が入っている時は表示する */
+input[type="date"]:focus::-webkit-datetime-edit-year-field,
+input[type="date"]:focus::-webkit-datetime-edit-month-field,
+input[type="date"]:focus::-webkit-datetime-edit-day-field,
+input[type="date"]:focus::-webkit-datetime-edit-text,
+input[type="date"]:valid::-webkit-datetime-edit-year-field,
+input[type="date"]:valid::-webkit-datetime-edit-month-field,
+input[type="date"]:valid::-webkit-datetime-edit-day-field,
+input[type="date"]:valid::-webkit-datetime-edit-text,
+input[type="month"]:focus::-webkit-datetime-edit-year-field,
+input[type="month"]:focus::-webkit-datetime-edit-month-field,
+input[type="month"]:focus::-webkit-datetime-edit-text,
+input[type="month"]:valid::-webkit-datetime-edit-year-field,
+input[type="month"]:valid::-webkit-datetime-edit-month-field,
+input[type="month"]:valid::-webkit-datetime-edit-text {
+  color: inherit;
+}

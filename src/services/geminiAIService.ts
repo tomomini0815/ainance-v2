@@ -137,12 +137,11 @@ ${ocrText}
     "primary": "消耗品費/交際費/旅費交通費/通信費/会議費/雑費/その他",
     "confidence": 0-100
   },
-  "items": [
-    { "name": "品名", "price": number, "qty": number, "line_total": number }
-  ]
+  "items": []
 }
 
 **特記事項**:
+- **品目明細のスキップ**: 個別の商品明細（items）は抽出不要です。summary, store_info, tax_info, categoryの抽出に集中してください。
 - 基準日: ${today} (今日の日付)
 - 年補完: ${currentYear}年を優先して解釈してください。
 `;
@@ -282,9 +281,10 @@ async function analyzeReceiptWithModel(
     - **【最重要】視覚的重み**: 「合計」「小計」「対象計」などの**ラベルの右側（または直下）にある、最もフォントサイズが大きく太い数字**を特定する。
     - 単なる最大値ではなく、「合計」というキーワードとの**位置関係（横並び）**を重視する。
     - ￥マークやカンマは除去して数値化する。
-4. **検証 (Math Check)**:
-    - 'line_total' と 'price * qty' が一致するか確認する。
-    - 'total_amount' がおおよそ 'Σ(line_total) + tax' と一致するか確認する。一致しない場合は 'validation_errors' に警告を記載する。
+4. **明細抽出のスキップ**:
+    - **【パフォーマンス・安定性向上のため】個別の商品明細（items）は絶対に抽出しないでください。**
+    - \`items\` フィールドは常に空配列 \`[]\` として出力してください。
+    - その分、店名、日付、合計金額、税額の抽出精度を極限まで高めてください。
 
 ### シミュレーション設定（追加）:
 - **手書き・汚れ・折れ**: レシートが不鮮明、手書き、折れている場合でも、文脈から最大限推測する。読み取れない項目は無理に埋めず \`null\` とする。
@@ -317,15 +317,7 @@ async function analyzeReceiptWithModel(
     "primary": "消耗品費/交際費/旅費交通費/通信費/会議費/雑費/その他",
     "confidence": 0-100
   },
-  "items": [
-    {
-      "name": "品名",
-      "price": number, // 値引きはマイナスで表現
-      "qty": number,
-      "line_total": number,
-      "tax_rate": "8% or 10%" // 可能なら推定
-    }
-  ],
+  "items": [],
   "validation_errors": [
     "合計金額が明細の合計と一致しません (Expected: 1000, Actual: 900)",
     "商品Aの金額計算が合いません"

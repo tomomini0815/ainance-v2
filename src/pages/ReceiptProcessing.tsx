@@ -603,7 +603,7 @@ const ReceiptProcessing: React.FC = () => {
                                 autoFocus
                               />
                             ) : (
-                              <div className="cursor-pointer" onClick={() => handleEdit(receipt)}>{receipt.merchant}</div>
+                              <div>{receipt.merchant}</div>
                             )}
                           </div>
                           <div className="text-sm text-text-muted">
@@ -616,7 +616,7 @@ const ReceiptProcessing: React.FC = () => {
                                 className="w-full px-2 py-1 border border-border rounded text-sm bg-background text-text-main"
                               />
                             ) : (
-                              <span className="cursor-pointer" onClick={() => handleEdit(receipt)}>{receipt.date}</span>
+                              <span>{receipt.date}</span>
                             )}
                           </div>
                         </div>
@@ -632,7 +632,7 @@ const ReceiptProcessing: React.FC = () => {
                             className="w-24 px-2 py-1 border border-border rounded text-sm text-right bg-background text-text-main"
                           />
                         ) : (
-                          <div className="font-medium text-lg text-text-main cursor-pointer" onClick={() => handleEdit(receipt)}>
+                          <div className="font-medium text-lg text-text-main">
                             ¥{receipt.amount.toLocaleString()}
                           </div>
                         )}
@@ -649,7 +649,7 @@ const ReceiptProcessing: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
-                      <div onClick={() => editingId !== receipt.id && handleEdit(receipt)} className="flex-1">
+                      <div className="flex-1">
                         {editingId === receipt.id ? (
                           <select
                             value={editData.category || receipt.category}
@@ -667,7 +667,7 @@ const ReceiptProcessing: React.FC = () => {
                             <option value="水道光熱費">水道光熱費</option>
                           </select>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border cursor-pointer">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border">
                             {receipt.category}
                           </span>
                         )}
@@ -753,24 +753,23 @@ const ReceiptProcessing: React.FC = () => {
                       filteredReceipts.map((receipt) => (
                         <tr key={receipt.id} className="hover:bg-surface-highlight transition-colors">
                           <td className="px-4 py-3 text-sm text-text-main">
-                            <span className="cursor-pointer" onClick={() => handleEdit(receipt)}>{receipt.date}</span>
+                            <span>{receipt.date}</span>
                           </td>
                           <td className="px-4 py-3 text-sm text-text-main">
-                            <div className="flex items-center gap-2" onClick={() => handleEdit(receipt)}>
+                            <div className="flex items-center gap-2">
                               <TransactionIcon item={receipt.merchant} category={receipt.category} size="sm" />
-                              <div className="flex flex-col cursor-pointer">
+                              <div className="flex flex-col">
                                 <span className="font-medium">{receipt.merchant}</span>
                                 <span className="text-[10px] text-text-muted mt-0.5">{receipt.category}</span>
                               </div>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-sm text-text-main">
-                            <span className="cursor-pointer font-medium text-text-main" onClick={() => handleEdit(receipt)}>¥{receipt.amount.toLocaleString()}</span>
+                            <span className="font-medium text-text-main">¥{receipt.amount.toLocaleString()}</span>
                           </td>
                           <td className="px-4 py-3 text-sm text-text-main">
                             <span
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border whitespace-nowrap cursor-pointer"
-                              onClick={() => handleEdit(receipt)}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border whitespace-nowrap"
                             >
                               {receipt.category}
                             </span>

@@ -298,96 +298,102 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
         <Line data={data} options={options} />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        {[
-          {
-            id: 'count',
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            ),
-            label: '総取引数',
-            period: period === 'yearly' ? '過去5年' : '過去1年',
-            value: `${totalCount}件`,
-            color: 'from-blue-500/10 to-indigo-500/10',
-            iconColor: 'bg-blue-500/15 text-blue-500',
-            borderColor: 'border-blue-500/20'
-          },
-          {
-            id: 'revenue',
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            ),
-            label: '総収益',
-            period: period === 'yearly' ? '過去5年' : '過去1年',
-            value: `¥${totalRevenue.toLocaleString()}`,
-            color: 'from-cyan-500/10 to-blue-500/10',
-            iconColor: 'bg-cyan-500/15 text-cyan-500',
-            borderColor: 'border-cyan-500/20'
-          },
-          {
-            id: 'expense',
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-              </svg>
-            ),
-            label: '総支出',
-            period: period === 'yearly' ? '過去5年' : '過去1年',
-            value: `¥${totalExpense.toLocaleString()}`,
-            color: 'from-pink-500/10 to-red-500/10',
-            iconColor: 'bg-pink-500/15 text-pink-500',
-            borderColor: 'border-pink-500/20'
-          },
-          {
-            id: 'profit',
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 9.5V17" />
-                <path d="M12 9.5 8 5" />
-                <path d="M12 9.5 16 5" />
-                <path d="M9 12h6" />
-                <path d="M9 15h6" />
-              </svg>
-            ),
-            label: '純利益',
-            period: period === 'yearly' ? '過去5年' : '過去1年',
-            value: `¥${totalProfit.toLocaleString()}`,
-            color: 'from-emerald-500/10 to-green-500/10',
-            iconColor: 'bg-emerald-500/15 text-emerald-500',
-            borderColor: 'border-emerald-500/20'
-          }
-        ].map((metric, index) => (
-          <motion.div
-            key={metric.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className={`relative overflow-hidden bg-gradient-to-br ${metric.color} p-2.5 rounded-xl border ${metric.borderColor} shadow-sm backdrop-blur-sm group hover:scale-[1.02] transition-transform flex flex-col justify-between min-h-[84px]`}
-          >
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className={`p-1.5 rounded-lg ${metric.iconColor} shrink-0`}>
-                  {React.cloneElement(metric.icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
+      <div className="mt-6">
+        <h4 className="text-sm font-black text-text-main mb-4 flex items-center gap-2.5">
+          <div className="w-1.5 h-4 bg-primary rounded-full shadow-sm shadow-primary/30" />
+          統計データ
+        </h4>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            {
+              id: 'count',
+              icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              ),
+              label: '総取引数',
+              period: period === 'yearly' ? '過去5年' : '過去1年',
+              value: `${totalCount}件`,
+              color: 'from-blue-500/10 to-indigo-500/10',
+              iconColor: 'bg-blue-500/15 text-blue-500',
+              borderColor: 'border-blue-500/20'
+            },
+            {
+              id: 'revenue',
+              icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              ),
+              label: '総収益',
+              period: period === 'yearly' ? '過去5年' : '過去1年',
+              value: `¥${totalRevenue.toLocaleString()}`,
+              color: 'from-cyan-500/10 to-blue-500/10',
+              iconColor: 'bg-cyan-500/15 text-cyan-500',
+              borderColor: 'border-cyan-500/20'
+            },
+            {
+              id: 'expense',
+              icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                </svg>
+              ),
+              label: '総支出',
+              period: period === 'yearly' ? '過去5年' : '過去1年',
+              value: `¥${totalExpense.toLocaleString()}`,
+              color: 'from-pink-500/10 to-red-500/10',
+              iconColor: 'bg-pink-500/15 text-pink-500',
+              borderColor: 'border-pink-500/20'
+            },
+            {
+              id: 'profit',
+              icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 9.5V17" />
+                  <path d="M12 9.5 8 5" />
+                  <path d="M12 9.5 16 5" />
+                  <path d="M9 12h6" />
+                  <path d="M9 15h6" />
+                </svg>
+              ),
+              label: '純利益',
+              period: period === 'yearly' ? '過去5年' : '過去1年',
+              value: `¥${totalProfit.toLocaleString()}`,
+              color: 'from-emerald-500/10 to-green-500/10',
+              iconColor: 'bg-emerald-500/15 text-emerald-500',
+              borderColor: 'border-emerald-500/20'
+            }
+          ].map((metric, index) => (
+            <motion.div
+              key={metric.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className={`relative overflow-hidden bg-gradient-to-br ${metric.color} p-2.5 rounded-xl border ${metric.borderColor} shadow-sm backdrop-blur-sm group hover:scale-[1.02] transition-transform flex flex-col justify-between min-h-[84px]`}
+            >
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className={`p-1.5 rounded-lg ${metric.iconColor} shrink-0`}>
+                    {React.cloneElement(metric.icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <p className="text-[10px] text-slate-900 dark:text-white font-bold truncate leading-tight">{metric.label}</p>
+                    <p className="text-[8px] text-gray-400 truncate uppercase tracking-tighter">{metric.period}</p>
+                  </div>
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <p className="text-[10px] text-slate-900 dark:text-white font-bold truncate leading-tight">{metric.label}</p>
-                  <p className="text-[8px] text-gray-400 truncate uppercase tracking-tighter">{metric.period}</p>
-                </div>
+                <p className="text-base font-black text-text-main truncate tracking-tight">{metric.value}</p>
               </div>
-              <p className="text-base font-black text-text-main truncate tracking-tight">{metric.value}</p>
-            </div>
-            {/* Background design elements */}
-            <div className={`absolute -right-3 -bottom-3 w-10 h-10 rounded-full opacity-10 group-hover:scale-150 transition-transform duration-500 ${metric.id === 'revenue' ? 'bg-cyan-500' : metric.id === 'expense' ? 'bg-pink-500' : metric.id === 'profit' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
-          </motion.div>
-        ))}
+              {/* Background design elements */}
+              <div className={`absolute -right-3 -bottom-3 w-10 h-10 rounded-full opacity-10 group-hover:scale-150 transition-transform duration-500 ${metric.id === 'revenue' ? 'bg-cyan-500' : metric.id === 'expense' ? 'bg-pink-500' : metric.id === 'profit' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+            </motion.div>
+          ))}
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default RevenueChart
+export default RevenueChart;
