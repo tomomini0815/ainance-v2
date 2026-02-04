@@ -40,7 +40,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
             <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
                 {/* Header */}
-                <div className="p-6 border-b border-border flex items-center justify-between bg-surface/50">
+                <div className="p-4 border-b border-border flex items-center justify-between bg-surface/50">
                     <div>
                         <h2 className="text-xl font-bold text-text-main flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-primary" />
@@ -57,7 +57,7 @@ const OmniEntryPortal: React.FC<OmniEntryPortalProps> = ({ onClose, onSuccess })
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
                     <TransactionForm onSubmit={handleManualSubmit} onCancel={onClose} />
                 </div>
             </div>

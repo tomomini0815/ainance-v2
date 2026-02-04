@@ -296,21 +296,21 @@ const Dashboard: React.FC = () => {
 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Suspense fallback={<div className="h-[620px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="h-[620px] lg:h-[580px]">
+        <Suspense fallback={<div className="h-[620px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[620px]">
             <RevenueChart transactions={transactions} />
           </div>
         </Suspense>
-        <Suspense fallback={<div className="h-[620px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="h-[620px] lg:h-[580px]">
+        <Suspense fallback={<div className="h-[620px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[620px]">
             <ExpenseChart transactions={transactions} />
           </div>
         </Suspense>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Suspense fallback={<div className="h-[650px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="h-[650px] lg:h-[580px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <Suspense fallback={<div className="h-[650px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[650px]">
             <TransactionTable
               transactions={transactions}
               onOpenCreateModal={() => setShowCreateForm(true)}
@@ -318,8 +318,8 @@ const Dashboard: React.FC = () => {
             />
           </div>
         </Suspense>
-        <Suspense fallback={<div className="h-[650px] lg:h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
-          <div className="h-[650px] lg:h-[580px]">
+        <Suspense fallback={<div className="h-[650px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
+          <div className="h-[650px]">
             <BudgetControlCard
               transactions={transactions}
               receipts={receipts}

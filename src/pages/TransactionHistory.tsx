@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowLeft, Search, Filter, Plus, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { ArrowLeft, Search, Filter, Plus, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat, ChevronLeft, ChevronRight, Calendar, List, Activity } from 'lucide-react'
 import TransactionIcon from '../components/TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionForm from '../components/TransactionForm'
@@ -22,6 +22,7 @@ const TransactionHistory: React.FC = () => {
   const [amountRange, setAmountRange] = useState({ min: '', max: '' })
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'item' | 'created_at'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [viewMode, setViewMode] = useState<'all' | 'depreciation'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
@@ -91,6 +92,11 @@ const TransactionHistory: React.FC = () => {
     // 未承認の取引（Voice入力など）を除外
     result = result.filter(transaction => transaction.approval_status !== 'pending')
 
+    // ビュー選択によるフィルタリング
+    if (viewMode === 'depreciation') {
+      result = result.filter(transaction => transaction.tags?.includes('depreciation_asset'))
+    }
+
     if (searchTerm) {
       result = result.filter(transaction =>
         (transaction.item && transaction.item.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -149,7 +155,7 @@ const TransactionHistory: React.FC = () => {
     })
 
     return result
-  }, [transactions, searchTerm, categoryFilter, dateRange, amountRange, sortBy, sortOrder])
+  }, [transactions, searchTerm, categoryFilter, dateRange, amountRange, sortBy, sortOrder, viewMode])
 
   // ページネーション
   const totalPages = Math.ceil(filteredAndSortedTransactions.length / itemsPerPage)
@@ -182,7 +188,9 @@ const TransactionHistory: React.FC = () => {
       income: totalIncome,
       expense: totalExpense,
       balance: totalIncome - totalExpense,
-      pendingCount: transactions.filter(t => t.approval_status === 'pending').length
+      pendingCount: transactions.filter(t => t.approval_status === 'pending').length,
+      depreciationCount: transactions.filter(t => t.tags?.includes('depreciation_asset') && t.approval_status !== 'pending').length,
+      allCount: transactions.filter(t => t.approval_status !== 'pending').length
     };
   }, [transactions])
 
@@ -473,15 +481,42 @@ const TransactionHistory: React.FC = () => {
         <div className="bg-surface rounded-xl shadow-sm border border-border overflow-hidden">
           {/* モバイル: カード表示 */}
           <div className="block md:hidden divide-y divide-border">
+            {/* モバイル用タブ切り替え (元のデザインを維持) */}
+            <div className="p-3 border-b border-border bg-surface-highlight/30">
+              <div className="flex bg-surface-highlight p-1 rounded-xl border border-border w-full">
+                <button
+                  onClick={() => {
+                    setViewMode('all');
+                    setCurrentPage(1);
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === 'all'
+                    ? 'bg-surface text-primary shadow-sm'
+                    : 'text-text-muted hover:text-text-main'
+                    }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  全ての取引
+                </button>
+                <button
+                  onClick={() => {
+                    setViewMode('depreciation');
+                    setCurrentPage(1);
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === 'depreciation'
+                    ? 'bg-surface text-primary shadow-sm'
+                    : 'text-text-muted hover:text-text-main'
+                    }`}
+                >
+                  <Activity className="w-3.5 h-3.5" />
+                  減価償却資産
+                </button>
+              </div>
+            </div>
             {paginatedTransactions.length > 0 ? (
               paginatedTransactions.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="p-4 hover:bg-surface-highlight transition-colors cursor-pointer"
-                  onClick={() => {
-                    setEditingTransaction(transaction)
-                    setShowCreateForm(true)
-                  }}
+                  className="p-4 hover:bg-surface-highlight/50 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center">
@@ -548,18 +583,18 @@ const TransactionHistory: React.FC = () => {
                           setEditingTransaction(transaction)
                           setShowCreateForm(true)
                         }}
-                        className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-sm"
+                        className="w-11 h-11 rounded-full flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md active:scale-95"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-5 h-5" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           deleteTransaction(transaction.id)
                         }}
-                        className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                        className="w-11 h-11 rounded-full flex items-center justify-center bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
@@ -578,6 +613,50 @@ const TransactionHistory: React.FC = () => {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-surface-highlight">
+                <tr className="border-b border-border/50">
+                  <th colSpan={6} className="px-5 py-4 text-left">
+                    <div className="flex bg-surface-highlight p-1 rounded-xl border border-border w-fit shadow-sm">
+                      <button
+                        onClick={() => {
+                          setViewMode('all');
+                          setCurrentPage(1);
+                        }}
+                        className={`flex items-center gap-2.5 px-8 py-2 text-xs font-bold rounded-lg transition-all duration-300 ${viewMode === 'all'
+                          ? 'bg-surface text-primary shadow-sm'
+                          : 'text-text-muted hover:text-text-main hover:bg-white/50'
+                          }`}
+                      >
+                        <List className={`w-4 h-4 ${viewMode === 'all' ? 'text-primary' : 'text-text-muted'}`} />
+                        <span>全ての取引</span>
+                        <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${viewMode === 'all'
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-background text-text-muted'
+                          }`}>
+                          {stats.allCount}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setViewMode('depreciation');
+                          setCurrentPage(1);
+                        }}
+                        className={`flex items-center gap-2.5 px-8 py-2 text-xs font-bold rounded-lg transition-all duration-300 ${viewMode === 'depreciation'
+                          ? 'bg-surface text-primary shadow-sm'
+                          : 'text-text-muted hover:text-text-main hover:bg-white/50'
+                          }`}
+                      >
+                        <Activity className={`w-4 h-4 ${viewMode === 'depreciation' ? 'text-primary' : 'text-text-muted'}`} />
+                        <span>減価償却資産</span>
+                        <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${viewMode === 'depreciation'
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-background text-text-muted'
+                          }`}>
+                          {stats.depreciationCount}
+                        </span>
+                      </button>
+                    </div>
+                  </th>
+                </tr>
                 <tr>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider w-12">
                     <input

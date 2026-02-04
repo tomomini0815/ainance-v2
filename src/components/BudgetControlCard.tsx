@@ -141,16 +141,16 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                     data: sortedCats.map(([, amount]) => amount),
                     backgroundColor: '#3b82f6',
                     borderRadius: 4,
-                    barThickness: 10,
-                    maxBarThickness: 12,
+                    barThickness: 16,
+                    maxBarThickness: 24,
                 },
                 {
                     label: '目安',
                     data: budgetEstimates,
                     backgroundColor: 'rgba(156, 163, 175, 0.3)',
                     borderRadius: 4,
-                    barThickness: 10,
-                    maxBarThickness: 12,
+                    barThickness: 16,
+                    maxBarThickness: 24,
                 }
             ]
         };
@@ -208,8 +208,8 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                     data: sortedCats.map(([, amount]) => amount),
                     backgroundColor: '#10b981', // 緑色
                     borderRadius: 4,
-                    barThickness: 10,
-                    maxBarThickness: 12,
+                    barThickness: 16,
+                    maxBarThickness: 24,
                 }
             ]
         };
