@@ -23,7 +23,22 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
     const categoryTotals: { [key: string]: { amount: number; count: number } } = {};
 
     expenseTransactions.forEach(transaction => {
-      const amount = Math.abs(typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount);
+      let amount = Math.abs(typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount);
+
+      // 減価償却資産の場合、全額ではなく「今期償却額」を加算する
+      if (transaction.tags?.includes('depreciation_asset')) {
+        const depMatch = transaction.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+        if (depMatch) {
+          amount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+        } else {
+          // 旧形式のフォールバック
+          const oldMatch = transaction.description?.match(/年間償却費: ¥([\d,]+)/);
+          if (oldMatch) {
+            amount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+          }
+        }
+      }
+
       const category = transaction.category || 'その他';
 
       if (!categoryTotals[category]) {

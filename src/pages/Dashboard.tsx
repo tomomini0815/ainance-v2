@@ -125,24 +125,14 @@ const Dashboard: React.FC = () => {
 
     // amountの値を安全に取得するヘルパー関数
     const getAmountValue = (amount: any): number => {
-      if (typeof amount === 'number') {
-        return amount;
-      }
+      if (typeof amount === 'number') return amount;
       if (typeof amount === 'string') {
-        const parsed = parseFloat(amount);
+        const parsed = parseFloat(amount.replace(/,/g, ''));
         return isNaN(parsed) ? 0 : parsed;
       }
       if (typeof amount === 'object' && amount !== null) {
-        // オブジェクトの場合、valueやamountプロパティを探す
         const objValue = amount.value || amount.amount || amount.number || 0;
-        if (typeof objValue === 'number') {
-          return objValue;
-        }
-        if (typeof objValue === 'string') {
-          const parsed = parseFloat(objValue);
-          return isNaN(parsed) ? 0 : parsed;
-        }
-        return 0;
+        return getAmountValue(objValue);
       }
       return 0;
     };
@@ -185,15 +175,42 @@ const Dashboard: React.FC = () => {
     });
 
     const totalIncome = incomeTransactions.reduce((sum, t) => {
-      const amount = getAmountValue(t.amount);
-      // 収入は常に正の値として計算
+      let amount = getAmountValue(t.amount);
+      if (t.tags?.includes('depreciation_asset')) {
+        const depMatch = t.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+        if (depMatch) {
+          amount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+        } else {
+          const oldMatch = t.description?.match(/年間償却費: ¥([\d,]+)/);
+          if (oldMatch) {
+            amount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+          }
+        }
+      }
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
-      console.log(`ダッシュボード - 収入計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
       return sum + validAmount;
     }, 0);
 
     const totalExpense = expenseTransactions.reduce((sum, t) => {
-      const amount = getAmountValue(t.amount);
+      let amount = getAmountValue(t.amount);
+
+      // 減価償却資産の場合、全額ではなく「今期償却額」を加算する
+      if (t.tags?.includes('depreciation_asset')) {
+        const depMatch = t.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+        if (depMatch) {
+          const depAmount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+          console.log(`ダッシュボード - 減価償却資産を検知 (ID: ${t.id}): 全額 ${amount} -> 今期償却額 ${depAmount} を適用`);
+          amount = depAmount;
+        } else {
+          // 旧形式のフォールバック
+          const oldMatch = t.description?.match(/年間償却費: ¥([\d,]+)/);
+          if (oldMatch) {
+            const depAmount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+            amount = depAmount;
+          }
+        }
+      }
+
       // 支出は常に正の値として計算
       const validAmount = !isNaN(amount) && isFinite(amount) ? Math.abs(amount) : 0;
       console.log(`ダッシュボード - 支出計算: ${sum} + ${validAmount} = ${sum + validAmount}`);
@@ -315,6 +332,7 @@ const Dashboard: React.FC = () => {
               transactions={transactions}
               onOpenCreateModal={() => setShowCreateForm(true)}
               showCreateButton={false}
+              disableEdit={true}
             />
           </div>
         </Suspense>

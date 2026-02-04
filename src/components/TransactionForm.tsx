@@ -61,23 +61,66 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
   const [usefulLife, setUsefulLife] = useState<number>(5)
   const [depreciationMethod, setDepreciationMethod] = useState<string>('定額法')
   const [businessRatio, setBusinessRatio] = useState<number>(100)
+  const [acqDate, setAcqDate] = useState<string>(transaction?.date || new Date().toISOString().split('T')[0])
+
+  const annualDepreciation = useMemo(() => {
+    const amount = Number(formData.amount) || 0;
+    const ratio = businessRatio / 100;
+    const baseAmount = amount * ratio;
+
+    if (depreciationMethod === '少額減価償却資産 (特例)') {
+      return baseAmount;
+    }
+    if (depreciationMethod === '一括償却 (3年)') {
+      return baseAmount / 3; // 法令上、月割は行わない
+    }
+
+    if (usefulLife <= 0) return 0;
+    const fullAnnual = baseAmount / usefulLife;
+
+    // 取得日と計上年度の比較による計算
+    const acquisitionDate = new Date(acqDate);
+    const reportingDate = formData.date ? new Date(formData.date) : new Date();
+
+    const acqYear = acquisitionDate.getFullYear();
+    const repYear = reportingDate.getFullYear();
+
+    if (repYear < acqYear) return 0; // 取得前は償却なし
+
+    if (repYear === acqYear) {
+      // 1年目: 取得月に基づく月割
+      const acquisitionMonth = acquisitionDate.getMonth() + 1;
+      const remainingMonths = 12 - acquisitionMonth + 1;
+      return (fullAnnual * remainingMonths) / 12;
+    } else {
+      // 2年目以降
+      const yearsElapsed = repYear - acqYear;
+
+      // 耐用年数を超えているかチェック
+      if (yearsElapsed >= usefulLife) {
+        // 最終年（端数月）の計算
+        const acqMonth = acquisitionDate.getMonth() + 1;
+        const firstYearMonths = 12 - acqMonth + 1;
+        const lastYearMonths = 12 - firstYearMonths;
+
+        if (yearsElapsed === Math.ceil(usefulLife) && lastYearMonths > 0) {
+          return (fullAnnual * lastYearMonths) / 12;
+        }
+        return 0; // すでに償却完了
+      }
+
+      return fullAnnual; // 通常の12ヶ月分
+    }
+  }, [formData.amount, formData.date, acqDate, usefulLife, depreciationMethod, businessRatio]);
 
   useEffect(() => {
     const history = localStorage.getItem('locationHistory')
-    // ... (rest of useEffect is unchanged from my perspective, but I need to include it if I replace the whole block)
     if (history) setLocationHistory(JSON.parse(history))
     const favorites = localStorage.getItem('favoriteCategories')
     if (favorites) setFavoriteCategories(JSON.parse(favorites))
     const recent = localStorage.getItem('recentTransactions')
     if (recent) setRecentTransactions(JSON.parse(recent))
   }, [])
-
-  // ... (keeping other hooks)
-
-  // (Skipping down to handleSubmit)
-  // Wait, I should not replace too much if I can't see it all.
-  // I will just replace the state definition block first.
-
 
   useEffect(() => {
     if (transaction) {
@@ -182,7 +225,21 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     // Prepare data based on active tab
     let dataToSubmit = { ...formData };
     if (activeTab === 'depreciation') {
-      const depreciationInfo = `\n[減価償却資産] 耐用年数: ${usefulLife}年`;
+      const year = formData.date ? new Date(formData.date).getFullYear() : new Date().getFullYear();
+      const reportDate = formData.date || new Date().toISOString().split('T')[0];
+      const acqMonth = new Date(acqDate).getMonth() + 1;
+
+      let calcBasis = '';
+      const acqYear = new Date(acqDate).getFullYear();
+      const repYear = new Date(reportDate).getFullYear();
+
+      if (acqYear === repYear) {
+        calcBasis = `${12 - acqMonth + 1}ヶ月分`;
+      } else {
+        calcBasis = `12ヶ月分`;
+      }
+
+      const depreciationInfo = `\n[固定資産台帳] 取得日:${acqDate}, 計上日:${reportDate}, 償却方法:${depreciationMethod}, 耐用年数:${usefulLife}年, 事業割合:${businessRatio}%, 今期(${year}年)償却額:¥${Math.round(annualDepreciation).toLocaleString()} (${calcBasis})`;
       dataToSubmit.description = (dataToSubmit.description || '') + depreciationInfo;
       dataToSubmit.tags = [...(dataToSubmit.tags || []), 'depreciation_asset'];
     }
@@ -272,6 +329,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
       case '衣服費': return <span className="text-lg">👕</span>
       case '美容費': return <span className="text-lg">💇</span>
       case '交際費': return <span className="text-lg">🎁</span>
+      case '設備費': return <span className="text-lg">🛠️</span>
+      case '車両費': return <span className="text-lg">🚗</span>
       default: return <Wallet className="w-4 h-4 text-text-muted" />
     }
   }
@@ -710,22 +769,20 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
       ) : (
         <>
           <div className="space-y-6">
-            {/* Asset Name */}
-            <div>
-              <label className="block text-sm font-medium text-text-muted mb-1.5">資産名称 *</label>
-              <input
-                type="text"
-                name="item"
-                value={formData.item}
-                onChange={handleChange}
-                placeholder="例: パソコン、営業車"
-                className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all placeholder:text-text-muted/50"
-                required
-              />
-            </div>
-
-            {/* Price & Date Row */}
+            {/* Name & Price Row */}
             <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">資産名称 *</label>
+                <input
+                  type="text"
+                  name="item"
+                  value={formData.item}
+                  onChange={handleChange}
+                  placeholder="例: パソコン、営業車"
+                  className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all placeholder:text-text-muted/50"
+                  required
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1.5">取得価額 *</label>
                 <div className="relative">
@@ -734,7 +791,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     name="amount"
                     value={formData.amount || ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all"
+                    className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all"
                     placeholder="0"
                     min="0"
                     required
@@ -742,24 +799,44 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">円</span>
                 </div>
               </div>
+            </div>
+
+            {/* Date Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">取得年月日</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Calendar className="h-4 w-4 text-text-muted" />
+                  </div>
+                  <input
+                    type="date"
+                    value={acqDate}
+                    onChange={(e) => setAcqDate(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono transition-all"
+                    required
+                  />
+                </div>
+              </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">取得年月</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">計上年度の決算日等</label>
                 <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Calendar className="h-4 w-4 text-text-muted" />
+                  </div>
                   <input
                     type="date"
                     name="date"
                     value={formData.date}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono transition-all"
                     required
                   />
-                  {/* Calendar icon removed to avoid duplication with browser native picker */}
                 </div>
               </div>
             </div>
 
-            {/* Method & Life Row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1.5">償却方法</label>
@@ -767,30 +844,33 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   <select
                     value={depreciationMethod}
                     onChange={(e) => setDepreciationMethod(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all"
+                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all cursor-pointer"
                   >
                     <option value="定額法">定額法</option>
-                    <option value="定率法">定率法</option>
+                    <option value="定率法">定率法 (要届出)</option>
                     <option value="一括償却 (3年)">一括償却 (3年)</option>
-                    <option value="生産高比例法">生産高比例法</option>
-                    <option value="リース期間定額法">リース期間定額法</option>
-                    <option value="少額減価償却資産 (特例)">少額減価償却資産 (特例)</option>
+                    <option value="少額減価償却資産 (特例)">少額特例 (30万未満)</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">耐用年数 (年)</label>
-                <input
-                  type="number"
-                  value={usefulLife}
-                  onChange={(e) => setUsefulLife(Number(e.target.value))}
-                  min="1"
-                  max="100"
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all"
-                  required
-                />
+                <label className="block text-sm font-medium text-text-muted mb-1.5">耐用年数</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={usefulLife}
+                    onChange={(e) => setUsefulLife(Number(e.target.value))}
+                    min="1"
+                    max="100"
+                    disabled={depreciationMethod === '一括償却 (3年)' || depreciationMethod === '少額減価償却資産 (特例)'}
+                    className={`w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all ${(depreciationMethod === '一括償却 (3年)' || depreciationMethod === '少額減価償却資産 (特例)') ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    required
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">年</span>
+                </div>
               </div>
             </div>
 
@@ -807,7 +887,6 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all"
                 />
               </div>
-              {/* Category (Optional) could go here or replace method if needed, but keeping method separate as requested */}
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1.5">勘定科目 (任意)</label>
                 <div className="relative">
@@ -831,35 +910,80 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
               </div>
             </div>
 
-            <div className="flex justify-end items-center gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="btn-tertiary whitespace-nowrap"
-              >
-                キャンセル
-              </button>
-              <button
-                type="submit"
-                className="btn-primary px-10 py-3 text-base font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                <span className="text-lg">+</span> 追加する
-              </button>
-            </div>
+            {/* Calculated Depreciation Result */}
+            <div className="bg-surface-highlight/50 p-4 rounded-xl border border-border/50 animate-in fade-in slide-in-from-top-1 duration-300">
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                      <TrendingDown className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-wider">償却年度</span>
+                      <span className="text-sm font-bold text-text-secondary">
+                        {formData.date ? new Date(formData.date).getFullYear() : new Date().getFullYear()}年度分
+                        <span className="text-[10px] text-text-muted ml-1">
+                          {(() => {
+                            const acquisitionDate = new Date(acqDate);
+                            const reportingDate = formData.date ? new Date(formData.date) : new Date();
+                            const acqYear = acquisitionDate.getFullYear();
+                            const repYear = reportingDate.getFullYear();
 
-            {/* Info Box */}
-            <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/30 mt-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5">
-                  <Clock className="w-5 h-5 text-blue-400" />
+                            if (repYear < acqYear) return '(0ヶ月)';
+                            if (repYear === acqYear) return `(${(12 - (acquisitionDate.getMonth() + 1) + 1)}ヶ月)`;
+
+                            const yearsElapsed = repYear - acqYear;
+                            if (yearsElapsed >= usefulLife) {
+                              const lastYearMonths = 12 - (12 - (acquisitionDate.getMonth() + 1) + 1);
+                              if (yearsElapsed === Math.ceil(usefulLife) && lastYearMonths > 0) return `(${lastYearMonths}ヶ月)`;
+                              return '(償却済)';
+                            }
+                            return '(12ヶ月)';
+                          })()}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">今期償却額</span>
+                    <div className="text-xl font-bold text-primary">
+                      ¥{Math.round(annualDepreciation).toLocaleString()}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white mb-1">減価償却の記帳について</h4>
-                  <p className="text-xs text-blue-200/80 leading-relaxed">
-                    ここで計算された償却費の合計額は、自動的に損益計算書の「減価償却費」として計上されます。
-                    10万円未満の資産は消耗品費として処理できます（青色申告の場合は30万円未満を少額減価償却資産として即時償却できる特例もあります）。
-                  </p>
-                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end items-center gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="btn-tertiary whitespace-nowrap"
+            >
+              キャンセル
+            </button>
+            <button
+              type="submit"
+              className="btn-primary px-10 py-3 text-base font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <span className="text-lg">+</span> 追加する
+            </button>
+          </div>
+
+          {/* Info Box */}
+          <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/30 mt-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">
+                <Clock className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white mb-1">減価償却の記帳について</h4>
+                <p className="text-xs text-blue-200/80 leading-relaxed">
+                  ここで計算された償却費の合計額は、自動的に損益計算書の「減価償却費」として計上されます。
+                  10万円未満の資産は消耗品費として処理できます（青色申告の場合は30万円未満を少額減価償却資産として即時償却できる特例もあります）。
+                </p>
               </div>
             </div>
           </div>

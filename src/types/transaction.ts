@@ -9,5 +9,6 @@ export interface Transaction {
   approval_status?: string;
   receipt_path?: string;
   tag?: string;
+  tags?: string[];
   ai_parsed?: boolean;
 }

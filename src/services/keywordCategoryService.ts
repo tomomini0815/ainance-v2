@@ -28,7 +28,9 @@ export type StandardCategory =
   | '売上'
   | '業務委託収入'
   | '給与'
-  | '燃料費';
+  | '燃料費'
+  | '設備費'
+  | '車両費';
 
 export const STANDARD_CATEGORIES: StandardCategory[] = [
   '旅費交通費',
@@ -52,7 +54,9 @@ export const STANDARD_CATEGORIES: StandardCategory[] = [
   '売上',
   '業務委託収入',
   '給与',
-  '燃料費'
+  '燃料費',
+  '設備費',
+  '車両費'
 ];
 
 // キーワードとカテゴリのマッピング
@@ -291,6 +295,25 @@ const KEYWORD_RULES: { keyword: string; category: StandardCategory }[] = [
   { keyword: '保険', category: '保険料' },
   { keyword: '損保', category: '保険料' },
   { keyword: '生保', category: '保険料' },
+  // 設備費
+  { keyword: '設備', category: '設備費' },
+  { keyword: '家具', category: '設備費' },
+  { keyword: 'デスク', category: '設備費' },
+  { keyword: 'チェア', category: '設備費' },
+  { keyword: '机', category: '設備費' },
+  { keyword: '椅子', category: '設備費' },
+  { keyword: 'モニター', category: '設備費' },
+  { keyword: 'ディスプレイ', category: '設備費' },
+  { keyword: 'プリンター', category: '設備費' },
+  { keyword: '複合機', category: '設備費' },
+  // 車両費
+  { keyword: '車両', category: '車両費' },
+  { keyword: '自動車', category: '車両費' },
+  { keyword: '車検', category: '車両費' },
+  { keyword: 'タイヤ', category: '車両費' },
+  { keyword: 'オイル交換', category: '車両費' },
+  { keyword: 'ガソリン', category: '車両費' },
+  { keyword: '給油', category: '車両費' },
 ];
 
 /**
@@ -315,10 +338,10 @@ export function determineCategoryByKeyword(text: string): string | null {
 /**
  * 取引項目名を標準化する（例：飲食系は「飲食代」に統一）
  * @param itemName 取引項目名
- * @param category カテゴリ名
+ * @param _category カテゴリ名
  * @returns 標準化された項目名
  */
-export function standardizeItemName(itemName: string, category: string): string {
+export function standardizeItemName(itemName: string, _category: string): string {
   if (!itemName) return itemName;
 
   // 以前は「飲食代」などに統一していましたが、

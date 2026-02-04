@@ -57,7 +57,24 @@ export const useCorporateTaxCalculation = (transactions: Transaction[], receipts
         const ytdExpenseFromTx = yearTransactions.filter(t => {
             const amount = parseAmount(t.amount);
             return t.type === 'expense' || (t.type !== 'income' && amount < 0);
-        }).reduce((sum, t) => sum + getAmount(t.amount), 0);
+        }).reduce((sum, t) => {
+            let amount = getAmount(t.amount);
+
+            // 減価償却資産の場合、全額ではなく「今期償却額」を加算する
+            if (t.tags?.includes('depreciation_asset')) {
+                const depMatch = t.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+                if (depMatch) {
+                    amount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+                } else {
+                    const oldMatch = t.description?.match(/年間償却費: ¥([\d,]+)/);
+                    if (oldMatch) {
+                        amount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+                    }
+                }
+            }
+
+            return sum + amount;
+        }, 0);
 
         const ytdExpenseFromReceipts = yearReceipts.reduce((sum, r) => sum + getAmount(r.amount), 0);
 

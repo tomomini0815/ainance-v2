@@ -82,14 +82,26 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
             const isThisMonth = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
 
             const amount = parseAmount(t.amount);
-            // 支出判定:
-            // 1. 明示的に 'expense' である
-            // 2. 'income' ではなく、かつ金額が負である、または金額が正でも 'expense' 扱いである場合を考慮
-            // ダッシュボードと一貫性を持たせる: typeがない場合、amount > 0 は収入、amount < 0 は支出
-            // ただし、多くのレシート等は type='expense' かつ amount > 0 である
             const isExpense = t.type === 'expense' || (t.type !== 'income' && amount < 0);
 
             return isThisMonth && isExpense && t.approval_status === 'approved';
+        }).map(t => {
+            let amount = getAmount(t.amount);
+            // 減価償却資産の場合、全額ではなく「今期償却額」の月割（簡易）を考慮すべきか、
+            // それとも「今期償却額」として記録されたものを月次予算にどう当てるか。
+            // 現状のロジック（今期＝1年分）に基づくと、予算管理では「今期償却額」がその月に計上されている。
+            if (t.tags?.includes('depreciation_asset')) {
+                const depMatch = t.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+                if (depMatch) {
+                    amount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+                } else {
+                    const oldMatch = t.description?.match(/年間償却費: ¥([\d,]+)/);
+                    if (oldMatch) {
+                        amount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+                    }
+                }
+            }
+            return { ...t, amount };
         });
 
         // receipts（未承認）は集計から除外
@@ -165,6 +177,20 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
             const amount = parseAmount(t.amount);
             const isExpense = t.type === 'expense' || (t.type !== 'income' && amount < 0);
             return isExpense && t.approval_status !== 'rejected';
+        }).map(t => {
+            let amount = getAmount(t.amount);
+            if (t.tags?.includes('depreciation_asset')) {
+                const depMatch = t.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+                if (depMatch) {
+                    amount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+                } else {
+                    const oldMatch = t.description?.match(/年間償却費: ¥([\d,]+)/);
+                    if (oldMatch) {
+                        amount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+                    }
+                }
+            }
+            return { ...t, amount };
         });
 
         const allExpensesFromReceipts = receipts.filter(r => r.status === 'pending').map(r => ({

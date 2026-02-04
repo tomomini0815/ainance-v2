@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, ChevronLeft, Plus, FileText, Repeat, Calendar, Edit2 } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Plus, FileText, Repeat, Calendar } from 'lucide-react'
 import TransactionIcon from './TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
@@ -30,9 +30,10 @@ interface TransactionTableProps {
   transactions: Transaction[];
   onOpenCreateModal?: () => void;
   showCreateButton?: boolean;
+  disableEdit?: boolean;
 }
 
-const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpenCreateModal, showCreateButton = true }) => {
+const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpenCreateModal, showCreateButton = true, disableEdit = false }) => {
   const { currentBusinessType } = useBusinessTypeContext();
   const { user: authUser } = useAuth();
   const { transactions: fetchedTransactions, loading, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
@@ -194,13 +195,23 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
       <div className="block md:hidden flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-3">
         {paginatedTransactions.length > 0 ? (
           paginatedTransactions.slice(0, 5).map((transaction) => {
-            let amount = transaction.amount;
+            let amount = 0;
             if (typeof transaction.amount === 'string') {
               amount = parseFloat(transaction.amount);
             } else if (typeof transaction.amount === 'number') {
               amount = transaction.amount;
-            } else {
-              amount = 0;
+            }
+
+            if (transaction.tags?.includes('depreciation_asset')) {
+              const depMatch = transaction.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+              if (depMatch) {
+                amount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+              } else {
+                const oldMatch = transaction.description?.match(/年間償却費: ¥([\d,]+)/);
+                if (oldMatch) {
+                  amount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+                }
+              }
             }
 
             const isValidAmount = !isNaN(amount) && isFinite(amount);
@@ -208,12 +219,13 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
             const isExplicitExpense = transaction.type === 'expense';
 
             const isFinalIncome = isExplicitIncome ? true : (isExplicitExpense ? false : (isValidAmount && amount > 0));
+            const isDepreciation = transaction.tags?.includes('depreciation_asset');
 
             return (
               <div
                 key={transaction.id}
-                onClick={() => handleRowClick(transaction)}
-                className="cursor-pointer bg-surface-highlight rounded-xl p-2.5 border border-border hover:border-primary/50 transition-all active:scale-[0.98] relative group"
+                onClick={() => !disableEdit && handleRowClick(transaction)}
+                className={`${disableEdit ? 'cursor-default' : 'cursor-pointer active:scale-[0.98]'} bg-surface-highlight rounded-xl p-2.5 border border-border hover:border-primary/50 transition-all relative group`}
               >
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-2 px-0.5 font-medium uppercase tracking-wider">
                   <Calendar className="w-2.5 h-2.5 opacity-40" />
@@ -244,7 +256,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                     </div>
                   </div>
                   <div className="text-right ml-3 shrink-0">
-                    <div className={`font-bold text-base ${isFinalIncome ? 'text-green-500' : 'text-slate-900 dark:text-white'}`}>
+                    <div className={`font-bold text-base ${isFinalIncome ? 'text-green-500' : isDepreciation ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
                       {isFinalIncome ? '+' : '-'} {isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}円
                     </div>
                   </div>
@@ -285,25 +297,36 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
           <tbody className="divide-y divide-white/5">
             {paginatedTransactions.length > 0 ? (
               paginatedTransactions.map((transaction) => {
-                let amount = transaction.amount;
+                let amount = 0;
                 if (typeof transaction.amount === 'string') {
-                  amount = parseFloat(amount);
+                  amount = parseFloat(transaction.amount);
                 } else if (typeof transaction.amount === 'number') {
                   amount = transaction.amount;
-                } else {
-                  amount = 0;
+                }
+
+                if (transaction.tags?.includes('depreciation_asset')) {
+                  const depMatch = transaction.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+                  if (depMatch) {
+                    amount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+                  } else {
+                    const oldMatch = transaction.description?.match(/年間償却費: ¥([\d,]+)/);
+                    if (oldMatch) {
+                      amount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+                    }
+                  }
                 }
 
                 const isValidAmount = !isNaN(amount) && isFinite(amount);
                 const isExplicitIncome = transaction.type === 'income';
                 const isExplicitExpense = transaction.type === 'expense';
                 const isFinalIncome = isExplicitIncome ? true : (isExplicitExpense ? false : (isValidAmount && amount > 0));
+                const isDepreciation = transaction.tags?.includes('depreciation_asset');
 
                 return (
                   <tr
                     key={transaction.id}
-                    className="hover:bg-white/5 transition-colors group cursor-pointer"
-                    onClick={() => handleRowClick(transaction)}
+                    className={`hover:bg-white/5 transition-colors group ${disableEdit ? 'cursor-default' : 'cursor-pointer'}`}
+                    onClick={() => !disableEdit && handleRowClick(transaction)}
                   >
                     <td className="py-2.5 px-3">
                       <div className="flex items-center">
@@ -327,7 +350,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                       </div>
                     </td>
                     <td className="py-2.5 px-3 text-right font-medium">
-                      <span className={`${isFinalIncome ? 'text-green-600 dark:text-green-500' : 'text-slate-900 dark:text-white'}`}>
+                      <span className={`${isFinalIncome ? 'text-green-600 dark:text-green-500' : isDepreciation ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
                         {isFinalIncome ? '+' : '-'}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}円
                       </span>
                     </td>

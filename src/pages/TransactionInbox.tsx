@@ -420,7 +420,7 @@ const TransactionInbox: React.FC = () => {
                 isEditModalOpen && editingTransaction && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                            <div className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-surface/95 backdrop-blur z-10">
+                            <div className="p-4 border-b border-border flex justify-between items-center sticky top-0 bg-surface/95 backdrop-blur z-10">
                                 <h3 className="text-xl font-bold text-text-main flex items-center gap-2">
                                     <Edit2 className="w-5 h-5 text-primary" />
                                     取引情報の編集
@@ -432,7 +432,7 @@ const TransactionInbox: React.FC = () => {
                                     <X className="w-5 h-5 text-text-muted" />
                                 </button>
                             </div>
-                            <div className="p-6">
+                            <div className="p-4">
                                 <TransactionForm
                                     transaction={editingTransaction}
                                     onSubmit={handleEditSubmit}

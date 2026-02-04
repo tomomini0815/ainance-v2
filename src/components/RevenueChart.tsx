@@ -86,7 +86,8 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
 
       // 集計対象のフィルタリング（必要に応じて拡張）
 
-      const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
+      const amountVal = transaction.amount;
+      const amount = typeof amountVal === 'number' ? amountVal : parseFloat(String(amountVal || '0').replace(/,/g, ''));
       const date = new Date(transaction.date);
       const tYear = date.getFullYear();
       const tMonth = date.getMonth() + 1;
@@ -103,14 +104,29 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
 
       if (data[key]) {
         data[key].count += 1;
+        let finalAmount = amount;
+
+        // 減価償却資産の場合、今期償却額を抽出
+        if (transaction.tags?.includes('depreciation_asset')) {
+          const depMatch = transaction.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+          if (depMatch) {
+            finalAmount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+          } else {
+            const oldMatch = transaction.description?.match(/年間償却費: ¥([\d,]+)/);
+            if (oldMatch) {
+              finalAmount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+            }
+          }
+        }
+
         if (transaction.type === 'income') {
-          data[key].revenue += Math.abs(amount);
+          data[key].revenue += Math.abs(finalAmount);
         } else if (transaction.type === 'expense') {
-          data[key].expense += Math.abs(amount);
-        } else if (amount > 0) {
-          data[key].revenue += amount;
-        } else if (amount < 0) {
-          data[key].expense += Math.abs(amount);
+          data[key].expense += Math.abs(finalAmount);
+        } else if (finalAmount > 0) {
+          data[key].revenue += finalAmount;
+        } else if (finalAmount < 0) {
+          data[key].expense += Math.abs(finalAmount);
         }
       }
     });

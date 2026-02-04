@@ -281,7 +281,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 )}
 
                 {/* メインコンテンツ */}
-                <div className="p-5 space-y-6">
+                <div className="p-4 space-y-6">
                     {/* 抽出データセクション */}
                     <div>
                         <div className="flex items-center justify-between mb-3">
@@ -447,7 +447,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 </div>
 
                 {/* フッター */}
-                <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-700 p-6 rounded-b-2xl border-t border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-700 p-4 rounded-b-2xl border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <button
                         onClick={onRetake}
                         className="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-white rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-all text-sm font-medium flex items-center justify-center"

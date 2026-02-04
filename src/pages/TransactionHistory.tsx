@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowLeft, Search, Filter, Plus, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat, ChevronLeft, ChevronRight, Calendar, List, Activity } from 'lucide-react'
+import { ArrowLeft, Search, Filter, Plus, JapaneseYen, FileText, Trash2, Edit, TrendingUp, TrendingDown, X, Repeat, ChevronLeft, ChevronRight, Calendar, List, Activity, Wallet, Clock } from 'lucide-react'
 import TransactionIcon from '../components/TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionForm from '../components/TransactionForm'
@@ -177,11 +177,53 @@ const TransactionHistory: React.FC = () => {
       return 0;
     };
 
-    const incomeTransactions = transactions.filter(t => t.type === 'income' && t.approval_status !== 'pending');
-    const expenseTransactions = transactions.filter(t => t.type === 'expense' && t.approval_status !== 'pending');
+    const incomeTransactions = transactions.filter(t => {
+      if (t.approval_status === 'pending') return false;
+      if (t.type === 'income') return true;
+      if (t.type === 'expense') return false;
+      const val = getAmountValue(t.amount);
+      return !isNaN(val) && isFinite(val) && val > 0;
+    });
 
-    const totalIncome = incomeTransactions.reduce((sum, t) => sum + getAmountValue(t.amount), 0);
-    const totalExpense = expenseTransactions.reduce((sum, t) => sum + getAmountValue(t.amount), 0);
+    const expenseTransactions = transactions.filter(t => {
+      if (t.approval_status === 'pending') return false;
+      if (t.type === 'expense') return true;
+      if (t.type === 'income') return false;
+      const val = getAmountValue(t.amount);
+      return !isNaN(val) && isFinite(val) && val < 0;
+    });
+
+    const totalIncome = incomeTransactions.reduce((sum, t) => {
+      let amount = getAmountValue(t.amount);
+      if (t.tags?.includes('depreciation_asset')) {
+        const depMatch = t.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+        if (depMatch) {
+          amount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+        } else {
+          const oldMatch = t.description?.match(/年間償却費: ¥([\d,]+)/);
+          if (oldMatch) {
+            amount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+          }
+        }
+      }
+      return sum + Math.abs(amount);
+    }, 0);
+
+    const totalExpense = expenseTransactions.reduce((sum, t) => {
+      let amount = getAmountValue(t.amount);
+      if (t.tags?.includes('depreciation_asset')) {
+        const depMatch = t.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+        if (depMatch) {
+          amount = parseInt(depMatch[1].replace(/,/g, ''), 10);
+        } else {
+          const oldMatch = t.description?.match(/年間償却費: ¥([\d,]+)/);
+          if (oldMatch) {
+            amount = parseInt(oldMatch[1].replace(/,/g, ''), 10);
+          }
+        }
+      }
+      return sum + Math.abs(amount);
+    }, 0);
 
     return {
       total: transactions.length,
@@ -611,54 +653,40 @@ const TransactionHistory: React.FC = () => {
 
           {/* デスクトップ: テーブル表示 */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-surface-highlight">
-                <tr className="border-b border-border/50">
-                  <th colSpan={6} className="px-5 py-4 text-left">
-                    <div className="flex bg-surface-highlight p-1 rounded-xl border border-border w-fit shadow-sm">
-                      <button
-                        onClick={() => {
-                          setViewMode('all');
-                          setCurrentPage(1);
-                        }}
-                        className={`flex items-center gap-2.5 px-8 py-2 text-xs font-bold rounded-lg transition-all duration-300 ${viewMode === 'all'
-                          ? 'bg-surface text-primary shadow-sm'
-                          : 'text-text-muted hover:text-text-main hover:bg-white/50'
-                          }`}
-                      >
-                        <List className={`w-4 h-4 ${viewMode === 'all' ? 'text-primary' : 'text-text-muted'}`} />
-                        <span>全ての取引</span>
-                        <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${viewMode === 'all'
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-background text-text-muted'
-                          }`}>
-                          {stats.allCount}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setViewMode('depreciation');
-                          setCurrentPage(1);
-                        }}
-                        className={`flex items-center gap-2.5 px-8 py-2 text-xs font-bold rounded-lg transition-all duration-300 ${viewMode === 'depreciation'
-                          ? 'bg-surface text-primary shadow-sm'
-                          : 'text-text-muted hover:text-text-main hover:bg-white/50'
-                          }`}
-                      >
-                        <Activity className={`w-4 h-4 ${viewMode === 'depreciation' ? 'text-primary' : 'text-text-muted'}`} />
-                        <span>減価償却資産</span>
-                        <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${viewMode === 'depreciation'
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-background text-text-muted'
-                          }`}>
-                          {stats.depreciationCount}
-                        </span>
-                      </button>
-                    </div>
-                  </th>
-                </tr>
+            {/* View Mode Tabs */}
+            <div className="flex bg-[#2a3245] p-1 rounded-full border border-slate-800 w-fit shadow-md mt-4 mb-4 ml-4">
+              <button
+                onClick={() => {
+                  setViewMode('all');
+                  setCurrentPage(1);
+                }}
+                className={`flex items-center gap-2.5 px-6 py-2 text-xs font-bold rounded-full transition-all duration-300 ${viewMode === 'all'
+                  ? 'bg-[#1e293b] text-indigo-400 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+              >
+                <Wallet className={`w-4 h-4 ${viewMode === 'all' ? 'text-indigo-400' : 'text-slate-400'}`} />
+                <span>全ての取引</span>
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode('depreciation');
+                  setCurrentPage(1);
+                }}
+                className={`flex items-center gap-2.5 px-6 py-2 text-xs font-bold rounded-full transition-all duration-300 ${viewMode === 'depreciation'
+                  ? 'bg-[#1e293b] text-indigo-400 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+              >
+                <Clock className={`w-4 h-4 ${viewMode === 'depreciation' ? 'text-indigo-400' : 'text-slate-400'}`} />
+                <span>減価償却資産</span>
+              </button>
+            </div>
+
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-[#2a3245]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider w-12">
+                  <th className="px-4 py-3 text-left w-12">
                     <input
                       type="checkbox"
                       checked={selectedTransactions.length === paginatedTransactions.length && paginatedTransactions.length > 0}
@@ -667,9 +695,12 @@ const TransactionHistory: React.FC = () => {
                     />
                   </th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider">項目</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-medium text-text-muted uppercase tracking-wider">金額</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider hidden sm:table-cell">日付</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-medium text-primary uppercase tracking-wider">金額</th>
+                  {viewMode === 'depreciation' && (
+                    <th className="px-4 py-3 text-right text-[10px] font-medium text-text-muted uppercase tracking-wider">償却総額</th>
+                  )}
+                  <th className="px-4 py-3 text-center text-[10px] font-medium text-text-muted uppercase tracking-wider hidden sm:table-cell">日付</th>
+                  <th className="px-4 py-3 text-center text-[10px] font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
                   <th className="px-4 py-3 text-center text-[10px] font-medium text-text-muted uppercase tracking-wider">操作</th>
                 </tr>
               </thead>
@@ -712,19 +743,31 @@ const TransactionHistory: React.FC = () => {
                         </div>
 
                       </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium">
-                        <span className={transaction.type === 'income' ? 'text-green-500' : 'text-text-main'}>
-                          {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()}円
-                        </span>
+                      <td className={`px-4 py-2.5 whitespace-nowrap text-right text-sm font-bold ${transaction.tags?.includes('depreciation_asset') ? 'text-primary' : 'text-text-main'}`}>
+                        {(() => {
+                          if (transaction.tags?.includes('depreciation_asset')) {
+                            const newMatch = transaction.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+                            if (newMatch) return `¥${newMatch[1]}`;
+                            const oldMatch = transaction.description?.match(/年間償却費: ¥([\d,]+)/);
+                            return oldMatch ? `¥${oldMatch[1]}` : `¥${transaction.amount.toLocaleString()}`;
+                          }
+                          return `${transaction.type === 'income' ? '+' : '-'}¥${transaction.amount.toLocaleString()}`;
+                        })()}
                       </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-muted hidden sm:table-cell">
+
+                      {viewMode === 'depreciation' && (
+                        <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium text-text-muted">
+                          ¥{transaction.amount.toLocaleString()}
+                        </td>
+                      )}
+                      <td className="px-4 py-2.5 whitespace-nowrap text-center text-[11px] text-text-muted hidden sm:table-cell">
                         {new Date(transaction.date).toLocaleDateString('ja-JP', {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric'
                         })}
                       </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap">
+                      <td className="px-4 py-2.5 whitespace-nowrap text-center">
                         <span className="whitespace-nowrap px-2 py-0.5 inline-flex text-[10px] leading-4 font-medium rounded-full bg-slate-500/10 text-text-secondary">
                           {transaction.category}
                         </span>
@@ -841,7 +884,7 @@ const TransactionHistory: React.FC = () => {
             {editingTransaction ? (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                 <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-border">
-                  <div className="p-6">
+                  <div className="p-4">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-xl font-bold text-text-main">
                         取引を編集
