@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, ChevronLeft, Plus, FileText, Repeat, Calendar } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Plus, FileText, Repeat, Calendar, Edit2 } from 'lucide-react'
 import TransactionIcon from './TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useAuth } from '../hooks/useAuth'
+import ReceiptResultModal from './ReceiptResultModal';
 
 interface Transaction {
   id: string | number
@@ -35,6 +36,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
   const { currentBusinessType } = useBusinessTypeContext();
   const { user: authUser } = useAuth();
   const { transactions: fetchedTransactions, loading, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
+  const [selectedTransaction, setSelectedTransaction] = React.useState<any>(null); // 編集用
 
   // データの再取得
   useEffect(() => {
@@ -66,8 +68,6 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
     };
   }, [currentBusinessType, fetchTransactions]);
 
-  // getItemIcon logic replaced by shared TransactionIcon component
-
   const latestTransactions = [...(transactions.length > 0 ? transactions : fetchedTransactions)]
     .filter(t => t.approval_status !== 'pending')
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -83,6 +83,46 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleRowClick = (transaction: Transaction) => {
+    // Descriptionから明細（Items）を復元する簡易ロジック
+    // 形式: "店舗名での購入\n【内訳】\n・品名: ¥価格\n..."
+    let items: any[] = [];
+    if (transaction.description && transaction.description.includes('【内訳】')) {
+      const parts = transaction.description.split('【内訳】');
+      const itemsPart = parts[1];
+      if (itemsPart) {
+        items = itemsPart.trim().split('\n').map(line => {
+          const match = line.match(/・(.+): ¥([\d,]+)/);
+          if (match) {
+            return {
+              name: match[1].trim(),
+              price: parseInt(match[2].replace(/,/g, '')),
+              line_total: parseInt(match[2].replace(/,/g, '')),
+              qty: 1
+            };
+          }
+          return null;
+        }).filter(i => i !== null);
+      }
+    }
+
+    // ReceiptResultModal形式にデータを変換
+    const receiptData = {
+      merchant: transaction.item,
+      date: transaction.date.split('T')[0], // YYYY-MM-DD
+      amount: Math.abs(transaction.amount),
+      category: transaction.category,
+      taxRate: 10,
+      confidence: 100, // 編集なので100%
+      items: items
+    };
+
+    setSelectedTransaction({
+      id: transaction.id,
+      data: receiptData
+    });
   };
 
   if (loading) {
@@ -136,11 +176,24 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
         </div>
       </div>
 
+      {/* Edit Modal */}
+      {selectedTransaction && (
+        <ReceiptResultModal
+          mode="edit"
+          transactionId={selectedTransaction.id}
+          receiptData={selectedTransaction.data}
+          onClose={() => setSelectedTransaction(null)}
+          onSave={() => {
+            fetchTransactions();
+            setSelectedTransaction(null);
+          }}
+        />
+      )}
+
       {/* モバイル: カード表示 */}
       <div className="block md:hidden flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-3">
         {paginatedTransactions.length > 0 ? (
           paginatedTransactions.slice(0, 5).map((transaction) => {
-            // amountの型を確実に数値に変換
             let amount = transaction.amount;
             if (typeof transaction.amount === 'string') {
               amount = parseFloat(transaction.amount);
@@ -155,12 +208,12 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
             const isExplicitExpense = transaction.type === 'expense';
 
             const isFinalIncome = isExplicitIncome ? true : (isExplicitExpense ? false : (isValidAmount && amount > 0));
-            const isFinalExpense = isExplicitExpense ? true : (isExplicitIncome ? false : (isValidAmount && amount < 0));
 
             return (
               <div
                 key={transaction.id}
-                className="bg-surface-highlight rounded-xl p-2.5 border border-border hover:border-primary/50 transition-all"
+                onClick={() => handleRowClick(transaction)}
+                className="cursor-pointer bg-surface-highlight rounded-xl p-2.5 border border-border hover:border-primary/50 transition-all active:scale-[0.98] relative group"
               >
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-2 px-0.5 font-medium uppercase tracking-wider">
                   <Calendar className="w-2.5 h-2.5 opacity-40" />
@@ -192,7 +245,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                   </div>
                   <div className="text-right ml-3 shrink-0">
                     <div className={`font-bold text-base ${isFinalIncome ? 'text-green-500' : 'text-slate-900 dark:text-white'}`}>
-                      {isFinalIncome ? '+' : isFinalExpense ? '-' : ''}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}円
+                      {isFinalIncome ? '+' : '-'} {isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}円
                     </div>
                   </div>
                 </div>
@@ -232,10 +285,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
           <tbody className="divide-y divide-white/5">
             {paginatedTransactions.length > 0 ? (
               paginatedTransactions.map((transaction) => {
-                // amountの型を確実に数値に変換
                 let amount = transaction.amount;
                 if (typeof transaction.amount === 'string') {
-                  amount = parseFloat(transaction.amount);
+                  amount = parseFloat(amount);
                 } else if (typeof transaction.amount === 'number') {
                   amount = transaction.amount;
                 } else {
@@ -245,14 +297,14 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                 const isValidAmount = !isNaN(amount) && isFinite(amount);
                 const isExplicitIncome = transaction.type === 'income';
                 const isExplicitExpense = transaction.type === 'expense';
-
-                // isExplicitIncomeまたはisExplicitExpenseが指定されている場合、それを優先
-                // 両方がtrueになることはないので、isExplicitIncomeを優先
                 const isFinalIncome = isExplicitIncome ? true : (isExplicitExpense ? false : (isValidAmount && amount > 0));
-                const isFinalExpense = isExplicitExpense ? true : (isExplicitIncome ? false : (isValidAmount && amount < 0));
 
                 return (
-                  <tr key={transaction.id} className="hover:bg-white/5 transition-colors group">
+                  <tr
+                    key={transaction.id}
+                    className="hover:bg-white/5 transition-colors group cursor-pointer"
+                    onClick={() => handleRowClick(transaction)}
+                  >
                     <td className="py-2.5 px-3">
                       <div className="flex items-center">
                         <TransactionIcon item={transaction.item} category={transaction.category} size="xs" />
@@ -276,7 +328,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
                     </td>
                     <td className="py-2.5 px-3 text-right font-medium">
                       <span className={`${isFinalIncome ? 'text-green-600 dark:text-green-500' : 'text-slate-900 dark:text-white'}`}>
-                        {isFinalIncome ? '+' : isFinalExpense ? '-' : ''}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}円
+                        {isFinalIncome ? '+' : '-'}{isValidAmount ? Math.abs(amount).toLocaleString() : 'N/A'}円
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-xs text-text-muted">
@@ -313,6 +365,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
       {/* ページネーション */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center mt-6 space-x-2">
+          {/* ... pagination (same) ... */}
           <button
             onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
@@ -325,11 +378,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
           </button>
 
           {(() => {
-            // 表示するページ番号の範囲を計算（最大5つ表示）
             let startPage = Math.max(1, currentPage - 2);
             let endPage = Math.min(totalPages, startPage + 4);
 
-            // ページの範囲を調整（端の場合）
             if (endPage - startPage < 4) {
               startPage = Math.max(1, endPage - 4);
             }

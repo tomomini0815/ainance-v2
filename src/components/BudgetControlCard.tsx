@@ -73,7 +73,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
         const currentDay = now.getDate();
 
-        // transactionsから今月の支出を取得（pending含む）
+        // transactionsから今月の支出を取得（承認済みのみ）
         const currentMonthExpensesFromTx = transactions.filter(t => {
             const d = new Date(t.date);
             const isThisMonth = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
@@ -86,10 +86,12 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
             // ただし、多くのレシート等は type='expense' かつ amount > 0 である
             const isExpense = t.type === 'expense' || (t.type !== 'income' && amount < 0);
 
-            return isThisMonth && isExpense && t.approval_status !== 'rejected';
+            return isThisMonth && isExpense && t.approval_status === 'approved';
         });
 
-        // receiptsから今月の支出を取得（status='pending'のもの。approvedはtransactions側に移行しているはず）
+        // receipts（未承認）は集計から除外
+        const currentMonthExpensesFromReceipts: any[] = [];
+        /*
         const currentMonthExpensesFromReceipts = receipts.filter(r => {
             const d = new Date(r.date);
             const isThisMonth = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
@@ -102,6 +104,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
             date: r.date,
             type: 'expense' as const
         }));
+        */
 
         const allExpenses = [...currentMonthExpensesFromTx, ...currentMonthExpensesFromReceipts];
 

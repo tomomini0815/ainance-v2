@@ -13,13 +13,21 @@ interface ReceiptData {
     taxRate: number;
     confidence: number;
     validationErrors?: string[];
+    items?: {
+        name: string;
+        price: number | null;
+        qty: number | null;
+        line_total: number | null;
+    }[];
 }
 
 interface ReceiptResultModalProps {
     receiptData: ReceiptData;
     onClose: () => void;
-    onRetake: () => void;
+    onRetake?: () => void; // Make optional for edit mode
     onSave?: () => void;
+    mode?: 'create' | 'edit';
+    transactionId?: string | number;
 }
 
 // カテゴリのマスターデータ
@@ -39,12 +47,14 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
     onClose,
     onRetake,
     onSave,
+    mode = 'create',
+    transactionId,
 }) => {
-    console.log('🎯 ReceiptResultModalが呼び出されました', { receiptData });
+    console.log('🎯 ReceiptResultModalが呼び出されました', { receiptData, mode });
 
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
-    const { createTransaction } = useTransactions(user?.id, currentBusinessType?.business_type);
+    const { createTransaction, updateTransaction } = useTransactions(user?.id, currentBusinessType?.business_type);
 
     const [editedData, setEditedData] = useState(receiptData || {
         merchant: '',
@@ -88,13 +98,44 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
             console.log('現在の業態:', currentBusinessType);
 
             // 1. レシートテーブルに保存
+            // 明細がある場合はDescriptionに追記
+            let finalDescription = editedData.merchant; // シンプルに店舗名のみ、または空でも良いが、一旦店舗名にする
+            if (editedData.items && editedData.items.length > 0) {
+                finalDescription += '\n【内訳】\n' + editedData.items.map(i => `・${i.name}: ¥${i.line_total || i.price}`).join('\n');
+            } else if (mode === 'edit' && receiptData.items && receiptData.items.length > 0) {
+                // 編集モードで、itemsがstateにないがpropsにある場合（初期表示時など）のガード
+                // ただしeditedData.itemsはstate管理されているので、基本は上の分岐でOK
+            }
+
+            if (mode === 'edit') {
+                if (!transactionId) throw new Error('更新対象のIDが見つかりません');
+
+                const updates = {
+                    item: editedData.merchant,
+                    amount: editedData.amount,
+                    date: editedData.date,
+                    category: selectedCategory,
+                    description: finalDescription,
+                };
+
+                const result = await updateTransaction(String(transactionId), updates);
+                if (result.error) throw result.error;
+
+                alert('✅ 取引内容を更新しました');
+                if (onSave) onSave();
+                window.dispatchEvent(new CustomEvent('transactionRecorded')); // 更新通知
+                onClose();
+                return;
+            }
+
+            // --- 新規作成モード (Create) ---
             const receiptToSave = {
                 user_id: user.id,
                 date: editedData.date,
                 merchant: editedData.merchant,
                 amount: editedData.amount,
                 category: selectedCategory,
-                description: `${editedData.merchant}での購入`,
+                description: finalDescription,
                 confidence: editedData.confidence,
                 status: 'pending' as const,
                 tax_rate: editedData.taxRate,
@@ -121,7 +162,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                 date: editedData.date,
                 category: selectedCategory,
                 type: 'expense' as const,
-                description: `${editedData.merchant}での購入（レシート読取）`,
+                description: finalDescription, // ここもfinalDescriptionを使う
                 approval_status: 'pending' as const, // 保留中で保存
                 tags: ['receipt_created', `receipt_id:${savedReceipt.id}`],
                 creator: user.id,
@@ -322,6 +363,66 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                             ))}
                         </div>
                     </div>
+
+                    {/* AI抽出明細リスト表示 (編集可能) */}
+                    {editedData.items && editedData.items.length > 0 && (
+                        <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
+                            <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                                <span className="flex items-center">
+                                    <FileText className="w-4 h-4 mr-1 text-gray-500" />
+                                    読み取った明細 (編集可)
+                                    <span className="ml-2 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full">
+                                        {editedData.items.length}件
+                                    </span>
+                                </span>
+                            </h4>
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 max-h-40 overflow-y-auto shadow-inner">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10">
+                                        <tr>
+                                            <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-2/3">品名</th>
+                                            <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/3">金額</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                        {editedData.items.map((item, index) => (
+                                            <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                                <td className="px-1 py-1 text-xs text-gray-900 dark:text-gray-300">
+                                                    <input
+                                                        type="text"
+                                                        value={item.name}
+                                                        onChange={(e) => {
+                                                            const newItems = [...(editedData.items || [])];
+                                                            newItems[index] = { ...item, name: e.target.value };
+                                                            setEditedData({ ...editedData, items: newItems });
+                                                        }}
+                                                        className="w-full px-2 py-1 bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded text-xs"
+                                                    />
+                                                </td>
+                                                <td className="px-1 py-1 text-xs text-right text-gray-900 dark:text-gray-300">
+                                                    <div className="flex items-center justify-end">
+                                                        <span className="text-gray-400 mr-1">¥</span>
+                                                        <input
+                                                            type="number"
+                                                            value={item.line_total || item.price || 0}
+                                                            onChange={(e) => {
+                                                                const val = parseInt(e.target.value) || 0;
+                                                                const newItems = [...(editedData.items || [])];
+                                                                newItems[index] = { ...item, line_total: val, price: val };
+                                                                setEditedData({ ...editedData, items: newItems });
+                                                            }}
+                                                            className="w-20 px-1 py-1 bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded text-right text-xs font-mono"
+                                                        />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p className="mt-1 text-[10px] text-gray-500 text-right">※明細を修正しても合計金額は自動計算されません（必要なら上部で修正してください）</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* フッター */}

@@ -54,7 +54,7 @@ interface ScanState {
 }
 
 // 抽出されたレシート結果
-interface ExtractedReceiptData {
+export interface ExtractedReceiptData {
   merchant: string;
   date: string;
   amount: number;
@@ -62,6 +62,12 @@ interface ExtractedReceiptData {
   taxRate: number;
   confidence: number;
   validationErrors?: string[];
+  items?: {
+    name: string;
+    price: number | null;
+    qty: number | null;
+    line_total: number | null;
+  }[];
 }
 
 const ReceiptProcessing: React.FC = () => {
@@ -198,6 +204,7 @@ const ReceiptProcessing: React.FC = () => {
         taxRate: aiResult.tax_info.tax_amount_10 ? 10 : 8, // 簡易判定
         confidence: aiResult.summary.confidence || 0,
         validationErrors: aiResult.validation_errors, // 検証エラーをUIに渡す
+        items: aiResult.items, // 明細データを渡す
       });
 
       // 処理完了
@@ -262,14 +269,28 @@ const ReceiptProcessing: React.FC = () => {
   }
 
   const handleEdit = (receipt: ReceiptData) => {
-    setEditingId(receipt.id);
-    setEditData({
-      date: receipt.date,
+    // itemsの型変換
+    const mappedItems = receipt.aiAnalysis?.items?.map(item => ({
+      name: item.name,
+      price: item.price,
+      qty: item.quantity,
+      line_total: item.price * item.quantity
+    })) || [];
+
+    // モーダル編集用にデータを変換
+    const modalData: ExtractedReceiptData = {
       merchant: receipt.merchant,
+      date: receipt.date,
       amount: receipt.amount,
       category: receipt.category,
-      description: receipt.description
-    });
+      taxRate: receipt.taxRate || 10,
+      confidence: receipt.confidence,
+      items: mappedItems
+    };
+
+    setExtractedData(modalData); // モーダルにデータをセット
+    setEditingId(receipt.id); // 編集対象のIDをセット
+    setShowResultModal(true); // モーダルを表示
   };
 
   const handleSave = () => {
@@ -728,73 +749,28 @@ const ReceiptProcessing: React.FC = () => {
                     ) : (
                       filteredReceipts.map((receipt) => (
                         <tr key={receipt.id} className="hover:bg-surface-highlight transition-colors">
-                          <td className="px-4 py-3 text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                            {editingId === receipt.id ? (
-                              <input
-                                type="date"
-                                value={editData.date || receipt.date}
-                                onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                              />
-                            ) : (
-                              <span className="cursor-pointer">{receipt.date}</span>
-                            )}
+                          <td className="px-4 py-3 text-sm text-text-main">
+                            <span className="cursor-pointer" onClick={() => handleEdit(receipt)}>{receipt.date}</span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                            <div className="flex items-center gap-2">
+                          <td className="px-4 py-3 text-sm text-text-main">
+                            <div className="flex items-center gap-2" onClick={() => handleEdit(receipt)}>
                               <TransactionIcon item={receipt.merchant} category={receipt.category} size="sm" />
-                              {editingId === receipt.id ? (
-                                <input
-                                  type="text"
-                                  value={editData.merchant || receipt.merchant}
-                                  onChange={(e) => setEditData(prev => ({ ...prev, merchant: e.target.value }))}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                                />
-                              ) : (
-                                <div className="flex flex-col">
-                                  <span className="cursor-pointer">{receipt.merchant}</span>
-                                  <span className="text-[10px] text-text-muted mt-0.5">{receipt.category}</span>
-                                </div>
-                              )}
+                              <div className="flex flex-col cursor-pointer">
+                                <span className="font-medium">{receipt.merchant}</span>
+                                <span className="text-[10px] text-text-muted mt-0.5">{receipt.category}</span>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                            {editingId === receipt.id ? (
-                              <input
-                                type="number"
-                                value={editData.amount || receipt.amount}
-                                onChange={(e) => setEditData(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                              />
-                            ) : (
-                              <span className="cursor-pointer font-medium text-text-main">¥{receipt.amount.toLocaleString()}</span>
-                            )}
+                          <td className="px-4 py-3 text-sm text-text-main">
+                            <span className="cursor-pointer font-medium text-text-main" onClick={() => handleEdit(receipt)}>¥{receipt.amount.toLocaleString()}</span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-text-main" onClick={() => editingId !== receipt.id && handleEdit(receipt)}>
-                            {editingId === receipt.id ? (
-                              <select
-                                value={editData.category || receipt.category}
-                                onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-full px-2 py-1 bg-background border border-border rounded text-sm text-text-main"
-                              >
-                                {categories.map(cat => (
-                                  <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                                <option value="消耗品費">消耗品費</option>
-                                <option value="接待交際費">接待交際費</option>
-                                <option value="旅費交通費">旅費交通費</option>
-                                <option value="通信費">通信費</option>
-                                <option value="水道光熱費">水道光熱費</option>
-                              </select>
-                            ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border whitespace-nowrap cursor-pointer">
-                                {receipt.category}
-                              </span>
-                            )}
+                          <td className="px-4 py-3 text-sm text-text-main">
+                            <span
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border whitespace-nowrap cursor-pointer"
+                              onClick={() => handleEdit(receipt)}
+                            >
+                              {receipt.category}
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <div className="flex items-center">
@@ -811,35 +787,30 @@ const ReceiptProcessing: React.FC = () => {
                           </td>
                           <td className="px-4 py-3 text-sm font-medium">
                             <div className="flex items-center gap-2">
-                              {editingId === receipt.id ? (
-                                <button
-                                  onClick={handleSave}
-                                  className="p-2 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
-                                  title="保存"
-                                >
-                                  <Save className="w-4 h-4" />
-                                  保存
-                                </button>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => handleApprove(receipt.id)}
-                                    className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
-                                    title="登録"
-                                  >
-                                    <CheckCircle className="w-4 h-4" />
-                                    登録
-                                  </button>
-                                  <button
-                                    onClick={() => handleReject(receipt.id)}
-                                    className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
-                                    title="削除"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    削除
-                                  </button>
-                                </>
-                              )}
+                              <button
+                                onClick={() => handleApprove(receipt.id)}
+                                className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                                title="登録"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                登録
+                              </button>
+                              <button
+                                onClick={() => handleEdit(receipt)}
+                                className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                                title="編集"
+                              >
+                                <Edit className="w-4 h-4" />
+                                編集
+                              </button>
+                              <button
+                                onClick={() => handleReject(receipt.id)}
+                                className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center gap-1 text-xs whitespace-nowrap"
+                                title="削除"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                削除
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -855,18 +826,29 @@ const ReceiptProcessing: React.FC = () => {
               {
                 showResultModal && extractedData && (
                   <ReceiptResultModal
+                    mode={editingId ? 'edit' : 'create'} // 編集モードと新規作成モードを切り替え
+                    transactionId={editingId || undefined}
                     receiptData={extractedData as any}
                     onClose={() => {
                       setShowResultModal(false);
                       setExtractedData(null);
+                      setEditingId(null);
                     }}
                     onRetake={() => {
                       setShowResultModal(false);
                       setExtractedData(null);
+                      setEditingId(null);
                       setShowCamera(true);
                     }}
                     onSave={() => {
                       loadReceipts();
+                      // モーダル側で保存処理が行われるため、ここではリロードのみ
+                      // 必要ならcloseもここで行うが、ReceiptResultModalの実装依存
+                      // ReceiptResultModalがonSave後に閉じるか確認が必要だが、
+                      // 基本はリロードして閉じるフローが多い
+                      setShowResultModal(false);
+                      setExtractedData(null);
+                      setEditingId(null);
                     }}
                   />
                 )

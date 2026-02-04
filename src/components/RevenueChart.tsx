@@ -81,6 +81,9 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
 
     // トランザクション集計
     transactions.forEach(transaction => {
+      // 未承認（保留中）のデータは集計から除外
+      if (transaction.approval_status === 'pending') return;
+
       // 集計対象のフィルタリング（必要に応じて拡張）
 
       const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
