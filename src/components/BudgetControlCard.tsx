@@ -32,7 +32,7 @@ interface BudgetControlCardProps {
 }
 
 const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, receipts = [] }) => {
-    const [activeTab, setActiveTab] = useState<'month' | 'total' | 'tax'>('month');
+    const [activeTab, setActiveTab] = useState<'month' | 'total' | 'tax'>('total');
     // Simple budget state (persisted in local storage for demo)
     const [budget, setBudget] = useState<number>(() => {
         const saved = localStorage.getItem('monthly_budget');

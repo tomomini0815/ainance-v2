@@ -59,6 +59,16 @@ export const useTaxCalculation = (transactions: Transaction[], receipts: Receipt
         const monthsPassed = currentMonth + 1;
         const projectedAnnualProfit = (ytdProfit / monthsPassed) * 12;
 
+        console.log('[TaxDebug] Calculation:', {
+            yearTransactionsLen: yearTransactions.length,
+            yearReceiptsLen: yearReceipts.length,
+            ytdIncome,
+            ytdExpense,
+            ytdProfit,
+            monthsPassed,
+            projectedAnnualProfit
+        });
+
         // Simplified Japanese Tax Estimation (Approximate)
         let incomeTax = 0;
         if (projectedAnnualProfit > 18000000) incomeTax = projectedAnnualProfit * 0.40 - 2796000;
@@ -68,12 +78,19 @@ export const useTaxCalculation = (transactions: Transaction[], receipts: Receipt
         else if (projectedAnnualProfit > 1950000) incomeTax = projectedAnnualProfit * 0.10 - 97500;
         else incomeTax = projectedAnnualProfit * 0.05;
 
+        // Ensure tax is not calculated for negative profit (already handled by ytdProfit max 0, but good to be explicit)
+        if (projectedAnnualProfit <= 0) {
+            incomeTax = 0;
+        }
+
         const residentTax = projectedAnnualProfit * 0.10;
         const businessTax = Math.max(0, projectedAnnualProfit - 2900000) * 0.05;
         const healthInsurance = Math.min(projectedAnnualProfit * 0.10, 800000);
 
         const totalTax = Math.max(0, incomeTax + residentTax + businessTax + healthInsurance);
         const monthlyTaxAru = totalTax / 12;
+
+        console.log('[TaxDebug] Result:', { totalTax, breakdown: { incomeTax, residentTax, businessTax, healthInsurance } });
 
         const chartData = {
             labels: ['所得税', '住民税', '事業税', '国民健康保険'],

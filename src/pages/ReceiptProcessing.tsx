@@ -10,6 +10,7 @@ import { useAuth } from '../components/AuthProvider'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionIcon from '../components/TransactionIcon';
+import { parseGeminiError } from '../utils/geminiErrorUtils';
 
 interface ReceiptData {
   id: string
@@ -222,13 +223,14 @@ const ReceiptProcessing: React.FC = () => {
 
     } catch (error: any) {
       console.error('AI処理エラー:', error);
+      const friendlyError = parseGeminiError(error);
       setScanState(prev => ({
         ...prev,
         isProcessing: false,
         retryCount: 0,
-        errorMessage: `AI処理に失敗しました: ${error.message} `
+        errorMessage: friendlyError
       }));
-      toast.error('AI読み取りに失敗しました。');
+      toast.error('AI読み取りに失敗しました');
     }
   };
 
@@ -376,9 +378,10 @@ const ReceiptProcessing: React.FC = () => {
         await processReceiptImageWithGemini(scanState.imageData);
       } catch (error) {
         console.error('再試行エラー:', error);
+        const friendlyError = parseGeminiError(error);
         setScanState(prev => ({
           ...prev,
-          errorMessage: '再試行に失敗しました'
+          errorMessage: friendlyError // Use parsed message
         }));
       }
     }
