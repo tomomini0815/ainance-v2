@@ -5,10 +5,17 @@
 
 // Gemini API設定
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+export const GEMINI_API_KEY_LOADED = !!GEMINI_API_KEY;
 // 利用可能なモデル（優先順位順）
+// 利用可能なモデル（優先順位順）
+// 利用可能なモデル（優先順位順）
+// ユーザーの環境（Trusted Tester等）に合わせて利用可能なモデルを定義
 const GEMINI_MODELS = [
-  'gemini-1.5-pro',          // 最高精度（推奨）
-  'gemini-1.5-flash',        // 高速・低コスト
+  'gemini-2.0-flash',        // 最新高速モデル
+  'gemini-2.5-flash',        // 次世代Flash
+  'gemini-2.5-pro',          // 次世代Pro
+  'gemini-flash-latest',     // エイリアス
+  'gemini-pro-latest',       // エイリアス
 ];
 
 // デフォルトのAPI URL
@@ -60,7 +67,9 @@ export interface AIReceiptAnalysis {
     price: number | null;
     qty: number | null;
     line_total: number | null;
+    tax_rate?: string;
   }[];
+  validation_errors?: string[];
   // 互換性のためのフラットフィールド（マッピング用）
   transaction_date?: string; // summary.transaction_dateへのエイリアス
   store_name?: string; // store_info.nameへのエイリアス
@@ -159,17 +168,22 @@ ${ocrText}
     });
 
     if (!response.ok) {
-      // ... error handling ...
-      return null;
+      const errorText = await response.text();
+      console.error('Gemini API Error:', response.status, errorText);
+      throw new Error(`Gemini API Error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
     const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!textContent) return null;
+    if (!textContent) {
+      throw new Error('AIからの応答が空でした');
+    }
 
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
+    if (!jsonMatch) {
+      throw new Error('AIの応答からJSONを抽出できませんでした');
+    }
 
     const result = JSON.parse(jsonMatch[0]) as AIReceiptAnalysis;
 
@@ -193,7 +207,8 @@ ${ocrText}
 
   } catch (error) {
     console.error('Gemini AI Analysis Exception:', error);
-    return null;
+    // 元のエラーをスローしてUI側で表示させる
+    throw error;
   }
 }
 
@@ -207,6 +222,31 @@ export async function analyzeReceiptWithVision(
     return null;
   }
 
+  // 複数のモデルで再試行するロジック
+  for (const model of GEMINI_MODELS) {
+    try {
+      console.log(`Trying Gemini Model: ${model}`);
+      return await analyzeReceiptWithModel(imageBase64, model);
+    } catch (error: any) {
+      console.warn(`Model ${model} failed:`, error);
+      // 最後のモデルだった場合はエラーをスロー
+      if (model === GEMINI_MODELS[GEMINI_MODELS.length - 1]) {
+        throw error;
+      }
+      // 次のモデルを試行（ループ継続）
+    }
+  }
+  return null;
+}
+
+/**
+ * 指定されたモデルでレシートを分析する内部関数
+ */
+async function analyzeReceiptWithModel(
+  imageBase64: string,
+  model: string
+): Promise<AIReceiptAnalysis | null> {
+
   // MIMEタイプの動的検出
   let mimeType = 'image/jpeg';
   if (imageBase64.includes('data:')) {
@@ -217,7 +257,7 @@ export async function analyzeReceiptWithVision(
   // Base64プレフィックスを除去
   const pureBase64 = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
 
-  const today = new Date().toISOString().split('T')[0];
+
   const currentYear = new Date().getFullYear();
 
   const prompt = `あなたは「CLOVA OCR」のような最高峰の日本語レシート認識エンジンをシミュレートするAIです。
@@ -234,15 +274,21 @@ export async function analyzeReceiptWithVision(
 
 ### 思考プロセス:
 1. **店名特定**: ロゴ画像 → テキストOCR → 電話番号逆引き の順で確度を高める。(例: ロゴが "7" だけでも電話番号がセブンのものなら「セブンイレブン」と断定)
-3. **日付**:
-    - **ターゲット形式**: 「2024年02月04日」「2024/02/04」「2024-02-04」「R6.02.04」など、**和暦・西暦・スラッシュ区切り・ハイフン区切り**の全てに対応して検索する。
-    - "YYYY-MM-DD"形式に統一して出力する。
-    - **今日の日付の誤入力厳禁**: レシートに日付が印字されていない場合は \`null\` とするが、ノイズで見えにくい場合は前後の文脈から推測して良い。
+2. **日付**:
+    - **ターゲット形式**: 「2024年02月04日」「2024/02/04」「2024-02-04」に加え、**「2024年02月04日(日) 10:30」のように曜日や時刻が付くパターン**も対象とする。
+    - "YYYY-MM-DD"形式に統一して出力する（時刻は捨てる）。
+    - **今日の日付の誤入力厳禁**: レシートに日付が印字されていない場合は \`null\` とする。
 3. **金額 (合計)**:
     - **【最重要】視覚的重み**: 「合計」「小計」「対象計」などの**ラベルの右側（または直下）にある、最もフォントサイズが大きく太い数字**を特定する。
     - 単なる最大値ではなく、「合計」というキーワードとの**位置関係（横並び）**を重視する。
-    - 割り勘やポイント利用前の「支払うべき総額」を特定する。
     - ￥マークやカンマは除去して数値化する。
+4. **検証 (Math Check)**:
+    - 'line_total' と 'price * qty' が一致するか確認する。
+    - 'total_amount' がおおよそ 'Σ(line_total) + tax' と一致するか確認する。一致しない場合は 'validation_errors' に警告を記載する。
+
+### シミュレーション設定（追加）:
+- **手書き・汚れ・折れ**: レシートが不鮮明、手書き、折れている場合でも、文脈から最大限推測する。読み取れない項目は無理に埋めず \`null\` とする。
+- **数値形式**: 全ての数字は半角、カンマなしで出力する。
 
 ### 出力形式（Strict JSON）:
 {
@@ -259,12 +305,13 @@ export async function analyzeReceiptWithVision(
   },
   "payment_info": {
     "method": "cash/credit/paypay/ic/other",
-    "amount": number
+    "amount": number | null
   },
   "tax_info": {
-    "tax_amount_8": number,
-    "tax_amount_10": number,
-    "tax_excluded_amount": number
+    "tax_amount_8": number | null,
+    "tax_amount_10": number | null,
+    "tax_excluded_amount": number | null
+    // 複数の税率がある場合はここに内訳が入る
   },
   "category": {
     "primary": "消耗品費/交際費/旅費交通費/通信費/会議費/雑費/その他",
@@ -278,16 +325,20 @@ export async function analyzeReceiptWithVision(
       "line_total": number,
       "tax_rate": "8% or 10%" // 可能なら推定
     }
+  ],
+  "validation_errors": [
+    "合計金額が明細の合計と一致しません (Expected: 1000, Actual: 900)",
+    "商品Aの金額計算が合いません"
   ]
 }
 
 **特記事項**:
-- 基準日コンテキスト(参考): ${today}
 - 年補完: 年が省略されている場合のみ ${currentYear}年を優先。
 `;
 
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    const apiUrl = getApiUrl(model);
+    const response = await fetch(`${apiUrl}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -313,13 +364,12 @@ export async function analyzeReceiptWithVision(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Gemini Vision API Error Details:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
-      });
-      return null;
+      if (response.status === 404) {
+        throw new Error(`Model ${model} not found (404)`);
+      }
+      const errorText = await response.text();
+      console.error('Gemini API Error:', response.status, errorText);
+      throw new Error(`Gemini API Error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
@@ -329,20 +379,17 @@ export async function analyzeReceiptWithVision(
 
     if (!textContent) {
       console.warn('Gemini Vision API returned empty text content.');
-      return null;
+      throw new Error('AIからの応答が空でした');
     }
 
     // JSON extraction fix for potential markdown wrapping
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error('Failed to extract JSON from Gemini Vision response:', textContent);
-      return null;
+      throw new Error('AIの応答からJSONを抽出できませんでした');
     }
 
     const result = JSON.parse(jsonMatch[0]) as AIReceiptAnalysis;
-
-    // キーワードによるカテゴリ修正のフォールバック (itemsにcategoryがないため、この処理は削除または変更が必要)
-    // 今回の要件ではitemsにcategoryを含めないため、このブロックは削除します。
 
     // 全体のカテゴリチェック
     if (result) {
@@ -384,7 +431,8 @@ export async function analyzeReceiptWithVision(
     return result;
   } catch (error) {
     console.error('Gemini Vision AI Analysis Exception:', error);
-    return null;
+    // 元のエラーをスローして呼び出し元（再試行ループ）で処理させる
+    throw error;
   }
 }
 

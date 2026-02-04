@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, X, Edit2, FileText, RotateCcw } from 'lucide-react';
+import { Check, X, FileText, RotateCcw } from 'lucide-react';
 import { useAuth } from '../components/AuthProvider';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 import { useTransactions } from '../hooks/useTransactions';
@@ -12,6 +12,7 @@ interface ReceiptData {
     category: string;
     taxRate: number;
     confidence: number;
+    validationErrors?: string[];
 }
 
 interface ReceiptResultModalProps {
@@ -43,7 +44,7 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
 
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
-    const { createTransaction, loading: isTransactionLoading } = useTransactions(user?.id, currentBusinessType?.business_type);
+    const { createTransaction } = useTransactions(user?.id, currentBusinessType?.business_type);
 
     const [editedData, setEditedData] = useState(receiptData || {
         merchant: '',
@@ -195,6 +196,27 @@ const ReceiptResultModal: React.FC<ReceiptResultModalProps> = ({
                         />
                     </div>
                 </div>
+
+                {/* 検証エラー表示 */}
+                {receiptData.validationErrors && receiptData.validationErrors.length > 0 && (
+                    <div className="mx-5 mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                        <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                                <span className="text-red-500 dark:text-red-400">⚠️</span>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-sm font-medium text-red-800 dark:text-red-300">抽出データの不整合</h3>
+                                <div className="mt-1 text-xs text-red-700 dark:text-red-400">
+                                    <ul className="list-disc pl-4 space-y-1">
+                                        {receiptData.validationErrors.map((error, index) => (
+                                            <li key={index}>{error}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* メインコンテンツ */}
                 <div className="p-5 space-y-6">

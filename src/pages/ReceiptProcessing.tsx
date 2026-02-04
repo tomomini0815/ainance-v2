@@ -61,6 +61,7 @@ interface ExtractedReceiptData {
   category: string;
   taxRate: number;
   confidence: number;
+  validationErrors?: string[];
 }
 
 const ReceiptProcessing: React.FC = () => {
@@ -127,95 +128,81 @@ const ReceiptProcessing: React.FC = () => {
     setShowCamera(false)
   }
 
-  // レシート画像処理（OCR実装の強化版）
-  const processReceiptImage = async (imageBlob: Blob) => {
-    setShowCamera(false); // Close camera
-
-    // 画像URLを作成して保存（再試行用）
-    const imageUrl = URL.createObjectURL(imageBlob);
-    setScanState(prev => ({
-      ...prev,
-      imageData: imageUrl
-    }));
-
-    // Tesseract.jsを使用して処理
-    await processReceiptImageWithTesseract(imageUrl);
-  };
-
-  // Tesseract.jsを使用したレシート画像処理
-  const processReceiptImageWithTesseract = async (imageUrl: string) => {
+  // Gemini Visionを使用したレシート画像処理
+  const processReceiptImageWithGemini = async (imageUrl: string) => {
     // 処理状態を更新
     setScanState(prev => ({
       ...prev,
       isProcessing: true,
       retryCount: 0,
-      progress: 0,
-      currentStep: 'OCR処理を開始しています...',
-      // imageDataはprocessReceiptImageで設定済み
+      progress: 10,
+      currentStep: 'AI分析を開始しています...',
     }));
 
     try {
-      // 動的インポートでTesseract.jsを読み込み
-      const Tesseract = await import('tesseract.js');
+      // 動的インポート
+      const { analyzeReceiptWithVision, GEMINI_API_KEY_LOADED } = await import('../services/geminiAIService');
+
+      if (!GEMINI_API_KEY_LOADED) {
+        throw new Error('Gemini APIキーが設定されていません。.envファイルを確認してください。');
+      }
 
       setScanState(prev => ({
         ...prev,
-        progress: 10,
-        currentStep: 'OCRエンジンを初期化中...'
+        progress: 30,
+        currentStep: '画像を解析中...'
       }));
 
-      // タイムアウト設定（45秒）
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('OCR処理がタイムアウトしました。画像の解像度が高いか、ネットワークが不安定です。')), 45000);
+      // 画像データを取得 (URL -> Base64)
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const reader = new FileReader();
+
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') resolve(reader.result);
+          else reject(new Error('画像の読み込みに失敗しました'));
+        };
+        reader.onerror = reject;
       });
+      reader.readAsDataURL(blob);
+      const base64Data = await base64Promise;
 
-      // OCR処理を実行（日本語+英語）
-      const recognizePromise = Tesseract.recognize(
-        imageUrl,
-        'jpn+eng',
-        {
-          logger: (m: any) => {
-            if (m.status === 'recognizing text') {
-              const progress = Math.round(m.progress * 80) + 10; // 10-90%
-              setScanState(prev => ({
-                ...prev,
-                progress,
-                currentStep: `テキストを認識中... ${Math.round(m.progress * 100)}% `
-              }));
-            }
-          }
-        }
-      );
+      setScanState(prev => ({
+        ...prev,
+        progress: 50,
+        currentStep: 'AIがデータを抽出・検証中...'
+      }));
 
-      const result: any = await Promise.race([recognizePromise, timeoutPromise]);
+      // Gemini Vision API呼び出し
+      const aiResult = await analyzeReceiptWithVision(base64Data);
 
-      // 注: imageUrlは再試行のために保持するため、ここではrevokeしない
-      // クリーンアップはコンポーネントのアンマウント時や新しい画像がロードされた時に行うべき
+      if (!aiResult) {
+        throw new Error('AIによる解析ができませんでした');
+      }
 
-      console.log('OCR結果:', result.data.text);
+      console.log('AI解析結果:', aiResult);
 
       setScanState(prev => ({
         ...prev,
         progress: 90,
-        currentStep: 'データを抽出中...'
+        currentStep: 'データを整形中...'
       }));
-
-      // テキストから情報を抽出
-      const extractedReceiptData = extractReceiptData(result.data.text);
 
       // 抽出したデータを設定
       setExtractedData({
-        merchant: extractedReceiptData.merchant || '不明',
-        date: extractedReceiptData.date || '',
-        amount: extractedReceiptData.amount || 0,
-        category: extractedReceiptData.category || '雑費',
-        taxRate: extractedReceiptData.taxRate || 0,
-        confidence: extractedReceiptData.confidence || 70,
+        merchant: aiResult.store_info.name || '不明',
+        date: aiResult.summary.transaction_date || '', // 日付がない場合は空文字
+        amount: aiResult.summary.total_amount || 0,
+        category: typeof aiResult.category === 'string' ? aiResult.category : (aiResult.category.primary || '雑費'),
+        taxRate: aiResult.tax_info.tax_amount_10 ? 10 : 8, // 簡易判定
+        confidence: aiResult.summary.confidence || 0,
+        validationErrors: aiResult.validation_errors, // 検証エラーをUIに渡す
       });
 
       // 処理完了
       setScanState(prev => ({
-        ...prev, // 既存の状態（imageData含む）を維持
+        ...prev,
         isProcessing: false,
         retryCount: 0,
         progress: 100,
@@ -227,384 +214,32 @@ const ReceiptProcessing: React.FC = () => {
       toast.success('レシートの読み取りが完了しました');
 
     } catch (error: any) {
-      console.error('OCR処理エラー:', error);
-
+      console.error('AI処理エラー:', error);
       setScanState(prev => ({
         ...prev,
         isProcessing: false,
         retryCount: 0,
-        errorMessage: `OCR処理に失敗しました: ${error.message} `
+        errorMessage: `AI処理に失敗しました: ${error.message} `
       }));
-
-      toast.error('レシートの読み取りに失敗しました。もう一度お試しください。');
+      toast.error('AI読み取りに失敗しました。');
     }
   };
 
-  // テキストからレシート情報を抽出する関数（日本語対応強化版）
-  const extractReceiptData = (text: string) => {
-    console.log('抽出対象テキスト:', text);
+  // レシート画像処理（エントリポイント）
+  const processReceiptImage = async (imageBlob: Blob) => {
+    setShowCamera(false);
 
-    // 全角数字を半角に変換するヘルパー関数
-    const normalizeText = (str: string) => {
-      return str.replace(/[０-９]/g, (s) => {
-        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-      }).replace(/[Ａ-Ｚａ-ｚ]/g, (s) => {
-        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-      });
-    };
+    const imageUrl = URL.createObjectURL(imageBlob);
+    setScanState(prev => ({
+      ...prev,
+      imageData: imageUrl
+    }));
 
-    const normalizedText = normalizeText(text);
-
-    // 正規表現パターン（日本語レシート対応強化）
-    const patterns = {
-      // 金額パターン
-      totalAmount: [
-        /(?:合計|総計|お買上計|領収金額|支払金額|請求金額)[\s:：]*[¥￥]*\s*([0-9,]+)/i,
-        /合\s*計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
-        /小計[\s:：]*[¥￥]*\s*([0-9,]+)/i,
-        /(?:現\s*金|クレ(?:ジット)?|PayPay|d払い|auPAY|LINE\s*Pay)[\s:：]*[¥￥]*\s*([0-9,]+)/i,
-        /[¥￥]\s*([0-9,]+)(?!\s*[\-\+])/ // 単独の金額表記（マイナス表記を除く）
-      ],
-      // 日付パターン
-      date: [
-        /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})[日]?/,
-        /(\d{2,4})[\/\-](\d{1,2})[\/\-](\d{1,2})/,
-        /(\d{4})\.(\d{2})\.(\d{2})/,
-        /(?:令和|R)(\d{1,2})[年\/\-](\d{1,2})[月\/\-](\d{1,2})[日]?/ // 和暦対応
-      ],
-      // 税率パターン
-      taxRate: [
-        /(?:10|8)%対象/i,
-        /消費税等?\s*\(?(10|8)%\)?/i,
-        /内税/
-      ],
-      // 電話番号パターン
-      phone: /(?:TEL|電話|Tel|tel)[:：\s]*(\d{2,4}[-\s]\d{2,4}[-\s]\d{3,4})/,
-      // インボイス登録番号
-      invoice: /(T\d{13})/
-    };
-
-    // 店舗名の候補を検索
-    let merchant = '不明';
-    let merchantConfidence = 0;
+    // Geminiを使用
+    await processReceiptImageWithGemini(imageUrl);
+  };
 
 
-    // よく知られた店舗名のリスト（大幅に拡充）
-    const merchantKeywords = [
-      'セブンイレブン', 'セブン-イレブン', 'セブン', '7-ELEVEN', '7-11', '7ELEVEN',
-      'ローソン', 'LAWSON', 'ナチュラルローソン', 'ローソンストア100',
-      'ファミリーマート', 'ファミマ', 'FamilyMart', 'FAMILY MART',
-      'ミニストップ', 'MINISTOP',
-      'デイリーヤマザキ', 'ヤマザキデイリーストア',
-      'ニューデイズ', 'NewDays',
-      'ポプラ', 'くらしハウス',
-      'イオン', 'AEON', 'マックスバリュ', 'MaxValu', 'ザ・ビッグ', 'まいばすけっと',
-      'イトーヨーカドー', 'ヨーカドー', 'ItoYokado',
-      'ライフ', 'LIFE',
-      'サミット', 'Summit',
-      '西友', 'SEIYU',
-      'マルエツ', 'Maruetsu',
-      'ダイエー', 'DAIEI',
-      '成城石井', '成城',
-      'カルディ', 'KALDI', 'カルディコーヒーファーム',
-      '業務スーパー',
-      'オーケー', 'OK', 'オーケーストア',
-      'コープ', 'COOP', '生協',
-      'ヤオコー',
-      'ベルク',
-      'ベイシア',
-      'トライアル',
-      'ドン・キホーテ', 'ドンキ', 'ドンキホーテ', 'MEGAドンキ',
-      'マクドナルド', "McDonald's", 'マック', 'McDonalds',
-      'モスバーガー', 'モス', 'MOS BURGER',
-      'ロッテリア', 'LOTTERIA',
-      'ケンタッキー', 'KFC', 'ケンタッキーフライドチキン',
-      'バーガーキング', 'BURGER KING',
-      'フレッシュネスバーガー',
-      'サブウェイ', 'SUBWAY',
-      'ミスタードーナツ', 'ミスド', 'Mister Donut',
-      'スターバックス', 'スタバ', 'Starbucks', 'STARBUCKS',
-      'ドトール', 'DOUTOR',
-      'タリーズ', "TULLY'S", 'タリーズコーヒー',
-      'コメダ珈琲', 'コメダ', 'KOMEDA',
-      'サンマルクカフェ', 'サンマルク',
-      'プロント', 'PRONTO',
-      '上島珈琲',
-      'カフェ・ド・クリエ',
-      'ベローチェ',
-      'すき家', 'すきや', 'SUKIYA',
-      '吉野家', 'YOSHINOYA',
-      '松屋', 'MATSUYA',
-      'なか卯', 'NAKAU',
-      'てんや',
-      '大戸屋', 'OOTOYA',
-      'やよい軒',
-      'ガスト', 'GUSTO',
-      'サイゼリヤ', 'Saizeriya',
-      'ジョナサン', "Jonathan's",
-      'バーミヤン',
-      'ロイヤルホスト',
-      'デニーズ', "Denny's",
-      'ココス', "COCO'S",
-      'ビッグボーイ',
-      'くら寿司', 'くらずし', '無添くら寿司',
-      'スシロー', 'SUSHIRO',
-      'はま寿司', 'はまずし',
-      'かっぱ寿司', 'かっぱずし',
-      '魚べい',
-      'サイゼリア',
-      'リンガーハット',
-      '丸亀製麺',
-      'はなまるうどん',
-      '天下一品',
-      '一風堂',
-      '日高屋',
-      '王将', '餃子の王将',
-      'ペッパーランチ',
-      'マツモトキヨシ', 'マツキヨ', 'matsukiyo',
-      'ウエルシア', 'Welcia',
-      'ツルハドラッグ', 'ツルハ',
-      'サンドラッグ', 'SUNDRUG',
-      'スギ薬局', 'スギヤマ',
-      'ココカラファイン',
-      'クリエイト',
-      'コスモス',
-      'セイムス',
-      'ダイコクドラッグ',
-      'トモズ',
-      'ビックカメラ', 'ビッグカメラ', 'BIC CAMERA',
-      'ヨドバシカメラ', 'ヨドバシ', 'Yodobashi',
-      'ヤマダ電機', 'ヤマダデンキ', 'YAMADA',
-      'エディオン', 'EDION',
-      'ケーズデンキ', "K's",
-      'ジョーシン', 'Joshin',
-      'ノジマ',
-      'コジマ',
-      'ソフマップ',
-      'ベスト電器',
-      'ユニクロ', 'UNIQLO',
-      'GU', 'ジーユー',
-      'しまむら',
-      'ライトオン',
-      'ハニーズ',
-      'ZARA', 'ザラ',
-      'H&M',
-      'GAP', 'ギャップ',
-      'ユナイテッドアローズ',
-      'ビームス', 'BEAMS',
-      'アーバンリサーチ',
-      'ニトリ', 'NITORI',
-      '無印良品', 'MUJI',
-      'ダイソー', 'DAISO', '100円ショップ',
-      'セリア', 'Seria',
-      'キャンドゥ', 'Can Do',
-      'フランフラン',
-      '東急ハンズ', 'ハンズ', 'HANDS',
-      'ロフト', 'LOFT',
-      'カインズ', 'CAINZ',
-      'コーナン', 'KOHNAN',
-      'コメリ',
-      'ビバホーム',
-      'ジョイフル本田',
-      'ケーヨーデイツー', 'D2',
-      '高島屋', 'タカシマヤ',
-      '伊勢丹', 'ISETAN',
-      '三越', 'MITSUKOSHI',
-      '大丸', 'DAIMARU',
-      '松坂屋',
-      '阪急百貨店', '阪急',
-      '阪神百貨店', '阪神',
-      '西武', '西武百貨店',
-      '東武', '東武百貨店',
-      '小田急百貨店',
-      '京王百貨店',
-      '近鉄百貨店',
-      '紀伊國屋書店', '紀伊国屋',
-      'ジュンク堂',
-      '丸善',
-      'TSUTAYA', 'ツタヤ',
-      'ブックオフ', 'BOOKOFF',
-      '有隣堂',
-      '三省堂書店',
-      'トイザらス',
-      'ベビーザらス',
-      'ABCマート',
-      'アスビー',
-      '眼鏡市場',
-      'JINS', 'ジンズ',
-      'Zoff', 'ゾフ',
-      'ENEOS', 'エネオス',
-      '出光', 'Idemitsu',
-      'コスモ石油', 'COSMO',
-      'シェル', 'Shell',
-      'エッソ', 'Esso',
-      'モービル', 'Mobil',
-      'Amazon', 'アマゾン',
-      '楽天', 'Rakuten',
-      'メルカリ',
-      'ヤフオク', 'Yahoo!',
-      'PayPay',
-    ];
-
-
-    // 1. キーワードマッチング
-    for (const keyword of merchantKeywords) {
-      if (normalizedText.includes(keyword)) {
-        merchant = keyword;
-        merchantConfidence = 95;
-        break;
-      }
-    }
-
-    const lines = normalizedText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-
-    // 2. 電話番号の近くにある行を店舗名として推測
-    if (merchantConfidence < 50) {
-      const phoneMatch = normalizedText.match(patterns.phone);
-      if (phoneMatch) {
-        // 電話番号が見つかった場合、その数行前を探索
-        const phoneIndex = lines.findIndex(line => line.includes(phoneMatch[1]) || line.includes(phoneMatch[0]));
-        if (phoneIndex > 0) {
-          // 電話番号の1-3行前をチェック
-          for (let i = Math.max(0, phoneIndex - 3); i < phoneIndex; i++) {
-            const line = lines[i];
-            // 明らかに店舗名っぽくない行を除外（日付や金額のみなど）
-            if (line.length > 2 && line.length < 20 && !line.match(/[\d\/\-\.:\s]+$/)) {
-              merchant = line;
-              merchantConfidence = 70;
-              break; // 一番上の行を優先したい場合はループ順序を逆にするか、ここでbreakしない
-            }
-          }
-        }
-      }
-    }
-
-    // 3. 最初の行を使用（フォールバック）
-    if (merchantConfidence === 0 && lines.length > 0) {
-      const firstLine = lines[0];
-      // 記号や数字だけの行を除外
-      if (firstLine.length > 1 && !/^[\d\s\-\/\.:¥￥]+$/.test(firstLine)) {
-        merchant = firstLine;
-        merchantConfidence = 50;
-      } else if (lines.length > 1) {
-        merchant = lines[1]; // 2行目を試す
-        merchantConfidence = 40;
-      }
-    }
-
-    // 日付を検索
-    let date = '';
-    let dateConfidence = 0;
-    for (const pattern of patterns.date) {
-      const dateMatch = normalizedText.match(pattern);
-      if (dateMatch) {
-        let year = dateMatch[1];
-        const month = dateMatch[2].padStart(2, '0');
-        const day = dateMatch[3].padStart(2, '0');
-
-        // 和暦変換
-        if (pattern.toString().includes('令和') || pattern.toString().includes('R')) {
-          year = (parseInt(year) + 2018).toString();
-        } else if (year.length === 2) {
-          year = '20' + year;
-        }
-
-        // 有効な日付かチェック
-        const dateObj = new Date(`${year} -${month} -${day} `);
-        if (!isNaN(dateObj.getTime()) && dateObj.getFullYear() > 2000 && dateObj.getFullYear() < 2030) {
-          date = `${year} -${month} -${day} `;
-          dateConfidence = 90;
-          break;
-        }
-      }
-    }
-
-    // 日付が見つからない場合、今日の日付を設定
-    if (!date) {
-      date = new Date().toISOString().split('T')[0];
-      dateConfidence = 10; // 低い信頼度
-    }
-
-    // 金額を検索
-    let amount = 0;
-    let amountConfidence = 0;
-
-    for (const pattern of patterns.totalAmount) {
-      const amountMatch = normalizedText.match(pattern);
-      if (amountMatch) {
-        const amountStr = amountMatch[1].replace(/[,，]/g, ''); // 全角カンマも考慮
-        const parsedAmount = parseInt(amountStr);
-        if (!isNaN(parsedAmount) && parsedAmount > 0) {
-          amount = parsedAmount;
-          amountConfidence = 90;
-          break;
-        }
-      }
-    }
-
-    // 金額が見つからない場合、全ての数字から最大値を探す（ただし日付や電話番号と誤認しないように注意）
-    if (amount === 0) {
-      const allNumbers = normalizedText.match(/[0-9,]+/g);
-      if (allNumbers) {
-        const numbers = allNumbers
-          .map(n => parseInt(n.replace(/[,，]/g, '')))
-          .filter(n => !isNaN(n) && n > 0 && n < 1000000); // 100万円未満
-
-        // 日付っぽい数字（20240101など）を除外するロジックが必要だが、簡易的に最大値を取る
-        if (numbers.length > 0) {
-          // 単純な最大値ではなく、頻出する金額や、合計っぽい位置にあるものを探すべきだが、
-          // ここでは簡易的に最大値を採用しつつ信頼度を下げる
-          amount = Math.max(...numbers);
-          amountConfidence = 40;
-        }
-      }
-    }
-
-    // 税率を検索
-    let taxRate = 10; // デフォルト10%
-    let taxRateConfidence = 50;
-
-    if (normalizedText.match(/8%|軽減税率/)) {
-      taxRate = 8;
-      taxRateConfidence = 80;
-    } else if (normalizedText.match(/10%/)) {
-      taxRate = 10;
-      taxRateConfidence = 80;
-    }
-
-    // インボイス登録番号の抽出（あれば信頼度アップ）
-    const invoiceMatch = normalizedText.match(patterns.invoice);
-    const hasInvoice = !!invoiceMatch;
-
-    const totalConfidence = Math.round(
-      (merchantConfidence + dateConfidence + amountConfidence + taxRateConfidence + (hasInvoice ? 20 : 0)) / (hasInvoice ? 5 : 4)
-    );
-
-    console.log('抽出結果:', {
-      merchant,
-      date,
-      amount,
-      taxRate,
-      hasInvoice,
-      confidence: totalConfidence
-    });
-
-    return {
-      merchant,
-      date,
-      amount,
-      taxRate,
-      category: '未分類', // デフォルトカテゴリ
-      description: hasInvoice ? `インボイス登録番号: ${invoiceMatch![1]} ` : 'OCRで抽出',
-      confidence: Math.min(100, totalConfidence),
-      confidenceScores: {
-        merchant: merchantConfidence,
-        date: dateConfidence,
-        amount: amountConfidence,
-        taxRate: taxRateConfidence
-      }
-    };
-  }
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -717,7 +352,7 @@ const ReceiptProcessing: React.FC = () => {
 
       // 画像URLを使用して再処理
       try {
-        await processReceiptImageWithTesseract(scanState.imageData);
+        await processReceiptImageWithGemini(scanState.imageData);
       } catch (error) {
         console.error('再試行エラー:', error);
         setScanState(prev => ({

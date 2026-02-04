@@ -79,7 +79,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
       setFormData({
         item: transaction.item || '',
         amount: transaction.amount || 0,
-        date: transaction.date || new Date().toISOString().split('T')[0],
+        date: transaction.date || '',
         category: transaction.category || '',
         type: transaction.type || 'expense',
         description: transaction.description || '',
