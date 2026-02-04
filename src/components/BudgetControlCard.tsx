@@ -4,6 +4,7 @@ import { CheckCircle2, Search, ArrowRight, Settings, TrendingUp, BarChart3, Info
 import { Transaction } from '../types/transaction';
 import { Receipt } from '../services/receiptService';
 import { useTaxCalculation } from '../hooks/useTaxCalculation';
+import { useCorporateTaxCalculation } from '../hooks/useCorporateTaxCalculation';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -29,9 +30,10 @@ ChartJS.register(
 interface BudgetControlCardProps {
     transactions: Transaction[];
     receipts?: Receipt[];
+    businessType?: 'individual' | 'corporation';
 }
 
-const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, receipts = [] }) => {
+const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, receipts = [], businessType = 'individual' }) => {
     const [activeTab, setActiveTab] = useState<'month' | 'total' | 'tax'>('total');
     // Simple budget state (persisted in local storage for demo)
     const [budget, setBudget] = useState<number>(() => {
@@ -216,7 +218,16 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
     }, [transactions, receipts, budget]);
 
     // --- Tax Logic ---
-    const taxData = useTaxCalculation(transactions, receipts);
+    // Conditionally use the tax hook based on businessType (This must be done carefully as hooks cannot be called conditionally in React)
+    // However, since we need to render one or the other, we can call both and assume lightweight calculation, OR refactor to a single hook with a param.
+    // Given the constraints and existing code, calling both is acceptable if they are light, or better yet, we just change the component structure.
+    // But since hooks must be top-level, we MUST call them unconditionally or create a unified hook.
+    // The implementation plan suggested logic inside the component, but hooks rules apply.
+    // Refactoring plan: Call both, use one result.
+    const individualTaxData = useTaxCalculation(transactions, receipts);
+    const corporateTaxData = useCorporateTaxCalculation(transactions, receipts);
+
+    const taxData = businessType === 'corporation' ? corporateTaxData : individualTaxData;
 
     const chartOptions = {
         indexAxis: 'y' as const,
@@ -251,14 +262,6 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                         <h3 className="text-base font-bold text-text-main leading-tight">経営管理コックピット</h3>
                         <p className="text-[10px] text-text-muted">財務状況をリアルタイムに把握</p>
                     </div>
-                    {activeTab !== 'tax' && (
-                        <button
-                            onClick={() => setIsEditing(!isEditing)}
-                            className="p-1.5 text-text-muted hover:text-primary transition-colors hover:bg-surface-highlight rounded-lg"
-                        >
-                            <Settings className="w-4 h-4" />
-                        </button>
-                    )}
                 </div>
 
                 <div className="flex p-1 bg-surface-highlight rounded-xl w-fit">
@@ -314,7 +317,15 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                             <button onClick={saveBudget} className="text-xs bg-primary text-white border border-primary px-2 py-0.5 rounded">保存</button>
                                         </div>
                                     ) : (
-                                        <div className="text-xl font-bold text-text-main">{budget.toLocaleString()}円</div>
+                                        <div className="flex items-center justify-end gap-2">
+                                            <div className="text-xl font-bold text-text-main">{budget.toLocaleString()}円</div>
+                                            <button
+                                                onClick={() => setIsEditing(true)}
+                                                className="p-1 text-text-muted hover:text-primary transition-colors hover:bg-surface-highlight rounded-lg"
+                                            >
+                                                <Settings className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -358,7 +369,31 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                             <div className="flex justify-between items-end mb-1">
                                 <span className="text-xs font-medium text-text-muted">全期間の累計予実 ({totalBudgetData.monthCount}ヶ月分)</span>
                                 <div className="text-right">
-                                    <span className="text-base font-bold text-text-main">￥{totalBudgetData.total.toLocaleString()}<span className="text-[10px] text-text-muted font-normal ml-1">/ ￥{totalBudgetData.cumulativeBudget.toLocaleString()}</span></span>
+                                    {isEditing ? (
+                                        <div className="flex items-center gap-2 justify-end flex-nowrap whitespace-nowrap">
+                                            <span className="text-[10px] text-text-muted">月次予算設定:</span>
+                                            <input
+                                                type="number"
+                                                className="w-20 px-1 py-0.5 text-right border rounded text-xs bg-background"
+                                                value={editValue}
+                                                onChange={(e) => setEditValue(e.target.value)}
+                                            />
+                                            <button onClick={saveBudget} className="text-xs bg-primary text-white border border-primary px-2 py-0.5 rounded flex-shrink-0">保存</button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-end gap-2">
+                                            <span className="text-base font-bold text-text-main">
+                                                ￥{totalBudgetData.total.toLocaleString()}
+                                                <span className="text-[10px] text-text-muted font-normal ml-1">/ ￥{totalBudgetData.cumulativeBudget.toLocaleString()}</span>
+                                            </span>
+                                            <button
+                                                onClick={() => setIsEditing(true)}
+                                                className="p-1 text-text-muted hover:text-primary transition-colors hover:bg-surface-highlight rounded-lg"
+                                            >
+                                                <Settings className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="h-1.5 bg-surface-highlight rounded-full overflow-hidden">
@@ -391,7 +426,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                         {/* Tax Prediction Header */}
                         <div>
                             <div className="flex justify-between items-end mb-1">
-                                <span className="text-xs font-medium text-text-muted">年間納税予測額</span>
+                                <span className="text-xs font-medium text-text-muted">年間納税予測額 ({taxData.calculationYear}年)</span>
                                 <div className="text-right">
                                     <div className="text-xl font-bold text-text-main">
                                         <span className="text-xs mr-1">約</span>
@@ -409,7 +444,11 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                 ))}
                             </div>
                             <div className="flex justify-between mt-1 text-[10px]">
-                                <span className="font-bold text-blue-500">所得税: {Math.round(taxData.breakdown.incomeTax).toLocaleString()}円</span>
+                                <span className="font-bold text-blue-500">
+                                    {businessType === 'corporation' ? '法人税' : '所得税'}: {
+                                        Math.round(businessType === 'corporation' ? ((taxData.breakdown as any).corporateTax || 0) : ((taxData.breakdown as any).incomeTax || 0)).toLocaleString()
+                                    }円
+                                </span>
                                 <span className="font-bold text-text-muted">月平均: {Math.round(taxData.monthlyTaxAru).toLocaleString()}円</span>
                             </div>
                         </div>
@@ -418,20 +457,38 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                         <div className="flex-1 min-h-0 bg-surface-highlight/30 rounded-xl p-3 border border-border/50 flex flex-col">
                             <h4 className="text-[10px] font-bold text-text-main mb-2">税目別内訳（着地予想）</h4>
                             <div className="space-y-2.5 flex-1 overflow-auto">
-                                {[
-                                    { label: '所得税', value: taxData.breakdown.incomeTax, color: 'bg-blue-500' },
-                                    { label: '住民税', value: taxData.breakdown.residentTax, color: 'bg-emerald-500' },
-                                    { label: '個人事業税', value: taxData.breakdown.businessTax, color: 'bg-amber-500' },
-                                    { label: '国民健康保険', value: taxData.breakdown.healthInsurance, color: 'bg-purple-500' },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-1.5 h-1.5 rounded-full ${item.color}`} />
-                                            <span className="text-xs text-text-main">{item.label}</span>
+                                {businessType === 'corporation' ? (
+                                    // Corporate Tax Breakdown
+                                    [
+                                        { label: '法人税', value: (taxData.breakdown as any).corporateTax || 0, color: 'bg-blue-500' },
+                                        { label: '法人住民税', value: taxData.breakdown.residentTax, color: 'bg-emerald-500' },
+                                        { label: '法人事業税', value: taxData.breakdown.businessTax, color: 'bg-amber-500' },
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${item.color}`} />
+                                                <span className="text-xs text-text-main">{item.label}</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-text-main">{Math.round(item.value).toLocaleString()}円</span>
                                         </div>
-                                        <span className="text-xs font-bold text-text-main">{Math.round(item.value).toLocaleString()}円</span>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    // Individual Tax Breakdown
+                                    [
+                                        { label: '所得税', value: (taxData.breakdown as any).incomeTax, color: 'bg-blue-500' },
+                                        { label: '住民税', value: taxData.breakdown.residentTax, color: 'bg-emerald-500' },
+                                        { label: '個人事業税', value: taxData.breakdown.businessTax, color: 'bg-amber-500' },
+                                        { label: '国民健康保険', value: (taxData.breakdown as any).healthInsurance, color: 'bg-purple-500' },
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${item.color}`} />
+                                                <span className="text-xs text-text-main">{item.label}</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-text-main">{Math.round(item.value).toLocaleString()}円</span>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </>
@@ -471,7 +528,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                 ) : activeTab === 'total' ? (
                                     totalBudgetData.topCategory && `累計最大支出: ${totalBudgetData.topCategory.name}`
                                 ) : (
-                                    `年間納税予測: 約${Math.round(taxData.totalTax).toLocaleString()}円`
+                                    `${taxData.calculationYear}年 納税予測: 約${Math.round(taxData.totalTax).toLocaleString()}円`
                                 )}
                             </p>
                         </div>

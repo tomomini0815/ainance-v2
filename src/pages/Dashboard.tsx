@@ -320,7 +320,11 @@ const Dashboard: React.FC = () => {
         </Suspense>
         <Suspense fallback={<div className="h-[580px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
           <div className="h-[500px] lg:h-[580px]">
-            <BudgetControlCard transactions={transactions} receipts={receipts} />
+            <BudgetControlCard
+              transactions={transactions}
+              receipts={receipts}
+              businessType={currentBusinessType?.business_type}
+            />
           </div>
         </Suspense>
       </div>
