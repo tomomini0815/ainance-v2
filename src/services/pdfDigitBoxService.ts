@@ -38,54 +38,106 @@ export interface DigitBoxConfig {
 
 /**
  * Field mapping for Beppyo1 (別表一)
- * Coordinates are relative to PDF page (origin at bottom-left)
+ * 
+ * Coordinates calibrated from actual PDF analysis:
+ * - Page size: 595.32 x 841.92 points (A4)
+ * - Origin: bottom-left corner (0, 0)
+ * - Y increases upward
+ * 
+ * Layout Analysis (from user's image):
+ * - Form header takes ~200pt from top
+ * - Each row is ~19.5pt high
+ * - Left column boxes end at X ≈ 244pt
+ * - Right column boxes end at X ≈ 514pt
+ * - Each digit box is ~16.15pt wide
  */
 export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
-    // Left column fields (所得金額等)
-    '所得金額_box1': {
-        anchorX: 244,  // Rightmost digit X
-        anchorY: 580,  // Row Y
-        boxWidth: 16.15,
-        boxSpacing: 16.15,
-        fontSize: 10,
-        maxDigits: 12
-    },
-    '法人税額_box2': {
+    // ===== 左側カラム (Left Column) =====
+    // Row 1: 所得金額又は欠損金額 (別表四「52の①」)
+    '所得金額_row1': {
         anchorX: 244,
-        anchorY: 560,
+        anchorY: 622,   // 用紙上部から約220ptの位置
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
         maxDigits: 12
     },
-    '差引法人税額_box13': {
+
+    // Row 2: 法人税額 ((48)+(49)+(50))
+    '法人税額_row2': {
         anchorX: 244,
-        anchorY: 340,
+        anchorY: 602,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
         maxDigits: 12
     },
-    '所得合計_box18': {
+
+    // Row 13: 差引所得に対する法人税額 ((9)-(10)-(11)-(12))
+    '差引法人税額_row13': {
         anchorX: 244,
-        anchorY: 240,  // Row 18 位置
+        anchorY: 387,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
         maxDigits: 12
     },
-    // Right column fields (控除・中間納付等)
-    '控除税額_box19': {
+
+    // Row 18: 所得金額の計 (これがテスト対象)
+    '所得合計_row18': {
+        anchorX: 244,
+        anchorY: 290,   // ※ユーザー画像で「0」が入っている行
+        boxWidth: 16.15,
+        boxSpacing: 16.15,
+        fontSize: 10,
+        maxDigits: 12
+    },
+
+    // Row 28: 法人税額計 (ユーザー画像で「141940」が入っている行)
+    '法人税額計_row28': {
+        anchorX: 244,
+        anchorY: 95,
+        boxWidth: 16.15,
+        boxSpacing: 16.15,
+        fontSize: 10,
+        maxDigits: 12
+    },
+
+    // ===== 右側カラム (Right Column) =====
+    // Row 17: 復興特別法人税額
+    '復興税額_row17': {
         anchorX: 514,
-        anchorY: 540,
+        anchorY: 310,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
         maxDigits: 12
     },
-    '中間納付_box22': {
+
+    // Row 19: 所得税額等の控除額 ((16)+(17))
+    '控除税額_row19': {
         anchorX: 514,
-        anchorY: 480,
+        anchorY: 270,
+        boxWidth: 16.15,
+        boxSpacing: 16.15,
+        fontSize: 10,
+        maxDigits: 12
+    },
+
+    // Row 20: 控除しきれなかった金額
+    '控除残_row20': {
+        anchorX: 514,
+        anchorY: 250,
+        boxWidth: 16.15,
+        boxSpacing: 16.15,
+        fontSize: 10,
+        maxDigits: 12
+    },
+
+    // Row 22: 中間納付額 ((14)-(13))
+    '中間納付_row22': {
+        anchorX: 514,
+        anchorY: 210,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -216,21 +268,21 @@ export async function fillBeppyo1WithDigitBoxes(
 
     // Debug mode: Place test values
     if (debugMode) {
-        // Test 1: Place "0" in box 18
-        const config18 = BEPPYO1_FIELDS['所得合計_box18'];
+        // Test 1: Place "0" in row 18 (所得金額の計)
+        const config18 = BEPPYO1_FIELDS['所得合計_row18'];
         const result0 = fillDigitBoxField(page, 0, config18, font, calibration);
         report.fieldDetails.push({
-            fieldName: '所得合計_box18 (テスト: 0)',
+            fieldName: '所得合計_row18 (テスト: 0)',
             value: 0,
             success: result0.success,
             coordinates: { x: config18.anchorX, y: config18.anchorY }
         });
 
-        // Test 2: Place "5000000" in box 1
-        const config1 = BEPPYO1_FIELDS['所得金額_box1'];
+        // Test 2: Place "5000000" in row 1 (所得金額)
+        const config1 = BEPPYO1_FIELDS['所得金額_row1'];
         const result5m = fillDigitBoxField(page, 5000000, config1, font, calibration);
         report.fieldDetails.push({
-            fieldName: '所得金額_box1 (テスト: 5,000,000)',
+            fieldName: '所得金額_row1 (テスト: 5,000,000)',
             value: 5000000,
             success: result5m.success,
             coordinates: { x: config1.anchorX, y: config1.anchorY }
@@ -241,12 +293,12 @@ export async function fillBeppyo1WithDigitBoxes(
     } else {
         // Production mode: Fill all fields from data
         const fieldMappings: { fieldKey: string; value: number }[] = [
-            { fieldKey: '所得金額_box1', value: data.beppyo4.taxableIncome },
-            { fieldKey: '法人税額_box2', value: data.beppyo1.corporateTaxAmount },
-            { fieldKey: '差引法人税額_box13', value: data.beppyo1.corporateTaxAmount - data.beppyo1.specialTaxCredit - data.beppyo1.interimPayment },
-            { fieldKey: '所得合計_box18', value: data.beppyo4.taxableIncome },
-            { fieldKey: '控除税額_box19', value: data.beppyo1.specialTaxCredit },
-            { fieldKey: '中間納付_box22', value: data.beppyo1.interimPayment },
+            { fieldKey: '所得金額_row1', value: data.beppyo4.taxableIncome },
+            { fieldKey: '法人税額_row2', value: data.beppyo1.corporateTaxAmount },
+            { fieldKey: '差引法人税額_row13', value: data.beppyo1.corporateTaxAmount - data.beppyo1.specialTaxCredit - data.beppyo1.interimPayment },
+            { fieldKey: '所得合計_row18', value: data.beppyo4.taxableIncome },
+            { fieldKey: '控除税額_row19', value: data.beppyo1.specialTaxCredit },
+            { fieldKey: '中間納付_row22', value: data.beppyo1.interimPayment },
         ];
 
         for (const mapping of fieldMappings) {
