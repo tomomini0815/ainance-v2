@@ -26,7 +26,7 @@ export interface Beppyo5Data {
     currentIncrease: number; // 当期増減（増）
     currentDecrease: number; // 当期増減（減）
     retainedEarningsEnd: number; // 差引翌期首現在利益積立金額
-    
+
     capitalBegin: number; // 期首資本金等の額
     capitalIncrease: number;
     capitalDecrease: number;
@@ -102,7 +102,7 @@ export interface BusinessOverviewData {
     operatingIncome: number;
     ordinaryIncome: number;
     netIncome: number;
-    
+
     // 主要科目
     directorsCompensation: number; // 役員給与
     employeesSalary: number; // 従業員給料
@@ -121,6 +121,10 @@ export interface CorporateTaxInputData {
     beppyo15: Beppyo15Data;
     beppyo2: Beppyo2Data;
     businessOverview: BusinessOverviewData;
+    calibration?: {
+        globalShiftX: number;
+        globalShiftY: number;
+    };
 }
 
 export const initialCorporateTaxInputData: CorporateTaxInputData = {
@@ -196,5 +200,9 @@ export const initialCorporateTaxInputData: CorporateTaxInputData = {
         taxesAndDues: 0,
         entertainmentExpenses: 0,
         depreciation: 0,
+    },
+    calibration: {
+        globalShiftX: 0,
+        globalShiftY: 0,
     }
 };

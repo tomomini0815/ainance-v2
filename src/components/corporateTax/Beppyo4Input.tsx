@@ -1,6 +1,6 @@
 import React from 'react';
 import { CorporateTaxInputData } from '../../types/corporateTaxInput';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Info } from 'lucide-react';
 import { MoneyInput } from '../common/MoneyInput';
 
 interface Props {
@@ -50,108 +50,158 @@ export const Beppyo4Input: React.FC<Props> = ({ data, onChange }) => {
     const calculatedIncome = data.beppyo4.netIncomeFromPL + totalAdditions - totalSubtractions;
 
     return (
-        <div className="space-y-8">
-
+        <div className="space-y-6">
+            <div className="bg-info/5 border border-info/20 rounded-lg p-3 flex items-start gap-3 mb-4">
+                <Info className="w-4 h-4 text-info shrink-0 mt-0.5" />
+                <p className="text-xs text-text-muted">
+                    この画面では会計上の利益から税務上の所得への調整を行います（申告調整）。
+                    取引データから「租税公課」や「交際費」の不算入額が自動計算されています。
+                </p>
+            </div>
 
             {/* 当期純利益 */}
-            <div className="bg-surface p-4 rounded-lg border border-border">
-                <label className="block text-sm font-medium text-text-main mb-2">当期純利益（損益計算書）</label>
+            <div className="bg-surface p-5 rounded-xl border border-border shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="w-8 h-8 flex items-center justify-center bg-slate-800 text-white rounded font-bold text-sm">1</span>
+                    <label className="block text-sm font-bold text-text-main">当期利益又は当期欠損の額</label>
+                </div>
                 <MoneyInput
                     value={data.beppyo4.netIncomeFromPL}
                     onChange={handleNetIncomeChange}
-                    className="input-base flex-1 min-w-0 bg-surface"
+                    className="input-base w-full max-w-md bg-surface font-mono text-lg"
                 />
             </div>
 
             {/* 加算項目 */}
-            <div>
-                <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium text-text-main">加算（損金不算入・益金算入）</h4>
-                    <button onClick={() => handleAddItem('additions')} className="btn-ghost btn-sm text-xs">
-                        <Plus className="w-3 h-3 mr-1" /> 追加
+            <div className="bg-surface p-5 rounded-xl border border-border shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 flex items-center justify-center bg-red-600 text-white rounded font-bold text-sm">＋</span>
+                        <h4 className="font-bold text-text-main text-lg">加算（損金不算入・益金算入）</h4>
+                    </div>
+                    <button onClick={() => handleAddItem('additions')} className="btn-secondary btn-sm">
+                        <Plus className="w-4 h-4 mr-1" /> 項目追加
                     </button>
                 </div>
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-text-muted px-1">
-                        <div className="flex-1">項目名</div>
-                        <div className="flex-1">金額</div>
-                        <div className="w-6"></div> {/* Spacer for delete button */}
-                    </div>
-                    {data.beppyo4.additions.map((item) => (
-                        <div key={item.id} className="flex items-center gap-2">
-                            <input
-                                type="text"
-                                value={item.description}
-                                onChange={(e) => handleItemChange('additions', item.id, 'description', e.target.value)}
-                                className="input-base flex-1 min-w-0" // Add min-w-0 to prevent flex item overflow
-                                placeholder="項目名"
-                            />
-                            <MoneyInput
-                                value={item.amount}
-                                onChange={(val) => handleItemChange('additions', item.id, 'amount', val)}
-                                className="input-base flex-1 min-w-0"
-                                placeholder="金額"
-                            />
-                            <button onClick={() => handleRemoveItem('additions', item.id)} className="text-text-muted hover:text-error p-1 shrink-0">
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ))}
-                    <div className="text-right text-sm font-semibold text-text-muted mt-2">
-                        加算計: ¥{totalAdditions.toLocaleString()}
-                    </div>
+                <div className="space-y-3">
+                    {data.beppyo4.additions.length > 0 ? (
+                        <>
+                            <div className="grid grid-cols-[1fr_1fr_40px] gap-4 px-2 text-xs font-bold text-text-muted">
+                                <div>調整項目（摘要）</div>
+                                <div>金額（加算額）</div>
+                                <div></div>
+                            </div>
+                            {data.beppyo4.additions.map((item, idx) => (
+                                <div key={item.id} className="grid grid-cols-[1fr_1fr_40px] items-center gap-4 group">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs font-mono text-text-muted w-4">{idx + 2}</span>
+                                        <input
+                                            type="text"
+                                            value={item.description}
+                                            onChange={(e) => handleItemChange('additions', item.id, 'description', e.target.value)}
+                                            className="input-base w-full bg-surface-highlight/30"
+                                            placeholder="項目名"
+                                        />
+                                    </div>
+                                    <MoneyInput
+                                        value={item.amount}
+                                        onChange={(val) => handleItemChange('additions', item.id, 'amount', val)}
+                                        className="input-base w-full font-mono text-right"
+                                        placeholder="金額"
+                                    />
+                                    <button onClick={() => handleRemoveItem('additions', item.id)} className="text-text-muted hover:text-red-500 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                            <div className="pt-4 mt-2 border-t border-border flex justify-end items-center gap-4">
+                                <span className="text-sm font-bold text-text-muted">加算計</span>
+                                <span className="text-xl font-mono font-bold text-red-500">¥{totalAdditions.toLocaleString()}</span>
+                            </div>
+                        </>
+                    ) : (
+                        <p className="text-center py-8 text-text-muted bg-surface-highlight/20 rounded-lg border border-dashed border-border">
+                            加算項目はありません
+                        </p>
+                    )}
                 </div>
             </div>
 
             {/* 減算項目 */}
-            <div>
-                <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium text-text-main">減算（損金算入・益金不算入）</h4>
-                    <button onClick={() => handleAddItem('subtractions')} className="btn-ghost btn-sm text-xs">
-                        <Plus className="w-3 h-3 mr-1" /> 追加
+            <div className="bg-surface p-5 rounded-xl border border-border shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded font-bold text-sm">－</span>
+                        <h4 className="font-bold text-text-main text-lg">減算（損金算入・益金不算入）</h4>
+                    </div>
+                    <button onClick={() => handleAddItem('subtractions')} className="btn-secondary btn-sm">
+                        <Plus className="w-4 h-4 mr-1" /> 項目追加
                     </button>
                 </div>
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-text-muted px-1">
-                        <div className="flex-1">項目名</div>
-                        <div className="flex-1">金額</div>
-                        <div className="w-6"></div>
-                    </div>
-                    {data.beppyo4.subtractions.map((item) => (
-                        <div key={item.id} className="flex items-center gap-2">
-                            <input
-                                type="text"
-                                value={item.description}
-                                onChange={(e) => handleItemChange('subtractions', item.id, 'description', e.target.value)}
-                                className="input-base flex-1 min-w-0"
-                                placeholder="項目名"
-                            />
-                            <MoneyInput
-                                value={item.amount}
-                                onChange={(val) => handleItemChange('subtractions', item.id, 'amount', val)}
-                                className="input-base flex-1 min-w-0"
-                                placeholder="金額"
-                            />
-                            <button onClick={() => handleRemoveItem('subtractions', item.id)} className="text-text-muted hover:text-error p-1 shrink-0">
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ))}
-                    <div className="text-right text-sm font-semibold text-text-muted mt-2">
-                        減算計: ¥{totalSubtractions.toLocaleString()}
-                    </div>
+                <div className="space-y-3">
+                    {data.beppyo4.subtractions.length > 0 ? (
+                        <>
+                            <div className="grid grid-cols-[1fr_1fr_40px] gap-4 px-2 text-xs font-bold text-text-muted">
+                                <div>調整項目（摘要）</div>
+                                <div>金額（減算額）</div>
+                                <div></div>
+                            </div>
+                            {data.beppyo4.subtractions.map((item, idx) => (
+                                <div key={item.id} className="grid grid-cols-[1fr_1fr_40px] items-center gap-4 group">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs font-mono text-text-muted w-4">{idx + data.beppyo4.additions.length + 2}</span>
+                                        <input
+                                            type="text"
+                                            value={item.description}
+                                            onChange={(e) => handleItemChange('subtractions', item.id, 'description', e.target.value)}
+                                            className="input-base w-full bg-surface-highlight/30"
+                                            placeholder="項目名"
+                                        />
+                                    </div>
+                                    <MoneyInput
+                                        value={item.amount}
+                                        onChange={(val) => handleItemChange('subtractions', item.id, 'amount', val)}
+                                        className="input-base w-full font-mono text-right"
+                                        placeholder="金額"
+                                    />
+                                    <button onClick={() => handleRemoveItem('subtractions', item.id)} className="text-text-muted hover:text-red-500 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                            <div className="pt-4 mt-2 border-t border-border flex justify-end items-center gap-4">
+                                <span className="text-sm font-bold text-text-muted">減算計</span>
+                                <span className="text-xl font-mono font-bold text-blue-500">¥{totalSubtractions.toLocaleString()}</span>
+                            </div>
+                        </>
+                    ) : (
+                        <p className="text-center py-8 text-text-muted bg-surface-highlight/20 rounded-lg border border-dashed border-border">
+                            減算項目はありません
+                        </p>
+                    )}
                 </div>
             </div>
 
             {/* 所得金額 */}
-            <div className="bg-primary/5 p-6 rounded-xl border border-primary/20">
-                <div className="flex justify-between items-center">
-                    <label className="text-lg font-bold text-text-main">所得金額</label>
-                    <div className="text-3xl font-bold text-primary">
-                        ¥{calculatedIncome.toLocaleString()}
+            <div className="bg-gradient-to-r from-primary to-primary-light p-8 rounded-2xl border border-primary/20 shadow-xl shadow-primary/10 transition-all hover:shadow-2xl hover:shadow-primary/20">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-md text-white rounded-lg font-bold text-lg">48</span>
+                            <label className="text-xl font-bold text-white">所得金額又は欠損金額</label>
+                        </div>
+                        <p className="text-primary-light/80 text-sm max-w-sm">
+                            （1 + 加算計 - 減算計）
+                            この金額が別表一の「課税標準額」の計算の基礎となります。
+                        </p>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-4xl md:text-5xl font-mono font-black text-white drop-shadow-lg">
+                            ¥{calculatedIncome.toLocaleString()}
+                        </div>
+                        <div className="mt-2 text-white/60 text-xs font-medium uppercase tracking-widest">Calculated Taxable Income</div>
                     </div>
                 </div>
-                <p className="text-xs text-text-muted mt-2">※ この金額が別表一の「課税標準額」に転記されます</p>
             </div>
         </div>
     );

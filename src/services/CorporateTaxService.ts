@@ -104,7 +104,7 @@ export interface FinancialData {
   extraordinaryIncome: number; // 特別利益
   extraordinaryLoss: number;  // 特別損失
   incomeBeforeTax: number;    // 税引前当期純利益
-  
+
   // 貸借対照表（簡易版）
   totalAssets: number;        // 総資産
   totalLiabilities: number;   // 負債合計
@@ -116,7 +116,7 @@ export interface FinancialData {
   accountsPayable: number;    // 買掛金
   shortTermLoans: number;     // 短期借入金
   longTermLoans: number;      // 長期借入金
-  
+
   // 経費内訳
   expensesByCategory: {
     category: string;
@@ -128,32 +128,32 @@ export interface FinancialData {
 export interface CorporateTaxResult {
   // 課税所得
   taxableIncome: number;
-  
+
   // 法人税
   corporateTax: number;
   corporateTaxBreakdown: {
     lowerBracket: number;   // 800万円以下の部分
     upperBracket: number;   // 800万円超の部分
   };
-  
+
   // 地方法人税
   localCorporateTax: number;
-  
+
   // 法人住民税
   corporateInhabitantTax: number;
   prefecturalTax: number;
   municipalTax: number;
   perCapitaLevy: number;
-  
+
   // 法人事業税
   businessTax: number;
-  
+
   // 税金合計
   totalTax: number;
-  
+
   // 当期純利益
   netIncome: number;
-  
+
   // 実効税率
   effectiveTaxRate: number;
 }
@@ -178,10 +178,10 @@ export function calculateCorporateTax(
   capital: number
 ): { tax: number; breakdown: { lowerBracket: number; upperBracket: number } } {
   const isSmallBusiness = capital <= 100000000; // 資本金1億円以下
-  
+
   if (isSmallBusiness) {
     const { lowerRate, upperRate, threshold } = CORPORATE_TAX_RATES.smallBusiness;
-    
+
     if (taxableIncome <= threshold) {
       return {
         tax: Math.floor(taxableIncome * lowerRate),
@@ -232,7 +232,7 @@ export function calculateCorporateInhabitantTax(corporateTax: number): {
   const prefecturalTax = Math.floor(corporateTax * CORPORATE_INHABITANT_TAX.prefectural);
   const municipalTax = Math.floor(corporateTax * CORPORATE_INHABITANT_TAX.municipal);
   const perCapitaLevy = CORPORATE_INHABITANT_TAX.perCapitaLevy;
-  
+
   return {
     prefecturalTax,
     municipalTax,
@@ -246,9 +246,9 @@ export function calculateCorporateInhabitantTax(corporateTax: number): {
  */
 export function calculateBusinessTax(taxableIncome: number): number {
   if (taxableIncome <= 0) return 0;
-  
+
   let tax = 0;
-  
+
   if (taxableIncome <= 4000000) {
     tax = Math.floor(taxableIncome * BUSINESS_TAX_RATES.income400);
   } else if (taxableIncome <= 8000000) {
@@ -259,7 +259,7 @@ export function calculateBusinessTax(taxableIncome: number): number {
     tax += Math.floor(4000000 * BUSINESS_TAX_RATES.income800);
     tax += Math.floor((taxableIncome - 8000000) * BUSINESS_TAX_RATES.incomeOver);
   }
-  
+
   return tax;
 }
 
@@ -272,28 +272,28 @@ export function calculateAllCorporateTaxes(
 ): CorporateTaxResult {
   // 課税所得（税引前利益から計算。実際はより複雑な調整が必要）
   const taxableIncome = Math.max(0, financialData.incomeBeforeTax);
-  
+
   // 法人税
   const corporateTaxResult = calculateCorporateTax(taxableIncome, corporateInfo.capital);
-  
+
   // 地方法人税
   const localCorporateTax = calculateLocalCorporateTax(corporateTaxResult.tax);
-  
+
   // 法人住民税
   const inhabitantTax = calculateCorporateInhabitantTax(corporateTaxResult.tax);
-  
+
   // 法人事業税
   const businessTax = calculateBusinessTax(taxableIncome);
-  
+
   // 税金合計
   const totalTax = corporateTaxResult.tax + localCorporateTax + inhabitantTax.total + businessTax;
-  
+
   // 当期純利益
   const netIncome = financialData.incomeBeforeTax - totalTax;
-  
+
   // 実効税率
   const effectiveTaxRate = taxableIncome > 0 ? totalTax / taxableIncome : 0;
-  
+
   return {
     taxableIncome,
     corporateTax: corporateTaxResult.tax,
@@ -319,19 +319,19 @@ export function calculateConsumptionTax(
 ): ConsumptionTaxResult {
   const TAX_RATE = 0.10;
   const LOCAL_TAX_RATIO = 22 / 78; // 地方消費税の割合
-  
+
   // 売上に係る消費税
   const outputTax = Math.floor(taxableRevenue * TAX_RATE / (1 + TAX_RATE));
-  
+
   // 仕入に係る消費税
   const inputTax = Math.floor(taxablePurchases * TAX_RATE / (1 + TAX_RATE));
-  
+
   // 納付消費税額（国税分）
   const netConsumptionTax = Math.max(0, outputTax - inputTax);
-  
+
   // 地方消費税
   const localConsumptionTax = Math.floor(netConsumptionTax * LOCAL_TAX_RATIO);
-  
+
   return {
     taxableRevenue,
     taxExemptRevenue: 0,
@@ -342,6 +342,24 @@ export function calculateConsumptionTax(
     localConsumptionTax,
     totalConsumptionTax: netConsumptionTax + localConsumptionTax,
   };
+}
+
+/**
+ * 交際費の損金不算入額を計算
+ * 中小法人の場合：年800万円までは損金算入可能
+ */
+export function calculateEntertainmentAdjustment(
+  totalEntertainment: number,
+  capital: number
+): number {
+  const isSmallBusiness = capital <= 100000000;
+  if (!isSmallBusiness) {
+    // 大法人は原則全額不算入（飲食費の50%を除くが、ここでは簡略化）
+    return totalEntertainment;
+  }
+
+  const LIMIT = 8000000; // 800万円定額控除制度
+  return Math.max(0, totalEntertainment - LIMIT);
 }
 
 /**
@@ -359,19 +377,19 @@ export function calculateDepreciation(asset: DepreciationAsset): DepreciationRes
   // 1. 償却率の取得
   let rate = 0;
   if (depreciationMethod === 'lumpSum') {
-     // 一括償却資産（3年均等）
-     rate = 1 / 3;
+    // 一括償却資産（3年均等）
+    rate = 1 / 3;
   } else if (depreciationMethod === 'immediateSME') {
-     // 少額減価償却資産の特例（30万円未満、即時償却）
-     rate = 1.0;
+    // 少額減価償却資産の特例（30万円未満、即時償却）
+    rate = 1.0;
   } else if (depreciationMethod === 'leasePeriod') {
-     // リース期間定額法
-     rate = 1 / usefulLife;
+    // リース期間定額法
+    rate = 1 / usefulLife;
   } else if (depreciationMethod === 'unitsOfProduction') {
-     // 生産高比例法
-     if (asset.totalEstimatedUnits && asset.totalEstimatedUnits > 0) {
-       rate = (asset.currentYearUnits || 0) / asset.totalEstimatedUnits;
-     }
+    // 生産高比例法
+    if (asset.totalEstimatedUnits && asset.totalEstimatedUnits > 0) {
+      rate = (asset.currentYearUnits || 0) / asset.totalEstimatedUnits;
+    }
   } else if (DEPRECIATION_RATES[usefulLife]) {
     const methods = DEPRECIATION_RATES[usefulLife];
     if (depreciationMethod === 'straightLine' || depreciationMethod === 'decliningBalance') {

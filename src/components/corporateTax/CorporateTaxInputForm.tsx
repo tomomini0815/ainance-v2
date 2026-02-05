@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { initialCorporateTaxInputData, CorporateTaxInputData } from '../../types/corporateTaxInput';
 import { CorporateTaxInputService } from '../../services/CorporateTaxInputService';
-import { generateCompleteCorporateTaxPDF } from '../../services/pdfJapaneseService';
+import { generateCompleteCorporateTaxPDF, fillOfficialCorporateTaxPDF, fillSingleOfficialCorporateTaxPDF } from '../../services/pdfJapaneseService';
 import { CsvExportService } from '../../services/CsvExportService';
 import { Beppyo1Input } from './Beppyo1Input';
 import { Beppyo4Input } from './Beppyo4Input';
@@ -12,7 +12,8 @@ import { Beppyo15Input } from './Beppyo15Input';
 import { Beppyo16Input } from './Beppyo16Input';
 import { Beppyo2Input } from './Beppyo2Input';
 import { BusinessOverviewInput } from './BusinessOverviewInput';
-import { Save, RefreshCw, Download, Activity, Calculator, PieChart, Landmark, Box, Coffee, Users, FileText, BookOpen, Eye, X } from 'lucide-react';
+import { generateCorporateTaxXTX, downloadFile } from '../../services/eTaxExportService';
+import { Save, RefreshCw, Download, Activity, Calculator, PieChart, Landmark, Box, Coffee, Users, FileText, BookOpen, Eye, X, Share2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useBusinessTypeContext } from '../../context/BusinessTypeContext';
@@ -48,7 +49,17 @@ export const CorporateTaxInputForm: React.FC = () => {
             toast.error('取り込む取引データがありません');
             return;
         }
-        if (!window.confirm('現在入力されているデータに、取引データから集計した値を加算・上書きしますか？')) {
+
+        const currentYear = new Date().getFullYear();
+        const fiscalYear = currentYear - 1;
+        const yearTransactions = transactions.filter(t => new Date(t.date).getFullYear() === fiscalYear);
+
+        if (yearTransactions.length === 0) {
+            toast.error(`${fiscalYear}年度の取引データが見つかりませんでした`);
+            return;
+        }
+
+        if (!window.confirm(`${fiscalYear}年度の取引（${yearTransactions.length}件）を解析し、申告書に転記しますか？\n（現在入力されている調整項目は上書きされる場合があります）`)) {
             return;
         }
 
@@ -56,7 +67,21 @@ export const CorporateTaxInputForm: React.FC = () => {
             const calculated = CorporateTaxInputService.calculateDataFromTransactions(transactions);
             setData(prev => ({ ...prev, ...calculated }));
             setHasUnsavedChanges(true);
-            toast.success('取引データを転記しました');
+
+            // 転記された内容を要約して通知
+            const additionCount = calculated.beppyo4?.additions?.length || 0;
+            const assetCount = calculated.beppyo16?.assets?.length || 0;
+
+            toast.success(
+                <div>
+                    <p className="font-bold">データの転記が完了しました</p>
+                    <p className="text-xs mt-1">
+                        ・別表四: {additionCount}項目の調整を抽出<br />
+                        ・別表十六: {assetCount}件の資産を特定
+                    </p>
+                </div>,
+                { duration: 4000 }
+            );
         } catch (error) {
             console.error('Import failed', error);
             toast.error('転記に失敗しました');
@@ -91,6 +116,49 @@ export const CorporateTaxInputForm: React.FC = () => {
         }
     };
 
+    const handleDownloadOfficialPDF = async () => {
+        setIsGeneratingPdf(true);
+        try {
+            const { pdfBytes, successes, errors } = await fillOfficialCorporateTaxPDF(data);
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = `公式法人税申告書_一括_${new Date().toISOString().split('T')[0]}.pdf`;
+            link.click();
+
+            toast.success(
+                <div>
+                    <p className="font-bold">公式様式PDFを出力しました</p>
+                    <p className="text-xs mt-1">成功: {successes.join(', ')}</p>
+                    {errors.length > 0 && <p className="text-xs text-red-500 mt-1">失敗: {errors.join(', ')}</p>}
+                </div>
+            );
+        } catch (error: any) {
+            console.error('Official PDF filling failed', error);
+            toast.error(error.message || '公式様式の作成に失敗しました');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
+    const handleDownloadSingleOfficialPDF = async (templateId: string, name: string) => {
+        setIsGeneratingPdf(true);
+        try {
+            const pdfBytes = await fillSingleOfficialCorporateTaxPDF(data, templateId);
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = `${name}_${new Date().toISOString().split('T')[0]}.pdf`;
+            link.click();
+            toast.success(`${name}を出力しました`);
+        } catch (error: any) {
+            console.error(`Single PDF filling failed for ${templateId}`, error);
+            toast.error(`${name}の作成に失敗しました: ${error.message}`);
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
     const handlePreviewPDF = async () => {
         setIsGeneratingPdf(true);
         try {
@@ -112,6 +180,25 @@ export const CorporateTaxInputForm: React.FC = () => {
         if (previewBlobUrl) {
             window.URL.revokeObjectURL(previewBlobUrl);
             setPreviewBlobUrl(null);
+        }
+    };
+
+    const handleExportXTX = () => {
+        try {
+            const xtx = generateCorporateTaxXTX(data);
+            const fileName = `corporate_tax_return_${new Date().getFullYear()}.xtx`;
+            downloadFile(xtx, fileName);
+            toast.success(
+                <div>
+                    <p className="font-bold">e-Tax用ファイルを書き出しました</p>
+                    <p className="text-xs mt-1">
+                        国税庁のe-Taxソフト等でインポートできます。
+                    </p>
+                </div>
+            );
+        } catch (error) {
+            console.error('XTX export failed', error);
+            toast.error('書き出しに失敗しました');
         }
     };
 
@@ -268,18 +355,72 @@ export const CorporateTaxInputForm: React.FC = () => {
                                         ) : (
                                             <FileText className="w-4 h-4" />
                                         )}
-                                        PDF出力
+                                        PDF出力 (下書き用)
+                                    </button>
+
+                                    <div className="space-y-3">
+                                        <button
+                                            onClick={handleDownloadOfficialPDF}
+                                            disabled={isGeneratingPdf}
+                                            className="w-full h-12 bg-primary text-white font-bold rounded-xl shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2"
+                                        >
+                                            <FileText className="w-5 h-5" />
+                                            {isGeneratingPdf ? '生成中...' : '公式PDF (一括出力)'}
+                                        </button>
+
+                                        <div className="grid grid-cols-1 gap-1 border border-border rounded-xl overflow-hidden bg-surface mt-4 shadow-inner">
+                                            <div className="px-3 py-2 bg-surface-highlight text-[10px] font-bold text-text-muted uppercase border-b border-border tracking-wider flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                                個別出力 (反映成功のみ)
+                                            </div>
+                                            <div className="divide-y divide-border">
+                                                {[
+                                                    { id: 'beppyo1', name: '別表一' },
+                                                    { id: 'beppyo4', name: '別表四' },
+                                                    { id: 'beppyo5_1', name: '別表五一' },
+                                                    { id: 'beppyo15', name: '別表十五' },
+                                                    { id: 'beppyo16', name: '別表十六' }
+                                                ].map(item => (
+                                                    <div key={item.id} className="flex divide-x divide-border">
+                                                        <button
+                                                            onClick={() => handleDownloadSingleOfficialPDF(item.id, item.name)}
+                                                            className="flex-1 py-2 px-3 text-left text-sm text-text-main hover:bg-surface-highlight transition-colors flex items-center justify-between"
+                                                        >
+                                                            <span>{item.name}</span>
+                                                            <Download className="w-3 h-3 text-text-muted" />
+                                                        </button>
+                                                        {item.id === 'beppyo1' && (
+                                                            <button
+                                                                onClick={() => handleDownloadSingleOfficialPDF('beppyo1_debug', '座標確認用')}
+                                                                title="位置合わせ用の目盛りを表示します"
+                                                                className="px-2 bg-surface hover:bg-surface-highlight text-[10px] text-text-muted transition-colors flex items-center justify-center border-l border-border"
+                                                            >
+                                                                <Activity className="w-3 h-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleExportXTX}
+                                        className="w-full py-2.5 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                                    >
+                                        <Share2 className="w-4 h-4" />
+                                        e-Tax出力 (提出用)
                                     </button>
                                     <button
                                         onClick={() => {
                                             const csv = CsvExportService.generateFinancialStatementCSV(data);
                                             CsvExportService.downloadCSV(csv, `financial_statements_draft.csv`);
-                                            toast.success('CSVを出力しました');
+                                            toast.success('財務諸表CSVを出力しました');
                                         }}
                                         className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
                                     >
                                         <BookOpen className="w-4 h-4" />
-                                        e-Tax用CSV
+                                        財務諸表CSV (提出用)
                                     </button>
                                     <button
                                         onClick={handleImport}
@@ -321,7 +462,7 @@ export const CorporateTaxInputForm: React.FC = () => {
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>
-                            <div className="flex-1 bg-gray-100 p-4">
+                            <div className="flex-1 bg-surface-highlight p-4">
                                 <iframe
                                     src={previewBlobUrl}
                                     className="w-full h-full rounded-lg shadow-inner border border-border"

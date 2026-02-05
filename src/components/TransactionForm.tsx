@@ -343,7 +343,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         <button
           type="button"
           onClick={() => setActiveTab('normal')}
-          className={`flex-1 flex items-center justify-center py-2.5 px-4 rounded-full text-sm font-bold transition-all duration-500 whitespace-nowrap ${activeTab === 'normal'
+          className={`flex-1 flex items-center justify-center py-2.5 px-2 sm:px-4 rounded-full text-xs sm:text-sm font-bold transition-all duration-500 whitespace-nowrap ${activeTab === 'normal'
             ? 'bg-slate-800 text-primary shadow-lg shadow-black/20 transform scale-[1.02]'
             : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
             }`}
@@ -354,7 +354,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         <button
           type="button"
           onClick={() => setActiveTab('depreciation')}
-          className={`flex-1 flex items-center justify-center py-2.5 px-4 rounded-full text-sm font-bold transition-all duration-500 whitespace-nowrap ${activeTab === 'depreciation'
+          className={`flex-1 flex items-center justify-center py-2.5 px-2 sm:px-4 rounded-full text-xs sm:text-sm font-bold transition-all duration-500 whitespace-nowrap ${activeTab === 'depreciation'
             ? 'bg-slate-800 text-primary shadow-lg shadow-black/20 transform scale-[1.02]'
             : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
             }`}
@@ -400,9 +400,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-2 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-text-muted mb-1.5">タイプ</label>
+              <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">タイプ</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -430,28 +430,28 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-muted mb-1.5">日付</label>
+              <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">日付</label>
               <div className="relative">
-                <Calendar className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4 pointer-events-none z-10" />
+                <Calendar className="absolute left-2 sm:left-3.5 top-1/2 transform -translate-y-1/2 text-text-muted w-3 h-3 sm:w-4 sm:h-4 pointer-events-none z-10" />
                 <input
                   type="date"
                   name="date"
                   value={formData.date}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                  className="w-full pl-7 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main transition-all"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-muted mb-1.5">カテゴリ(勘定科目)</label>
+              <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">カテゴリ</label>
               <div className="relative">
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all"
+                  className="w-full px-2 sm:px-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main appearance-none transition-all"
                   required
                 >
                   <option value="" className="bg-surface-highlight text-text-muted">カテゴリを選択</option>
@@ -496,13 +496,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-muted mb-1.5">取引項目</label>
+              <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">取引項目</label>
               <div className="relative">
                 <select
                   name="item"
                   value={formData.item}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all"
+                  className="w-full px-2 sm:px-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main appearance-none transition-all"
                   required
                 >
                   <option value="" className="bg-surface-highlight text-text-muted">取引項目を選択</option>
@@ -552,7 +552,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-muted mb-1.5">金額</label>
+              <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">金額</label>
               <div className="relative">
                 <input
                   type="number"
@@ -561,7 +561,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   onChange={handleChange}
                   onFocus={() => setIsAmountFocused(true)}
                   onBlur={() => setTimeout(() => setIsAmountFocused(false), 200)}
-                  className="w-full pl-4 pr-10 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main placeholder-text-muted transition-all"
+                  className="w-full px-2 sm:pl-4 pr-10 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main placeholder-text-muted transition-all"
                   required
                   min="0"
                   step="1"
@@ -591,7 +591,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-muted mb-1.5">場所</label>
+              <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">場所</label>
               <div className="relative">
                 <input
                   type="text"
@@ -599,7 +599,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   value={formData.location}
                   onChange={handleChange}
                   placeholder="場所を入力"
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main placeholder-text-muted transition-all"
+                  className="w-full px-2 sm:px-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main placeholder-text-muted transition-all"
                   list="location-options"
                 />
                 <datalist id="location-options">
@@ -725,25 +725,25 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-text-muted mb-1.5">開始日</label>
+                  <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">開始日</label>
                   <input
                     type="date"
                     name="recurring_start_date"
                     value={formData.recurring_start_date}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                    className="w-full px-2 sm:px-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-text-muted mb-1.5">終了日</label>
+                  <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">終了日</label>
                   <input
                     type="date"
                     name="recurring_end_date"
                     value={formData.recurring_end_date}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                    className="w-full px-2 sm:px-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main transition-all"
                   />
                 </div>
               </div>
@@ -770,93 +770,93 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         <>
           <div className="space-y-6">
             {/* Name & Price Row */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">資産名称 *</label>
+                <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">資産名称 *</label>
                 <input
                   type="text"
                   name="item"
                   value={formData.item}
                   onChange={handleChange}
-                  placeholder="例: パソコン、営業車"
-                  className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all placeholder:text-text-muted/50"
+                  placeholder="例: パソコン"
+                  className="w-full px-2 sm:px-4 py-2 sm:py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-xs sm:text-main transition-all placeholder:text-text-muted/50"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">取得価額 *</label>
+                <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">取得価額 *</label>
                 <div className="relative">
                   <input
                     type="number"
                     name="amount"
                     value={formData.amount || ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all"
+                    className="w-full px-2 sm:px-4 py-2 sm:py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-sm sm:text-lg transition-all"
                     placeholder="0"
                     min="0"
                     required
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">円</span>
+                  <span className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-text-muted text-[10px] sm:text-sm">円</span>
                 </div>
               </div>
             </div>
 
             {/* Date Row */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">取得年月日</label>
+                <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">取得年月日</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar className="h-4 w-4 text-text-muted" />
+                  <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-text-muted" />
                   </div>
                   <input
                     type="date"
                     value={acqDate}
                     onChange={(e) => setAcqDate(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono transition-all"
+                    className="w-full pl-7 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main font-mono transition-all"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">計上年度の決算日等</label>
+                <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">計上年度の決算日等</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar className="h-4 w-4 text-text-muted" />
+                  <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-text-muted" />
                   </div>
                   <input
                     type="date"
                     name="date"
                     value={formData.date}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono transition-all"
+                    className="w-full pl-7 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main font-mono transition-all"
                     required
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">償却方法</label>
+                <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">償却方法</label>
                 <div className="relative">
                   <select
                     value={depreciationMethod}
                     onChange={(e) => setDepreciationMethod(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all cursor-pointer"
+                    className="w-full px-2 sm:px-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main appearance-none transition-all cursor-pointer"
                   >
                     <option value="定額法">定額法</option>
-                    <option value="定率法">定率法 (要届出)</option>
-                    <option value="一括償却 (3年)">一括償却 (3年)</option>
-                    <option value="少額減価償却資産 (特例)">少額特例 (30万未満)</option>
+                    <option value="定率法">定率法</option>
+                    <option value="一括償却 (3年)">一括償却</option>
+                    <option value="少額減価償却資産 (特例)">少額特例</option>
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                  <ChevronDown className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-text-muted pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">耐用年数</label>
+                <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">耐用年数</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -865,30 +865,30 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     min="1"
                     max="100"
                     disabled={depreciationMethod === '一括償却 (3年)' || depreciationMethod === '少額減価償却資産 (特例)'}
-                    className={`w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all ${(depreciationMethod === '一括償却 (3年)' || depreciationMethod === '少額減価償却資産 (特例)') ? 'opacity-50 cursor-not-allowed' : ''
+                    className={`w-full px-2 sm:px-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-sm sm:text-lg transition-all ${(depreciationMethod === '一括償却 (3年)' || depreciationMethod === '少額減価償却資産 (特例)') ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     required
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">年</span>
+                  <span className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-text-muted text-[10px] sm:text-sm">年</span>
                 </div>
               </div>
             </div>
 
             {/* Usage Ratio */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">事業専用割合 (%)</label>
+                <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">事業割合 (%)</label>
                 <input
                   type="number"
                   value={businessRatio}
                   onChange={(e) => setBusinessRatio(Number(e.target.value))}
                   min="0"
                   max="100"
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all"
+                  className="w-full px-2 sm:px-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-sm sm:text-lg transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">勘定科目 (任意)</label>
+                <label className="block text-[10px] sm:text-sm font-medium text-text-muted mb-1.5">勘定科目</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -896,8 +896,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     value={formData.category}
                     onChange={handleChange}
                     list="asset-categories"
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
-                    placeholder="例: 工具器具備品"
+                    className="w-full px-2 sm:px-4 py-2 sm:py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-[10px] sm:text-sm text-text-main transition-all"
+                    placeholder="例: 工具備品"
                   />
                   <datalist id="asset-categories">
                     <option value="工具器具備品" />
@@ -913,7 +913,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
             {/* Calculated Depreciation Result */}
             <div className="bg-surface-highlight/50 p-4 rounded-xl border border-border/50 animate-in fade-in slide-in-from-top-1 duration-300">
               <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-primary/10 rounded-lg">
                       <TrendingDown className="w-4 h-4 text-primary" />

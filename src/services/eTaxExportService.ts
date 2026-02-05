@@ -1,3 +1,5 @@
+import { CorporateTaxInputData } from '../types/corporateTaxInput';
+
 /**
  * e-Tax用ファイル生成サービス
  * 国税庁のe-Taxに直接インポート可能なxtx形式ファイルを生成
@@ -7,7 +9,7 @@ export interface TaxFilingInfo {
   // 基本情報
   fiscalYear: number;
   filingType: 'blue' | 'white'; // 青色申告 or 白色申告
-  
+
   // 申告者情報
   name?: string;
   furigana?: string;
@@ -15,18 +17,18 @@ export interface TaxFilingInfo {
   address?: string;
   phoneNumber?: string;
   birthDate?: string;
-  
+
   // 収支データ
   revenue: number;          // 売上高
   expenses: number;         // 経費合計
   netIncome: number;        // 事業所得
-  
+
   // 経費内訳
   expensesByCategory: {
     category: string;
     amount: number;
   }[];
-  
+
   // 控除
   deductions: {
     type: string;
@@ -34,7 +36,7 @@ export interface TaxFilingInfo {
     amount: number;
   }[];
   totalDeductions: number;
-  
+
   // 税額計算
   taxableIncome: number;    // 課税所得
   estimatedTax: number;     // 予想税額
@@ -42,12 +44,11 @@ export interface TaxFilingInfo {
 
 /**
  * 青色申告決算書（一般用）のXTX/XML形式を生成
- * 注意: これは簡易版です。完全なe-Tax対応には追加の項目が必要です。
  */
 export function generateBlueReturnXTX(info: TaxFilingInfo): string {
   const now = new Date();
   const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0];
-  
+
   // 勘定科目のマッピング
   const categoryToCode: { [key: string]: string } = {
     '売上高': 'AA100',
@@ -64,107 +65,101 @@ export function generateBlueReturnXTX(info: TaxFilingInfo): string {
     '雑費': 'AC190',
   };
 
-  // 経費内訳をXML要素に変換
   const expenseElements = info.expensesByCategory.map((exp, index) => {
     const code = categoryToCode[exp.category] || `AC${200 + index}`;
     return `    <${code}>${exp.amount}</${code}>`;
   }).join('\n');
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Ainance e-Tax Export File
-  生成日時: ${now.toLocaleString('ja-JP')}
-  対象年度: ${info.fiscalYear}年度
-  申告区分: ${info.filingType === 'blue' ? '青色申告' : '白色申告'}
--->
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <申告書等送信票等>
   <作成日時>${timestamp}</作成日時>
   <ファイル種別>青色申告決算書</ファイル種別>
-  
   <申告者情報>
-    <氏名>${info.name || '（要入力）'}</氏名>
-    <フリガナ>${info.furigana || '（要入力）'}</フリガナ>
-    <郵便番号>${info.postalCode || ''}</郵便番号>
-    <住所>${info.address || '（要入力）'}</住所>
-    <電話番号>${info.phoneNumber || ''}</電話番号>
-    <生年月日>${info.birthDate || ''}</生年月日>
+    <氏名>${info.name || ''}</氏名>
+    <住所>${info.address || ''}</住所>
   </申告者情報>
-  
   <青色申告決算書>
-    <対象年度>${info.fiscalYear}</対象年度>
-    <申告区分>${info.filingType === 'blue' ? '1' : '2'}</申告区分>
-    
-    <!-- 損益計算書 -->
     <損益計算書>
-      <売上金額>
-        <AA100>${info.revenue}</AA100>
-      </売上金額>
-      
-      <必要経費>
-${expenseElements}
-        <経費合計>${info.expenses}</経費合計>
-      </必要経費>
-      
-      <差引金額>${info.netIncome}</差引金額>
-      
-      <各種引当金>
-        <繰戻額>0</繰戻額>
-        <繰入額>0</繰入額>
-      </各種引当金>
-      
-      <青色申告特別控除前所得>${info.netIncome}</青色申告特別控除前所得>
-      <青色申告特別控除額>${info.filingType === 'blue' ? 650000 : 0}</青色申告特別控除額>
-      <所得金額>${info.netIncome - (info.filingType === 'blue' ? 650000 : 0)}</所得金額>
+      <売上金額><AA100>${info.revenue}</AA100></売上金額>
+      <必要経費>${expenseElements}</必要経費>
+      <所得金額>${info.netIncome}</所得金額>
     </損益計算書>
-    
-    <!-- 控除情報 -->
-    <所得控除>
-${info.deductions.map(d => `      <${d.type}>${d.amount}</${d.type}>`).join('\n')}
-      <控除合計>${info.totalDeductions}</控除合計>
-    </所得控除>
-    
-    <!-- 税額計算 -->
-    <税額計算>
-      <課税所得金額>${info.taxableIncome}</課税所得金額>
-      <算出税額>${info.estimatedTax}</算出税額>
-    </税額計算>
   </青色申告決算書>
-  
-  <備考>
-    このファイルはAinanceで生成されました。
-    正式な申告にはe-Tax確定申告書等作成コーナーでの確認・修正が必要な場合があります。
-  </備考>
 </申告書等送信票等>`;
-
-  return xml;
 }
 
 /**
  * 収支内訳書（白色申告用）のXML形式を生成
  */
 export function generateIncomeStatementXML(info: TaxFilingInfo): string {
-  const now = new Date();
-  
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Ainance e-Tax Export File - 収支内訳書
-  生成日時: ${now.toLocaleString('ja-JP')}
-  対象年度: ${info.fiscalYear}年度
--->
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <収支内訳書>
   <対象年度>${info.fiscalYear}</対象年度>
-  
-  <収入金額>
-    <売上金額>${info.revenue}</売上金額>
-  </収入金額>
-  
-  <必要経費>
-${info.expensesByCategory.map(exp => `    <${exp.category.replace(/\s/g, '')}>${exp.amount}</${exp.category.replace(/\s/g, '')}>`).join('\n')}
-    <経費合計>${info.expenses}</経費合計>
-  </必要経費>
-  
+  <収入金額><売上金額>${info.revenue}</売上金額></収入金額>
   <差引金額>${info.netIncome}</差引金額>
 </収支内訳書>`;
+}
+
+/**
+ * 法人税申告書（別表一、四、十五、十六）のXTX形式を生成
+ */
+export function generateCorporateTaxXTX(data: CorporateTaxInputData): string {
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0];
+
+  // 簡易的なマッピング（実際には国税庁の仕様に準拠したタグ名が必要）
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<法人税申告書等データ>
+    <作成日時>${timestamp}</作成日時>
+    <ファイル種別>法人税申告書</ファイル種別>
+    
+    <別表一>
+        <課税標準額>${data.beppyo1.taxableIncome}</課税標準額>
+        <法人税額>${data.beppyo1.corporateTaxAmount}</法人税額>
+        <特別控除額>${data.beppyo1.specialTaxCredit}</特別控除額>
+        <中間納付額>${data.beppyo1.interimPayment}</中間納付額>
+        <差引確定法人税額>${data.beppyo1.corporateTaxAmount - data.beppyo1.specialTaxCredit - data.beppyo1.interimPayment}</差引確定法人税額>
+    </别表一>
+
+    <別表四>
+        <当期純利益>${data.beppyo4.netIncomeFromPL}</当期純利益>
+        <加算項目>
+            ${data.beppyo4.additions.map(a => `
+            <項目>
+                <摘要>${a.description}</摘要>
+                <金額>${a.amount}</金額>
+            </項目>`).join('')}
+        </加算項目>
+        <減算項目>
+            ${data.beppyo4.subtractions.map(s => `
+            <項目>
+                <摘要>${s.description}</摘要>
+                <金額>${s.amount}</金額>
+            </項目>`).join('')}
+        </減算項目>
+        <所得金額>${data.beppyo4.taxableIncome}</所得金額>
+    </別表四>
+
+    <別表十五>
+        <交際費等の支出額>${data.beppyo15.socialExpenses}</交際費等の支出額>
+        <接待飲食費の額>${data.beppyo15.deductibleExpenses}</接待飲食費の額>
+        <損金不算入額>${data.beppyo15.excessAmount}</損金不算入額>
+    </別表十五>
+
+    <別表十六>
+        <資産一覧>
+            ${data.beppyo16.assets.map(asset => `
+            <資産>
+                <名称>${asset.name}</名称>
+                <取得価額>${asset.acquisitionCost}</取得価額>
+                <当期償却額>${asset.currentDepreciation}</当期償却額>
+            </資産>`).join('')}
+        </資産一覧>
+        <償却超過額>${data.beppyo16.excessAmount}</償却超過額>
+    </別表十六>
+    
+    <備考>Ainanceにて生成 (Corporate Tax Return Draft)</備考>
+</法人税申告書等データ>`;
 
   return xml;
 }
@@ -183,7 +178,7 @@ export function generateCopyableText(info: TaxFilingInfo): {
   deductions: { name: string; amount: string }[];
 } {
   const formatCurrency = (amount: number) => amount.toLocaleString('ja-JP');
-  
+
   return {
     summary: `
 【${info.fiscalYear}年度 確定申告データ】
@@ -211,10 +206,10 @@ export function generateCopyableText(info: TaxFilingInfo): {
 }
 
 /**
- * xtxファイルをダウンロード
+ * ファイルをダウンロード
  */
-export function downloadXTXFile(content: string, filename: string): void {
-  const blob = new Blob(['\ufeff' + content], { type: 'application/xml;charset=utf-8' });
+export function downloadFile(content: string, filename: string, type: string = 'application/xml;charset=utf-8'): void {
+  const blob = new Blob(['\ufeff' + content], { type });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -224,3 +219,8 @@ export function downloadXTXFile(content: string, filename: string): void {
   document.body.removeChild(link);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/**
+ * 旧関数名との互換性のために残す（必要に応じて）
+ */
+export const downloadXTXFile = downloadFile;

@@ -47,7 +47,8 @@ export default defineConfig(({ mode }) => {
     // HTTP設定（スマホカメラアクセス用）
     server: {
       host: true,
-      strictPort: false,
+      port: 5173,
+      strictPort: true,
       historyApiFallback: {
         index: '/index.html'
       },
