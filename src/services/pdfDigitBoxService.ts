@@ -47,252 +47,235 @@ export interface TextFieldConfig {
 }
 
 // ===================================================================
-// IMPORTANT: These coordinates were recalibrated on 2026-02-05
-// based on proportional analysis of the official form structure.
+// IMPORTANT: Coordinates calibrated on 2026-02-06 using drag-and-drop tool
+// User manually positioned each field for pixel-perfect accuracy
 // 
-// Form Layout Analysis:
-// - Page: 595.32 x 841.92 pt (A4)
-// - Data area starts at ~Y=640 and ends at ~Y=80
-// - Total height of data area: ~560pt for 28 rows = ~20pt per row
-// - Left column digit boxes right edge: ~X=256
-// - Right column digit boxes right edge: ~X=526
+// Form Layout: A4 (595.32 x 841.92 pt)
 // ===================================================================
 
-/**
- * BEPPYO1 Row Positions (Calibrated from form structure)
- * 
- * The form data area spans approximately:
- * - Top (Row 1): Y ≈ 628
- * - Bottom (Row 28): Y ≈ 88
- * - Row spacing: ~20pt
- */
-
-// Calculate Y position for a given row number (1-28 for left column)
-function getRowY(rowNumber: number): number {
-    const topRowY = 628;      // Y position of Row 1
-    const rowSpacing = 20;    // Spacing between rows
-    return topRowY - ((rowNumber - 1) * rowSpacing);
-}
-
-// Calculate Y for right column (rows 16-44)
-function getRightRowY(rowNumber: number): number {
-    const topRowY = 568;      // Y position of first right column row (around row 16 equivalent)
-    const rowSpacing = 20;
-    const localRow = rowNumber - 16;  // Convert to local row number
-    return topRowY - (localRow * rowSpacing);
-}
-
 export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
-    // ===== LEFT COLUMN (Rows 1-28) =====
-    // Anchor X = 256 (right edge of leftmost digit box)
-    // Each row is 20pt apart, starting from Y=628 for Row 1
-
+    // ===== LEFT COLUMN (Rows 1-15, 28) =====
     '所得金額_row1': {
-        anchorX: 256,
-        anchorY: getRowY(1),  // 628
+        anchorX: 292.7,
+        anchorY: 568.6,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '法人税額_row2': {
-        anchorX: 256,
-        anchorY: getRowY(2),  // 608
+        anchorX: 293.3,
+        anchorY: 549.9,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '特別控除額_row3': {
-        anchorX: 256,
-        anchorY: getRowY(3),  // 588
+        anchorX: 293.3,
+        anchorY: 533.3,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '税額控除_row4': {
-        anchorX: 256,
-        anchorY: getRowY(4),  // 568
+        anchorX: 293.3,
+        anchorY: 514.6,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '利子税_row5': {
-        anchorX: 256,
-        anchorY: getRowY(5),  // 548
+        anchorX: 292,
+        anchorY: 496.6,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '控除税額_row6': {
-        anchorX: 256,
-        anchorY: getRowY(6),  // 528
+        anchorX: 292.7,
+        anchorY: 479.3,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '留保金額_row7': {
-        anchorX: 256,
-        anchorY: getRowY(7),  // 508
+        anchorX: 292.7,
+        anchorY: 460.6,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '同上税額_row8': {
-        anchorX: 256,
-        anchorY: getRowY(8),  // 488
+        anchorX: 292,
+        anchorY: 441.9,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '法人税額計1_row9': {
-        anchorX: 256,
-        anchorY: getRowY(9),  // 468
+        anchorX: 294.7,
+        anchorY: 407.3,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     'row10': {
-        anchorX: 256,
-        anchorY: getRowY(10),  // 448
+        anchorX: 294,
+        anchorY: 386.6,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     'row11': {
-        anchorX: 256,
-        anchorY: getRowY(11),  // 428
+        anchorX: 293.3,
+        anchorY: 368.6,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     'row12': {
-        anchorX: 256,
-        anchorY: getRowY(12),  // 408
+        anchorX: 292.7,
+        anchorY: 351.3,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '差引法人税額_row13': {
-        anchorX: 256,
-        anchorY: getRowY(13),  // 388
+        anchorX: 292.7,
+        anchorY: 333.9,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '中間申告_row14': {
-        anchorX: 256,
-        anchorY: getRowY(14),  // 368
+        anchorX: 294.7,
+        anchorY: 316.8,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     'row15': {
-        anchorX: 256,
-        anchorY: getRowY(15),  // 348
+        anchorX: 293.3,
+        anchorY: 295.3,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
-    // Row 28 - 法人税額計 (user's image shows 141940 here)
     '法人税額計_row28': {
-        anchorX: 256,
-        anchorY: getRowY(28),  // 88
+        anchorX: 293.3,
+        anchorY: 276.1,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
 
-    // ===== RIGHT COLUMN =====
-    // Right column starts around equivalent of row 16
-    // Anchor X = 526 (right edge)
-
-    '所得税額_row16': {
-        anchorX: 526,
-        anchorY: 568,
+    // ===== RIGHT COLUMN (Rows 16-27) =====
+    'row16': {
+        anchorX: 560,
+        anchorY: 565.3,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
-    '復興税額_row17': {
-        anchorX: 526,
-        anchorY: 548,
+    'row17': {
+        anchorX: 560,
+        anchorY: 547.3,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
     '所得合計_row18': {
-        anchorX: 256,  // This is actually left column based on user's image
-        anchorY: getRowY(18),  // ~290  (user says "0" should be here)
+        anchorX: 560,
+        anchorY: 527.3,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
-    '控除税額_row19': {
-        anchorX: 526,
-        anchorY: 508,
+    'row19': {
+        anchorX: 559.3,
+        anchorY: 509.9,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
-    '控除残_row20': {
-        anchorX: 526,
-        anchorY: 488,
+    'row20': {
+        anchorX: 560,
+        anchorY: 492.1,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
-    '差引計_row21': {
-        anchorX: 526,
-        anchorY: 468,
+    'row21': {
+        anchorX: 559.3,
+        anchorY: 470.8,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
         maxDigits: 12
     },
-
-    '中間納付_row22': {
-        anchorX: 526,
-        anchorY: 448,
+    'row22': {
+        anchorX: 560,
+        anchorY: 447.5,
+        boxWidth: 16,
+        boxSpacing: 16,
+        fontSize: 10,
+        maxDigits: 12
+    },
+    'row23': {
+        anchorX: 560,
+        anchorY: 421.5,
+        boxWidth: 16,
+        boxSpacing: 16,
+        fontSize: 10,
+        maxDigits: 12
+    },
+    'row24': {
+        anchorX: 560,
+        anchorY: 394.1,
+        boxWidth: 16,
+        boxSpacing: 16,
+        fontSize: 10,
+        maxDigits: 12
+    },
+    'row25': {
+        anchorX: 558.7,
+        anchorY: 340.1,
+        boxWidth: 16,
+        boxSpacing: 16,
+        fontSize: 10,
+        maxDigits: 12
+    },
+    'row26': {
+        anchorX: 558.7,
+        anchorY: 316.8,
+        boxWidth: 16,
+        boxSpacing: 16,
+        fontSize: 10,
+        maxDigits: 12
+    },
+    'row27': {
+        anchorX: 560,
+        anchorY: 295.5,
         boxWidth: 16,
         boxSpacing: 16,
         fontSize: 10,
@@ -301,26 +284,15 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
 };
 
 // ===== TEXT FIELDS FOR COMPANY INFO =====
-// These are positioned based on the header section of the form
+// Calibrated on 2026-02-06 using drag-and-drop tool
 
 export const BEPPYO1_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
-    // Header section (top of form)
-    '税務署名': { x: 95, y: 805, fontSize: 9 },
-    '事業年度_年_自': { x: 68, y: 742, fontSize: 9 },
-    '事業年度_月_自': { x: 90, y: 742, fontSize: 9 },
-    '事業年度_日_自': { x: 110, y: 742, fontSize: 9 },
-    '事業年度_年_至': { x: 68, y: 727, fontSize: 9 },
-    '事業年度_月_至': { x: 90, y: 727, fontSize: 9 },
-    '事業年度_日_至': { x: 110, y: 727, fontSize: 9 },
-
-    // Company info section
-    '法人名': { x: 68, y: 780, fontSize: 10, maxWidth: 180 },
-    '法人番号': { x: 360, y: 820, fontSize: 8 },
-    '郵便番号': { x: 180, y: 695, fontSize: 8 },
-    '納税地': { x: 68, y: 695, fontSize: 9, maxWidth: 100 },
-    '電話番号': { x: 240, y: 695, fontSize: 8 },
-    '代表者氏名': { x: 68, y: 665, fontSize: 10, maxWidth: 120 },
-    '事業種目': { x: 68, y: 780, fontSize: 9, maxWidth: 150 },
+    '税務署名': { x: 114, y: 781.5, fontSize: 9 },
+    '法人名': { x: 85.3, y: 716.1, fontSize: 9 },
+    '法人番号': { x: 83.3, y: 695.3, fontSize: 9 },
+    '納税地': { x: 84, y: 752.1, fontSize: 9 },
+    '電話番号': { x: 170, y: 745.5, fontSize: 9 },
+    '代表者氏名': { x: 85.3, y: 665.9, fontSize: 9 },
 };
 
 // ===== CALIBRATION OFFSETS =====
