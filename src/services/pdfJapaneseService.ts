@@ -99,7 +99,7 @@ export interface ValidationReport {
   mappings: {
     key: string;
     value: any;
-    method: 'AcroForm' | 'DigitBox' | 'Absolute';
+    method: 'AcroForm' | 'Anchor' | 'FixedCoord' | 'DigitBox' | 'Absolute';
     fieldId?: string;
     coordinate?: { x: number; y: number };
     offset?: { x: number; y: number };
@@ -1305,24 +1305,20 @@ function validateData(data: CorporateTaxInputData): string[] {
   return errors;
 }
 
-/**
- * PDF構造の検証
- */
-function verifyPdfStructure(doc: PDFDocument): { hasAcroForm: boolean, fields: string[] } {
-  try {
-    const form = doc.getForm();
-    const fields = form.getFields().map(f => f.getName());
-    return { hasAcroForm: fields.length > 0, fields };
-  } catch (e) {
-    return { hasAcroForm: false, fields: [] };
-  }
-}
+
 
 /**
- * 個別の公式様式PDFを生成する（プロフェッショナル仕様）
+ * 個別の公式様式PDFを生成する（3層アプローチ）
+ * Tier 1: AcroForm → Tier 2: Anchor → Tier 3: Fixed Coordinates
  */
 export async function fillSingleOfficialCorporateTaxPDF(data: CorporateTaxInputData, templateType: string): Promise<Uint8Array> {
   const pureType = templateType.replace('_debug', '');
+
+  // Import the new services
+  const { fillAcroFormFields, hasAcroFormFields, formatTaxNumber } = await import('./pdfFormFillerService');
+  const { fillByTextAnchors } = await import('./pdfAnchorDetector');
+  const { getTemplateCoordinates, getFieldMappingsForTemplate } = await import('./pdfTemplateRegistry');
+
   const report: ValidationReport = {
     timestamp: new Date().toISOString(),
     template: templateType,
@@ -1351,15 +1347,19 @@ export async function fillSingleOfficialCorporateTaxPDF(data: CorporateTaxInputD
   };
 
   const url = templates[pureType];
+  if (!url) {
+    throw new Error(`Unknown template type: ${pureType}`);
+  }
+
   const bytes = await fetch(`${url}?t=${Date.now()}`).then(r => r.arrayBuffer()).then(ab => new Uint8Array(ab));
 
-  // 2. 構造解析
-  let pdfDoc;
+  // 2. PDFロード
+  let pdfDoc: PDFDocument;
   try {
     pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true, throwOnInvalidObject: false } as any);
     report.loadSuccess = true;
   } catch (e: any) {
-    // リリカバリー
+    // フォールバック
     if (pureType === 'beppyo1') {
       const fb = await fetch('/templates/beppyo1_official.pdf').then(r => r.arrayBuffer());
       pdfDoc = await PDFDocument.load(new Uint8Array(fb), { ignoreEncryption: true, throwOnInvalidObject: false } as any);
@@ -1369,87 +1369,129 @@ export async function fillSingleOfficialCorporateTaxPDF(data: CorporateTaxInputD
     }
   }
 
-
   pdfDoc.registerFontkit(fontkit);
   const { regular } = await loadJapaneseFont(pdfDoc);
   const templatePage = pdfDoc.getPages()[0];
-  const { height, width } = templatePage.getSize();
-  const form = pdfDoc.getForm();
 
-  /**
-   * 1桁ずつマスに配置する高精度エンジン
-   */
-  const fillDigitBox = (amount: number, anchorRelX: number, relY: number, label: string) => {
-    // 0の場合はそのまま、それ以外は整数化
-    const text = amount === 0 ? '0' : String(Math.floor(amount));
-    const digits = text.split('').reverse();
-    const boxW = 16.15; // 1マスの幅 (pt)
+  // ===== 3層アプローチ =====
 
-    const shiftX = (data.calibration?.globalShiftX || 0);
-    const shiftY = (data.calibration?.globalShiftY || 0);
+  console.log(`\n[PDF Filling] Starting 3-tier approach for ${pureType}`);
 
-    digits.forEach((d, i) => {
-      // 右詰め: anchorRelX が右端のマスの中心または右端を指す
-      const absX = (width * anchorRelX) - (i * boxW) - 8 + shiftX;
-      const absY = height * (1 - relY) + 2.5 - shiftY;
+  // Tier 1: AcroForm フィールド
+  let tier1Result = null;
+  if (hasAcroFormFields(pdfDoc)) {
+    console.log('[Tier 1] AcroForm fields detected, attempting to fill...');
+    report.hasAcroForm = true;
+    tier1Result = await fillAcroFormFields(pdfDoc, data, pureType);
 
-      templatePage.drawText(d, {
-        x: absX,
-        y: absY,
-        size: 10,
-        font: regular,
-        color: rgb(0, 0, 0.5)
-      });
-    });
+    if (tier1Result.success && tier1Result.filledFields.length > 0) {
+      console.log(`[Tier 1] ✓ SUCCESS: Filled ${tier1Result.filledFields.length} fields via AcroForm`);
+      report.mappings.push(...tier1Result.filledFields.map(f => ({
+        key: f,
+        value: 'filled',
+        method: 'AcroForm' as const
+      })));
 
-    report.mappings.push({
-      key: label,
-      value: amount,
-      method: 'DigitBox',
-      coordinate: { x: anchorRelX, y: relY }
-    });
-  };
-
-
-  // 実行
-  if (pureType === 'beppyo1' || templateType === 'beppyo1_debug') {
-    const startY = 262 / 842;
-    const rowH = 19.5 / 842;
-    const leftAnchorX = 245 / 595;
-    const rightAnchorX = 515 / 595;
-
-    // デバッグモード: 指定された0と5,000,000を入れる
-    if (templateType === 'beppyo1_debug') {
-      fillDigitBox(0, leftAnchorX, startY + rowH * 17, 'テストBox18 (0)');
-      fillDigitBox(5000000, leftAnchorX, startY, 'テストBox1 (5百万)');
+      // AcroFormで成功したら終了
+      return pdfDoc.save();
     } else {
-      // 本番マッピング
-      // 1. 所得金額 (Box 1)
-      fillDigitBox(data.beppyo4.taxableIncome, leftAnchorX, startY, '所得金額');
-      // 2. 法人税額 (Box 2)
-      fillDigitBox(data.beppyo1.corporateTaxAmount, leftAnchorX, startY + rowH, '法人税額');
-      // 13. 差引確定法人税額 (Box 13)
-      fillDigitBox(data.beppyo1.corporateTaxAmount - data.beppyo1.specialTaxCredit - data.beppyo1.interimPayment, leftAnchorX, startY + rowH * 12, '差引確定税額');
-
-      // 18. 所得金額の合計 (Box 18) - 18行目付近
-      fillDigitBox(data.beppyo4.taxableIncome, leftAnchorX, startY + rowH * 17, '所得合計(Box18)');
-
-      // 右側セクション (控除・中間納付)
-      // 19. 控除税額 (Box 19)
-      fillDigitBox(data.beppyo1.specialTaxCredit, rightAnchorX, startY + rowH * 2, '控除税額(Box19)');
-      // 22. 中間納付 (Box 22)
-      fillDigitBox(data.beppyo1.interimPayment, rightAnchorX, startY + rowH * 5, '中間納付(Box22)');
+      console.log(`[Tier 1] ✗ FAILED: ${tier1Result.errors.join(', ')}`);
+      report.errors.push(...tier1Result.errors);
     }
-
-    // PDFの最終化
-    try { form.flatten(); } catch (e) { /* ignore */ }
+  } else {
+    console.log('[Tier 1] No AcroForm fields found, skipping to Tier 2');
   }
 
-  // 4. 監査レポート出力
-  console.log(`--- [PDF AUDIT REPORT: ${pureType}] ---`);
-  console.table(report.mappings);
-  if (report.errors.length > 0) console.error('Errors:', report.errors);
+  // Tier 2: テキストアンカー
+  console.log('[Tier 2] Attempting text anchor-based filling...');
+  try {
+    const tier2Result = await fillByTextAnchors(templatePage, data, pureType, regular);
 
+    if (tier2Result.success && tier2Result.filledFields.length > 0) {
+      console.log(`[Tier 2] ✓ SUCCESS: Filled ${tier2Result.filledFields.length} fields via anchors`);
+      report.mappings.push(...tier2Result.filledFields.map(f => ({
+        key: f,
+        value: 'filled',
+        method: 'Anchor' as const
+      })));
+
+      return pdfDoc.save();
+    } else {
+      console.log(`[Tier 2] ✗ FAILED: ${tier2Result.errors.join(', ')}`);
+      report.errors.push(...tier2Result.errors);
+    }
+  } catch (e: any) {
+    console.log(`[Tier 2] ✗ ERROR: ${e.message}`);
+    report.errors.push(`Tier 2 error: ${e.message}`);
+  }
+
+  // Tier 3: 固定座標
+  console.log('[Tier 3] Attempting fixed coordinate filling...');
+  const templateCoords = getTemplateCoordinates(pureType);
+
+  if (templateCoords) {
+    const fieldMappings = getFieldMappingsForTemplate(pureType, data);
+    let filledCount = 0;
+
+    for (const [fieldName, value] of fieldMappings.entries()) {
+      const coord = templateCoords.fields.get(fieldName);
+      if (!coord) {
+        report.errors.push(`No coordinates for field: ${fieldName}`);
+        continue;
+      }
+
+      try {
+        const formattedValue = typeof value === 'number' ? formatTaxNumber(value) : String(value);
+        const fontSize = 10;
+
+        let xPos = coord.x;
+        if (coord.align === 'right') {
+          const textWidth = regular.widthOfTextAtSize(formattedValue, fontSize);
+          xPos -= textWidth;
+        } else if (coord.align === 'center') {
+          const textWidth = regular.widthOfTextAtSize(formattedValue, fontSize);
+          xPos -= textWidth / 2;
+        }
+
+        templatePage.drawText(formattedValue, {
+          x: xPos,
+          y: coord.y,
+          size: fontSize,
+          font: regular,
+          color: rgb(0, 0, 0.5)
+        });
+
+        filledCount++;
+        report.mappings.push({
+          key: fieldName,
+          value: value,
+          method: 'FixedCoord' as const,
+          coordinate: { x: coord.x, y: coord.y }
+        });
+
+        console.log(`[Tier 3] ✓ Filled "${fieldName}" = "${formattedValue}" at (${coord.x}, ${coord.y})`);
+      } catch (e: any) {
+        report.errors.push(`Failed to fill ${fieldName}: ${e.message}`);
+      }
+    }
+
+    if (filledCount > 0) {
+      console.log(`[Tier 3] ✓ SUCCESS: Filled ${filledCount} fields via fixed coordinates`);
+      return pdfDoc.save();
+    } else {
+      console.log('[Tier 3] ✗ FAILED: No fields filled');
+    }
+  } else {
+    console.log(`[Tier 3] ✗ No template coordinates found for ${pureType}`);
+    report.errors.push(`No template coordinates for ${pureType}`);
+  }
+
+  // すべて失敗した場合
+  console.error('[PDF Filling] All tiers failed!');
+  console.table(report.mappings);
+  console.error('Errors:', report.errors);
+
+  // 空のPDFでも返す（エラーよりはマシ）
   return pdfDoc.save();
 }
 
