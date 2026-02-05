@@ -911,47 +911,39 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
             </div>
 
             {/* Calculated Depreciation Result */}
-            <div className="bg-surface-highlight/50 p-4 rounded-xl border border-border/50 animate-in fade-in slide-in-from-top-1 duration-300">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                      <TrendingDown className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-primary uppercase tracking-wider">償却年度</span>
-                      <span className="text-sm font-bold text-text-secondary">
-                        {formData.date ? new Date(formData.date).getFullYear() : new Date().getFullYear()}年度分
-                        <span className="text-[10px] text-text-muted ml-1">
-                          {(() => {
-                            const acquisitionDate = new Date(acqDate);
-                            const reportingDate = formData.date ? new Date(formData.date) : new Date();
-                            const acqYear = acquisitionDate.getFullYear();
-                            const repYear = reportingDate.getFullYear();
+            <div className="bg-surface-highlight/50 px-4 py-3 rounded-xl border border-border/50 animate-in fade-in slide-in-from-top-1 duration-300">
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider">償却年度</span>
+                  <span className="text-sm font-bold text-text-secondary">
+                    {formData.date ? new Date(formData.date).getFullYear() : new Date().getFullYear()}年度分
+                    <span className="text-[10px] text-text-muted ml-1">
+                      {(() => {
+                        const acquisitionDate = new Date(acqDate);
+                        const reportingDate = formData.date ? new Date(formData.date) : new Date();
+                        const acqYear = acquisitionDate.getFullYear();
+                        const repYear = reportingDate.getFullYear();
 
-                            if (repYear < acqYear) return '(0ヶ月)';
-                            if (repYear === acqYear) return `(${(12 - (acquisitionDate.getMonth() + 1) + 1)}ヶ月)`;
+                        if (repYear < acqYear) return '(0ヶ月)';
+                        if (repYear === acqYear) return `(${(12 - (acquisitionDate.getMonth() + 1) + 1)}ヶ月)`;
 
-                            const yearsElapsed = repYear - acqYear;
-                            if (yearsElapsed >= usefulLife) {
-                              const lastYearMonths = 12 - (12 - (acquisitionDate.getMonth() + 1) + 1);
-                              if (yearsElapsed === Math.ceil(usefulLife) && lastYearMonths > 0) return `(${lastYearMonths}ヶ月)`;
-                              return '(償却済)';
-                            }
-                            return '(12ヶ月)';
-                          })()}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">今期償却額</span>
-                    <div className="text-xl font-bold text-primary">
-                      ¥{Math.round(annualDepreciation).toLocaleString()}
-                    </div>
+                        const yearsElapsed = repYear - acqYear;
+                        if (yearsElapsed >= usefulLife) {
+                          const lastYearMonths = 12 - (12 - (acquisitionDate.getMonth() + 1) + 1);
+                          if (yearsElapsed === Math.ceil(usefulLife) && lastYearMonths > 0) return `(${lastYearMonths}ヶ月)`;
+                          return '(償却済)';
+                        }
+                        return '(12ヶ月)';
+                      })()}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider">今期償却額</span>
+                  <div className="text-lg font-bold text-primary">
+                    ¥{Math.round(annualDepreciation).toLocaleString()}
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
