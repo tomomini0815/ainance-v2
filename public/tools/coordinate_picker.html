@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF座標ピッカー - Precision Calibration Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .pdf-panel {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            padding: 20px;
+            background: #16213e;
+        }
+        .sidebar {
+            width: 400px;
+            background: #0f3460;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        h1 {
+            color: #e94560;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        h2 {
+            color: #0abde3;
+            margin: 20px 0 10px;
+            font-size: 1em;
+        }
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: crosshair;
+        }
+        #pdfCanvas {
+            border: 2px solid #e94560;
+            box-shadow: 0 0 20px rgba(233,69,96,0.3);
+        }
+        #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .coords-display {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(233,69,96,0.95);
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.5em;
+            font-weight: bold;
+            z-index: 1000;
+            font-family: monospace;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px 0;
+            width: 100%;
+        }
+        .btn-primary { background: #e94560; color: white; }
+        .btn-secondary { background: #0abde3; color: #1a1a2e; }
+        .btn-success { background: #10ac84; color: white; }
+        .points-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.85em;
+        }
+        .points-table th, .points-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        .points-table th {
+            background: #1a1a2e;
+            color: #e94560;
+        }
+        .points-table tr:hover {
+            background: rgba(233,69,96,0.1);
+        }
+        .delete-btn {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        #output {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.8em;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .scale-info {
+            background: #2a2a4a;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+        }
+        .instructions {
+            background: rgba(10,189,227,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="coords-display" id="coordsDisplay">X: ---, Y: ---</div>
+    
+    <div class="container">
+        <div class="pdf-panel">
+            <div class="canvas-wrapper" id="canvasWrapper">
+                <canvas id="pdfCanvas"></canvas>
+                <canvas id="overlayCanvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="sidebar">
+            <h1>📍 PDF座標ピッカー</h1>
+            
+            <div class="instructions">
+                <strong>使い方:</strong><br>
+                1. PDFファイルを選択<br>
+                2. PDF上でクリックして座標を取得<br>
+                3. ラベルを入力して「追加」<br>
+                4. 「座標をエクスポート」でコードを生成
+            </div>
+            
+            <div class="input-group">
+                <label>PDFファイル:</label>
+                <input type="file" id="pdfFile" accept=".pdf">
+            </div>
+            
+            <div class="scale-info" id="scaleInfo">
+                PDFサイズ: --<br>
+                表示スケール: --
+            </div>
+            
+            <div class="input-group">
+                <label>フィールドラベル:</label>
+                <input type="text" id="fieldLabel" placeholder="例: 所得金額_row1">
+            </div>
+            
+            <div class="input-group">
+                <label>フィールドタイプ:</label>
+                <select id="fieldType">
+                    <option value="digitBox">数字ボックス (右端基準)</option>
+                    <option value="textField">テキストフィールド (左端基準)</option>
+                </select>
+            </div>
+            
+            <button class="btn-primary" id="addPoint">➕ 現在の座標を追加</button>
+            <button class="btn-secondary" id="toggleGrid">📐 グリッド表示切替</button>
+            <button class="btn-success" id="exportCoords">📋 座標をエクスポート</button>
+            
+            <h2>📌 記録された座標</h2>
+            <table class="points-table">
+                <thead>
+                    <tr>
+                        <th>ラベル</th>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="pointsTable"></tbody>
+            </table>
+            
+            <h2>📤 エクスポート結果</h2>
+            <div id="output">座標を追加してエクスポートしてください</div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        let pdfDoc = null;
+        let pageNum = 1;
+        let scale = 1.5;
+        let pdfWidth = 0;
+        let pdfHeight = 0;
+        let currentX = 0;
+        let currentY = 0;
+        let points = [];
+        let showGrid = false;
+        
+        const canvas = document.getElementById('pdfCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const overlayCtx = overlayCanvas.getContext('2d');
+        
+        // Load PDF
+        document.getElementById('pdfFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const arrayBuffer = await file.arrayBuffer();
+            pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
+            renderPage(pageNum);
+        });
+        
+        // Render page
+        async function renderPage(num) {
+            const page = await pdfDoc.getPage(num);
+            const viewport = page.getViewport({ scale });
+            
+            pdfWidth = page.getViewport({ scale: 1 }).width;
+            pdfHeight = page.getViewport({ scale: 1 }).height;
+            
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            overlayCanvas.width = viewport.width;
+            overlayCanvas.height = viewport.height;
+            
+            document.getElementById('scaleInfo').innerHTML = `
+                PDFサイズ: ${pdfWidth.toFixed(2)} × ${pdfHeight.toFixed(2)} pt<br>
+                表示スケール: ${scale}x (${viewport.width.toFixed(0)} × ${viewport.height.toFixed(0)} px)
+            `;
+            
+            await page.render({
+                canvasContext: ctx,
+                viewport: viewport
+            }).promise;
+            
+            if (showGrid) drawGrid();
+        }
+        
+        // Draw coordinate grid
+        function drawGrid() {
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            
+            const step = 50; // Every 50pt
+            
+            // Horizontal lines (Y axis)
+            for (let y = 0; y <= pdfHeight; y += step) {
+                const canvasY = overlayCanvas.height - (y * scale);
+                overlayCtx.beginPath();
+                overlayCtx.strokeStyle = y % 100 === 0 ? 'rgba(233,69,96,0.5)' : 'rgba(233,69,96,0.2)';
+                overlayCtx.lineWidth = y % 100 === 0 ? 2 : 1;
+                overlayCtx.moveTo(0, canvasY);
+                overlayCtx.lineTo(overlayCanvas.width, canvasY);
+                overlayCtx.stroke();
+                
+                if (y % 100 === 0) {
+                    overlayCtx.fillStyle = '#e94560';
+                    overlayCtx.font = '12px monospace';
+                    overlayCtx.fillText(`Y=${y}`, 5, canvasY - 5);
+                }
+            }
+            
+            // Vertical lines (X axis)
+            for (let x = 0; x <= pdfWidth; x += step) {
+                const canvasX = x * scale;
+                overlayCtx.beginPath();
+                overlayCtx.strokeStyle = x % 100 === 0 ? 'rgba(10,189,227,0.5)' : 'rgba(10,189,227,0.2)';
+                overlayCtx.lineWidth = x % 100 === 0 ? 2 : 1;
+                overlayCtx.moveTo(canvasX, 0);
+                overlayCtx.lineTo(canvasX, overlayCanvas.height);
+                overlayCtx.stroke();
+                
+                if (x % 100 === 0) {
+                    overlayCtx.fillStyle = '#0abde3';
+                    overlayCtx.font = '12px monospace';
+                    overlayCtx.fillText(`X=${x}`, canvasX + 5, 15);
+                }
+            }
+            
+            // Draw saved points
+            points.forEach((p, i) => {
+                const canvasX = p.x * scale;
+                const canvasY = overlayCanvas.height - (p.y * scale);
+                
+                overlayCtx.beginPath();
+                overlayCtx.arc(canvasX, canvasY, 8, 0, 2 * Math.PI);
+                overlayCtx.fillStyle = p.type === 'digitBox' ? '#e94560' : '#10ac84';
+                overlayCtx.fill();
+                
+                overlayCtx.fillStyle = '#fff';
+                overlayCtx.font = 'bold 10px sans-serif';
+                overlayCtx.fillText(p.label.substring(0, 10), canvasX + 12, canvasY + 4);
+            });
+        }
+        
+        // Mouse move - update coordinates
+        document.getElementById('canvasWrapper').addEventListener('mousemove', (e) => {
+            if (!pdfDoc) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const canvasX = e.clientX - rect.left;
+            const canvasY = e.clientY - rect.top;
+            
+            // Convert to PDF coordinates (origin at bottom-left)
+            currentX = canvasX / scale;
+            currentY = pdfHeight - (canvasY / scale);
+            
+            document.getElementById('coordsDisplay').textContent = 
+                `X: ${currentX.toFixed(2)}, Y: ${currentY.toFixed(2)}`;
+        });
+        
+        // Click - save coordinate
+        document.getElementById('canvasWrapper').addEventListener('click', (e) => {
+            if (!pdfDoc) return;
+            
+            const label = document.getElementById('fieldLabel').value || `point_${points.length + 1}`;
+            const type = document.getElementById('fieldType').value;
+            
+            // Visual feedback
+            const rect = canvas.getBoundingClientRect();
+            const canvasX = e.clientX - rect.left;
+            const canvasY = e.clientY - rect.top;
+            
+            overlayCtx.beginPath();
+            overlayCtx.arc(canvasX, canvasY, 8, 0, 2 * Math.PI);
+            overlayCtx.fillStyle = type === 'digitBox' ? '#e94560' : '#10ac84';
+            overlayCtx.fill();
+        });
+        
+        // Add point
+        document.getElementById('addPoint').addEventListener('click', () => {
+            if (!pdfDoc) {
+                alert('PDFを先に読み込んでください');
+                return;
+            }
+            
+            const label = document.getElementById('fieldLabel').value || `point_${points.length + 1}`;
+            const type = document.getElementById('fieldType').value;
+            
+            points.push({
+                label,
+                x: Math.round(currentX * 10) / 10,
+                y: Math.round(currentY * 10) / 10,
+                type
+            });
+            
+            updatePointsTable();
+            document.getElementById('fieldLabel').value = '';
+            if (showGrid) drawGrid();
+        });
+        
+        // Update points table
+        function updatePointsTable() {
+            const tbody = document.getElementById('pointsTable');
+            tbody.innerHTML = points.map((p, i) => `
+                <tr>
+                    <td>${p.label}</td>
+                    <td>${p.x}</td>
+                    <td>${p.y}</td>
+                    <td><button class="delete-btn" onclick="deletePoint(${i})">✕</button></td>
+                </tr>
+            `).join('');
+        }
+        
+        window.deletePoint = function(index) {
+            points.splice(index, 1);
+            updatePointsTable();
+            if (showGrid) drawGrid();
+        };
+        
+        // Toggle grid
+        document.getElementById('toggleGrid').addEventListener('click', () => {
+            showGrid = !showGrid;
+            if (showGrid) {
+                drawGrid();
+            } else {
+                overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            }
+        });
+        
+        // Export coordinates
+        document.getElementById('exportCoords').addEventListener('click', () => {
+            const digitBoxes = points.filter(p => p.type === 'digitBox');
+            const textFields = points.filter(p => p.type === 'textField');
+            
+            let output = '// ===== DIGIT BOX FIELDS =====\n';
+            output += 'export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {\n';
+            digitBoxes.forEach(p => {
+                output += `    '${p.label}': {\n`;
+                output += `        anchorX: ${p.x},\n`;
+                output += `        anchorY: ${p.y},\n`;
+                output += `        boxWidth: 16.15,\n`;
+                output += `        boxSpacing: 16.15,\n`;
+                output += `        fontSize: 10,\n`;
+                output += `        maxDigits: 12\n`;
+                output += `    },\n`;
+            });
+            output += '};\n\n';
+            
+            output += '// ===== TEXT FIELDS =====\n';
+            output += 'export const BEPPYO1_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {\n';
+            textFields.forEach(p => {
+                output += `    '${p.label}': { x: ${p.x}, y: ${p.y}, fontSize: 9 },\n`;
+            });
+            output += '};\n';
+            
+            document.getElementById('output').textContent = output;
+        });
+        
+        // Load default PDF
+        async function loadDefaultPDF() {
+            try {
+                const response = await fetch('/templates/beppyo1_official.pdf');
+                if (response.ok) {
+                    const arrayBuffer = await response.arrayBuffer();
+                    pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    renderPage(pageNum);
+                }
+            } catch (e) {
+                console.log('Could not load default PDF');
+            }
+        }
+        
+        loadDefaultPDF();
+    </script>
+</body>
+</html>
