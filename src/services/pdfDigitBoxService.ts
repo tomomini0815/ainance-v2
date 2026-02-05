@@ -53,10 +53,12 @@ export interface DigitBoxConfig {
  */
 export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // ===== 左側カラム (Left Column) =====
+    // Calibrated 2026-02-05 based on visual form analysis
+
     // Row 1: 所得金額又は欠損金額 (別表四「52の①」)
     '所得金額_row1': {
         anchorX: 244,
-        anchorY: 622,   // 用紙上部から約220ptの位置
+        anchorY: 613,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -66,7 +68,7 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // Row 2: 法人税額 ((48)+(49)+(50))
     '法人税額_row2': {
         anchorX: 244,
-        anchorY: 602,
+        anchorY: 593,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -76,27 +78,27 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // Row 13: 差引所得に対する法人税額 ((9)-(10)-(11)-(12))
     '差引法人税額_row13': {
         anchorX: 244,
-        anchorY: 387,
+        anchorY: 377,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
         maxDigits: 12
     },
 
-    // Row 18: 所得金額の計 (これがテスト対象)
+    // Row 18: 所得金額の計 (テスト対象: "0")
     '所得合計_row18': {
         anchorX: 244,
-        anchorY: 290,   // ※ユーザー画像で「0」が入っている行
+        anchorY: 280,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
         maxDigits: 12
     },
 
-    // Row 28: 法人税額計 (ユーザー画像で「141940」が入っている行)
+    // Row 28: 法人税額計 (テスト対象: "141940")
     '法人税額計_row28': {
         anchorX: 244,
-        anchorY: 95,
+        anchorY: 88,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -107,7 +109,7 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // Row 17: 復興特別法人税額
     '復興税額_row17': {
         anchorX: 514,
-        anchorY: 310,
+        anchorY: 298,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -117,7 +119,7 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // Row 19: 所得税額等の控除額 ((16)+(17))
     '控除税額_row19': {
         anchorX: 514,
-        anchorY: 270,
+        anchorY: 260,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -127,7 +129,7 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // Row 20: 控除しきれなかった金額
     '控除残_row20': {
         anchorX: 514,
-        anchorY: 250,
+        anchorY: 240,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -137,7 +139,7 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // Row 22: 中間納付額 ((14)-(13))
     '中間納付_row22': {
         anchorX: 514,
-        anchorY: 210,
+        anchorY: 200,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
