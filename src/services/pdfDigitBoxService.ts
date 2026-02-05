@@ -44,21 +44,17 @@ export interface DigitBoxConfig {
  * - Origin: bottom-left corner (0, 0)
  * - Y increases upward
  * 
- * Layout Analysis (from user's image):
- * - Form header takes ~200pt from top
- * - Each row is ~19.5pt high
- * - Left column boxes end at X ≈ 244pt
- * - Right column boxes end at X ≈ 514pt
- * - Each digit box is ~16.15pt wide
+ * Final Calibration 2026-02-05:
+ * - Shifted X right to 257pt to center digits in boxes
+ * - Adjusted Y to align perfectly with row floors
  */
 export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // ===== 左側カラム (Left Column) =====
-    // Calibrated 2026-02-05 based on visual form analysis
 
     // Row 1: 所得金額又は欠損金額 (別表四「52の①」)
     '所得金額_row1': {
-        anchorX: 244,
-        anchorY: 613,
+        anchorX: 257.0,
+        anchorY: 610.5,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -67,8 +63,8 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
 
     // Row 2: 法人税額 ((48)+(49)+(50))
     '法人税額_row2': {
-        anchorX: 244,
-        anchorY: 593,
+        anchorX: 257.0,
+        anchorY: 590.5,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -77,8 +73,8 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
 
     // Row 13: 差引所得に対する法人税額 ((9)-(10)-(11)-(12))
     '差引法人税額_row13': {
-        anchorX: 244,
-        anchorY: 377,
+        anchorX: 257.0,
+        anchorY: 375.5,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -87,8 +83,8 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
 
     // Row 18: 所得金額の計 (テスト対象: "0")
     '所得合計_row18': {
-        anchorX: 244,
-        anchorY: 280,
+        anchorX: 257.0,
+        anchorY: 278.5,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -97,8 +93,8 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
 
     // Row 28: 法人税額計 (テスト対象: "141940")
     '法人税額計_row28': {
-        anchorX: 244,
-        anchorY: 88,
+        anchorX: 257.0,
+        anchorY: 85.5,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -108,8 +104,8 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // ===== 右側カラム (Right Column) =====
     // Row 17: 復興特別法人税額
     '復興税額_row17': {
-        anchorX: 514,
-        anchorY: 298,
+        anchorX: 527.0,
+        anchorY: 296.0,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -118,8 +114,8 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
 
     // Row 19: 所得税額等の控除額 ((16)+(17))
     '控除税額_row19': {
-        anchorX: 514,
-        anchorY: 260,
+        anchorX: 527.0,
+        anchorY: 258.0,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -128,8 +124,8 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
 
     // Row 20: 控除しきれなかった金額
     '控除残_row20': {
-        anchorX: 514,
-        anchorY: 240,
+        anchorX: 527.0,
+        anchorY: 238.0,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
@@ -138,8 +134,8 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
 
     // Row 22: 中間納付額 ((14)-(13))
     '中間納付_row22': {
-        anchorX: 514,
-        anchorY: 200,
+        anchorX: 527.0,
+        anchorY: 198.5,
         boxWidth: 16.15,
         boxSpacing: 16.15,
         fontSize: 10,
