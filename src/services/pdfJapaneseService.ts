@@ -1308,13 +1308,36 @@ function validateData(data: CorporateTaxInputData): string[] {
 
 
 /**
- * 個別の公式様式PDFを生成する（3層アプローチ）
- * Tier 1: AcroForm → Tier 2: Anchor → Tier 3: Fixed Coordinates
+ * 個別の公式様式PDFを生成する
+ * 
+ * For Beppyo1: Uses digit-box placement (individual digit boxes)
+ * For others: Uses 3-tier approach (AcroForm → Anchor → Fixed Coordinates)
  */
 export async function fillSingleOfficialCorporateTaxPDF(data: CorporateTaxInputData, templateType: string): Promise<Uint8Array> {
   const pureType = templateType.replace('_debug', '');
+  const isDebugMode = templateType.includes('_debug');
 
-  // Import the new services
+  // Beppyo1はdigit-boxで処理
+  if (pureType === 'beppyo1') {
+    const { fillBeppyo1WithDigitBoxes } = await import('./pdfDigitBoxService');
+
+    const url = '/templates/beppyo1_official.pdf';
+    const bytes = await fetch(`${url}?t=${Date.now()}`).then(r => r.arrayBuffer()).then(ab => new Uint8Array(ab));
+
+    const calibration = {
+      globalShiftX: data.calibration?.globalShiftX || 0,
+      globalShiftY: data.calibration?.globalShiftY || 0,
+      digitCenterOffsetX: -3,
+      digitCenterOffsetY: 2,
+    };
+
+    const { pdfBytes, report } = await fillBeppyo1WithDigitBoxes(bytes, data, calibration, isDebugMode);
+
+    console.log('[Beppyo1] Digit-box filling complete:', report);
+    return pdfBytes;
+  }
+
+  // 他の別表は3層アプローチ
   const { fillAcroFormFields, hasAcroFormFields, formatTaxNumber } = await import('./pdfFormFillerService');
   const { fillByTextAnchors } = await import('./pdfAnchorDetector');
   const { getTemplateCoordinates, getFieldMappingsForTemplate } = await import('./pdfTemplateRegistry');
