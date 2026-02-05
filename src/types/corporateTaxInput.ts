@@ -1,3 +1,28 @@
+/**
+ * 法人基本情報 (Company Basic Information)
+ * 公式申告書PDFのヘッダー部分に転記される情報
+ */
+export interface CompanyInfo {
+    corporateName: string;           // 法人名
+    corporateNameKana: string;       // 法人名（フリガナ）
+    corporateNumber: string;         // 法人番号（13桁）
+    postalCode: string;              // 郵便番号
+    address: string;                 // 納税地（住所）
+    phoneNumber: string;             // 電話番号
+    representativeName: string;      // 代表者氏名
+    representativeNameKana: string;  // 代表者氏名（フリガナ）
+    representativeAddress: string;   // 代表者住所
+    businessType: string;            // 事業種目
+    taxOffice: string;               // 税務署名
+    fiscalYearStart: string;         // 事業年度開始日 (YYYY-MM-DD)
+    fiscalYearEnd: string;           // 事業年度終了日 (YYYY-MM-DD)
+    filingDate: string;              // 申告日 (YYYY-MM-DD)
+    capitalAmount: number;           // 資本金の額
+    employeeCount: number;           // 従業員数
+    groupCompanyType: 'single' | 'parent' | 'subsidiary' | 'consolidated'; // 連結納税区分
+    blueFormApproval: boolean;       // 青色申告の承認
+}
+
 export interface Beppyo1Data {
     taxableIncome: number;
     corporateTaxAmount: number;
@@ -113,6 +138,7 @@ export interface BusinessOverviewData {
 }
 
 export interface CorporateTaxInputData {
+    companyInfo: CompanyInfo;        // 法人基本情報
     beppyo1: Beppyo1Data;
     beppyo4: Beppyo4Data;
     beppyo5: Beppyo5Data;
@@ -128,6 +154,26 @@ export interface CorporateTaxInputData {
 }
 
 export const initialCorporateTaxInputData: CorporateTaxInputData = {
+    companyInfo: {
+        corporateName: '',
+        corporateNameKana: '',
+        corporateNumber: '',
+        postalCode: '',
+        address: '',
+        phoneNumber: '',
+        representativeName: '',
+        representativeNameKana: '',
+        representativeAddress: '',
+        businessType: '',
+        taxOffice: '',
+        fiscalYearStart: '',
+        fiscalYearEnd: '',
+        filingDate: '',
+        capitalAmount: 1000000,
+        employeeCount: 1,
+        groupCompanyType: 'single',
+        blueFormApproval: true,
+    },
     beppyo1: {
         taxableIncome: 0,
         corporateTaxAmount: 0,

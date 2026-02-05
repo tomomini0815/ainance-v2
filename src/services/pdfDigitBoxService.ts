@@ -37,6 +37,47 @@ export interface DigitBoxConfig {
 }
 
 /**
+ * Text field configuration for company info and other text data
+ */
+export interface TextFieldConfig {
+    x: number;           // X coordinate (from left)
+    y: number;           // Y coordinate (from bottom)
+    fontSize: number;    // Font size
+    maxWidth?: number;   // Maximum width before truncation
+    align?: 'left' | 'center' | 'right';
+}
+
+/**
+ * Text field positions for Beppyo1 header section
+ * Calibrated based on visual form layout analysis
+ */
+export const BEPPYO1_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
+    // ===== 申告書ヘッダー =====
+    '税務署名': { x: 85, y: 795, fontSize: 9 },      // 〇〇税務署長殿
+    '事業年度_自': { x: 300, y: 810, fontSize: 8 },   // 令和 年 月 日から
+    '事業年度_至': { x: 410, y: 810, fontSize: 8 },   // 令和 年 月 日まで
+    '法人番号': { x: 440, y: 795, fontSize: 8 },      // 13桁の法人番号
+
+    // ===== 法人基本情報エリア =====
+    '法人名': { x: 85, y: 755, fontSize: 10, maxWidth: 200 },
+    '法人名カナ': { x: 85, y: 770, fontSize: 7 },
+    '郵便番号': { x: 300, y: 770, fontSize: 8 },
+    '納税地': { x: 300, y: 755, fontSize: 9, maxWidth: 250 },
+    '電話番号': { x: 480, y: 755, fontSize: 8 },
+
+    // ===== 代表者情報エリア =====
+    '代表者氏名': { x: 85, y: 725, fontSize: 10, maxWidth: 150 },
+    '代表者住所': { x: 250, y: 725, fontSize: 8, maxWidth: 200 },
+
+    // ===== 事業情報 =====
+    '事業種目': { x: 85, y: 695, fontSize: 9, maxWidth: 180 },
+    '資本金': { x: 300, y: 695, fontSize: 9 },
+
+    // ===== 申告日 =====
+    '申告日': { x: 500, y: 780, fontSize: 8 },
+};
+
+/**
  * Field mapping for Beppyo1 (別表一)
  * 
  * Coordinates calibrated from actual PDF analysis:
@@ -236,6 +277,81 @@ export function fillDigitBoxField(
 }
 
 /**
+ * Fill a text field on the PDF
+ * 
+ * @param page - PDF page to draw on
+ * @param text - Text to place
+ * @param config - Text field configuration
+ * @param font - Font to use
+ * @param calibration - Optional calibration offsets
+ */
+export function fillTextField(
+    page: PDFPage,
+    text: string,
+    config: TextFieldConfig,
+    font: PDFFont,
+    calibration: CalibrationOffsets = DEFAULT_CALIBRATION
+): { success: boolean } {
+    if (!text || text.trim() === '') {
+        return { success: false };
+    }
+
+    // Apply calibration offsets
+    const x = config.x + calibration.globalShiftX;
+    const y = config.y + calibration.globalShiftY;
+
+    // Truncate text if maxWidth is specified
+    let displayText = text;
+    if (config.maxWidth) {
+        const charWidth = config.fontSize * 0.6; // Approximate character width
+        const maxChars = Math.floor(config.maxWidth / charWidth);
+        if (text.length > maxChars) {
+            displayText = text.substring(0, maxChars - 1) + '…';
+        }
+    }
+
+    // Draw the text
+    page.drawText(displayText, {
+        x: x,
+        y: y,
+        size: config.fontSize,
+        font: font,
+        color: rgb(0, 0, 0)  // Black for text
+    });
+
+    console.log(`[TextField] Placed text: "${displayText.substring(0, 20)}..." at (${x}, ${y})`);
+    return { success: true };
+}
+
+/**
+ * Format date for Japanese tax forms (令和X年Y月Z日)
+ */
+function formatJapaneseFiscalDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+
+    const year = date.getFullYear();
+    const reiwaYear = year - 2018; // 令和元年 = 2019
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    return `${reiwaYear}年${month}月${day}日`;
+}
+
+/**
+ * Format capital amount (円表記)
+ */
+function formatCapitalAmount(amount: number): string {
+    if (amount >= 100000000) {
+        return `${(amount / 100000000).toFixed(0)}億円`;
+    } else if (amount >= 10000) {
+        return `${(amount / 10000).toFixed(0)}万円`;
+    }
+    return `${amount.toLocaleString()}円`;
+}
+
+/**
  * Fill Beppyo1 form with corporate tax data
  */
 export async function fillBeppyo1WithDigitBoxes(
@@ -290,6 +406,8 @@ export async function fillBeppyo1WithDigitBoxes(
         report.fieldsSucceeded = (result0.success ? 1 : 0) + (result5m.success ? 1 : 0);
     } else {
         // Production mode: Fill all fields from data
+
+        // ===== PART 1: Fill numeric digit boxes =====
         const fieldMappings: { fieldKey: string; value: number }[] = [
             { fieldKey: '所得金額_row1', value: data.beppyo4.taxableIncome },
             { fieldKey: '法人税額_row2', value: data.beppyo1.corporateTaxAmount },
@@ -319,6 +437,52 @@ export async function fillBeppyo1WithDigitBoxes(
                 success: result.success,
                 coordinates: { x: config.anchorX, y: config.anchorY }
             });
+        }
+
+        // ===== PART 2: Fill company information text fields =====
+        if (data.companyInfo) {
+            console.log('[TextField] Filling company information...');
+            const info = data.companyInfo;
+
+            // Text field mappings
+            const textMappings: { fieldKey: string; text: string }[] = [
+                { fieldKey: '税務署名', text: info.taxOffice },
+                { fieldKey: '法人番号', text: info.corporateNumber },
+                { fieldKey: '事業年度_自', text: formatJapaneseFiscalDate(info.fiscalYearStart) },
+                { fieldKey: '事業年度_至', text: formatJapaneseFiscalDate(info.fiscalYearEnd) },
+                { fieldKey: '法人名', text: info.corporateName },
+                { fieldKey: '法人名カナ', text: info.corporateNameKana },
+                { fieldKey: '郵便番号', text: info.postalCode },
+                { fieldKey: '納税地', text: info.address },
+                { fieldKey: '電話番号', text: info.phoneNumber },
+                { fieldKey: '代表者氏名', text: info.representativeName },
+                { fieldKey: '代表者住所', text: info.representativeAddress },
+                { fieldKey: '事業種目', text: info.businessType },
+                { fieldKey: '資本金', text: formatCapitalAmount(info.capitalAmount) },
+                { fieldKey: '申告日', text: formatJapaneseFiscalDate(info.filingDate) },
+            ];
+
+            for (const mapping of textMappings) {
+                const config = BEPPYO1_TEXT_FIELDS[mapping.fieldKey];
+                if (!config) {
+                    console.warn(`[TextField] Unknown field: ${mapping.fieldKey}`);
+                    continue;
+                }
+
+                if (mapping.text && mapping.text.trim() !== '') {
+                    report.fieldsAttempted++;
+                    const result = fillTextField(page, mapping.text, config, font, calibration);
+                    if (result.success) {
+                        report.fieldsSucceeded++;
+                    }
+                    report.fieldDetails.push({
+                        fieldName: mapping.fieldKey,
+                        value: 0, // Text field, not numeric
+                        success: result.success,
+                        coordinates: { x: config.x, y: config.y }
+                    });
+                }
+            }
         }
     }
 
