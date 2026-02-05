@@ -438,7 +438,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   name="date"
                   value={formData.date}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                   required
                 />
               </div>
@@ -451,7 +451,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all"
+                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main appearance-none transition-all"
                   required
                 >
                   <option value="" className="bg-surface-highlight text-text-muted">カテゴリを選択</option>
@@ -502,7 +502,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   name="item"
                   value={formData.item}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all"
+                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main appearance-none transition-all"
                   required
                 >
                   <option value="" className="bg-surface-highlight text-text-muted">取引項目を選択</option>
@@ -561,7 +561,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   onChange={handleChange}
                   onFocus={() => setIsAmountFocused(true)}
                   onBlur={() => setTimeout(() => setIsAmountFocused(false), 200)}
-                  className="w-full pl-4 pr-10 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main placeholder-text-muted transition-all"
+                  className="w-full pl-4 pr-10 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main placeholder-text-muted transition-all"
                   required
                   min="0"
                   step="1"
@@ -599,7 +599,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   value={formData.location}
                   onChange={handleChange}
                   placeholder="場所を入力"
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main placeholder-text-muted transition-all"
+                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main placeholder-text-muted transition-all"
                   list="location-options"
                 />
                 <datalist id="location-options">
@@ -733,7 +733,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     name="recurring_start_date"
                     value={formData.recurring_start_date}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                   />
                 </div>
                 <div>
@@ -743,7 +743,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     name="recurring_end_date"
                     value={formData.recurring_end_date}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                   />
                 </div>
               </div>
@@ -779,7 +779,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   value={formData.item}
                   onChange={handleChange}
                   placeholder="例: パソコン、営業車"
-                  className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all placeholder:text-text-muted/50"
+                  className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all placeholder:text-text-muted/50"
                   required
                 />
               </div>
@@ -791,7 +791,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     name="amount"
                     value={formData.amount || ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all"
+                    className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                     placeholder="0"
                     min="0"
                     required
@@ -813,7 +813,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     type="date"
                     value={acqDate}
                     onChange={(e) => setAcqDate(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                     required
                   />
                 </div>
@@ -830,7 +830,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     name="date"
                     value={formData.date}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                     required
                   />
                 </div>
@@ -844,7 +844,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   <select
                     value={depreciationMethod}
                     onChange={(e) => setDepreciationMethod(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main appearance-none transition-all cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main appearance-none transition-all cursor-pointer"
                   >
                     <option value="定額法">定額法</option>
                     <option value="定率法">定率法 (要届出)</option>
@@ -865,7 +865,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     min="1"
                     max="100"
                     disabled={depreciationMethod === '一括償却 (3年)' || depreciationMethod === '少額減価償却資産 (特例)'}
-                    className={`w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all ${(depreciationMethod === '一括償却 (3年)' || depreciationMethod === '少額減価償却資産 (特例)') ? 'opacity-50 cursor-not-allowed' : ''
+                    className={`w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all ${(depreciationMethod === '一括償却 (3年)' || depreciationMethod === '少額減価償却資産 (特例)') ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     required
                   />
@@ -884,7 +884,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   onChange={(e) => setBusinessRatio(Number(e.target.value))}
                   min="0"
                   max="100"
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main font-mono text-lg transition-all"
+                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                 />
               </div>
               <div>
@@ -896,7 +896,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     value={formData.category}
                     onChange={handleChange}
                     list="asset-categories"
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-text-main transition-all"
+                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                     placeholder="例: 工具器具備品"
                   />
                   <datalist id="asset-categories">
