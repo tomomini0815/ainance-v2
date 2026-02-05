@@ -1,22 +1,30 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF座標ピッカー - Precision Calibration Tool</title>
+    <title>PDF座標キャリブレーター - Visual Calibration Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', sans-serif;
             background: #1a1a2e;
             color: #eee;
             min-height: 100vh;
         }
+
         .container {
             display: flex;
             height: 100vh;
         }
+
         .pdf-panel {
             flex: 1;
             overflow: auto;
@@ -24,43 +32,52 @@
             padding: 20px;
             background: #16213e;
         }
+
         .sidebar {
-            width: 400px;
+            width: 450px;
             background: #0f3460;
             padding: 20px;
             overflow-y: auto;
         }
+
         h1 {
             color: #e94560;
-            margin-bottom: 20px;
-            font-size: 1.2em;
+            margin-bottom: 15px;
+            font-size: 1.3em;
         }
+
         h2 {
             color: #0abde3;
-            margin: 20px 0 10px;
+            margin: 15px 0 10px;
             font-size: 1em;
+            border-bottom: 1px solid #2a4a6a;
+            padding-bottom: 5px;
         }
+
         .canvas-wrapper {
             position: relative;
             display: inline-block;
             cursor: crosshair;
         }
+
         #pdfCanvas {
             border: 2px solid #e94560;
-            box-shadow: 0 0 20px rgba(233,69,96,0.3);
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
         }
+
         #overlayCanvas {
             position: absolute;
             top: 0;
             left: 0;
             pointer-events: none;
         }
+
         .coords-display {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(233,69,96,0.95);
+            background: rgba(233, 69, 96, 0.95);
             padding: 15px 30px;
             border-radius: 8px;
             font-size: 1.5em;
@@ -68,15 +85,19 @@
             z-index: 1000;
             font-family: monospace;
         }
+
         .input-group {
             margin-bottom: 15px;
         }
+
         .input-group label {
             display: block;
             margin-bottom: 5px;
             color: #aaa;
         }
-        .input-group input, .input-group select {
+
+        .input-group input,
+        .input-group select {
             width: 100%;
             padding: 10px;
             border: none;
@@ -84,6 +105,7 @@
             background: #1a1a2e;
             color: #fff;
         }
+
         button {
             padding: 12px 20px;
             border: none;
@@ -92,67 +114,139 @@
             font-weight: bold;
             margin: 5px 0;
             width: 100%;
+            transition: all 0.2s;
         }
-        .btn-primary { background: #e94560; color: white; }
-        .btn-secondary { background: #0abde3; color: #1a1a2e; }
-        .btn-success { background: #10ac84; color: white; }
-        .points-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+
+        button:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #0abde3;
+            color: #1a1a2e;
+        }
+
+        .btn-success {
+            background: #10ac84;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: #1a1a2e;
+        }
+
+        .field-list {
+            max-height: 250px;
+            overflow-y: auto;
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .field-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin: 4px 0;
+            border-radius: 4px;
+            background: #2a3a5a;
             font-size: 0.85em;
         }
-        .points-table th, .points-table td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #2a2a4a;
+
+        .field-item.selected {
+            background: #e9456033;
+            border: 1px solid #e94560;
         }
-        .points-table th {
-            background: #1a1a2e;
-            color: #e94560;
+
+        .field-item .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
         }
-        .points-table tr:hover {
-            background: rgba(233,69,96,0.1);
+
+        .field-item .dot.digit {
+            background: #e94560;
         }
-        .delete-btn {
-            background: #c0392b;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8em;
+
+        .field-item .dot.text {
+            background: #10ac84;
         }
+
+        .field-item .coords {
+            margin-left: auto;
+            color: #888;
+            font-family: monospace;
+        }
+
         #output {
             background: #1a1a2e;
             padding: 15px;
             border-radius: 8px;
             font-family: monospace;
-            font-size: 0.8em;
+            font-size: 0.75em;
             white-space: pre-wrap;
             max-height: 300px;
             overflow-y: auto;
         }
-        .scale-info {
-            background: #2a2a4a;
-            padding: 10px;
-            border-radius: 6px;
+
+        .instructions {
+            background: rgba(10, 189, 227, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+
+        .offset-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .offset-controls input {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            background: #1a1a2e;
+            color: #fff;
+            text-align: center;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
             margin-bottom: 15px;
             font-size: 0.85em;
         }
-        .instructions {
-            background: rgba(10,189,227,0.1);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9em;
-            line-height: 1.6;
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-item .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
         }
     </style>
 </head>
+
 <body>
     <div class="coords-display" id="coordsDisplay">X: ---, Y: ---</div>
-    
+
     <div class="container">
         <div class="pdf-panel">
             <div class="canvas-wrapper" id="canvasWrapper">
@@ -160,302 +254,352 @@
                 <canvas id="overlayCanvas"></canvas>
             </div>
         </div>
-        
+
         <div class="sidebar">
-            <h1>📍 PDF座標ピッカー</h1>
-            
+            <h1>📍 PDF座標キャリブレーター</h1>
+
             <div class="instructions">
                 <strong>使い方:</strong><br>
-                1. PDFファイルを選択<br>
-                2. PDF上でクリックして座標を取得<br>
-                3. ラベルを入力して「追加」<br>
-                4. 「座標をエクスポート」でコードを生成
+                1. PDFを読み込む<br>
+                2. 「全フィールドを表示」で赤/緑の点を確認<br>
+                3. 点がずれていたらオフセット値を調整<br>
+                4. 「修正座標をエクスポート」でコード取得
             </div>
-            
+
             <div class="input-group">
                 <label>PDFファイル:</label>
                 <input type="file" id="pdfFile" accept=".pdf">
             </div>
-            
-            <div class="scale-info" id="scaleInfo">
-                PDFサイズ: --<br>
-                表示スケール: --
-            </div>
-            
-            <div class="input-group">
-                <label>フィールドラベル:</label>
-                <input type="text" id="fieldLabel" placeholder="例: 所得金額_row1">
-            </div>
-            
-            <div class="input-group">
-                <label>フィールドタイプ:</label>
-                <select id="fieldType">
-                    <option value="digitBox">数字ボックス (右端基準)</option>
-                    <option value="textField">テキストフィールド (左端基準)</option>
-                </select>
-            </div>
-            
-            <button class="btn-primary" id="addPoint">➕ 現在の座標を追加</button>
+
+            <button class="btn-warning" id="showAllFields">👁️ 全フィールドを表示（点を描画）</button>
             <button class="btn-secondary" id="toggleGrid">📐 グリッド表示切替</button>
-            <button class="btn-success" id="exportCoords">📋 座標をエクスポート</button>
-            
-            <h2>📌 記録された座標</h2>
-            <table class="points-table">
-                <thead>
-                    <tr>
-                        <th>ラベル</th>
-                        <th>X</th>
-                        <th>Y</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="pointsTable"></tbody>
-            </table>
-            
-            <h2>📤 エクスポート結果</h2>
-            <div id="output">座標を追加してエクスポートしてください</div>
+
+            <h2>🔧 座標オフセット調整</h2>
+            <p style="font-size: 0.8em; color: #888; margin-bottom: 10px;">
+                点がずれている場合、ここで全体調整できます
+            </p>
+            <div class="offset-controls">
+                <div>
+                    <label style="font-size: 0.8em;">X オフセット</label>
+                    <input type="number" id="offsetX" value="0" step="1">
+                </div>
+                <div>
+                    <label style="font-size: 0.8em;">Y オフセット</label>
+                    <input type="number" id="offsetY" value="0" step="1">
+                </div>
+            </div>
+            <button class="btn-primary" id="applyOffset">オフセットを適用して再描画</button>
+
+            <h2>📋 登録フィールド</h2>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="dot" style="background:#e94560"></div> 数字ボックス
+                </div>
+                <div class="legend-item">
+                    <div class="dot" style="background:#10ac84"></div> テキスト
+                </div>
+            </div>
+            <div class="field-list" id="fieldList"></div>
+
+            <h2>📤 エクスポート</h2>
+            <button class="btn-success" id="exportCoords">📋 修正座標をエクスポート</button>
+            <div id="output">PDFを読み込んで「全フィールドを表示」を押してください</div>
         </div>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        
+
         let pdfDoc = null;
         let pageNum = 1;
         let scale = 1.5;
         let pdfWidth = 0;
         let pdfHeight = 0;
-        let currentX = 0;
-        let currentY = 0;
-        let points = [];
         let showGrid = false;
-        
+        let offsetX = 0;
+        let offsetY = 0;
+
         const canvas = document.getElementById('pdfCanvas');
         const ctx = canvas.getContext('2d');
         const overlayCanvas = document.getElementById('overlayCanvas');
         const overlayCtx = overlayCanvas.getContext('2d');
-        
+
+        // ===== 登録フィールド（現在の推定座標） =====
+        // これらの点がPDF上に表示されます
+        const DIGIT_BOX_FIELDS = [
+            // Left Column
+            { id: '所得金額_row1', x: 256, y: 628, description: 'Row 1: 所得金額' },
+            { id: '法人税額_row2', x: 256, y: 608, description: 'Row 2: 法人税額' },
+            { id: '特別控除額_row3', x: 256, y: 588, description: 'Row 3: 特別控除額' },
+            { id: '税額控除_row4', x: 256, y: 568, description: 'Row 4: 税額控除' },
+            { id: '利子税_row5', x: 256, y: 548, description: 'Row 5: 利子税' },
+            { id: '控除税額_row6', x: 256, y: 528, description: 'Row 6: 控除税額' },
+            { id: '留保金額_row7', x: 256, y: 508, description: 'Row 7: 留保金額' },
+            { id: '同上税額_row8', x: 256, y: 488, description: 'Row 8: 同上税額' },
+            { id: '法人税額計1_row9', x: 256, y: 468, description: 'Row 9: 法人税額計' },
+            { id: 'row10', x: 256, y: 448, description: 'Row 10' },
+            { id: 'row11', x: 256, y: 428, description: 'Row 11' },
+            { id: 'row12', x: 256, y: 408, description: 'Row 12' },
+            { id: '差引法人税額_row13', x: 256, y: 388, description: 'Row 13: 差引法人税額' },
+            { id: '中間申告_row14', x: 256, y: 368, description: 'Row 14: 中間申告' },
+            { id: 'row15', x: 256, y: 348, description: 'Row 15' },
+            { id: 'row16', x: 256, y: 328, description: 'Row 16' },
+            { id: 'row17', x: 256, y: 308, description: 'Row 17' },
+            { id: '所得合計_row18', x: 256, y: 288, description: 'Row 18: 所得合計 (ここに0が入る)' },
+            { id: 'row19', x: 256, y: 268, description: 'Row 19' },
+            { id: 'row20', x: 256, y: 248, description: 'Row 20' },
+            { id: 'row21', x: 256, y: 228, description: 'Row 21' },
+            { id: 'row22', x: 256, y: 208, description: 'Row 22' },
+            { id: 'row23', x: 256, y: 188, description: 'Row 23' },
+            { id: 'row24', x: 256, y: 168, description: 'Row 24' },
+            { id: 'row25', x: 256, y: 148, description: 'Row 25' },
+            { id: 'row26', x: 256, y: 128, description: 'Row 26' },
+            { id: 'row27', x: 256, y: 108, description: 'Row 27' },
+            { id: '法人税額計_row28', x: 256, y: 88, description: 'Row 28: 法人税額計 (141940が入る)' },
+
+            // Right Column
+            { id: '右_row16', x: 526, y: 568, description: '右列 Row 16' },
+            { id: '右_row17', x: 526, y: 548, description: '右列 Row 17' },
+            { id: '右_row18', x: 526, y: 528, description: '右列 Row 18' },
+            { id: '右_row19', x: 526, y: 508, description: '右列 Row 19' },
+            { id: '右_row20', x: 526, y: 488, description: '右列 Row 20' },
+            { id: '右_row21', x: 526, y: 468, description: '右列 Row 21' },
+            { id: '右_row22', x: 526, y: 448, description: '右列 Row 22' },
+        ];
+
+        const TEXT_FIELDS = [
+            { id: '税務署名', x: 95, y: 805, description: '税務署名（〇〇税務署長殿）' },
+            { id: '法人名', x: 68, y: 780, description: '法人名' },
+            { id: '法人番号', x: 360, y: 820, description: '法人番号（13桁）' },
+            { id: '事業年度_自', x: 68, y: 742, description: '事業年度（自）' },
+            { id: '事業年度_至', x: 68, y: 727, description: '事業年度（至）' },
+            { id: '納税地', x: 68, y: 695, description: '納税地' },
+            { id: '電話番号', x: 240, y: 695, description: '電話番号' },
+            { id: '代表者氏名', x: 68, y: 665, description: '代表者氏名' },
+        ];
+
         // Load PDF
         document.getElementById('pdfFile').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            
+
             const arrayBuffer = await file.arrayBuffer();
             pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
             renderPage(pageNum);
+            renderFieldList();
         });
-        
+
         // Render page
         async function renderPage(num) {
             const page = await pdfDoc.getPage(num);
             const viewport = page.getViewport({ scale });
-            
+
             pdfWidth = page.getViewport({ scale: 1 }).width;
             pdfHeight = page.getViewport({ scale: 1 }).height;
-            
+
             canvas.width = viewport.width;
             canvas.height = viewport.height;
             overlayCanvas.width = viewport.width;
             overlayCanvas.height = viewport.height;
-            
-            document.getElementById('scaleInfo').innerHTML = `
-                PDFサイズ: ${pdfWidth.toFixed(2)} × ${pdfHeight.toFixed(2)} pt<br>
-                表示スケール: ${scale}x (${viewport.width.toFixed(0)} × ${viewport.height.toFixed(0)} px)
-            `;
-            
+
             await page.render({
                 canvasContext: ctx,
                 viewport: viewport
             }).promise;
-            
+        }
+
+        // Convert PDF coords to canvas coords
+        function pdfToCanvas(x, y) {
+            return {
+                x: (x + offsetX) * scale,
+                y: overlayCanvas.height - ((y + offsetY) * scale)
+            };
+        }
+
+        // Draw all field markers
+        function drawAllFields() {
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+            // Draw digit box fields (red)
+            DIGIT_BOX_FIELDS.forEach((field, i) => {
+                const pos = pdfToCanvas(field.x, field.y);
+
+                // Draw dot
+                overlayCtx.beginPath();
+                overlayCtx.arc(pos.x, pos.y, 8, 0, 2 * Math.PI);
+                overlayCtx.fillStyle = '#e94560';
+                overlayCtx.fill();
+                overlayCtx.strokeStyle = '#fff';
+                overlayCtx.lineWidth = 2;
+                overlayCtx.stroke();
+
+                // Draw number
+                overlayCtx.fillStyle = '#fff';
+                overlayCtx.font = 'bold 10px sans-serif';
+                overlayCtx.textAlign = 'center';
+                overlayCtx.fillText(String(i + 1), pos.x, pos.y + 3);
+
+                // Draw crosshair
+                overlayCtx.strokeStyle = 'rgba(233, 69, 96, 0.5)';
+                overlayCtx.lineWidth = 1;
+                overlayCtx.beginPath();
+                overlayCtx.moveTo(pos.x - 15, pos.y);
+                overlayCtx.lineTo(pos.x + 15, pos.y);
+                overlayCtx.moveTo(pos.x, pos.y - 15);
+                overlayCtx.lineTo(pos.x, pos.y + 15);
+                overlayCtx.stroke();
+            });
+
+            // Draw text fields (green)
+            TEXT_FIELDS.forEach((field, i) => {
+                const pos = pdfToCanvas(field.x, field.y);
+
+                // Draw dot
+                overlayCtx.beginPath();
+                overlayCtx.arc(pos.x, pos.y, 8, 0, 2 * Math.PI);
+                overlayCtx.fillStyle = '#10ac84';
+                overlayCtx.fill();
+                overlayCtx.strokeStyle = '#fff';
+                overlayCtx.lineWidth = 2;
+                overlayCtx.stroke();
+
+                // Draw label
+                overlayCtx.fillStyle = '#10ac84';
+                overlayCtx.font = 'bold 9px sans-serif';
+                overlayCtx.textAlign = 'left';
+                overlayCtx.fillText(field.id, pos.x + 12, pos.y + 3);
+            });
+
             if (showGrid) drawGrid();
         }
-        
+
         // Draw coordinate grid
         function drawGrid() {
-            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            
-            const step = 50; // Every 50pt
-            
-            // Horizontal lines (Y axis)
+            const step = 50;
+
             for (let y = 0; y <= pdfHeight; y += step) {
                 const canvasY = overlayCanvas.height - (y * scale);
                 overlayCtx.beginPath();
-                overlayCtx.strokeStyle = y % 100 === 0 ? 'rgba(233,69,96,0.5)' : 'rgba(233,69,96,0.2)';
-                overlayCtx.lineWidth = y % 100 === 0 ? 2 : 1;
+                overlayCtx.strokeStyle = y % 100 === 0 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)';
+                overlayCtx.lineWidth = y % 100 === 0 ? 1 : 0.5;
                 overlayCtx.moveTo(0, canvasY);
                 overlayCtx.lineTo(overlayCanvas.width, canvasY);
                 overlayCtx.stroke();
-                
+
                 if (y % 100 === 0) {
-                    overlayCtx.fillStyle = '#e94560';
-                    overlayCtx.font = '12px monospace';
-                    overlayCtx.fillText(`Y=${y}`, 5, canvasY - 5);
+                    overlayCtx.fillStyle = 'rgba(255,255,255,0.7)';
+                    overlayCtx.font = '10px monospace';
+                    overlayCtx.fillText(`Y=${y}`, 5, canvasY - 3);
                 }
             }
-            
-            // Vertical lines (X axis)
+
             for (let x = 0; x <= pdfWidth; x += step) {
                 const canvasX = x * scale;
                 overlayCtx.beginPath();
-                overlayCtx.strokeStyle = x % 100 === 0 ? 'rgba(10,189,227,0.5)' : 'rgba(10,189,227,0.2)';
-                overlayCtx.lineWidth = x % 100 === 0 ? 2 : 1;
+                overlayCtx.strokeStyle = x % 100 === 0 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)';
+                overlayCtx.lineWidth = x % 100 === 0 ? 1 : 0.5;
                 overlayCtx.moveTo(canvasX, 0);
                 overlayCtx.lineTo(canvasX, overlayCanvas.height);
                 overlayCtx.stroke();
-                
+
                 if (x % 100 === 0) {
-                    overlayCtx.fillStyle = '#0abde3';
-                    overlayCtx.font = '12px monospace';
-                    overlayCtx.fillText(`X=${x}`, canvasX + 5, 15);
+                    overlayCtx.fillStyle = 'rgba(255,255,255,0.7)';
+                    overlayCtx.font = '10px monospace';
+                    overlayCtx.fillText(`X=${x}`, canvasX + 3, 12);
                 }
             }
-            
-            // Draw saved points
-            points.forEach((p, i) => {
-                const canvasX = p.x * scale;
-                const canvasY = overlayCanvas.height - (p.y * scale);
-                
-                overlayCtx.beginPath();
-                overlayCtx.arc(canvasX, canvasY, 8, 0, 2 * Math.PI);
-                overlayCtx.fillStyle = p.type === 'digitBox' ? '#e94560' : '#10ac84';
-                overlayCtx.fill();
-                
-                overlayCtx.fillStyle = '#fff';
-                overlayCtx.font = 'bold 10px sans-serif';
-                overlayCtx.fillText(p.label.substring(0, 10), canvasX + 12, canvasY + 4);
-            });
         }
-        
-        // Mouse move - update coordinates
+
+        // Render field list
+        function renderFieldList() {
+            const list = document.getElementById('fieldList');
+            let html = '';
+
+            DIGIT_BOX_FIELDS.forEach((field, i) => {
+                html += `<div class="field-item">
+                    <div class="dot digit"></div>
+                    <span>${i + 1}. ${field.description}</span>
+                    <span class="coords">(${field.x}, ${field.y})</span>
+                </div>`;
+            });
+
+            TEXT_FIELDS.forEach((field) => {
+                html += `<div class="field-item">
+                    <div class="dot text"></div>
+                    <span>${field.id}</span>
+                    <span class="coords">(${field.x}, ${field.y})</span>
+                </div>`;
+            });
+
+            list.innerHTML = html;
+        }
+
+        // Mouse move
         document.getElementById('canvasWrapper').addEventListener('mousemove', (e) => {
             if (!pdfDoc) return;
-            
             const rect = canvas.getBoundingClientRect();
             const canvasX = e.clientX - rect.left;
             const canvasY = e.clientY - rect.top;
-            
-            // Convert to PDF coordinates (origin at bottom-left)
-            currentX = canvasX / scale;
-            currentY = pdfHeight - (canvasY / scale);
-            
-            document.getElementById('coordsDisplay').textContent = 
-                `X: ${currentX.toFixed(2)}, Y: ${currentY.toFixed(2)}`;
+            const pdfX = canvasX / scale;
+            const pdfY = pdfHeight - (canvasY / scale);
+            document.getElementById('coordsDisplay').textContent =
+                `X: ${pdfX.toFixed(1)}, Y: ${pdfY.toFixed(1)}`;
         });
-        
-        // Click - save coordinate
-        document.getElementById('canvasWrapper').addEventListener('click', (e) => {
-            if (!pdfDoc) return;
-            
-            const label = document.getElementById('fieldLabel').value || `point_${points.length + 1}`;
-            const type = document.getElementById('fieldType').value;
-            
-            // Visual feedback
-            const rect = canvas.getBoundingClientRect();
-            const canvasX = e.clientX - rect.left;
-            const canvasY = e.clientY - rect.top;
-            
-            overlayCtx.beginPath();
-            overlayCtx.arc(canvasX, canvasY, 8, 0, 2 * Math.PI);
-            overlayCtx.fillStyle = type === 'digitBox' ? '#e94560' : '#10ac84';
-            overlayCtx.fill();
-        });
-        
-        // Add point
-        document.getElementById('addPoint').addEventListener('click', () => {
+
+        // Show all fields
+        document.getElementById('showAllFields').addEventListener('click', () => {
             if (!pdfDoc) {
                 alert('PDFを先に読み込んでください');
                 return;
             }
-            
-            const label = document.getElementById('fieldLabel').value || `point_${points.length + 1}`;
-            const type = document.getElementById('fieldType').value;
-            
-            points.push({
-                label,
-                x: Math.round(currentX * 10) / 10,
-                y: Math.round(currentY * 10) / 10,
-                type
-            });
-            
-            updatePointsTable();
-            document.getElementById('fieldLabel').value = '';
-            if (showGrid) drawGrid();
+            drawAllFields();
         });
-        
-        // Update points table
-        function updatePointsTable() {
-            const tbody = document.getElementById('pointsTable');
-            tbody.innerHTML = points.map((p, i) => `
-                <tr>
-                    <td>${p.label}</td>
-                    <td>${p.x}</td>
-                    <td>${p.y}</td>
-                    <td><button class="delete-btn" onclick="deletePoint(${i})">✕</button></td>
-                </tr>
-            `).join('');
-        }
-        
-        window.deletePoint = function(index) {
-            points.splice(index, 1);
-            updatePointsTable();
-            if (showGrid) drawGrid();
-        };
-        
+
         // Toggle grid
         document.getElementById('toggleGrid').addEventListener('click', () => {
             showGrid = !showGrid;
-            if (showGrid) {
-                drawGrid();
-            } else {
-                overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            }
+            if (pdfDoc) drawAllFields();
         });
-        
-        // Export coordinates
+
+        // Apply offset
+        document.getElementById('applyOffset').addEventListener('click', () => {
+            offsetX = parseFloat(document.getElementById('offsetX').value) || 0;
+            offsetY = parseFloat(document.getElementById('offsetY').value) || 0;
+            if (pdfDoc) drawAllFields();
+        });
+
+        // Export
         document.getElementById('exportCoords').addEventListener('click', () => {
-            const digitBoxes = points.filter(p => p.type === 'digitBox');
-            const textFields = points.filter(p => p.type === 'textField');
-            
-            let output = '// ===== DIGIT BOX FIELDS =====\n';
+            let output = '// ===== BEPPYO1 DIGIT BOX FIELDS =====\n';
+            output += '// Generated with offset: X=' + offsetX + ', Y=' + offsetY + '\n\n';
             output += 'export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {\n';
-            digitBoxes.forEach(p => {
-                output += `    '${p.label}': {\n`;
-                output += `        anchorX: ${p.x},\n`;
-                output += `        anchorY: ${p.y},\n`;
-                output += `        boxWidth: 16.15,\n`;
-                output += `        boxSpacing: 16.15,\n`;
+
+            DIGIT_BOX_FIELDS.forEach(field => {
+                output += `    '${field.id}': {\n`;
+                output += `        anchorX: ${field.x + offsetX},\n`;
+                output += `        anchorY: ${field.y + offsetY},\n`;
+                output += `        boxWidth: 16,\n`;
+                output += `        boxSpacing: 16,\n`;
                 output += `        fontSize: 10,\n`;
                 output += `        maxDigits: 12\n`;
                 output += `    },\n`;
             });
+
             output += '};\n\n';
-            
-            output += '// ===== TEXT FIELDS =====\n';
+            output += '// ===== BEPPYO1 TEXT FIELDS =====\n';
             output += 'export const BEPPYO1_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {\n';
-            textFields.forEach(p => {
-                output += `    '${p.label}': { x: ${p.x}, y: ${p.y}, fontSize: 9 },\n`;
+
+            TEXT_FIELDS.forEach(field => {
+                output += `    '${field.id}': { x: ${field.x + offsetX}, y: ${field.y + offsetY}, fontSize: 9 },\n`;
             });
+
             output += '};\n';
-            
+
             document.getElementById('output').textContent = output;
         });
-        
-        // Load default PDF
-        async function loadDefaultPDF() {
-            try {
-                const response = await fetch('/templates/beppyo1_official.pdf');
-                if (response.ok) {
-                    const arrayBuffer = await response.arrayBuffer();
-                    pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
-                    renderPage(pageNum);
-                }
-            } catch (e) {
-                console.log('Could not load default PDF');
-            }
-        }
-        
-        loadDefaultPDF();
+
+        renderFieldList();
     </script>
 </body>
+
 </html>
