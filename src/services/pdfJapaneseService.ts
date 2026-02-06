@@ -1365,6 +1365,7 @@ export async function fillSingleOfficialCorporateTaxPDF(data: CorporateTaxInputD
     'beppyo1': '/templates/01-01-a.pdf',
     'beppyo4': '/templates/beppyo4_official.pdf',
     'beppyo5_1': '/templates/beppyo5_1_official.pdf',
+    'beppyo5_2': '/templates/beppyo5_2_official.pdf',
     'beppyo15': '/templates/beppyo15_official.pdf',
     'beppyo16': '/templates/beppyo16_official.pdf',
   };

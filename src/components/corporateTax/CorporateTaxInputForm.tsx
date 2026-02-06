@@ -371,13 +371,14 @@ export const CorporateTaxInputForm: React.FC = () => {
                                         <div className="grid grid-cols-1 gap-1 border border-border rounded-xl overflow-hidden bg-surface mt-4 shadow-inner">
                                             <div className="px-3 py-2 bg-surface-highlight text-[10px] font-bold text-text-muted uppercase border-b border-border tracking-wider flex items-center gap-2">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                                                個別出力 (反映成功のみ)
+                                                公式PDF書類出力
                                             </div>
                                             <div className="divide-y divide-border">
                                                 {[
                                                     { id: 'beppyo1', name: '別表一' },
                                                     { id: 'beppyo4', name: '別表四' },
-                                                    { id: 'beppyo5_1', name: '別表五一' },
+                                                    { id: 'beppyo5_1', name: '別表五(一)' },
+                                                    { id: 'beppyo5_2', name: '別表五(二)' },
                                                     { id: 'beppyo15', name: '別表十五' },
                                                     { id: 'beppyo16', name: '別表十六' }
                                                 ].map(item => (
