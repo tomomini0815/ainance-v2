@@ -13,7 +13,7 @@ import { Beppyo16Input } from './Beppyo16Input';
 import { Beppyo2Input } from './Beppyo2Input';
 import { BusinessOverviewInput } from './BusinessOverviewInput';
 import { generateCorporateTaxXTX, downloadFile } from '../../services/eTaxExportService';
-import { Save, RefreshCw, Download, Activity, Calculator, PieChart, Landmark, Box, Coffee, Users, FileText, BookOpen, Eye, X, Share2, Wrench } from 'lucide-react';
+import { Save, RefreshCw, Download, Activity, Calculator, PieChart, Landmark, Box, Coffee, Users, FileText, BookOpen, Eye, X, Share2, Wrench, Upload } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useBusinessTypeContext } from '../../context/BusinessTypeContext';
@@ -322,6 +322,15 @@ export const CorporateTaxInputForm: React.FC = () => {
                             <div className="p-6 sticky top-0">
                                 <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">アクション</h3>
                                 <div className="space-y-3">
+                                    {/* 取引データ転記 - 目立たせる */}
+                                    <button
+                                        onClick={handleImport}
+                                        className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
+                                    >
+                                        <Upload className="w-4 h-4" />
+                                        データ転記
+                                    </button>
+
                                     <button
                                         onClick={handlePreviewPDF}
                                         className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
@@ -422,13 +431,6 @@ export const CorporateTaxInputForm: React.FC = () => {
                                     >
                                         <BookOpen className="w-4 h-4" />
                                         財務諸表CSV (提出用)
-                                    </button>
-                                    <button
-                                        onClick={handleImport}
-                                        className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        データ転記
                                     </button>
                                     <div className="border-t border-border my-2"></div>
                                     <button

@@ -4,7 +4,8 @@ import { TaxReturnInputService } from '../../services/TaxReturnInputService';
 import { TaxReturnTable1Input } from './TaxReturnTable1Input';
 import { TaxReturnTable2Input } from './TaxReturnTable2Input';
 import { BlueReturnInput } from './BlueReturnInput';
-import { Save, RefreshCw, FileText, Activity, CreditCard, Download, Wrench, Eye } from 'lucide-react';
+import { Save, RefreshCw, FileText, Activity, CreditCard, Download, Wrench, Eye, Upload } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
@@ -281,15 +282,24 @@ export const TaxReturnInputForm: React.FC = () => {
                                     `}
                                 >
                                     {isActive && (
-                                        <div className="absolute inset-0 bg-primary/15 rounded-full border border-primary/30" />
+                                        <motion.div
+                                            layoutId="activeTabIndicatorPersonal"
+                                            className="absolute bottom-0 left-3 right-3 h-[3px] bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--color-primary),0.5)]"
+                                            transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+                                        />
                                     )}
-                                    <Icon className={`w-4 h-4 mb-0.5 z-10 ${isActive ? 'text-primary' : ''}`} />
-                                    <span className="text-xs font-semibold z-10">{mainLabel}</span>
-                                    {subLabel && (
-                                        <span className={`text-[10px] z-10 ${isActive ? 'text-primary/70' : 'text-slate-500'}`}>
-                                            {subLabel}
-                                        </span>
-                                    )}
+
+                                    <div className="relative z-10 flex flex-col items-center leading-tight">
+                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-primary' : 'text-slate-500'}`} />
+                                            <span className="text-sm font-bold tracking-tight whitespace-nowrap">{mainLabel}</span>
+                                        </div>
+                                        {subLabel && (
+                                            <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-primary/80' : 'text-slate-500'}`}>
+                                                {subLabel}
+                                            </span>
+                                        )}
+                                    </div>
                                 </button>
                             );
                         })}
@@ -316,6 +326,15 @@ export const TaxReturnInputForm: React.FC = () => {
                         <div className="p-6 sticky top-0">
                             <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">アクション</h3>
                             <div className="space-y-3">
+                                {/* 取引データ転記 - 目立たせる */}
+                                <button
+                                    onClick={handleImportFromTransactions}
+                                    className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    取引データ転記
+                                </button>
+
                                 <button
                                     onClick={handlePreviewPDF}
                                     className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
@@ -373,14 +392,6 @@ export const TaxReturnInputForm: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            <button
-                                onClick={handleImportFromTransactions}
-                                className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Download className="w-4 h-4" />
-                                取引データ転記
-                            </button>
 
                             <div className="border-t border-border my-2"></div>
 
