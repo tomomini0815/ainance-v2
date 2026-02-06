@@ -628,7 +628,19 @@
 
         function updatePageNav() {
             const config = getCurrentFormConfig();
-            totalPages = config?.pages || 1;
+            // PDFがロードされている場合は実際のページ数を使用
+            if (pdfDoc) {
+                totalPages = pdfDoc.numPages;
+                // フォーム設定も更新
+                if (config && totalPages > config.pages) {
+                    config.pages = totalPages;
+                    for (let i = 1; i <= totalPages; i++) {
+                        if (!config.fields[i]) config.fields[i] = [];
+                    }
+                }
+            } else {
+                totalPages = config?.pages || 1;
+            }
 
             const pageNav = document.getElementById('pageNav');
             if (totalPages > 1) {
