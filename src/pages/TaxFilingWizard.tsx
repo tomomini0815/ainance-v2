@@ -923,6 +923,10 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                         onClick={async () => {
                                             try {
                                                 const formData: JpTaxFormData = {
+                                                    name: currentBusinessType?.representative_name || user?.name || '',
+                                                    address: currentBusinessType?.address || '',
+                                                    tradeName: currentBusinessType?.company_name || '',
+                                                    phone: currentBusinessType?.phone || '',
                                                     revenue: taxData.totalRevenue,
                                                     expenses: taxData.totalExpenses,
                                                     netIncome: taxData.netIncome,
@@ -956,6 +960,9 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                             onClick={async () => {
                                                 try {
                                                     const formData: JpTaxFormData = {
+                                                        name: user?.name,
+                                                        address: currentBusinessType?.address || '',
+                                                        tradeName: currentBusinessType?.company_name || '',
                                                         revenue: taxData.totalRevenue,
                                                         expenses: taxData.totalExpenses,
                                                         netIncome: taxData.netIncome,
@@ -993,6 +1000,9 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                         onClick={async () => {
                                             try {
                                                 const formData: JpTaxFormData = {
+                                                    companyName: currentBusinessType?.company_name || '会社名',
+                                                    representativeName: currentBusinessType?.representative_name || '',
+                                                    address: currentBusinessType?.address || '',
                                                     revenue: taxData.totalRevenue,
                                                     expenses: taxData.totalExpenses,
                                                     netIncome: taxData.netIncome,
@@ -1001,9 +1011,6 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                                     estimatedTax: taxData.estimatedTax,
                                                     fiscalYear,
                                                     businessType: 'corporation',
-                                                    companyName: currentBusinessType?.company_name || '会社名',
-                                                    representativeName: currentBusinessType?.representative_name || '',
-                                                    address: currentBusinessType?.address || '',
                                                 };
                                                 const pdfBytes = await generateCorporateTaxPDF(formData);
                                                 const filename = `法人税申告書_${fiscalYear}年度.pdf`;

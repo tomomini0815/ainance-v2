@@ -48,139 +48,140 @@ export interface TextFieldConfig {
 
 // ===================================================================
 // IMPORTANT: Coordinates calibrated on 2026-02-06 using drag-and-drop tool
-// User manually positioned each field for pixel-perfect accuracy
-// 
-// Form Layout: A4 (595.32 x 841.92 pt)
+// Updated with confirmed 14.2pt spacing and 11pt font size
 // ===================================================================
+
+const CALIBRATED_SPACING = 14.2;
+const CALIBRATED_FONT_SIZE = 11;
 
 export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     // ===== LEFT COLUMN (Rows 1-15, 28) =====
     '所得金額_row1': {
         anchorX: 292.7,
         anchorY: 568.6,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '法人税額_row2': {
         anchorX: 293.3,
         anchorY: 549.9,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '特別控除額_row3': {
         anchorX: 293.3,
         anchorY: 533.3,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '税額控除_row4': {
         anchorX: 293.3,
         anchorY: 514.6,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '利子税_row5': {
         anchorX: 292,
         anchorY: 496.6,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '控除税額_row6': {
         anchorX: 292.7,
         anchorY: 479.3,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '留保金額_row7': {
         anchorX: 292.7,
         anchorY: 460.6,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '同上税額_row8': {
         anchorX: 292,
         anchorY: 441.9,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '法人税額計1_row9': {
         anchorX: 294.7,
         anchorY: 407.3,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row10': {
         anchorX: 294,
         anchorY: 386.6,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row11': {
         anchorX: 293.3,
         anchorY: 368.6,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row12': {
         anchorX: 292.7,
         anchorY: 351.3,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '差引法人税額_row13': {
         anchorX: 292.7,
         anchorY: 333.9,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '中間申告_row14': {
         anchorX: 294.7,
         anchorY: 316.8,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row15': {
         anchorX: 293.3,
         anchorY: 295.3,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '法人税額計_row28': {
         anchorX: 293.3,
         anchorY: 276.1,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
 
@@ -188,97 +189,97 @@ export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
     'row16': {
         anchorX: 560,
         anchorY: 565.3,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row17': {
         anchorX: 560,
         anchorY: 547.3,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     '所得合計_row18': {
         anchorX: 560,
         anchorY: 527.3,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row19': {
         anchorX: 559.3,
         anchorY: 509.9,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row20': {
         anchorX: 560,
         anchorY: 492.1,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row21': {
         anchorX: 559.3,
         anchorY: 470.8,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row22': {
         anchorX: 560,
         anchorY: 447.5,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row23': {
         anchorX: 560,
         anchorY: 421.5,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row24': {
         anchorX: 560,
         anchorY: 394.1,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row25': {
         anchorX: 558.7,
         anchorY: 340.1,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row26': {
         anchorX: 558.7,
         anchorY: 316.8,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
     'row27': {
         anchorX: 560,
         anchorY: 295.5,
-        boxWidth: 16,
-        boxSpacing: 16,
-        fontSize: 10,
+        boxWidth: CALIBRATED_SPACING,
+        boxSpacing: CALIBRATED_SPACING,
+        fontSize: CALIBRATED_FONT_SIZE,
         maxDigits: 12
     },
 };
@@ -307,7 +308,7 @@ export interface CalibrationOffsets {
 const DEFAULT_CALIBRATION: CalibrationOffsets = {
     globalShiftX: 0,
     globalShiftY: 0,
-    digitCenterOffsetX: -5,  // Center digit within 16pt box
+    digitCenterOffsetX: -5,  // Center digit within box
     digitCenterOffsetY: 2,   // Baseline adjustment
 };
 
@@ -317,11 +318,11 @@ async function loadFont(pdfDoc: PDFDocument): Promise<PDFFont> {
     pdfDoc.registerFontkit(fontkit);
 
     try {
-        const fontUrl = 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@4.5.0/files/noto-sans-jp-japanese-400-normal.woff';
+        const fontUrl = '/fonts/NotoSansCJKjp-Regular.otf';
         const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
         return await pdfDoc.embedFont(fontBytes);
     } catch (e) {
-        console.warn('[DigitBox] Could not load Japanese font, falling back to Helvetica');
+        console.warn('[DigitBox] Could not load local Japanese font, falling back to Helvetica');
         const { StandardFonts } = await import('pdf-lib');
         return await pdfDoc.embedStandardFont(StandardFonts.Helvetica);
     }

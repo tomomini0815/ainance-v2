@@ -928,8 +928,8 @@
                     ${f.required ? '<span style="color:#ffcc00;margin-right:2px;">★</span>' : ''}
                     <span>${f.id}</span>
                     <span style="margin-left:auto;color:#888;font-family:monospace;font-size:0.85em;">(${f.x}, ${f.y})</span>
-                    <button class="toggle-visibility-btn" data-index="${i}" style="margin-left:4px;padding:2px 6px;font-size:0.7em;cursor:pointer;background:${f.hidden ? '#e94560' : '#10ac84'};border:none;border-radius:3px;color:white;">
-                        ${f.hidden ? '👁‍🗨' : '👁'}
+                    <button class="toggle-visibility-btn" data-index="${i}" style="margin-left:4px;width:12px;height:12px;padding:0;font-size:8px;cursor:pointer;background:${f.hidden ? '#e94560' : '#10ac84'};border:none;border-radius:0;color:white;display:flex;align-items:center;justify-content:center;">
+                        ${f.hidden ? '×' : '○'}
                     </button>
                 </div>
             `).join('');

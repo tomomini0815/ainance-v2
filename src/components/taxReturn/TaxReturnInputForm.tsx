@@ -99,10 +99,10 @@ export const TaxReturnInputForm: React.FC = () => {
         const taxableIncome = Math.max(0, totalIncome - totalDeductions);
 
         return {
-            name: '',
-            address: '',
-            phone: '',
-            tradeName: '',
+            name: currentBusinessType?.representative_name || user?.name || '',
+            address: currentBusinessType?.address || '',
+            phone: currentBusinessType?.phone || '',
+            tradeName: currentBusinessType?.company_name || '',
             year: new Date().getFullYear(),
             month: 3,
             day: 15,
@@ -112,19 +112,16 @@ export const TaxReturnInputForm: React.FC = () => {
             netIncome: data.income.business_agriculture || 0,
             expensesByCategory: [],
             deductions: {
-                social_insurance: data.deductions.social_insurance || 0,
-                life_insurance: data.deductions.life_insurance || 0,
+                socialInsurance: data.deductions.social_insurance || 0,
+                lifeInsurance: data.deductions.life_insurance || 0,
                 basic: data.deductions.basic || 480000,
+                medicalExpenses: data.deductions.medical_expenses || 0,
+                blueReturn: isBlueReturn ? 650000 : 0,
             },
             businessIncome: data.income.business_agriculture || 0,
             salaryIncome: data.income.employment || 0,
             miscellaneousIncome: (data.income.miscellaneous_other || 0) + (data.income.miscellaneous_public_pension || 0),
             totalIncome: totalIncome,
-            socialInsurance: data.deductions.social_insurance || 0,
-            lifeInsurance: data.deductions.life_insurance || 0,
-            medicalExpenses: data.deductions.medical_expenses || 0,
-            basicDeduction: data.deductions.basic || 480000,
-            blueReturnDeduction: isBlueReturn ? 650000 : 0,
             taxableIncome: taxableIncome,
             estimatedTax: 0,
             fiscalYear: data.fiscalYear,
@@ -156,6 +153,22 @@ export const TaxReturnInputForm: React.FC = () => {
             const { pdfBytes, filename } = await generateFilledTaxForm('blue_return', taxFormData);
             downloadPDF(pdfBytes, filename);
             toast.success('青色申告決算書を出力しました');
+        } catch (error: any) {
+            console.error('PDF generation failed', error);
+            toast.error(error.message || 'PDF出力に失敗しました');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
+    // PDF出力 - 所得の内訳書
+    const handleDownloadIncomeStatementPDF = async () => {
+        setIsGeneratingPdf(true);
+        try {
+            const taxFormData = createTaxFormData(false);
+            const { pdfBytes, filename } = await generateFilledTaxForm('income_statement', taxFormData);
+            downloadPDF(pdfBytes, filename);
+            toast.success('所得の内訳書を出力しました');
         } catch (error: any) {
             console.error('PDF generation failed', error);
             toast.error(error.message || 'PDF出力に失敗しました');
@@ -211,8 +224,8 @@ export const TaxReturnInputForm: React.FC = () => {
         {
             id: 'uchiwake',
             name: '所得の内訳書',
-            handler: () => handleDownloadOfficialTemplate('/templates/syotokuuchiwakesyo.pdf', '所得の内訳書'),
-            hasAutoFill: false
+            handler: handleDownloadIncomeStatementPDF,
+            hasAutoFill: true
         },
     ];
 
@@ -222,7 +235,7 @@ export const TaxReturnInputForm: React.FC = () => {
         try {
             const taxFormData = createTaxFormData(false);
             const { pdfBytes } = await generateFilledTaxForm('tax_return_b', taxFormData);
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
             setPreviewBlobUrl(url);
             setShowPreviewModal(true);

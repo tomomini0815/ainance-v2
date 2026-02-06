@@ -8,6 +8,7 @@ import fontkit from '@pdf-lib/fontkit';
 import { TaxReturnInputData } from '../types/taxReturnInput';
 import { CorporateTaxInputData } from '../types/corporateTaxInput';
 import { ApplicationDraft } from './subsidyMatchingService';
+import { fillTaxReturnB, TaxFormData } from './pdfAutoFillService';
 
 // 経費カテゴリのマッピング（日本語）
 export const EXPENSE_CATEGORIES_JP: { [key: string]: string } = {
@@ -58,6 +59,10 @@ export interface JpTaxFormData {
   companyName?: string;
   representativeName?: string;
   address?: string;
+  phone?: string;
+  name?: string;
+  birthDate?: { year: number; month: number; day: number };
+  occupation?: string;
   corporateNumber?: string;
   capital?: number;
   businessType?: 'individual' | 'corporation';
@@ -594,129 +599,40 @@ export async function generateFinancialStatementPDF(data: JpTaxFormData): Promis
 
 /**
  * 確定申告書B PDFを生成（日本語・個人事業主用）
+ * 公式テンプレート（kakutei_1_2.pdf）を使用してDigitBox方式で転記
  */
 export async function generateTaxReturnBPDF(data: JpTaxFormData): Promise<Uint8Array> {
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595.28, 841.89]);
-  const { regular, bold } = await loadJapaneseFont(pdfDoc);
-  const { width, height } = page.getSize();
+  // 公式テンプレートを読み込み
+  const url = '/templates/kakutei_1_2.pdf';
+  const templateBytes = await fetch(`${url}?t=${Date.now()}`).then(r => r.arrayBuffer());
 
-  const colors = {
-    primary: rgb(0.2, 0.4, 0.8),
-    text: rgb(0.1, 0.1, 0.1),
-    muted: rgb(0.4, 0.4, 0.4),
-    line: rgb(0.5, 0.5, 0.5),
-    highlight: rgb(0.95, 0.95, 1),
-    red: rgb(0.8, 0.2, 0.2),
+  // JpTaxFormDataをTaxFormDataに変換
+  const fillData: TaxFormData = {
+    name: data.name,
+    address: data.address,
+    phone: data.phone,
+    tradeName: data.tradeName,
+    revenue: data.revenue,
+    expenses: data.expenses,
+    netIncome: data.netIncome,
+    businessIncome: data.netIncome,
+    totalIncome: data.netIncome,
+    taxableIncome: data.taxableIncome,
+    estimatedTax: data.estimatedTax,
+    fiscalYear: data.fiscalYear,
+    isBlueReturn: !!data.isBlueReturn,
+    expensesByCategory: data.expensesByCategory,
+    deductions: {
+      basic: data.deductions?.basic,
+      blueReturn: data.deductions?.blueReturn,
+      socialInsurance: data.deductions?.socialInsurance,
+      lifeInsurance: data.deductions?.lifeInsurance,
+    }
   };
 
-  const drawText = (text: string, x: number, y: number, options: { size?: number; font?: PDFFont; color?: typeof colors.text } = {}) => {
-    page.drawText(text, { x, y, size: options.size || 10, font: options.font || regular, color: options.color || colors.text });
-  };
-
-  const drawLine = (x1: number, y1: number, x2: number, y2: number, thickness = 0.5) => {
-    page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color: colors.line });
-  };
-
-  const drawRect = (x: number, y: number, w: number, h: number, color: typeof colors.highlight) => {
-    page.drawRectangle({ x, y, width: w, height: h, color });
-  };
-
-  // ヘッダー
-  drawRect(0, height - 60, width, 60, colors.primary);
-  drawText('確 定 申 告 書 B', 200, height - 40, { size: 20, font: bold, color: rgb(1, 1, 1) });
-
-  let y = height - 85;
-  drawText(`${getJapaneseYear(data.fiscalYear)}分の所得税及び復興特別所得税の申告書`, 50, y, { size: 11, font: bold });
-  drawText(`作成日: ${new Date().toLocaleDateString('ja-JP')}`, 400, y, { size: 9, color: colors.muted });
-  y -= 30;
-
-  drawLine(50, y, 545, y, 1);
-  y -= 25;
-
-  // 収入金額等
-  drawText('第1部　収入金額等', 50, y, { size: 12, font: bold, color: colors.primary });
-  y -= 25;
-
-  drawRect(50, y - 5, 495, 20, colors.highlight);
-  drawLine(50, y - 5, 545, y - 5);
-  drawText('事業所得（営業等）　ア', 60, y);
-  drawText(`${formatCurrency(data.revenue)}円`, 450, y);
-  y -= 30;
-
-  // 所得金額等
-  drawText('第2部　所得金額等', 50, y, { size: 12, font: bold, color: colors.primary });
-  y -= 25;
-
-  drawLine(50, y - 5, 545, y - 5);
-  drawText('事業所得　①', 60, y);
-  drawText(`${formatCurrency(data.netIncome)}円`, 450, y);
-  y -= 20;
-
-  drawRect(50, y - 5, 495, 20, colors.highlight);
-  drawLine(50, y - 5, 545, y - 5);
-  drawText('合計（総所得金額）　⑫', 60, y, { font: bold });
-  drawText(`${formatCurrency(data.netIncome)}円`, 450, y, { font: bold });
-  y -= 35;
-
-  // 所得控除
-  drawText('第3部　所得から差し引かれる金額', 50, y, { size: 12, font: bold, color: colors.primary });
-  y -= 25;
-
-  let totalDeductions = 0;
-
-  if (data.deductions?.basic) {
-    drawLine(50, y - 5, 545, y - 5);
-    drawText('基礎控除　㉔', 60, y);
-    drawText(`${formatCurrency(data.deductions.basic)}円`, 450, y);
-    totalDeductions += data.deductions.basic;
-    y -= 20;
-  }
-
-  if (data.deductions?.blueReturn) {
-    drawLine(50, y - 5, 545, y - 5);
-    drawText('青色申告特別控除', 60, y);
-    drawText(`${formatCurrency(data.deductions.blueReturn)}円`, 450, y);
-    totalDeductions += data.deductions.blueReturn;
-    y -= 20;
-  }
-
-  if (data.deductions?.socialInsurance) {
-    drawLine(50, y - 5, 545, y - 5);
-    drawText('社会保険料控除　⑬', 60, y);
-    drawText(`${formatCurrency(data.deductions.socialInsurance)}円`, 450, y);
-    totalDeductions += data.deductions.socialInsurance;
-    y -= 20;
-  }
-
-  drawRect(50, y - 5, 495, 20, colors.highlight);
-  drawLine(50, y - 5, 545, y - 5);
-  drawText('所得控除合計　㉕', 60, y, { font: bold });
-  drawText(`${formatCurrency(totalDeductions)}円`, 450, y, { font: bold });
-  y -= 35;
-
-  // 税額計算
-  drawText('第4部　税額の計算', 50, y, { size: 12, font: bold, color: colors.primary });
-  y -= 25;
-
-  drawLine(50, y - 5, 545, y - 5);
-  drawText('課税される所得金額　㉖', 60, y);
-  drawText(`${formatCurrency(data.taxableIncome)}円`, 450, y);
-  y -= 25;
-
-  // 所得税額
-  drawRect(50, y - 8, 495, 28, rgb(1, 0.95, 0.95));
-  drawLine(50, y - 8, 545, y - 8, 1);
-  drawLine(50, y + 20, 545, y + 20, 1);
-  drawText('所得税額（概算）　㉗', 60, y + 3, { font: bold, size: 11 });
-  drawText(`${formatCurrency(data.estimatedTax)}円`, 440, y + 3, { font: bold, size: 11, color: colors.red });
-
-  // フッター
-  drawLine(50, 60, 545, 60);
-  drawText('※ この書類はAinanceで作成した参考資料です。', 50, 45, { size: 8, color: colors.muted });
-  drawText('※ 正式な申告には国税庁「確定申告書等作成コーナー」をご利用ください。', 50, 33, { size: 8, color: colors.muted });
-
-  return pdfDoc.save();
+  // 1-2表一括生成ロジックがある場合はそちらを優先する等の拡張も可能だが、
+  // 現時点では調整済みのfillTaxReturnBを使用
+  return await fillTaxReturnB(templateBytes, fillData);
 }
 
 /**
