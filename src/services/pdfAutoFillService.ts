@@ -7,43 +7,49 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 // 確定申告書第一表・第二表の入力座標マッピング（令和5年分）
 // 2026-02-06 キャリブレーション済み座標（座標キャリブレーターで調整）
-// 座標は左下原点でpt単位（1pt = 約0.35mm）
-const TAX_RETURN_B_FIELDS: { [key: string]: { x: number; y: number; width: number } } = {
-  // 第一表 - 収入金額等
-  '事業収入_ア': { x: 286.7, y: 672.6, width: 80 },
-  '給与収入_カ': { x: 286.7, y: 605.3, width: 80 },
-  '雑収入_ク': { x: 286.7, y: 553.9, width: 80 },
-  '収入合計_12': { x: 286.7, y: 292.6, width: 80 },
+// 座標は左下原点でpt単位、anchorX/Yは数値の最後尾（右端）の箱中央を指す
+// boxSpacingは各桁の箱の間隔（通常9-10pt）
+
+interface DigitFieldConfig {
+  anchorX: number;      // 最後尾（右端）の箱の中央X座標
+  anchorY: number;      // 箱の中央Y座標
+  boxSpacing: number;   // 各桁の箱の間隔（左方向へ）
+  fontSize: number;     // フォントサイズ
+  maxDigits: number;    // 最大桁数
+}
+
+interface TextFieldConfig {
+  x: number;
+  y: number;
+  fontSize: number;
+}
+
+// 数値フィールド（DigitBox方式）
+const TAX_RETURN_B_DIGIT_FIELDS: { [key: string]: DigitFieldConfig } = {
+  // 第一表 - 収入金額等（座標は最後尾箱の中央）
+  '事業収入_ア': { anchorX: 286.7, anchorY: 672.6, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
+  '給与収入_カ': { anchorX: 286.7, anchorY: 605.3, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
+  '雑収入_ク': { anchorX: 286.7, anchorY: 553.9, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
   // 第一表 - 所得金額等
-  '事業所得_1': { x: 286, y: 483.9, width: 80 },
-  '給与所得_6': { x: 286.7, y: 396.6, width: 80 },
-  '所得合計_12': { x: 286, y: 292.1, width: 80 },
+  '事業所得_1': { anchorX: 286, anchorY: 483.9, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
+  '給与所得_6': { anchorX: 286.7, anchorY: 396.6, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
+  '所得合計_12': { anchorX: 286, anchorY: 292.1, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
   // 第一表 - 所得控除
-  '基礎控除_48': { x: 551.3, y: 570.6, width: 80 },
-  '社会保険料控除_13': { x: 286.7, y: 274.8, width: 80 },
-  '控除合計_25': { x: 287.3, y: 120.1, width: 80 },
+  '基礎控除_48': { anchorX: 551.3, anchorY: 570.6, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
+  '社会保険料控除_13': { anchorX: 286.7, anchorY: 274.8, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
+  '控除合計_25': { anchorX: 287.3, anchorY: 120.1, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
   // 第一表 - 税額計算
-  '課税所得_26': { x: 287.3, y: 102.8, width: 80 },
-  '所得税額_27': { x: 286.7, y: 84.7, width: 80 },
-  '申告納税額_51': { x: 552, y: 553.5, width: 80 },
-  // 第一表 - 申告者情報
-  '氏名': { x: 364.7, y: 738.8, width: 150 },
-  '住所': { x: 89.3, y: 758.8, width: 200 },
-  '税務署名': { x: 48, y: 818.1, width: 100 },
-  '電話番号': { x: 350, y: 755, width: 100 },
-  // 旧フィールド名との互換性
-  '事業_営業等': { x: 286.7, y: 672.6, width: 80 },
-  '給与': { x: 286.7, y: 605.3, width: 80 },
-  '事業所得_営業等': { x: 286, y: 483.9, width: 80 },
-  '総所得金額': { x: 286, y: 292.1, width: 80 },
-  '社会保険料控除': { x: 286.7, y: 274.8, width: 80 },
-  '小規模企業共済等掛金控除': { x: 286.7, y: 260, width: 80 },
-  '生命保険料控除': { x: 286.7, y: 245, width: 80 },
-  '地震保険料控除': { x: 286.7, y: 230, width: 80 },
-  '配偶者控除': { x: 286.7, y: 200, width: 80 },
-  '扶養控除': { x: 286.7, y: 185, width: 80 },
-  '基礎控除': { x: 551.3, y: 570.6, width: 80 },
-  '所得控除合計': { x: 287.3, y: 120.1, width: 80 },
+  '課税所得_26': { anchorX: 287.3, anchorY: 102.8, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
+  '所得税額_27': { anchorX: 286.7, anchorY: 84.7, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
+  '申告納税額_51': { anchorX: 552, anchorY: 553.5, boxSpacing: 9.5, fontSize: 9, maxDigits: 12 },
+};
+
+// テキストフィールド
+const TAX_RETURN_B_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
+  '氏名': { x: 364.7, y: 738.8, fontSize: 9 },
+  '住所': { x: 89.3, y: 758.8, fontSize: 8 },
+  '税務署名': { x: 48, y: 818.1, fontSize: 9 },
+  '電話番号': { x: 350, y: 755, fontSize: 9 },
 };
 
 // 青色申告決算書の入力座標マッピング（令和5年分）
@@ -165,7 +171,8 @@ export interface TaxFormData {
 }
 
 /**
- * 確定申告書BにAinanceのデータを自動転記
+ * 確定申告書BにAinanceのデータを自動転記（DigitBox方式）
+ * 数値は1桁ずつ右から左へ四角い枠に配置
  */
 export async function fillTaxReturnB(
   templateBytes: ArrayBuffer,
@@ -178,66 +185,68 @@ export async function fillTaxReturnB(
   // フォントを埋め込み
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  // ヘルパー関数: 数値をフォーマット
-  const formatNumber = (num: number) => num.toLocaleString('ja-JP');
+  // DigitBox方式: 数値を右端から左へ1桁ずつ配置
+  const fillDigitBox = (value: number, config: DigitFieldConfig) => {
+    if (value === 0 || value === undefined || value === null) return;
 
-  // ヘルパー関数: テキストを描画
-  const drawText = (text: string, x: number, y: number, size = 9) => {
+    const absValue = Math.abs(Math.floor(value));
+    const digits = String(absValue).split('');
+    const reversedDigits = [...digits].reverse();
+
+    reversedDigits.forEach((digit, index) => {
+      // 右端から左へ配置（indexが増えるごとにX座標が減る）
+      const textWidth = font.widthOfTextAtSize(digit, config.fontSize);
+      const x = config.anchorX - (index * config.boxSpacing) - (textWidth / 2);
+      const y = config.anchorY;
+
+      firstPage.drawText(digit, {
+        x,
+        y,
+        size: config.fontSize,
+        font,
+        color: rgb(0, 0, 0),
+      });
+    });
+  };
+
+  // テキスト描画
+  const drawText = (text: string, config: TextFieldConfig) => {
+    if (!text) return;
     firstPage.drawText(text, {
-      x,
-      y,
-      size,
+      x: config.x,
+      y: config.y,
+      size: config.fontSize,
       font,
       color: rgb(0, 0, 0),
     });
   };
 
-  // 収入金額 - 事業（営業等）
-  drawText(formatNumber(data.revenue), TAX_RETURN_B_FIELDS.事業_営業等.x, TAX_RETURN_B_FIELDS.事業_営業等.y);
+  // === 第一表 - 収入金額等 ===
+  fillDigitBox(data.revenue, TAX_RETURN_B_DIGIT_FIELDS['事業収入_ア']);
 
-  // 所得金額 - 事業所得（営業等）
-  drawText(formatNumber(data.netIncome), TAX_RETURN_B_FIELDS.事業所得_営業等.x, TAX_RETURN_B_FIELDS.事業所得_営業等.y);
+  // === 第一表 - 所得金額等 ===
+  fillDigitBox(data.netIncome, TAX_RETURN_B_DIGIT_FIELDS['事業所得_1']);
+  fillDigitBox(data.netIncome, TAX_RETURN_B_DIGIT_FIELDS['所得合計_12']);
 
-  // 総所得金額
-  drawText(formatNumber(data.netIncome), TAX_RETURN_B_FIELDS.総所得金額.x, TAX_RETURN_B_FIELDS.総所得金額.y);
-
-  // 所得控除
+  // === 第一表 - 所得控除 ===
   if (data.deductions.socialInsurance) {
-    drawText(formatNumber(data.deductions.socialInsurance), TAX_RETURN_B_FIELDS.社会保険料控除.x, TAX_RETURN_B_FIELDS.社会保険料控除.y);
-  }
-  if (data.deductions.smallBusinessMutual) {
-    drawText(formatNumber(data.deductions.smallBusinessMutual), TAX_RETURN_B_FIELDS.小規模企業共済等掛金控除.x, TAX_RETURN_B_FIELDS.小規模企業共済等掛金控除.y);
-  }
-  if (data.deductions.lifeInsurance) {
-    drawText(formatNumber(data.deductions.lifeInsurance), TAX_RETURN_B_FIELDS.生命保険料控除.x, TAX_RETURN_B_FIELDS.生命保険料控除.y);
-  }
-  if (data.deductions.earthquakeInsurance) {
-    drawText(formatNumber(data.deductions.earthquakeInsurance), TAX_RETURN_B_FIELDS.地震保険料控除.x, TAX_RETURN_B_FIELDS.地震保険料控除.y);
-  }
-  if (data.deductions.spouse) {
-    drawText(formatNumber(data.deductions.spouse), TAX_RETURN_B_FIELDS.配偶者控除.x, TAX_RETURN_B_FIELDS.配偶者控除.y);
-  }
-  if (data.deductions.dependents) {
-    drawText(formatNumber(data.deductions.dependents), TAX_RETURN_B_FIELDS.扶養控除.x, TAX_RETURN_B_FIELDS.扶養控除.y);
+    fillDigitBox(data.deductions.socialInsurance, TAX_RETURN_B_DIGIT_FIELDS['社会保険料控除_13']);
   }
   if (data.deductions.basic) {
-    drawText(formatNumber(data.deductions.basic), TAX_RETURN_B_FIELDS.基礎控除.x, TAX_RETURN_B_FIELDS.基礎控除.y);
+    fillDigitBox(data.deductions.basic, TAX_RETURN_B_DIGIT_FIELDS['基礎控除_48']);
   }
 
   // 所得控除合計
   const totalDeductions = Object.values(data.deductions).reduce((sum: number, val) => sum + (val || 0), 0);
-  drawText(formatNumber(totalDeductions), TAX_RETURN_B_FIELDS.所得控除合計.x, TAX_RETURN_B_FIELDS.所得控除合計.y);
+  fillDigitBox(totalDeductions, TAX_RETURN_B_DIGIT_FIELDS['控除合計_25']);
 
-  // 申告者情報
-  if (data.address) {
-    drawText(data.address, TAX_RETURN_B_FIELDS.住所.x, TAX_RETURN_B_FIELDS.住所.y, 8);
-  }
-  if (data.name) {
-    drawText(data.name, TAX_RETURN_B_FIELDS.氏名.x, TAX_RETURN_B_FIELDS.氏名.y);
-  }
-  if (data.phone) {
-    drawText(data.phone, TAX_RETURN_B_FIELDS.電話番号.x, TAX_RETURN_B_FIELDS.電話番号.y);
-  }
+  // === 税額計算 ===
+  fillDigitBox(data.taxableIncome, TAX_RETURN_B_DIGIT_FIELDS['課税所得_26']);
+  fillDigitBox(data.estimatedTax, TAX_RETURN_B_DIGIT_FIELDS['所得税額_27']);
+
+  // === 申告者情報（テキスト） ===
+  drawText(data.name || '', TAX_RETURN_B_TEXT_FIELDS['氏名']);
+  drawText(data.address || '', TAX_RETURN_B_TEXT_FIELDS['住所']);
 
   return pdfDoc.save();
 }
