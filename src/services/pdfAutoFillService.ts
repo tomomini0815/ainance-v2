@@ -337,8 +337,8 @@ export async function generateFilledTaxForm(
   }
 
   const templatePath = formType === 'tax_return_b'
-    ? '/templates/tax_return_r05.pdf'
-    : '/templates/blue_return_r05.pdf';
+    ? '/templates/kakutei1&2.pdf'
+    : '/templates/aoirokessansyo.pdf';
 
   let pdfBytes: Uint8Array;
 
