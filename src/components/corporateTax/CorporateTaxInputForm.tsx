@@ -13,7 +13,7 @@ import { Beppyo16Input } from './Beppyo16Input';
 import { Beppyo2Input } from './Beppyo2Input';
 import { BusinessOverviewInput } from './BusinessOverviewInput';
 import { generateCorporateTaxXTX, downloadFile } from '../../services/eTaxExportService';
-import { Save, RefreshCw, Download, Activity, Calculator, PieChart, Landmark, Box, Coffee, Users, FileText, BookOpen, Eye, X, Share2 } from 'lucide-react';
+import { Save, RefreshCw, Download, Activity, Calculator, PieChart, Landmark, Box, Coffee, Users, FileText, BookOpen, Eye, X, Share2, Wrench } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useBusinessTypeContext } from '../../context/BusinessTypeContext';
@@ -443,6 +443,17 @@ export const CorporateTaxInputForm: React.FC = () => {
                                         <RefreshCw className="w-4 h-4" />
                                         リセット
                                     </button>
+
+                                    {/* 開発者ツール */}
+                                    <a
+                                        href="/tools/coordinate_picker.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full py-2 px-4 bg-surface border border-border text-text-muted rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2 text-sm"
+                                    >
+                                        <Wrench className="w-4 h-4" />
+                                        座標キャリブレーター
+                                    </a>
                                 </div>
                             </div>
                         </div>

@@ -4,10 +4,11 @@ import { TaxReturnInputService } from '../../services/TaxReturnInputService';
 import { TaxReturnTable1Input } from './TaxReturnTable1Input';
 import { TaxReturnTable2Input } from './TaxReturnTable2Input';
 import { BlueReturnInput } from './BlueReturnInput';
-import { Save, RefreshCw, FileText, Activity, CreditCard, Download } from 'lucide-react';
+import { Save, RefreshCw, FileText, Activity, CreditCard, Download, Wrench, ArrowRight } from 'lucide-react';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
+import { generateFilledTaxForm, downloadPDF } from '../../services/pdfAutoFillService';
 
 import { useBusinessTypeContext } from '../../context/BusinessTypeContext';
 
@@ -16,6 +17,7 @@ export const TaxReturnInputForm: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'table1' | 'table2' | 'blue'>('table1');
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
@@ -47,50 +49,23 @@ export const TaxReturnInputForm: React.FC = () => {
 
         try {
             const calculatedData = TaxReturnInputService.calculateDataFromTransactions(transactions);
-
-            // 既存データとマージ（数値は加算ではなく上書きが基本だが、ユーザー体験としてはどうすべきか？計画では「転記」なので上書きで実装）
-            // ただし、計算結果が0の場合は上書きしないほうが安全かもしれないが、
-            // 「転記」なら取引データの結果（0なら0）を正とするのが自然。
-
             setData(prev => {
                 const newData = { ...prev };
-
-                // Income
                 if (calculatedData.income) {
                     newData.income = { ...newData.income, ...calculatedData.income };
                 }
-
-                // Deductions
                 if (calculatedData.deductions) {
-                    // deductionsは部分的なので、存在するキーのみ更新したいが、
-                    // calculateDataFromTransactionsは全deductionsを返しているため、
-                    // 0より大きいものだけ、あるいは全てを上書きする。
-                    // ここではシンプルに「計算された項目」を上書きする。
-                    // ただしcalculateDataFromTransactionsは全項目を初期化して返しているため、
-                    // 意図しない0上書きを防ぐため、計算ロジック側で調整済み出ない場合は注意。
-                    // 今回の実装では calculateDataFromTransactions は全項目 0 スタートで計算している。
-                    // したがって、取引データにない項目は 0 にリセットされてしまう恐れがある。
-                    // よって、計算結果が 0 より大きいものだけをマージするか、
-                    // ユーザーに「リセットして計算」か「マージ」かを選ばせるのがベストだが、
-                    // シンプルに「計算結果で上書き」とする（インポート機能の性質上）。
-                    // ただし、すでに手入力がある場合に 0 で消えると困るため、
-                    // ここでは「計算結果 > 0 の項目のみ上書き」とする折衷案をとる。
-
                     const newDeductions = { ...newData.deductions };
-                    if (calculatedData.deductions) {
-                        (Object.keys(calculatedData.deductions) as Array<keyof typeof calculatedData.deductions>).forEach(key => {
-                            const val = calculatedData.deductions![key];
-                            if (val > 0) {
-                                newDeductions[key] = val;
-                            }
-                        });
-                    }
+                    (Object.keys(calculatedData.deductions) as Array<keyof typeof calculatedData.deductions>).forEach(key => {
+                        const val = calculatedData.deductions![key];
+                        if (val > 0) {
+                            newDeductions[key] = val;
+                        }
+                    });
                     newData.deductions = newDeductions;
                 }
-
                 return newData;
             });
-
             setHasUnsavedChanges(true);
             toast.success('取引データを転記しました');
         } catch (error) {
@@ -102,7 +77,6 @@ export const TaxReturnInputForm: React.FC = () => {
     // 保存処理
     const handleSave = () => {
         setSaveStatus('saving');
-        // 少し遅延させてSaving状態を見せる
         setTimeout(() => {
             TaxReturnInputService.saveData(data);
             setHasUnsavedChanges(false);
@@ -111,11 +85,102 @@ export const TaxReturnInputForm: React.FC = () => {
         }, 500);
     };
 
+    // PDF出力 - 確定申告書B
+    const handleDownloadTaxReturnPDF = async () => {
+        setIsGeneratingPdf(true);
+        try {
+            // TaxReturnInputDataを TaxFormData形式に変換
+            const totalIncome = (data.income.business_agriculture || 0) +
+                (data.income.employment || 0) +
+                (data.income.miscellaneous_other || 0);
+            const totalDeductions = (data.deductions.social_insurance || 0) +
+                (data.deductions.life_insurance || 0) +
+                (data.deductions.basic || 480000);
+            const taxableIncome = Math.max(0, totalIncome - totalDeductions);
+
+            const taxFormData = {
+                name: '',
+                address: '',
+                phone: '',
+                year: new Date().getFullYear(),
+                month: 3,
+                day: 15,
+                revenue: data.income.business_agriculture || 0,
+                expenses: 0,
+                netIncome: data.income.business_agriculture || 0,
+                expensesByCategory: [],
+                deductions: {
+                    social_insurance: data.deductions.social_insurance || 0,
+                    life_insurance: data.deductions.life_insurance || 0,
+                    basic: data.deductions.basic || 480000,
+                },
+                businessIncome: data.income.business_agriculture || 0,
+                salaryIncome: data.income.employment || 0,
+                miscellaneousIncome: data.income.miscellaneous_other + data.income.miscellaneous_public_pension || 0,
+                totalIncome: totalIncome,
+                socialInsurance: data.deductions.social_insurance || 0,
+                lifeInsurance: data.deductions.life_insurance || 0,
+                medicalExpenses: data.deductions.medical_expenses || 0,
+                basicDeduction: data.deductions.basic || 480000,
+                taxableIncome: taxableIncome,
+                estimatedTax: 0,
+                fiscalYear: data.fiscalYear,
+                isBlueReturn: false,
+            };
+
+            const { pdfBytes, filename } = await generateFilledTaxForm('tax_return_b', taxFormData);
+            downloadPDF(pdfBytes, filename);
+            toast.success('確定申告書Bを出力しました');
+        } catch (error: any) {
+            console.error('PDF generation failed', error);
+            toast.error(error.message || 'PDF出力に失敗しました');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
+    // PDF出力 - 青色申告決算書
+    const handleDownloadBlueReturnPDF = async () => {
+        setIsGeneratingPdf(true);
+        try {
+            const taxFormData = {
+                name: '',
+                tradeName: '',
+                address: '',
+                year: new Date().getFullYear(),
+                month: 3,
+                day: 15,
+                revenue: data.income.business_agriculture || 0,
+                costOfGoods: 0,
+                expenses: 0,
+                netIncome: data.income.business_agriculture || 0,
+                expensesByCategory: [],
+                deductions: {
+                    social_insurance: data.deductions.social_insurance || 0,
+                    basic: data.deductions.basic || 480000,
+                },
+                blueReturnDeduction: 650000,
+                taxableIncome: Math.max(0, (data.income.business_agriculture || 0) - 650000),
+                estimatedTax: 0,
+                fiscalYear: data.fiscalYear,
+                isBlueReturn: true,
+            };
+
+            const { pdfBytes, filename } = await generateFilledTaxForm('blue_return', taxFormData);
+            downloadPDF(pdfBytes, filename);
+            toast.success('青色申告決算書を出力しました');
+        } catch (error: any) {
+            console.error('PDF generation failed', error);
+            toast.error(error.message || 'PDF出力に失敗しました');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
     return (
         <div className="bg-background min-h-screen">
             <div className="max-w-4xl mx-auto px-4 py-8">
 
-                {/* ヘッダー */}
                 {/* ヘッダー */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
                     <div>
@@ -138,7 +203,7 @@ export const TaxReturnInputForm: React.FC = () => {
                                 if (window.confirm('入力内容をすべてリセットしますか？')) {
                                     TaxReturnInputService.resetData();
                                     setData(initialTaxReturnInputData);
-                                    setHasUnsavedChanges(true); // リセットも変更とみなす
+                                    setHasUnsavedChanges(true);
                                 }
                             }}
                             className="btn-ghost whitespace-nowrap px-2 py-2 text-xs sm:px-4 sm:text-sm h-8 sm:h-10"
@@ -203,6 +268,62 @@ export const TaxReturnInputForm: React.FC = () => {
                     {activeTab === 'blue' && (
                         <BlueReturnInput data={data} onChange={handleDataChange} />
                     )}
+                </div>
+
+                {/* PDF出力セクション */}
+                <div className="mt-6 bg-surface rounded-xl shadow-sm border border-border p-5">
+                    <h3 className="text-sm font-bold text-text-main mb-4 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-primary" />
+                        公式書類PDF出力
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button
+                            onClick={handleDownloadTaxReturnPDF}
+                            disabled={isGeneratingPdf}
+                            className="py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50"
+                        >
+                            {isGeneratingPdf ? (
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <FileText className="w-4 h-4" />
+                            )}
+                            確定申告書B (第一表・第二表)
+                        </button>
+                        <button
+                            onClick={handleDownloadBlueReturnPDF}
+                            disabled={isGeneratingPdf}
+                            className="py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50"
+                        >
+                            {isGeneratingPdf ? (
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <FileText className="w-4 h-4" />
+                            )}
+                            青色申告決算書
+                        </button>
+                    </div>
+                </div>
+
+                {/* 開発者ツール */}
+                <div className="mt-4 bg-surface rounded-xl shadow-sm border border-border p-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Wrench className="w-5 h-5 text-text-muted" />
+                            <div>
+                                <p className="font-medium text-text-main text-sm">PDF座標キャリブレーター</p>
+                                <p className="text-xs text-text-muted">公式PDFフォームの座標調整ツール</p>
+                            </div>
+                        </div>
+                        <a
+                            href="/tools/coordinate_picker.html"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-ghost text-sm flex items-center gap-1"
+                        >
+                            開く
+                            <ArrowRight className="w-4 h-4" />
+                        </a>
+                    </div>
                 </div>
 
                 {/* フッターナビ */}
