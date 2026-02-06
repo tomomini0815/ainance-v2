@@ -244,60 +244,24 @@
 
         .tax-type-tabs {
             display: flex;
-            gap: 0;
-            margin-bottom: 12px;
-            background: #1a1a2e;
-            border-radius: 9999px;
-            padding: 4px;
-            border: 1px solid #2a3a5a;
+            gap: 6px;
+            margin-bottom: 8px;
         }
 
         .tax-type-tab {
             flex: 1;
-            padding: 10px 16px;
+            padding: 8px;
             text-align: center;
-            background: transparent;
+            font-size: 0.8em;
+            background: #2a3a5a;
             border: 2px solid transparent;
             cursor: pointer;
-            border-radius: 9999px;
-            transition: all 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-        }
-
-        .tax-type-tab .tab-icon {
-            font-size: 1.2em;
-            margin-bottom: 2px;
-        }
-
-        .tax-type-tab .tab-title {
-            font-size: 0.9em;
-            font-weight: bold;
-            color: #aaa;
-        }
-
-        .tax-type-tab .tab-subtitle {
-            font-size: 0.65em;
-            color: #666;
-        }
-
-        .tax-type-tab:hover {
-            background: #2a3a5a33;
+            border-radius: 6px;
         }
 
         .tax-type-tab.active {
-            border-color: #8b5cf6;
-            background: #1a1a2e;
-        }
-
-        .tax-type-tab.active .tab-title {
-            color: #fff;
-        }
-
-        .tax-type-tab.active .tab-subtitle {
-            color: #8b5cf6;
+            border-color: #e94560;
+            background: #e9456033;
         }
 
         .doc-selector {
@@ -393,17 +357,10 @@
                 1. 税種類を選択 → 2. 書類 → 3. PDF読込 → 4. ドラッグ調整 → 5. エクスポート
             </div>
 
+            <h2>🏢 税種類</h2>
             <div class="tax-type-tabs">
-                <div class="tax-type-tab active" data-type="corporate">
-                    <span class="tab-icon">🏢</span>
-                    <span class="tab-title">法人税</span>
-                    <span class="tab-subtitle">別表・決算書</span>
-                </div>
-                <div class="tax-type-tab" data-type="personal">
-                    <span class="tab-icon">👤</span>
-                    <span class="tab-title">所得税</span>
-                    <span class="tab-subtitle">確定申告・青色</span>
-                </div>
+                <div class="tax-type-tab active" data-type="corporate">法人税</div>
+                <div class="tax-type-tab" data-type="personal">所得税</div>
             </div>
 
             <h2>📄 書類選択</h2>
