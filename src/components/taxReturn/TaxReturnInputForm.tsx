@@ -8,7 +8,7 @@ import { Save, RefreshCw, FileText, Activity, CreditCard, Download, Wrench, Eye 
 import { useTransactions } from '../../hooks/useTransactions';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
-import { generateFilledTaxForm, downloadPDF, previewPDF } from '../../services/pdfAutoFillService';
+import { generateFilledTaxForm, downloadPDF } from '../../services/pdfAutoFillService';
 
 import { useBusinessTypeContext } from '../../context/BusinessTypeContext';
 
@@ -163,6 +163,58 @@ export const TaxReturnInputForm: React.FC = () => {
         }
     };
 
+    // PDF出力 - 公式テンプレート直接ダウンロード（転記機能なし）
+    const handleDownloadOfficialTemplate = async (templatePath: string, displayName: string) => {
+        setIsGeneratingPdf(true);
+        try {
+            const response = await fetch(templatePath);
+            if (!response.ok) {
+                throw new Error(`テンプレートの読み込みに失敗: ${response.statusText}`);
+            }
+            const pdfBytes = await response.arrayBuffer();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = `${displayName}_${data.fiscalYear}年度.pdf`;
+            link.click();
+            window.URL.revokeObjectURL(link.href);
+            toast.success(`${displayName}を出力しました`);
+        } catch (error: any) {
+            console.error('PDF download failed', error);
+            toast.error(error.message || 'PDF出力に失敗しました');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
+    // 個人税PDF出力項目リスト
+    const personalPdfItems = [
+        {
+            id: 'kakutei_1_2',
+            name: '確定申告書 第一表・第二表',
+            handler: () => handleDownloadOfficialTemplate('/templates/kakutei1&2.pdf', '確定申告書_第一表第二表'),
+            hasAutoFill: false
+        },
+        {
+            id: 'aoiro_kessan',
+            name: '青色申告決算書',
+            handler: () => handleDownloadOfficialTemplate('/templates/aoirokessansyo.pdf', '青色申告決算書'),
+            hasAutoFill: false
+        },
+        {
+            id: 'syotoku_aoiro',
+            name: '所得税青色申告',
+            handler: () => handleDownloadOfficialTemplate('/templates/syotokuaoiro.pdf', '所得税青色申告'),
+            hasAutoFill: false
+        },
+        {
+            id: 'uchiwake',
+            name: '所得の内訳書',
+            handler: () => handleDownloadOfficialTemplate('/templates/syotokuuchiwakesyo.pdf', '所得の内訳書'),
+            hasAutoFill: false
+        },
+    ];
+
     // プレビュー
     const handlePreviewPDF = async () => {
         setIsGeneratingPdf(true);
@@ -297,17 +349,19 @@ export const TaxReturnInputForm: React.FC = () => {
                                             公式PDF書類出力
                                         </div>
                                         <div className="divide-y divide-border">
-                                            {[
-                                                { id: 'kakutei_b', name: '確定申告書B', handler: handleDownloadTaxReturnPDF },
-                                                { id: 'blue_return', name: '青色申告決算書', handler: handleDownloadBlueReturnPDF },
-                                            ].map(item => (
+                                            {personalPdfItems.map(item => (
                                                 <button
                                                     key={item.id}
                                                     onClick={item.handler}
                                                     disabled={isGeneratingPdf}
                                                     className="w-full py-2.5 px-3 text-left text-sm text-text-main hover:bg-surface-highlight transition-colors flex items-center justify-between disabled:opacity-50"
                                                 >
-                                                    <span>{item.name}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{item.name}</span>
+                                                        {!item.hasAutoFill && (
+                                                            <span className="text-[9px] px-1.5 py-0.5 bg-surface-highlight text-text-muted rounded">テンプレート</span>
+                                                        )}
+                                                    </div>
                                                     {isGeneratingPdf ? (
                                                         <RefreshCw className="w-3 h-3 text-text-muted animate-spin" />
                                                     ) : (
@@ -318,52 +372,52 @@ export const TaxReturnInputForm: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-
-                                <button
-                                    onClick={handleImportFromTransactions}
-                                    className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    取引データ転記
-                                </button>
-
-                                <div className="border-t border-border my-2"></div>
-
-                                <button
-                                    onClick={() => {
-                                        if (window.confirm('入力内容をすべてリセットしますか？')) {
-                                            TaxReturnInputService.resetData();
-                                            setData(initialTaxReturnInputData);
-                                            setHasUnsavedChanges(true);
-                                        }
-                                    }}
-                                    className="w-full py-2.5 px-4 bg-transparent text-text-muted rounded-lg font-medium hover:bg-red-50 hover:text-red-500 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <RefreshCw className="w-4 h-4" />
-                                    リセット
-                                </button>
-
-                                {/* 開発者ツール */}
-                                <a
-                                    href="/tools/coordinate_picker.html"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-full py-2 px-4 bg-surface border border-border text-text-muted rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2 text-sm"
-                                >
-                                    <Wrench className="w-4 h-4" />
-                                    座標キャリブレーター
-                                </a>
                             </div>
+
+                            <button
+                                onClick={handleImportFromTransactions}
+                                className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Download className="w-4 h-4" />
+                                取引データ転記
+                            </button>
+
+                            <div className="border-t border-border my-2"></div>
+
+                            <button
+                                onClick={() => {
+                                    if (window.confirm('入力内容をすべてリセットしますか？')) {
+                                        TaxReturnInputService.resetData();
+                                        setData(initialTaxReturnInputData);
+                                        setHasUnsavedChanges(true);
+                                    }
+                                }}
+                                className="w-full py-2.5 px-4 bg-transparent text-text-muted rounded-lg font-medium hover:bg-red-50 hover:text-red-500 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                リセット
+                            </button>
+
+                            {/* 開発者ツール */}
+                            <a
+                                href="/tools/coordinate_picker.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-2 px-4 bg-surface border border-border text-text-muted rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2 text-sm"
+                            >
+                                <Wrench className="w-4 h-4" />
+                                座標キャリブレーター
+                            </a>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* フッターナビ */}
-                <div className="mt-8 flex justify-between">
-                    <p className="text-sm text-text-muted">
-                        ※ ここで入力したデータはブラウザに保存され、PDF作成時に使用されます。
-                    </p>
-                </div>
+            {/* フッターナビ */}
+            <div className="mt-8 flex justify-between">
+                <p className="text-sm text-text-muted">
+                    ※ ここで入力したデータはブラウザに保存され、PDF作成時に使用されます。
+                </p>
             </div>
 
             {/* Preview Modal */}
@@ -381,7 +435,7 @@ export const TaxReturnInputForm: React.FC = () => {
                         </div>
                         <div className="flex-1">
                             <iframe
-                                src={previewBlobUrl}
+                                src={previewBlobUrl ?? undefined}
                                 className="w-full h-full"
                                 title="PDF Preview"
                             />
