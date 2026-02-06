@@ -6,9 +6,10 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 // 確定申告書第一表・第二表の入力座標マッピング（令和7年分）
+// 2026-02-06 キャリブレーション済み座標（座標キャリブレーターで調整）
 // 座標は左下原点でpt単位、anchorX/Yは数値の最後尾（右端）の箱中央を指す
-// boxSpacing: 各桁の箱の間隔（確定申告書は約9.5pt）
-// fontSize: 7.5pt（公式書類の0と同じサイズ）
+// boxSpacing: 16pt（キャリブレーション済み）
+// fontSize: 10pt（キャリブレーション済み）
 
 interface DigitFieldConfig {
   anchorX: number;      // 最後尾（右端）の箱の中央X座標
@@ -24,97 +25,116 @@ interface TextFieldConfig {
   fontSize: number;
 }
 
-// デフォルト設定
-const DEFAULT_BOX_SPACING = 9.5;
-const DEFAULT_FONT_SIZE = 7.5;  // 公式書類の0と同じサイズ
+// キャリブレーション済みデフォルト設定
+const CALIBRATED_BOX_SPACING = 16;
+const CALIBRATED_FONT_SIZE = 10;
 const DEFAULT_MAX_DIGITS = 12;
 
-// 数値フィールド（DigitBox方式）- 確定申告書第一表
+// ===== 確定申告書第一表 - 数値フィールド（キャリブレーション済み） =====
 const TAX_RETURN_B_DIGIT_FIELDS: { [key: string]: DigitFieldConfig } = {
   // ============================================
   // 左側 - 収入金額等
   // ============================================
-  '収入_ア_営業等': { anchorX: 286.7, anchorY: 672.6, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '収入_イ_農業': { anchorX: 286.7, anchorY: 659, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '収入_ウ_不動産': { anchorX: 286.7, anchorY: 645, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '収入_エ_給与': { anchorX: 286.7, anchorY: 631, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '収入_オ_公的年金等': { anchorX: 286.7, anchorY: 617, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '収入_カ_業務': { anchorX: 286.7, anchorY: 603, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '収入_キ_その他': { anchorX: 286.7, anchorY: 589, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '収入_ク_短期': { anchorX: 286.7, anchorY: 575, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '収入_ケ_長期': { anchorX: 286.7, anchorY: 561, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '収入_コ_一時': { anchorX: 286.7, anchorY: 547, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_ア_営業等': { anchorX: 286.7, anchorY: 672.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_イ_農業': { anchorX: 286.7, anchorY: 655.8, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_ウ_不動産': { anchorX: 286.7, anchorY: 639.2, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_エ_給与': { anchorX: 286.7, anchorY: 621.8, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_オ_公的年金等': { anchorX: 287.3, anchorY: 604.5, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_カ_業務': { anchorX: 286.7, anchorY: 587.2, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_キ_その他': { anchorX: 287.3, anchorY: 569.8, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_ク_短期': { anchorX: 287.3, anchorY: 553.2, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_ケ_長期': { anchorX: 286, anchorY: 535.2, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '収入_コ_一時': { anchorX: 286, anchorY: 519.2, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
 
   // ============================================
   // 左側 - 所得金額等
   // ============================================
-  '所得_1_営業等': { anchorX: 286.7, anchorY: 520, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_2_農業': { anchorX: 286.7, anchorY: 506, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_3_不動産': { anchorX: 286.7, anchorY: 492, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_4_利子': { anchorX: 286.7, anchorY: 478, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_5_配当': { anchorX: 286.7, anchorY: 464, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_6_給与': { anchorX: 286.7, anchorY: 450, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_7_公的年金等': { anchorX: 286.7, anchorY: 436, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_8_業務': { anchorX: 286.7, anchorY: 422, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_9_その他': { anchorX: 286.7, anchorY: 408, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_10_小計': { anchorX: 286.7, anchorY: 394, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_11_総合課税': { anchorX: 286.7, anchorY: 380, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '所得_12_合計': { anchorX: 286.7, anchorY: 366, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_1_営業等': { anchorX: 287.3, anchorY: 483.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_2_農業': { anchorX: 287.3, anchorY: 465.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_3_不動産': { anchorX: 286.7, anchorY: 449.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_4_利子': { anchorX: 286.7, anchorY: 432.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_5_配当': { anchorX: 288, anchorY: 414.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_6_給与': { anchorX: 286, anchorY: 397, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_7_公的年金等': { anchorX: 286.7, anchorY: 379.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_8_業務': { anchorX: 286, anchorY: 363, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_9_その他': { anchorX: 286.7, anchorY: 345.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_10_小計': { anchorX: 287.3, anchorY: 327.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_11_総合課税': { anchorX: 286.7, anchorY: 311, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '所得_12_合計': { anchorX: 286.7, anchorY: 294.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
 
   // ============================================
   // 左側 - 所得から差し引かれる金額（所得控除）
   // ============================================
-  '控除_13_社会保険料': { anchorX: 286.7, anchorY: 330, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_14_小規模企業共済': { anchorX: 286.7, anchorY: 316, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_15_生命保険料': { anchorX: 286.7, anchorY: 302, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_16_地震保険料': { anchorX: 286.7, anchorY: 288, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_17_寡婦ひとり親': { anchorX: 286.7, anchorY: 274, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_18_勤労学生障害者': { anchorX: 286.7, anchorY: 260, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_19_配偶者': { anchorX: 286.7, anchorY: 246, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_20_配偶者特別': { anchorX: 286.7, anchorY: 232, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_21_扶養': { anchorX: 286.7, anchorY: 218, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_22_基礎控除': { anchorX: 286.7, anchorY: 204, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_23_雑損': { anchorX: 286.7, anchorY: 190, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_24_医療費': { anchorX: 286.7, anchorY: 176, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_25_寄附金': { anchorX: 286.7, anchorY: 162, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_26_合計': { anchorX: 286.7, anchorY: 148, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_13_社会保険料': { anchorX: 286, anchorY: 275.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_14_小規模企業共済': { anchorX: 286, anchorY: 258.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_15_生命保険料': { anchorX: 286, anchorY: 241.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_16_地震保険料': { anchorX: 286.7, anchorY: 225, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_17_寡婦ひとり親': { anchorX: 227.3, anchorY: 207, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_18_勤労学生障害者': { anchorX: 227.3, anchorY: 207, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_19_配偶者': { anchorX: 227.3, anchorY: 189.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_20_配偶者特別': { anchorX: 228, anchorY: 189.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_21_扶養': { anchorX: 228.7, anchorY: 171.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_22_基礎控除': { anchorX: 229.3, anchorY: 171.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_23_雑損': { anchorX: 227.3, anchorY: 155.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_24_医療費': { anchorX: 228, anchorY: 137.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_25_寄附金': { anchorX: 228, anchorY: 119.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_26_合計': { anchorX: 286, anchorY: 101, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+
+  // ============================================
+  // 左側下部 - 課税所得・税額
+  // ============================================
+  '税額_27_課税所得': { anchorX: 286.7, anchorY: 84.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_28_上の税額': { anchorX: 287.3, anchorY: 66.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_29_配当控除': { anchorX: 286, anchorY: 50.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
 
   // ============================================
   // 右側 - 税金の計算
   // ============================================
-  '税額_27_課税所得': { anchorX: 552, anchorY: 672.6, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_28_上の税額': { anchorX: 552, anchorY: 658, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_29_配当控除': { anchorX: 552, anchorY: 644, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_38_住宅控除': { anchorX: 552, anchorY: 606, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_43_災害減免額': { anchorX: 552, anchorY: 568, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_44_再差引所得税': { anchorX: 552, anchorY: 554, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_45_復興特別所得税': { anchorX: 552, anchorY: 540, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_46_所得税復興税合計': { anchorX: 552, anchorY: 526, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_47_外国税額控除等': { anchorX: 552, anchorY: 512, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_48_源泉徴収税額': { anchorX: 552, anchorY: 498, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_49_申告納税額': { anchorX: 552, anchorY: 484, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_50_予定納税額': { anchorX: 552, anchorY: 470, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_51_納める税金': { anchorX: 552, anchorY: 456, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '税額_52_還付される税金': { anchorX: 552, anchorY: 442, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_38_住宅控除': { anchorX: 550.7, anchorY: 569, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_43_災害減免額': { anchorX: 550.7, anchorY: 537.5, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_44_再差引所得税': { anchorX: 552, anchorY: 520.8, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_45_復興特別所得税': { anchorX: 551.3, anchorY: 500.8, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_46_所得税復興税合計': { anchorX: 552, anchorY: 484.8, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_47_外国税額控除等': { anchorX: 552, anchorY: 466.1, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_48_源泉徴収税額': { anchorX: 551.3, anchorY: 466.8, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_49_申告納税額': { anchorX: 551.3, anchorY: 450.1, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_50_予定納税額': { anchorX: 553.3, anchorY: 432.8, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_51_納める税金': { anchorX: 552, anchorY: 414.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '税額_52_還付される税金': { anchorX: 522, anchorY: 396.1, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
 
   // ============================================
   // 右側 - その他
   // ============================================
-  '他_56_公的年金以外': { anchorX: 552, anchorY: 380, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '他_57_配偶者合計': { anchorX: 552, anchorY: 366, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '他_58_専従者給与': { anchorX: 552, anchorY: 352, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '他_59_青色申告特別控除': { anchorX: 552, anchorY: 338, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '他_66_延納届出額': { anchorX: 552, anchorY: 260, boxSpacing: DEFAULT_BOX_SPACING, fontSize: DEFAULT_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '他_56_公的年金以外': { anchorX: 551.3, anchorY: 327.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '他_57_配偶者合計': { anchorX: 551.3, anchorY: 311, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '他_58_専従者給与': { anchorX: 551.3, anchorY: 293.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '他_59_青色申告特別控除': { anchorX: 550.7, anchorY: 275, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '他_66_延納届出額': { anchorX: 506.7, anchorY: 153.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
 };
 
-// テキストフィールド
+// ===== 確定申告書第一表 - テキストフィールド（キャリブレーション済み） =====
 const TAX_RETURN_B_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
   '氏名': { x: 364.7, y: 738.8, fontSize: 9 },
-  '住所': { x: 89.3, y: 758.8, fontSize: 8 },
+  '住所': { x: 89.3, y: 758.8, fontSize: 9 },
   '税務署名': { x: 48, y: 818.1, fontSize: 9 },
-  '電話番号': { x: 350, y: 755, fontSize: 9 },
-  '職業': { x: 450, y: 770, fontSize: 8 },
-  '屋号': { x: 450, y: 755, fontSize: 8 },
+  '職業': { x: 294, y: 711.9, fontSize: 9 },
+  '屋号': { x: 373.3, y: 712.6, fontSize: 9 },
+  '電話番号': { x: 480, y: 692.6, fontSize: 9 },
+};
+
+// ===== 確定申告書第二表 - 数値フィールド（キャリブレーション済み） =====
+const TAX_RETURN_B_PAGE2_FIELDS: { [key: string]: DigitFieldConfig } = {
+  '源泉_給与': { anchorX: 236.7, anchorY: 581.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '源泉_年金': { anchorX: 237.3, anchorY: 555.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '社保_国民健康': { anchorX: 486, anchorY: 769.3, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '社保_国民年金': { anchorX: 486, anchorY: 747.9, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '生命保険_一般': { anchorX: 486, anchorY: 667.9, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '生命保険_個人年金': { anchorX: 484.7, anchorY: 708.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+};
+
+// ===== 確定申告書第二表 - テキストフィールド =====
+const TAX_RETURN_B_PAGE2_TEXT: { [key: string]: TextFieldConfig } = {
+  '氏名_2表': { x: 100, y: 682.1, fontSize: 9 },
 };
 
 // 青色申告決算書の入力座標マッピング（令和5年分）
