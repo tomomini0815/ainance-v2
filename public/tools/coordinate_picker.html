@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF座標キャリブレーター - 複数書類対応版</title>
+    <title>PDF座標キャリブレーター - 法人税・所得税対応</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * {
@@ -34,7 +34,7 @@
         }
 
         .sidebar {
-            width: 400px;
+            width: 420px;
             background: #0f3460;
             padding: 20px;
             overflow-y: auto;
@@ -42,14 +42,14 @@
 
         h1 {
             color: #e94560;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-size: 1.2em;
         }
 
         h2 {
             color: #0abde3;
-            margin: 15px 0 10px;
-            font-size: 1em;
+            margin: 12px 0 8px;
+            font-size: 0.95em;
             border-bottom: 1px solid #2a4a6a;
             padding-bottom: 5px;
         }
@@ -66,14 +66,14 @@
 
         .draggable-point {
             position: absolute;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             cursor: grab;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
+            font-size: 8px;
             font-weight: bold;
             color: white;
             border: 2px solid white;
@@ -108,14 +108,14 @@
         }
 
         .input-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .input-group label {
             display: block;
             margin-bottom: 5px;
             color: #aaa;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .input-group input,
@@ -129,14 +129,15 @@
         }
 
         button {
-            padding: 12px 20px;
+            padding: 10px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            margin: 5px 0;
+            margin: 4px 0;
             width: 100%;
             transition: all 0.2s;
+            font-size: 0.9em;
         }
 
         button:hover {
@@ -164,21 +165,21 @@
         }
 
         .field-list {
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
             background: #1a1a2e;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
         }
 
         .field-item {
             display: flex;
             align-items: center;
-            padding: 6px;
-            margin: 3px 0;
+            padding: 5px;
+            margin: 2px 0;
             border-radius: 4px;
             background: #2a3a5a;
-            font-size: 0.75em;
+            font-size: 0.72em;
             cursor: pointer;
         }
 
@@ -192,14 +193,14 @@
         }
 
         .field-item .num {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 8px;
-            font-size: 9px;
+            margin-right: 6px;
+            font-size: 8px;
             font-weight: bold;
             color: white;
         }
@@ -214,42 +215,63 @@
 
         #output {
             background: #1a1a2e;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             font-family: monospace;
-            font-size: 0.65em;
+            font-size: 0.6em;
             white-space: pre-wrap;
-            max-height: 200px;
+            max-height: 150px;
             overflow-y: auto;
         }
 
         .instructions {
             background: rgba(10, 189, 227, 0.1);
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 0.8em;
-            line-height: 1.5;
+            margin-bottom: 12px;
+            font-size: 0.78em;
+            line-height: 1.4;
         }
 
         .selected-info {
             background: #f39c1233;
             padding: 8px;
             border-radius: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            font-size: 0.82em;
+        }
+
+        .tax-type-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .tax-type-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
             font-size: 0.85em;
+            background: #2a3a5a;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .tax-type-tab.active {
+            border-color: #e94560;
+            background: #e9456033;
         }
 
         .doc-selector {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 6px;
+            margin-bottom: 12px;
         }
 
         .doc-btn {
-            padding: 10px 5px;
-            font-size: 0.8em;
+            padding: 8px 4px;
+            font-size: 0.75em;
             background: #2a3a5a;
             border: 2px solid transparent;
         }
@@ -261,38 +283,38 @@
 
         .legend {
             display: flex;
-            gap: 15px;
-            margin-bottom: 10px;
-            font-size: 0.75em;
+            gap: 12px;
+            margin-bottom: 8px;
+            font-size: 0.72em;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .legend-item .dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
         }
 
         .add-field {
             display: grid;
             grid-template-columns: 1fr auto;
-            gap: 8px;
-            margin-bottom: 10px;
+            gap: 6px;
+            margin-bottom: 8px;
         }
 
         .add-field input {
             padding: 8px;
-            font-size: 0.85em;
+            font-size: 0.82em;
         }
 
-        .add-field button {
-            width: auto;
-            padding: 8px 15px;
+        .add-field select {
+            width: 70px;
+            padding: 8px;
         }
     </style>
 </head>
@@ -306,21 +328,20 @@
         </div>
 
         <div class="sidebar">
-            <h1>📍 座標キャリブレーター</h1>
+            <h1>📍 PDF座標キャリブレーター</h1>
 
             <div class="instructions">
-                1. 書類を選択 → 2. PDFを読み込む → 3. 点をドラッグ → 4. エクスポート
+                1. 税種類を選択 → 2. 書類を選択 → 3. PDFを読み込む → 4. 点をドラッグ → 5. エクスポート
+            </div>
+
+            <h2>🏢 税種類</h2>
+            <div class="tax-type-tabs">
+                <div class="tax-type-tab active" data-type="corporate">法人税</div>
+                <div class="tax-type-tab" data-type="personal">所得税（個人）</div>
             </div>
 
             <h2>📄 書類選択</h2>
-            <div class="doc-selector" id="docSelector">
-                <button class="doc-btn active" data-doc="beppyo1">別表一</button>
-                <button class="doc-btn" data-doc="beppyo4">別表四</button>
-                <button class="doc-btn" data-doc="beppyo5">別表五(一)</button>
-                <button class="doc-btn" data-doc="beppyo5_2">別表五(二)</button>
-                <button class="doc-btn" data-doc="beppyo15">別表十五</button>
-                <button class="doc-btn" data-doc="beppyo16">別表十六</button>
-            </div>
+            <div class="doc-selector" id="docSelector"></div>
 
             <div class="input-group">
                 <label>PDFファイル:</label>
@@ -337,14 +358,14 @@
             <h2>➕ フィールド追加</h2>
             <div class="add-field">
                 <input type="text" id="newFieldName" placeholder="フィールド名">
-                <select id="newFieldType" style="width:80px;">
+                <select id="newFieldType">
                     <option value="digit">数字</option>
                     <option value="text">テキスト</option>
                 </select>
             </div>
-            <button class="btn-info" id="addFieldBtn">＋ 新しいフィールドを追加</button>
+            <button class="btn-info" id="addFieldBtn">＋ 追加</button>
 
-            <h2>📋 フィールド一覧 (<span id="fieldCount">0</span>)</h2>
+            <h2>📋 フィールド (<span id="fieldCount">0</span>)</h2>
             <div class="legend">
                 <div class="legend-item">
                     <div class="dot" style="background:#e94560"></div> 数字
@@ -368,6 +389,7 @@
         let scale = 1.5;
         let pdfWidth = 0;
         let pdfHeight = 0;
+        let currentTaxType = 'corporate';
         let currentDoc = 'beppyo1';
         let isDragging = false;
 
@@ -375,10 +397,10 @@
         const ctx = canvas.getContext('2d');
         const wrapper = document.getElementById('canvasWrapper');
 
-        // ===== DOCUMENT FIELD CONFIGURATIONS =====
-        const documentFields = {
+        // ===== CORPORATE TAX FORMS (法人税) =====
+        const corporateForms = {
             beppyo1: {
-                name: '別表一（一）',
+                name: '別表一',
                 fields: [
                     { id: '所得金額_row1', type: 'digit', x: 292.7, y: 568.6, label: '1' },
                     { id: '法人税額_row2', type: 'digit', x: 293.3, y: 549.9, label: '2' },
@@ -427,7 +449,7 @@
                 ]
             },
             beppyo5: {
-                name: '別表五（一）',
+                name: '別表五(一)',
                 fields: [
                     { id: '期首利益積立金_row1', type: 'digit', x: 400, y: 650, label: '1' },
                     { id: '当期増_row2', type: 'digit', x: 400, y: 600, label: '2' },
@@ -437,7 +459,7 @@
                 ]
             },
             beppyo5_2: {
-                name: '別表五（二）',
+                name: '別表五(二)',
                 fields: [
                     { id: '納付法人税_row1', type: 'digit', x: 450, y: 650, label: '1' },
                     { id: '納付住民税_row2', type: 'digit', x: 450, y: 600, label: '2' },
@@ -466,20 +488,140 @@
             }
         };
 
-        // Get current fields
-        function getCurrentFields() {
-            return documentFields[currentDoc].fields;
+        // ===== PERSONAL TAX FORMS (所得税・個人) =====
+        const personalForms = {
+            kakuteishinkoku_b: {
+                name: '確定申告書B',
+                fields: [
+                    // 第一表 収入金額
+                    { id: '事業収入_ア', type: 'digit', x: 480, y: 720, label: 'ア' },
+                    { id: '給与収入_カ', type: 'digit', x: 480, y: 680, label: 'カ' },
+                    { id: '雑収入_ク', type: 'digit', x: 480, y: 640, label: 'ク' },
+                    { id: '収入合計_⑫', type: 'digit', x: 480, y: 600, label: '⑫' },
+                    // 所得金額
+                    { id: '事業所得_①', type: 'digit', x: 480, y: 540, label: '①' },
+                    { id: '給与所得_⑥', type: 'digit', x: 480, y: 500, label: '⑥' },
+                    { id: '所得合計_⑫', type: 'digit', x: 480, y: 460, label: '⑫' },
+                    // 所得控除
+                    { id: '基礎控除_㊲', type: 'digit', x: 480, y: 380, label: '㊲' },
+                    { id: '社会保険料控除_⑬', type: 'digit', x: 480, y: 340, label: '⑬' },
+                    { id: '控除合計_㉕', type: 'digit', x: 480, y: 300, label: '㉕' },
+                    // 税額計算
+                    { id: '課税所得_㉖', type: 'digit', x: 480, y: 260, label: '㉖' },
+                    { id: '所得税額_㉗', type: 'digit', x: 480, y: 220, label: '㉗' },
+                    { id: '復興特別所得税_㊶', type: 'digit', x: 480, y: 180, label: '㊶' },
+                    { id: '申告納税額_㊷', type: 'digit', x: 480, y: 140, label: '㊷' },
+                    // ヘッダー情報
+                    { id: '氏名', type: 'text', x: 100, y: 780, label: '氏' },
+                    { id: '住所', type: 'text', x: 100, y: 750, label: '住' },
+                    { id: '電話番号', type: 'text', x: 300, y: 750, label: '電' },
+                    { id: '税務署名', type: 'text', x: 100, y: 810, label: '税' },
+                    { id: 'マイナンバー', type: 'text', x: 400, y: 810, label: 'マ' },
+                ]
+            },
+            kakuteishinkoku_a: {
+                name: '確定申告書A',
+                fields: [
+                    { id: '給与収入_カ', type: 'digit', x: 480, y: 700, label: 'カ' },
+                    { id: '年金収入_キ', type: 'digit', x: 480, y: 660, label: 'キ' },
+                    { id: '給与所得_①', type: 'digit', x: 480, y: 580, label: '①' },
+                    { id: '所得合計_⑤', type: 'digit', x: 480, y: 540, label: '⑤' },
+                    { id: '基礎控除_⑫', type: 'digit', x: 480, y: 400, label: '⑫' },
+                    { id: '控除合計_⑳', type: 'digit', x: 480, y: 300, label: '⑳' },
+                    { id: '所得税額_㉑', type: 'digit', x: 480, y: 200, label: '㉑' },
+                    { id: '氏名', type: 'text', x: 100, y: 780, label: '氏' },
+                    { id: '住所', type: 'text', x: 100, y: 750, label: '住' },
+                ]
+            },
+            shinkoku_daini: {
+                name: '申告書第二表',
+                fields: [
+                    { id: '源泉徴収税額_給与', type: 'digit', x: 350, y: 650, label: '源給' },
+                    { id: '源泉徴収税額_年金', type: 'digit', x: 350, y: 600, label: '源年' },
+                    { id: '社会保険料_国民健康', type: 'digit', x: 350, y: 500, label: '国健' },
+                    { id: '社会保険料_国民年金', type: 'digit', x: 350, y: 450, label: '国年' },
+                    { id: '生命保険料_一般', type: 'digit', x: 350, y: 350, label: '生一' },
+                    { id: '生命保険料_個人年金', type: 'digit', x: 350, y: 300, label: '生年' },
+                    { id: '氏名', type: 'text', x: 100, y: 780, label: '氏' },
+                ]
+            },
+            shoyutoku_uchiwake: {
+                name: '所得の内訳書',
+                fields: [
+                    { id: '所得種類_1', type: 'text', x: 100, y: 650, label: '種1' },
+                    { id: '収入金額_1', type: 'digit', x: 350, y: 650, label: '収1' },
+                    { id: '源泉徴収税額_1', type: 'digit', x: 480, y: 650, label: '源1' },
+                    { id: '所得種類_2', type: 'text', x: 100, y: 600, label: '種2' },
+                    { id: '収入金額_2', type: 'digit', x: 350, y: 600, label: '収2' },
+                    { id: '源泉徴収税額_2', type: 'digit', x: 480, y: 600, label: '源2' },
+                    { id: '氏名', type: 'text', x: 100, y: 780, label: '氏' },
+                ]
+            },
+            aoshinkoku_kessan: {
+                name: '青色申告決算書',
+                fields: [
+                    { id: '売上金額', type: 'digit', x: 450, y: 700, label: '売' },
+                    { id: '売上原価', type: 'digit', x: 450, y: 650, label: '原' },
+                    { id: '経費合計', type: 'digit', x: 450, y: 400, label: '経' },
+                    { id: '青色申告特別控除', type: 'digit', x: 450, y: 200, label: '青' },
+                    { id: '所得金額', type: 'digit', x: 450, y: 150, label: '所' },
+                    { id: '屋号', type: 'text', x: 100, y: 780, label: '屋' },
+                    { id: '氏名', type: 'text', x: 300, y: 780, label: '氏' },
+                ]
+            },
+            fy_shushi: {
+                name: '収支内訳書',
+                fields: [
+                    { id: '売上金額', type: 'digit', x: 450, y: 700, label: '売' },
+                    { id: '仕入金額', type: 'digit', x: 450, y: 650, label: '仕' },
+                    { id: '経費合計', type: 'digit', x: 450, y: 400, label: '経' },
+                    { id: '所得金額', type: 'digit', x: 450, y: 200, label: '所' },
+                    { id: '屋号', type: 'text', x: 100, y: 780, label: '屋' },
+                    { id: '氏名', type: 'text', x: 300, y: 780, label: '氏' },
+                ]
+            }
+        };
+
+        function getCurrentForms() {
+            return currentTaxType === 'corporate' ? corporateForms : personalForms;
         }
 
-        // Document selector
-        document.querySelectorAll('.doc-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.doc-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentDoc = btn.dataset.doc;
+        function getCurrentFields() {
+            return getCurrentForms()[currentDoc]?.fields || [];
+        }
+
+        function renderDocSelector() {
+            const forms = getCurrentForms();
+            const selector = document.getElementById('docSelector');
+            selector.innerHTML = '';
+
+            Object.keys(forms).forEach((key, i) => {
+                const btn = document.createElement('button');
+                btn.className = `doc-btn${i === 0 ? ' active' : ''}`;
+                btn.dataset.doc = key;
+                btn.textContent = forms[key].name;
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.doc-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentDoc = key;
+                    clearPoints();
+                    renderFieldList();
+                });
+                selector.appendChild(btn);
+            });
+
+            currentDoc = Object.keys(forms)[0];
+            renderFieldList();
+        }
+
+        // Tax type tabs
+        document.querySelectorAll('.tax-type-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tax-type-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTaxType = tab.dataset.type;
+                renderDocSelector();
                 clearPoints();
-                renderFieldList();
-                document.getElementById('output').textContent = `${documentFields[currentDoc].name}を選択しました。PDFを読み込んでください。`;
             });
         });
 
@@ -595,7 +737,7 @@
                 <div class="field-item" data-index="${i}">
                     <div class="num ${f.type}">${f.label}</div>
                     <span>${f.id}</span>
-                    <span style="margin-left:auto;color:#888;font-family:monospace;font-size:0.9em;">(${f.x}, ${f.y})</span>
+                    <span style="margin-left:auto;color:#888;font-family:monospace;font-size:0.85em;">(${f.x}, ${f.y})</span>
                 </div>
             `).join('');
 
@@ -614,35 +756,22 @@
             });
         }
 
-        // Add new field
+        // Add field
         document.getElementById('addFieldBtn').addEventListener('click', () => {
             const name = document.getElementById('newFieldName').value.trim();
             const type = document.getElementById('newFieldType').value;
-            if (!name) {
-                alert('フィールド名を入力してください');
-                return;
-            }
+            if (!name) { alert('フィールド名を入力してください'); return; }
 
             const fields = getCurrentFields();
             const newLabel = type === 'digit' ? String(fields.length + 1) : name.charAt(0);
-            fields.push({
-                id: name,
-                type: type,
-                x: 300,
-                y: 400,
-                label: newLabel
-            });
+            fields.push({ id: name, type: type, x: 300, y: 400, label: newLabel });
 
             document.getElementById('newFieldName').value = '';
             createPoints();
         });
 
-        // Show points
         document.getElementById('showPoints').addEventListener('click', () => {
-            if (!pdfDoc) {
-                alert('PDFを先に読み込んでください');
-                return;
-            }
+            if (!pdfDoc) { alert('PDFを先に読み込んでください'); return; }
             createPoints();
         });
 
@@ -657,14 +786,7 @@
             output += `export const ${docName}_FIELDS: { [key: string]: DigitBoxConfig } = {\n`;
 
             digitFields.forEach(f => {
-                output += `    '${f.id}': {\n`;
-                output += `        anchorX: ${f.x},\n`;
-                output += `        anchorY: ${f.y},\n`;
-                output += `        boxWidth: 16,\n`;
-                output += `        boxSpacing: 16,\n`;
-                output += `        fontSize: 10,\n`;
-                output += `        maxDigits: 12\n`;
-                output += `    },\n`;
+                output += `    '${f.id}': { anchorX: ${f.x}, anchorY: ${f.y}, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },\n`;
             });
 
             output += '};\n\n';
@@ -680,8 +802,8 @@
             document.getElementById('output').textContent = output;
         });
 
-        // Initial render
-        renderFieldList();
+        // Initialize
+        renderDocSelector();
     </script>
 </body>
 

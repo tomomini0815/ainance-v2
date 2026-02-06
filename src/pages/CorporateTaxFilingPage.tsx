@@ -17,6 +17,7 @@ import {
     PiggyBank,
     BookOpen,
     Edit,
+    Wrench,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTransactions } from '../hooks/useTransactions';
@@ -682,6 +683,28 @@ const CorporateTaxFilingPage: React.FC = () => {
                         この書類は参考資料です。正式な法人税申告は税理士にご相談いただくか、
                         e-Taxにて提出してください。
                     </p>
+                </div>
+            </div>
+
+            {/* 開発者ツール */}
+            <div className="bg-surface border border-border rounded-xl p-5">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Wrench className="w-5 h-5 text-text-muted" />
+                        <div>
+                            <p className="font-medium text-text-main">PDF座標キャリブレーター</p>
+                            <p className="text-sm text-text-muted">公式PDFフォームの座標調整ツール</p>
+                        </div>
+                    </div>
+                    <a
+                        href="/tools/coordinate_picker.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-ghost text-sm flex items-center gap-1"
+                    >
+                        開く
+                        <ArrowRight className="w-4 h-4" />
+                    </a>
                 </div>
             </div>
         </div>
