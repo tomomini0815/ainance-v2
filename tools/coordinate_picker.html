@@ -107,6 +107,19 @@
             box-shadow: 0 0 20px rgba(241, 196, 15, 0.8);
         }
 
+        .draggable-point.required::after {
+            content: '★';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            font-size: 8px;
+            color: #ffcc00;
+        }
+
+        .draggable-point.hidden-field {
+            display: none;
+        }
+
         .input-group {
             margin-bottom: 10px;
         }
@@ -217,6 +230,11 @@
 
         .field-item .num.text {
             background: #10ac84;
+        }
+
+        .field-item.hidden-item {
+            opacity: 0.5;
+            background: #1a2a3a;
         }
 
         #output {
@@ -547,7 +565,7 @@
                     // ===== 第一表 (ページ1) =====
                     1: [
                         // --- 収入金額等 (左側) ---
-                        { id: '収入_ア_営業等', type: 'digit', x: 286.7, y: 672.6, label: 'ア' },
+                        { id: '収入_ア_営業等', type: 'digit', x: 286.7, y: 672.6, label: 'ア', required: true },
                         { id: '収入_イ_農業', type: 'digit', x: 286.7, y: 659, label: 'イ' },
                         { id: '収入_ウ_不動産', type: 'digit', x: 286.7, y: 645, label: 'ウ' },
                         { id: '収入_エ_給与', type: 'digit', x: 286.7, y: 631, label: 'エ' },
@@ -558,7 +576,7 @@
                         { id: '収入_ケ_長期', type: 'digit', x: 286.7, y: 561, label: 'ケ' },
                         { id: '収入_コ_一時', type: 'digit', x: 286.7, y: 547, label: 'コ' },
                         // --- 所得金額等 (左側) ---
-                        { id: '所得_1_営業等', type: 'digit', x: 286.7, y: 520, label: '①' },
+                        { id: '所得_1_営業等', type: 'digit', x: 286.7, y: 520, label: '①', required: true },
                         { id: '所得_2_農業', type: 'digit', x: 286.7, y: 506, label: '②' },
                         { id: '所得_3_不動産', type: 'digit', x: 286.7, y: 492, label: '③' },
                         { id: '所得_4_利子', type: 'digit', x: 286.7, y: 478, label: '④' },
@@ -569,7 +587,7 @@
                         { id: '所得_9_その他', type: 'digit', x: 286.7, y: 408, label: '⑨' },
                         { id: '所得_10_小計', type: 'digit', x: 286.7, y: 394, label: '⑩' },
                         { id: '所得_11_総合課税', type: 'digit', x: 286.7, y: 380, label: '⑪' },
-                        { id: '所得_12_合計', type: 'digit', x: 286.7, y: 366, label: '⑫' },
+                        { id: '所得_12_合計', type: 'digit', x: 286.7, y: 366, label: '⑫', required: true },
                         // --- 所得控除 (左側) ---
                         { id: '控除_13_社会保険料', type: 'digit', x: 286.7, y: 330, label: '⑬' },
                         { id: '控除_14_小規模企業共済', type: 'digit', x: 286.7, y: 316, label: '⑭' },
@@ -580,14 +598,14 @@
                         { id: '控除_19_配偶者', type: 'digit', x: 286.7, y: 246, label: '⑲' },
                         { id: '控除_20_配偶者特別', type: 'digit', x: 286.7, y: 232, label: '⑳' },
                         { id: '控除_21_扶養', type: 'digit', x: 286.7, y: 218, label: '㉑' },
-                        { id: '控除_22_基礎控除', type: 'digit', x: 286.7, y: 204, label: '㉒' },
+                        { id: '控除_22_基礎控除', type: 'digit', x: 286.7, y: 204, label: '㉒', required: true },
                         { id: '控除_23_雑損', type: 'digit', x: 286.7, y: 190, label: '㉓' },
                         { id: '控除_24_医療費', type: 'digit', x: 286.7, y: 176, label: '㉔' },
                         { id: '控除_25_寄附金', type: 'digit', x: 286.7, y: 162, label: '㉕' },
-                        { id: '控除_26_合計', type: 'digit', x: 286.7, y: 148, label: '㉖' },
+                        { id: '控除_26_合計', type: 'digit', x: 286.7, y: 148, label: '㉖', required: true },
                         // --- 税金の計算 (右側) ---
-                        { id: '税額_27_課税所得', type: 'digit', x: 552, y: 672.6, label: '㉗' },
-                        { id: '税額_28_上の税額', type: 'digit', x: 552, y: 658, label: '㉘' },
+                        { id: '税額_27_課税所得', type: 'digit', x: 552, y: 672.6, label: '㉗', required: true },
+                        { id: '税額_28_上の税額', type: 'digit', x: 552, y: 658, label: '㉘', required: true },
                         { id: '税額_29_配当控除', type: 'digit', x: 552, y: 644, label: '㉙' },
                         { id: '税額_38_住宅控除', type: 'digit', x: 552, y: 606, label: '㊳' },
                         { id: '税額_43_災害減免額', type: 'digit', x: 552, y: 568, label: '㊸' },
@@ -598,7 +616,7 @@
                         { id: '税額_48_源泉徴収税額', type: 'digit', x: 552, y: 498, label: '㊽' },
                         { id: '税額_49_申告納税額', type: 'digit', x: 552, y: 484, label: '㊾' },
                         { id: '税額_50_予定納税額', type: 'digit', x: 552, y: 470, label: '㊿' },
-                        { id: '税額_51_納める税金', type: 'digit', x: 552, y: 456, label: '51' },
+                        { id: '税額_51_納める税金', type: 'digit', x: 552, y: 456, label: '51', required: true },
                         { id: '税額_52_還付される税金', type: 'digit', x: 552, y: 442, label: '52' },
                         // --- その他 (右側) ---
                         { id: '他_56_公的年金以外', type: 'digit', x: 552, y: 380, label: '56' },
@@ -607,8 +625,8 @@
                         { id: '他_59_青色申告特別控除', type: 'digit', x: 552, y: 338, label: '59' },
                         { id: '他_66_延納届出額', type: 'digit', x: 552, y: 260, label: '66' },
                         // --- ヘッダー情報 ---
-                        { id: '氏名', type: 'text', x: 364.7, y: 738.8, label: '氏' },
-                        { id: '住所', type: 'text', x: 89.3, y: 758.8, label: '住' },
+                        { id: '氏名', type: 'text', x: 364.7, y: 738.8, label: '氏', required: true },
+                        { id: '住所', type: 'text', x: 89.3, y: 758.8, label: '住', required: true },
                         { id: '税務署名', type: 'text', x: 48, y: 818.1, label: '税' },
                         { id: '職業', type: 'text', x: 450, y: 770, label: '職' },
                         { id: '屋号', type: 'text', x: 450, y: 755, label: '屋' },
@@ -832,7 +850,10 @@
             fields.forEach((field, index) => {
                 const pos = pdfToScreen(field.x, field.y);
                 const point = document.createElement('div');
-                point.className = `draggable-point ${field.type}`;
+                let classNames = `draggable-point ${field.type}`;
+                if (field.required) classNames += ' required';
+                if (field.hidden) classNames += ' hidden-field';
+                point.className = classNames;
                 point.textContent = field.label;
                 point.style.left = pos.left + 'px';
                 point.style.top = pos.top + 'px';
@@ -902,15 +923,23 @@
             document.getElementById('fieldCount').textContent = fields.length;
 
             list.innerHTML = fields.map((f, i) => `
-                <div class="field-item" data-index="${i}">
+                <div class="field-item${f.hidden ? ' hidden-item' : ''}" data-index="${i}">
                     <div class="num ${f.type}">${f.label}</div>
+                    ${f.required ? '<span style="color:#ffcc00;margin-right:2px;">★</span>' : ''}
                     <span>${f.id}</span>
                     <span style="margin-left:auto;color:#888;font-family:monospace;font-size:0.85em;">(${f.x}, ${f.y})</span>
+                    <button class="toggle-visibility-btn" data-index="${i}" style="margin-left:4px;padding:2px 6px;font-size:0.7em;cursor:pointer;background:${f.hidden ? '#e94560' : '#10ac84'};border:none;border-radius:3px;color:white;">
+                        ${f.hidden ? '👁‍🗨' : '👁'}
+                    </button>
                 </div>
             `).join('');
 
+            // クリックでフィールド選択
             list.querySelectorAll('.field-item').forEach(item => {
-                item.addEventListener('click', () => {
+                item.addEventListener('click', (e) => {
+                    // トグルボタンのクリックは無視
+                    if (e.target.classList.contains('toggle-visibility-btn')) return;
+
                     const index = parseInt(item.dataset.index);
                     const point = document.querySelector(`.draggable-point[data-index="${index}"]`);
                     if (point) {
@@ -920,6 +949,25 @@
                         item.classList.add('selected');
                         updateSelectedInfo(fields[index]);
                     }
+                });
+            });
+
+            // 表示/非表示トグル
+            list.querySelectorAll('.toggle-visibility-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const index = parseInt(btn.dataset.index);
+                    const field = fields[index];
+                    field.hidden = !field.hidden;
+
+                    // ポイントの表示/非表示を切り替え
+                    const point = document.querySelector(`.draggable-point[data-index="${index}"]`);
+                    if (point) {
+                        point.classList.toggle('hidden-field', field.hidden);
+                    }
+
+                    // リストを再描画
+                    renderFieldList();
                 });
             });
         }
