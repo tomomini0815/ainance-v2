@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF座標キャリブレーター - ドラッグ&ドロップ版</title>
+    <title>PDF座標キャリブレーター - 複数書類対応版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * {
@@ -34,7 +34,7 @@
         }
 
         .sidebar {
-            width: 380px;
+            width: 400px;
             background: #0f3460;
             padding: 20px;
             overflow-y: auto;
@@ -73,7 +73,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: bold;
             color: white;
             border: 2px solid white;
@@ -115,9 +115,11 @@
             display: block;
             margin-bottom: 5px;
             color: #aaa;
+            font-size: 0.9em;
         }
 
-        .input-group input {
+        .input-group input,
+        .input-group select {
             width: 100%;
             padding: 10px;
             border: none;
@@ -156,8 +158,13 @@
             color: #1a1a2e;
         }
 
+        .btn-info {
+            background: #3498db;
+            color: white;
+        }
+
         .field-list {
-            max-height: 300px;
+            max-height: 250px;
             overflow-y: auto;
             background: #1a1a2e;
             border-radius: 8px;
@@ -167,11 +174,11 @@
         .field-item {
             display: flex;
             align-items: center;
-            padding: 8px;
-            margin: 4px 0;
+            padding: 6px;
+            margin: 3px 0;
             border-radius: 4px;
             background: #2a3a5a;
-            font-size: 0.8em;
+            font-size: 0.75em;
             cursor: pointer;
         }
 
@@ -185,14 +192,14 @@
         }
 
         .field-item .num {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 10px;
-            font-size: 10px;
+            margin-right: 8px;
+            font-size: 9px;
             font-weight: bold;
             color: white;
         }
@@ -207,37 +214,56 @@
 
         #output {
             background: #1a1a2e;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
             font-family: monospace;
-            font-size: 0.7em;
+            font-size: 0.65em;
             white-space: pre-wrap;
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
         .instructions {
             background: rgba(10, 189, 227, 0.1);
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             margin-bottom: 15px;
-            font-size: 0.85em;
-            line-height: 1.6;
+            font-size: 0.8em;
+            line-height: 1.5;
         }
 
         .selected-info {
             background: #f39c1233;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             margin-bottom: 15px;
-            font-size: 0.9em;
+            font-size: 0.85em;
+        }
+
+        .doc-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .doc-btn {
+            padding: 10px 5px;
+            font-size: 0.8em;
+            background: #2a3a5a;
+            border: 2px solid transparent;
+        }
+
+        .doc-btn.active {
+            border-color: #e94560;
+            background: #e9456033;
         }
 
         .legend {
             display: flex;
             gap: 15px;
             margin-bottom: 10px;
-            font-size: 0.8em;
+            font-size: 0.75em;
         }
 
         .legend-item {
@@ -247,9 +273,26 @@
         }
 
         .legend-item .dot {
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
+        }
+
+        .add-field {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .add-field input {
+            padding: 8px;
+            font-size: 0.85em;
+        }
+
+        .add-field button {
+            width: auto;
+            padding: 8px 15px;
         }
     </style>
 </head>
@@ -259,18 +302,24 @@
         <div class="pdf-panel">
             <div class="canvas-wrapper" id="canvasWrapper">
                 <canvas id="pdfCanvas"></canvas>
-                <!-- Draggable points will be added here -->
             </div>
         </div>
 
         <div class="sidebar">
-            <h1>📍 ドラッグ&ドロップ座標調整</h1>
+            <h1>📍 座標キャリブレーター</h1>
 
             <div class="instructions">
-                <strong>使い方:</strong><br>
-                1. PDFを読み込む<br>
-                2. 点をドラッグして正しい位置に移動<br>
-                3. 「座標をエクスポート」でコード取得
+                1. 書類を選択 → 2. PDFを読み込む → 3. 点をドラッグ → 4. エクスポート
+            </div>
+
+            <h2>📄 書類選択</h2>
+            <div class="doc-selector" id="docSelector">
+                <button class="doc-btn active" data-doc="beppyo1">別表一</button>
+                <button class="doc-btn" data-doc="beppyo4">別表四</button>
+                <button class="doc-btn" data-doc="beppyo5">別表五(一)</button>
+                <button class="doc-btn" data-doc="beppyo5_2">別表五(二)</button>
+                <button class="doc-btn" data-doc="beppyo15">別表十五</button>
+                <button class="doc-btn" data-doc="beppyo16">別表十六</button>
             </div>
 
             <div class="input-group">
@@ -278,14 +327,24 @@
                 <input type="file" id="pdfFile" accept=".pdf">
             </div>
 
-            <button class="btn-warning" id="showPoints">� 点を表示</button>
+            <button class="btn-warning" id="showPoints">📍 点を表示</button>
 
             <div class="selected-info" id="selectedInfo" style="display:none;">
                 <strong>選択中:</strong> <span id="selectedName">-</span><br>
                 位置: <span id="selectedCoords">-</span>
             </div>
 
-            <h2>📋 フィールド一覧</h2>
+            <h2>➕ フィールド追加</h2>
+            <div class="add-field">
+                <input type="text" id="newFieldName" placeholder="フィールド名">
+                <select id="newFieldType" style="width:80px;">
+                    <option value="digit">数字</option>
+                    <option value="text">テキスト</option>
+                </select>
+            </div>
+            <button class="btn-info" id="addFieldBtn">＋ 新しいフィールドを追加</button>
+
+            <h2>📋 フィールド一覧 (<span id="fieldCount">0</span>)</h2>
             <div class="legend">
                 <div class="legend-item">
                     <div class="dot" style="background:#e94560"></div> 数字
@@ -298,7 +357,7 @@
 
             <h2>📤 エクスポート</h2>
             <button class="btn-success" id="exportCoords">📋 座標をエクスポート</button>
-            <div id="output">PDFを読み込んで点を配置してください</div>
+            <div id="output">書類を選択してPDFを読み込んでください</div>
         </div>
     </div>
 
@@ -309,53 +368,120 @@
         let scale = 1.5;
         let pdfWidth = 0;
         let pdfHeight = 0;
-        let selectedPoint = null;
+        let currentDoc = 'beppyo1';
         let isDragging = false;
 
         const canvas = document.getElementById('pdfCanvas');
         const ctx = canvas.getContext('2d');
         const wrapper = document.getElementById('canvasWrapper');
 
-        // Field definitions with initial positions
-        const fields = [
-            // Left column digit boxes
-            { id: '所得金額_row1', type: 'digit', x: 256, y: 628, label: '1' },
-            { id: '法人税額_row2', type: 'digit', x: 256, y: 608, label: '2' },
-            { id: '特別控除額_row3', type: 'digit', x: 256, y: 588, label: '3' },
-            { id: '税額控除_row4', type: 'digit', x: 256, y: 568, label: '4' },
-            { id: '利子税_row5', type: 'digit', x: 256, y: 548, label: '5' },
-            { id: '控除税額_row6', type: 'digit', x: 256, y: 528, label: '6' },
-            { id: '留保金額_row7', type: 'digit', x: 256, y: 508, label: '7' },
-            { id: '同上税額_row8', type: 'digit', x: 256, y: 488, label: '8' },
-            { id: '法人税額計1_row9', type: 'digit', x: 256, y: 468, label: '9' },
-            { id: 'row10', type: 'digit', x: 256, y: 448, label: '10' },
-            { id: 'row11', type: 'digit', x: 256, y: 428, label: '11' },
-            { id: 'row12', type: 'digit', x: 256, y: 408, label: '12' },
-            { id: '差引法人税額_row13', type: 'digit', x: 256, y: 388, label: '13' },
-            { id: '中間申告_row14', type: 'digit', x: 256, y: 368, label: '14' },
-            { id: 'row15', type: 'digit', x: 256, y: 348, label: '15' },
-            { id: 'row16', type: 'digit', x: 256, y: 328, label: '16' },
-            { id: 'row17', type: 'digit', x: 256, y: 308, label: '17' },
-            { id: '所得合計_row18', type: 'digit', x: 256, y: 288, label: '18' },
-            { id: 'row19', type: 'digit', x: 256, y: 268, label: '19' },
-            { id: 'row20', type: 'digit', x: 256, y: 248, label: '20' },
-            { id: 'row21', type: 'digit', x: 256, y: 228, label: '21' },
-            { id: 'row22', type: 'digit', x: 256, y: 208, label: '22' },
-            { id: 'row23', type: 'digit', x: 256, y: 188, label: '23' },
-            { id: 'row24', type: 'digit', x: 256, y: 168, label: '24' },
-            { id: 'row25', type: 'digit', x: 256, y: 148, label: '25' },
-            { id: 'row26', type: 'digit', x: 256, y: 128, label: '26' },
-            { id: 'row27', type: 'digit', x: 256, y: 108, label: '27' },
-            { id: '法人税額計_row28', type: 'digit', x: 256, y: 88, label: '28' },
+        // ===== DOCUMENT FIELD CONFIGURATIONS =====
+        const documentFields = {
+            beppyo1: {
+                name: '別表一（一）',
+                fields: [
+                    { id: '所得金額_row1', type: 'digit', x: 292.7, y: 568.6, label: '1' },
+                    { id: '法人税額_row2', type: 'digit', x: 293.3, y: 549.9, label: '2' },
+                    { id: '特別控除額_row3', type: 'digit', x: 293.3, y: 533.3, label: '3' },
+                    { id: '税額控除_row4', type: 'digit', x: 293.3, y: 514.6, label: '4' },
+                    { id: '利子税_row5', type: 'digit', x: 292, y: 496.6, label: '5' },
+                    { id: '控除税額_row6', type: 'digit', x: 292.7, y: 479.3, label: '6' },
+                    { id: '留保金額_row7', type: 'digit', x: 292.7, y: 460.6, label: '7' },
+                    { id: '同上税額_row8', type: 'digit', x: 292, y: 441.9, label: '8' },
+                    { id: '法人税額計1_row9', type: 'digit', x: 294.7, y: 407.3, label: '9' },
+                    { id: 'row10', type: 'digit', x: 294, y: 386.6, label: '10' },
+                    { id: 'row11', type: 'digit', x: 293.3, y: 368.6, label: '11' },
+                    { id: 'row12', type: 'digit', x: 292.7, y: 351.3, label: '12' },
+                    { id: '差引法人税額_row13', type: 'digit', x: 292.7, y: 333.9, label: '13' },
+                    { id: '中間申告_row14', type: 'digit', x: 294.7, y: 316.8, label: '14' },
+                    { id: 'row15', type: 'digit', x: 293.3, y: 295.3, label: '15' },
+                    { id: '法人税額計_row28', type: 'digit', x: 293.3, y: 276.1, label: '28' },
+                    { id: 'row16', type: 'digit', x: 560, y: 565.3, label: 'R16' },
+                    { id: 'row17', type: 'digit', x: 560, y: 547.3, label: 'R17' },
+                    { id: '所得合計_row18', type: 'digit', x: 560, y: 527.3, label: 'R18' },
+                    { id: 'row19', type: 'digit', x: 559.3, y: 509.9, label: 'R19' },
+                    { id: 'row20', type: 'digit', x: 560, y: 492.1, label: 'R20' },
+                    { id: 'row21', type: 'digit', x: 559.3, y: 470.8, label: 'R21' },
+                    { id: 'row22', type: 'digit', x: 560, y: 447.5, label: 'R22' },
+                    { id: 'row23', type: 'digit', x: 560, y: 421.5, label: 'R23' },
+                    { id: 'row24', type: 'digit', x: 560, y: 394.1, label: 'R24' },
+                    { id: 'row25', type: 'digit', x: 558.7, y: 340.1, label: 'R25' },
+                    { id: 'row26', type: 'digit', x: 558.7, y: 316.8, label: 'R26' },
+                    { id: 'row27', type: 'digit', x: 560, y: 295.5, label: 'R27' },
+                    { id: '税務署名', type: 'text', x: 114, y: 781.5, label: '税' },
+                    { id: '法人名', type: 'text', x: 85.3, y: 716.1, label: '法' },
+                    { id: '法人番号', type: 'text', x: 83.3, y: 695.3, label: '番' },
+                    { id: '納税地', type: 'text', x: 84, y: 752.1, label: '納' },
+                    { id: '電話番号', type: 'text', x: 170, y: 745.5, label: '電' },
+                    { id: '代表者氏名', type: 'text', x: 85.3, y: 665.9, label: '代' },
+                ]
+            },
+            beppyo4: {
+                name: '別表四',
+                fields: [
+                    { id: '当期利益_row1', type: 'digit', x: 450, y: 700, label: '1' },
+                    { id: '加算_row2', type: 'digit', x: 450, y: 650, label: '2' },
+                    { id: '減算_row3', type: 'digit', x: 450, y: 600, label: '3' },
+                    { id: '所得金額_row52', type: 'digit', x: 450, y: 200, label: '52' },
+                    { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
+                ]
+            },
+            beppyo5: {
+                name: '別表五（一）',
+                fields: [
+                    { id: '期首利益積立金_row1', type: 'digit', x: 400, y: 650, label: '1' },
+                    { id: '当期増_row2', type: 'digit', x: 400, y: 600, label: '2' },
+                    { id: '当期減_row3', type: 'digit', x: 400, y: 550, label: '3' },
+                    { id: '差引翌期首_row4', type: 'digit', x: 400, y: 500, label: '4' },
+                    { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
+                ]
+            },
+            beppyo5_2: {
+                name: '別表五（二）',
+                fields: [
+                    { id: '納付法人税_row1', type: 'digit', x: 450, y: 650, label: '1' },
+                    { id: '納付住民税_row2', type: 'digit', x: 450, y: 600, label: '2' },
+                    { id: '納付事業税_row3', type: 'digit', x: 450, y: 550, label: '3' },
+                    { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
+                ]
+            },
+            beppyo15: {
+                name: '別表十五',
+                fields: [
+                    { id: '交際費_row1', type: 'digit', x: 450, y: 650, label: '1' },
+                    { id: '接待飲食費_row2', type: 'digit', x: 450, y: 600, label: '2' },
+                    { id: '損金算入限度_row3', type: 'digit', x: 450, y: 550, label: '3' },
+                    { id: '損金不算入_row4', type: 'digit', x: 450, y: 500, label: '4' },
+                    { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
+                ]
+            },
+            beppyo16: {
+                name: '別表十六',
+                fields: [
+                    { id: '減価償却資産_row1', type: 'digit', x: 450, y: 650, label: '1' },
+                    { id: '取得価額_row2', type: 'digit', x: 450, y: 600, label: '2' },
+                    { id: '償却額_row3', type: 'digit', x: 450, y: 550, label: '3' },
+                    { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
+                ]
+            }
+        };
 
-            // Text fields
-            { id: '税務署名', type: 'text', x: 95, y: 805, label: '税' },
-            { id: '法人名', type: 'text', x: 68, y: 780, label: '法' },
-            { id: '法人番号', type: 'text', x: 360, y: 820, label: '番' },
-            { id: '納税地', type: 'text', x: 68, y: 695, label: '納' },
-            { id: '電話番号', type: 'text', x: 240, y: 695, label: '電' },
-            { id: '代表者氏名', type: 'text', x: 68, y: 665, label: '代' },
-        ];
+        // Get current fields
+        function getCurrentFields() {
+            return documentFields[currentDoc].fields;
+        }
+
+        // Document selector
+        document.querySelectorAll('.doc-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.doc-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentDoc = btn.dataset.doc;
+                clearPoints();
+                renderFieldList();
+                document.getElementById('output').textContent = `${documentFields[currentDoc].name}を選択しました。PDFを読み込んでください。`;
+            });
+        });
 
         // Load PDF
         document.getElementById('pdfFile').addEventListener('change', async (e) => {
@@ -364,6 +490,7 @@
             const arrayBuffer = await file.arrayBuffer();
             pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
             await renderPage();
+            renderFieldList();
         });
 
         async function renderPage() {
@@ -376,26 +503,21 @@
             await page.render({ canvasContext: ctx, viewport }).promise;
         }
 
-        // Convert PDF coords to screen position
         function pdfToScreen(x, y) {
-            return {
-                left: x * scale,
-                top: (pdfHeight - y) * scale
-            };
+            return { left: x * scale, top: (pdfHeight - y) * scale };
         }
 
-        // Convert screen position to PDF coords
         function screenToPdf(left, top) {
-            return {
-                x: left / scale,
-                y: pdfHeight - (top / scale)
-            };
+            return { x: left / scale, y: pdfHeight - (top / scale) };
         }
 
-        // Create draggable points
-        function createPoints() {
-            // Remove existing points
+        function clearPoints() {
             document.querySelectorAll('.draggable-point').forEach(el => el.remove());
+        }
+
+        function createPoints() {
+            clearPoints();
+            const fields = getCurrentFields();
 
             fields.forEach((field, index) => {
                 const pos = pdfToScreen(field.x, field.y);
@@ -405,27 +527,22 @@
                 point.style.left = pos.left + 'px';
                 point.style.top = pos.top + 'px';
                 point.dataset.index = index;
-
-                // Drag handlers
                 point.addEventListener('mousedown', startDrag);
-
                 wrapper.appendChild(point);
             });
 
             renderFieldList();
         }
 
-        // Drag functionality
         function startDrag(e) {
             e.preventDefault();
             const point = e.target;
             const index = parseInt(point.dataset.index);
+            const fields = getCurrentFields();
 
             isDragging = true;
-            selectedPoint = point;
             point.classList.add('dragging', 'selected');
 
-            // Update selection
             document.querySelectorAll('.draggable-point').forEach(p => {
                 if (p !== point) p.classList.remove('selected');
             });
@@ -438,18 +555,13 @@
             const onMouseMove = (e) => {
                 if (!isDragging) return;
                 const rect = wrapper.getBoundingClientRect();
-                const left = e.clientX - rect.left;
-                const top = e.clientY - rect.top;
+                const left = Math.max(0, Math.min(e.clientX - rect.left, canvas.width));
+                const top = Math.max(0, Math.min(e.clientY - rect.top, canvas.height));
 
-                // Constrain to canvas
-                const constrainedLeft = Math.max(0, Math.min(left, canvas.width));
-                const constrainedTop = Math.max(0, Math.min(top, canvas.height));
+                point.style.left = left + 'px';
+                point.style.top = top + 'px';
 
-                point.style.left = constrainedLeft + 'px';
-                point.style.top = constrainedTop + 'px';
-
-                // Update field data
-                const pdfCoords = screenToPdf(constrainedLeft, constrainedTop);
+                const pdfCoords = screenToPdf(left, top);
                 fields[index].x = Math.round(pdfCoords.x * 10) / 10;
                 fields[index].y = Math.round(pdfCoords.y * 10) / 10;
 
@@ -468,25 +580,25 @@
             document.addEventListener('mouseup', onMouseUp);
         }
 
-        // Update selected info display
         function updateSelectedInfo(field) {
             document.getElementById('selectedInfo').style.display = 'block';
             document.getElementById('selectedName').textContent = field.id;
             document.getElementById('selectedCoords').textContent = `X: ${field.x}, Y: ${field.y}`;
         }
 
-        // Render field list
         function renderFieldList() {
+            const fields = getCurrentFields();
             const list = document.getElementById('fieldList');
+            document.getElementById('fieldCount').textContent = fields.length;
+
             list.innerHTML = fields.map((f, i) => `
                 <div class="field-item" data-index="${i}">
                     <div class="num ${f.type}">${f.label}</div>
                     <span>${f.id}</span>
-                    <span style="margin-left:auto; color:#888; font-family:monospace;">(${f.x}, ${f.y})</span>
+                    <span style="margin-left:auto;color:#888;font-family:monospace;font-size:0.9em;">(${f.x}, ${f.y})</span>
                 </div>
             `).join('');
 
-            // Click to select
             list.querySelectorAll('.field-item').forEach(item => {
                 item.addEventListener('click', () => {
                     const index = parseInt(item.dataset.index);
@@ -502,7 +614,30 @@
             });
         }
 
-        // Show points button
+        // Add new field
+        document.getElementById('addFieldBtn').addEventListener('click', () => {
+            const name = document.getElementById('newFieldName').value.trim();
+            const type = document.getElementById('newFieldType').value;
+            if (!name) {
+                alert('フィールド名を入力してください');
+                return;
+            }
+
+            const fields = getCurrentFields();
+            const newLabel = type === 'digit' ? String(fields.length + 1) : name.charAt(0);
+            fields.push({
+                id: name,
+                type: type,
+                x: 300,
+                y: 400,
+                label: newLabel
+            });
+
+            document.getElementById('newFieldName').value = '';
+            createPoints();
+        });
+
+        // Show points
         document.getElementById('showPoints').addEventListener('click', () => {
             if (!pdfDoc) {
                 alert('PDFを先に読み込んでください');
@@ -513,11 +648,13 @@
 
         // Export
         document.getElementById('exportCoords').addEventListener('click', () => {
+            const fields = getCurrentFields();
+            const docName = currentDoc.toUpperCase();
             const digitFields = fields.filter(f => f.type === 'digit');
             const textFields = fields.filter(f => f.type === 'text');
 
-            let output = '// ===== BEPPYO1 DIGIT BOX FIELDS =====\n';
-            output += 'export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {\n';
+            let output = `// ===== ${docName} DIGIT BOX FIELDS =====\n`;
+            output += `export const ${docName}_FIELDS: { [key: string]: DigitBoxConfig } = {\n`;
 
             digitFields.forEach(f => {
                 output += `    '${f.id}': {\n`;
@@ -531,8 +668,8 @@
             });
 
             output += '};\n\n';
-            output += '// ===== BEPPYO1 TEXT FIELDS =====\n';
-            output += 'export const BEPPYO1_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {\n';
+            output += `// ===== ${docName} TEXT FIELDS =====\n`;
+            output += `export const ${docName}_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {\n`;
 
             textFields.forEach(f => {
                 output += `    '${f.id}': { x: ${f.x}, y: ${f.y}, fontSize: 9 },\n`;
@@ -542,6 +679,9 @@
 
             document.getElementById('output').textContent = output;
         });
+
+        // Initial render
+        renderFieldList();
     </script>
 </body>
 
