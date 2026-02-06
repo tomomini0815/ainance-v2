@@ -326,10 +326,10 @@ export const TaxReturnInputForm: React.FC = () => {
                         <div className="p-6 sticky top-0">
                             <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">アクション</h3>
                             <div className="space-y-3">
-                                {/* 取引データ転記 - 目立たせる */}
+                                {/* 取引データ転記 */}
                                 <button
                                     onClick={handleImportFromTransactions}
-                                    className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
+                                    className="w-full py-2.5 px-4 bg-transparent border-2 border-primary text-primary rounded-lg font-bold hover:bg-primary/10 transition-all flex items-center justify-center gap-2"
                                 >
                                     <Upload className="w-4 h-4" />
                                     取引データ転記
