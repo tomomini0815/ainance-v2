@@ -4,11 +4,11 @@ import { TaxReturnInputService } from '../../services/TaxReturnInputService';
 import { TaxReturnTable1Input } from './TaxReturnTable1Input';
 import { TaxReturnTable2Input } from './TaxReturnTable2Input';
 import { BlueReturnInput } from './BlueReturnInput';
-import { Save, RefreshCw, FileText, Activity, CreditCard, Download, Wrench, ArrowRight } from 'lucide-react';
+import { Save, RefreshCw, FileText, Activity, CreditCard, Download, Wrench, Eye } from 'lucide-react';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
-import { generateFilledTaxForm, downloadPDF } from '../../services/pdfAutoFillService';
+import { generateFilledTaxForm, downloadPDF, previewPDF } from '../../services/pdfAutoFillService';
 
 import { useBusinessTypeContext } from '../../context/BusinessTypeContext';
 
@@ -18,6 +18,8 @@ export const TaxReturnInputForm: React.FC = () => {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
 
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
@@ -85,49 +87,55 @@ export const TaxReturnInputForm: React.FC = () => {
         }, 500);
     };
 
+    // TaxFormData変換ヘルパー
+    const createTaxFormData = (isBlueReturn: boolean = false) => {
+        const totalIncome = (data.income.business_agriculture || 0) +
+            (data.income.employment || 0) +
+            (data.income.miscellaneous_other || 0);
+        const totalDeductions = (data.deductions.social_insurance || 0) +
+            (data.deductions.life_insurance || 0) +
+            (data.deductions.basic || 480000);
+        const taxableIncome = Math.max(0, totalIncome - totalDeductions);
+
+        return {
+            name: '',
+            address: '',
+            phone: '',
+            tradeName: '',
+            year: new Date().getFullYear(),
+            month: 3,
+            day: 15,
+            revenue: data.income.business_agriculture || 0,
+            costOfGoods: 0,
+            expenses: 0,
+            netIncome: data.income.business_agriculture || 0,
+            expensesByCategory: [],
+            deductions: {
+                social_insurance: data.deductions.social_insurance || 0,
+                life_insurance: data.deductions.life_insurance || 0,
+                basic: data.deductions.basic || 480000,
+            },
+            businessIncome: data.income.business_agriculture || 0,
+            salaryIncome: data.income.employment || 0,
+            miscellaneousIncome: (data.income.miscellaneous_other || 0) + (data.income.miscellaneous_public_pension || 0),
+            totalIncome: totalIncome,
+            socialInsurance: data.deductions.social_insurance || 0,
+            lifeInsurance: data.deductions.life_insurance || 0,
+            medicalExpenses: data.deductions.medical_expenses || 0,
+            basicDeduction: data.deductions.basic || 480000,
+            blueReturnDeduction: isBlueReturn ? 650000 : 0,
+            taxableIncome: taxableIncome,
+            estimatedTax: 0,
+            fiscalYear: data.fiscalYear,
+            isBlueReturn: isBlueReturn,
+        };
+    };
+
     // PDF出力 - 確定申告書B
     const handleDownloadTaxReturnPDF = async () => {
         setIsGeneratingPdf(true);
         try {
-            // TaxReturnInputDataを TaxFormData形式に変換
-            const totalIncome = (data.income.business_agriculture || 0) +
-                (data.income.employment || 0) +
-                (data.income.miscellaneous_other || 0);
-            const totalDeductions = (data.deductions.social_insurance || 0) +
-                (data.deductions.life_insurance || 0) +
-                (data.deductions.basic || 480000);
-            const taxableIncome = Math.max(0, totalIncome - totalDeductions);
-
-            const taxFormData = {
-                name: '',
-                address: '',
-                phone: '',
-                year: new Date().getFullYear(),
-                month: 3,
-                day: 15,
-                revenue: data.income.business_agriculture || 0,
-                expenses: 0,
-                netIncome: data.income.business_agriculture || 0,
-                expensesByCategory: [],
-                deductions: {
-                    social_insurance: data.deductions.social_insurance || 0,
-                    life_insurance: data.deductions.life_insurance || 0,
-                    basic: data.deductions.basic || 480000,
-                },
-                businessIncome: data.income.business_agriculture || 0,
-                salaryIncome: data.income.employment || 0,
-                miscellaneousIncome: data.income.miscellaneous_other + data.income.miscellaneous_public_pension || 0,
-                totalIncome: totalIncome,
-                socialInsurance: data.deductions.social_insurance || 0,
-                lifeInsurance: data.deductions.life_insurance || 0,
-                medicalExpenses: data.deductions.medical_expenses || 0,
-                basicDeduction: data.deductions.basic || 480000,
-                taxableIncome: taxableIncome,
-                estimatedTax: 0,
-                fiscalYear: data.fiscalYear,
-                isBlueReturn: false,
-            };
-
+            const taxFormData = createTaxFormData(false);
             const { pdfBytes, filename } = await generateFilledTaxForm('tax_return_b', taxFormData);
             downloadPDF(pdfBytes, filename);
             toast.success('確定申告書Bを出力しました');
@@ -143,29 +151,7 @@ export const TaxReturnInputForm: React.FC = () => {
     const handleDownloadBlueReturnPDF = async () => {
         setIsGeneratingPdf(true);
         try {
-            const taxFormData = {
-                name: '',
-                tradeName: '',
-                address: '',
-                year: new Date().getFullYear(),
-                month: 3,
-                day: 15,
-                revenue: data.income.business_agriculture || 0,
-                costOfGoods: 0,
-                expenses: 0,
-                netIncome: data.income.business_agriculture || 0,
-                expensesByCategory: [],
-                deductions: {
-                    social_insurance: data.deductions.social_insurance || 0,
-                    basic: data.deductions.basic || 480000,
-                },
-                blueReturnDeduction: 650000,
-                taxableIncome: Math.max(0, (data.income.business_agriculture || 0) - 650000),
-                estimatedTax: 0,
-                fiscalYear: data.fiscalYear,
-                isBlueReturn: true,
-            };
-
+            const taxFormData = createTaxFormData(true);
             const { pdfBytes, filename } = await generateFilledTaxForm('blue_return', taxFormData);
             downloadPDF(pdfBytes, filename);
             toast.success('青色申告決算書を出力しました');
@@ -177,152 +163,198 @@ export const TaxReturnInputForm: React.FC = () => {
         }
     };
 
+    // プレビュー
+    const handlePreviewPDF = async () => {
+        setIsGeneratingPdf(true);
+        try {
+            const taxFormData = createTaxFormData(false);
+            const { pdfBytes } = await generateFilledTaxForm('tax_return_b', taxFormData);
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            setPreviewBlobUrl(url);
+            setShowPreviewModal(true);
+        } catch (error) {
+            console.error('PDF preview failed', error);
+            toast.error('プレビューの作成に失敗しました');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
+    const closePreviewModal = () => {
+        setShowPreviewModal(false);
+        if (previewBlobUrl) {
+            window.URL.revokeObjectURL(previewBlobUrl);
+            setPreviewBlobUrl(null);
+        }
+    };
+
+    const tabDetails = {
+        table1: { label: '第一表（収入・控除）', icon: Activity },
+        table2: { label: '第二表（内訳・詳細）', icon: CreditCard },
+        blue: { label: '青色申告決算書', icon: FileText },
+    };
+
     return (
         <div className="bg-background min-h-screen">
-            <div className="max-w-4xl mx-auto px-4 py-8">
-
-                {/* ヘッダー */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-text-main whitespace-nowrap">申告書入力エディタ</h1>
-                        <p className="text-xs sm:text-base text-text-muted mt-1">
-                            申告書に記載する詳細情報を手動で入力・編集します
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                        <button
-                            onClick={handleImportFromTransactions}
-                            className="btn-outline whitespace-nowrap px-2 py-2 text-xs sm:px-4 sm:text-sm h-8 sm:h-10"
-                            title="収入や一部の控除を取引履歴から自動集計して入力します"
-                        >
-                            <Download className="w-3 h-3 mr-1 sm:w-4 sm:mr-2" />
-                            取引データ転記
-                        </button>
-                        <button
-                            onClick={() => {
-                                if (window.confirm('入力内容をすべてリセットしますか？')) {
-                                    TaxReturnInputService.resetData();
-                                    setData(initialTaxReturnInputData);
-                                    setHasUnsavedChanges(true);
-                                }
-                            }}
-                            className="btn-ghost whitespace-nowrap px-2 py-2 text-xs sm:px-4 sm:text-sm h-8 sm:h-10"
-                        >
-                            <RefreshCw className="w-3 h-3 mr-1 sm:w-4 sm:mr-2" />
-                            リセット
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={!hasUnsavedChanges && saveStatus !== 'saved'}
-                            className={`btn-primary whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm h-8 sm:h-10 min-w-0 sm:min-w-[140px] ${saveStatus === 'saved' ? 'bg-success hover:bg-success' : ''}`}
-                        >
-                            {saveStatus === 'saving' ? (
-                                <>
-                                    <RefreshCw className="w-3 h-3 mr-1 sm:w-4 sm:mr-2 animate-spin" />
-                                    保存中...
-                                </>
-                            ) : saveStatus === 'saved' ? (
-                                <>保存しました</>
-                            ) : (
-                                <>
-                                    <Save className="w-3 h-3 mr-1 sm:w-4 sm:mr-2" />
-                                    {hasUnsavedChanges ? '保存する' : '保存済み'}
-                                </>
-                            )}
-                        </button>
-                    </div>
+            <div className="max-w-[1280px] mx-auto px-4 py-8">
+                {/* Main Page Header */}
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-xl sm:text-2xl font-bold text-text-main whitespace-nowrap">申告書入力エディタ</h1>
+                    <p className="text-xs sm:text-base text-text-muted mt-1">
+                        確定申告書・青色申告決算書の各項目を詳細に入力・編集します
+                    </p>
                 </div>
 
-                {/* タブナビゲーション */}
-                <div className="bg-surface rounded-xl shadow-sm border border-border mb-6 overflow-hidden">
-                    <div className="flex overflow-x-auto">
-                        <TabButton
-                            active={activeTab === 'table1'}
-                            onClick={() => setActiveTab('table1')}
-                            icon={Activity}
-                            label="第一表 (収入・控除)"
-                        />
-                        <TabButton
-                            active={activeTab === 'table2'}
-                            onClick={() => setActiveTab('table2')}
-                            icon={CreditCard}
-                            label="第二表 (内訳・詳細)"
-                        />
-                        <TabButton
-                            active={activeTab === 'blue'}
-                            onClick={() => setActiveTab('blue')}
-                            icon={FileText}
-                            label="青色申告決算書"
-                        />
+                {/* Styled Tabs Section */}
+                <div className="mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                    <nav className="inline-flex bg-[#1e293b]/80 backdrop-blur-md p-1 rounded-full border border-white/10 min-w-max items-stretch">
+                        {Object.entries(tabDetails).map(([id, detail]) => {
+                            const Icon = detail.icon;
+                            const isActive = activeTab === id;
+                            const match = detail.label.match(/^(.+?)([（(].+[）)])$/);
+                            const mainLabel = match ? match[1] : detail.label;
+                            const subLabel = match ? match[2].replace(/[（()）]/g, '') : null;
+
+                            return (
+                                <button
+                                    key={id}
+                                    onClick={() => setActiveTab(id as any)}
+                                    className={`
+                                        relative flex flex-col items-center justify-center px-4 py-2 rounded-full transition-colors duration-200 min-h-[56px] min-w-[100px]
+                                        ${isActive
+                                            ? 'text-primary'
+                                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                                        }
+                                    `}
+                                >
+                                    {isActive && (
+                                        <div className="absolute inset-0 bg-primary/15 rounded-full border border-primary/30" />
+                                    )}
+                                    <Icon className={`w-4 h-4 mb-0.5 z-10 ${isActive ? 'text-primary' : ''}`} />
+                                    <span className="text-xs font-semibold z-10">{mainLabel}</span>
+                                    {subLabel && (
+                                        <span className={`text-[10px] z-10 ${isActive ? 'text-primary/70' : 'text-slate-500'}`}>
+                                            {subLabel}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </nav>
+                </div>
+
+                {/* Main Content Area with Sidebar */}
+                <div className="flex flex-col lg:flex-row bg-surface rounded-2xl shadow-xl border border-border overflow-hidden">
+                    {/* Form Content */}
+                    <div className="flex-1 p-6 overflow-auto">
+                        {activeTab === 'table1' && (
+                            <TaxReturnTable1Input data={data} onChange={handleDataChange} />
+                        )}
+                        {activeTab === 'table2' && (
+                            <TaxReturnTable2Input data={data} onChange={handleDataChange} />
+                        )}
+                        {activeTab === 'blue' && (
+                            <BlueReturnInput data={data} onChange={handleDataChange} />
+                        )}
                     </div>
-                </div>
 
-                {/* フォームコンテンツ */}
-                <div className="bg-surface rounded-xl shadow-sm border border-border p-6 animate-in fade-in duration-300">
-                    {activeTab === 'table1' && (
-                        <TaxReturnTable1Input data={data} onChange={handleDataChange} />
-                    )}
-                    {activeTab === 'table2' && (
-                        <TaxReturnTable2Input data={data} onChange={handleDataChange} />
-                    )}
-                    {activeTab === 'blue' && (
-                        <BlueReturnInput data={data} onChange={handleDataChange} />
-                    )}
-                </div>
+                    {/* Right Sidebar - Actions */}
+                    <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border bg-surface-highlight/5">
+                        <div className="p-6 sticky top-0">
+                            <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">アクション</h3>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={handlePreviewPDF}
+                                    className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    プレビュー
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saveStatus === 'saving'}
+                                    className={`w-full py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${hasUnsavedChanges
+                                        ? 'btn-primary shadow-lg shadow-primary/25'
+                                        : 'bg-surface border border-border text-text-muted hover:bg-surface-highlight'
+                                        }`}
+                                >
+                                    {saveStatus === 'saving' ? (
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Save className="w-4 h-4" />
+                                    )}
+                                    {saveStatus === 'saved' ? '保存しました' : '保存'}
+                                </button>
 
-                {/* PDF出力セクション */}
-                <div className="mt-6 bg-surface rounded-xl shadow-sm border border-border p-5">
-                    <h3 className="text-sm font-bold text-text-main mb-4 flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-primary" />
-                        公式書類PDF出力
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <button
-                            onClick={handleDownloadTaxReturnPDF}
-                            disabled={isGeneratingPdf}
-                            className="py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50"
-                        >
-                            {isGeneratingPdf ? (
-                                <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <FileText className="w-4 h-4" />
-                            )}
-                            確定申告書B (第一表・第二表)
-                        </button>
-                        <button
-                            onClick={handleDownloadBlueReturnPDF}
-                            disabled={isGeneratingPdf}
-                            className="py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50"
-                        >
-                            {isGeneratingPdf ? (
-                                <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <FileText className="w-4 h-4" />
-                            )}
-                            青色申告決算書
-                        </button>
-                    </div>
-                </div>
+                                <div className="border-t border-border my-2"></div>
 
-                {/* 開発者ツール */}
-                <div className="mt-4 bg-surface rounded-xl shadow-sm border border-border p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Wrench className="w-5 h-5 text-text-muted" />
-                            <div>
-                                <p className="font-medium text-text-main text-sm">PDF座標キャリブレーター</p>
-                                <p className="text-xs text-text-muted">公式PDFフォームの座標調整ツール</p>
+                                {/* 公式PDF出力セクション */}
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-1 gap-1 border border-border rounded-xl overflow-hidden bg-surface shadow-inner">
+                                        <div className="px-3 py-2 bg-surface-highlight text-[10px] font-bold text-text-muted uppercase border-b border-border tracking-wider flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                            公式PDF書類出力
+                                        </div>
+                                        <div className="divide-y divide-border">
+                                            {[
+                                                { id: 'kakutei_b', name: '確定申告書B', handler: handleDownloadTaxReturnPDF },
+                                                { id: 'blue_return', name: '青色申告決算書', handler: handleDownloadBlueReturnPDF },
+                                            ].map(item => (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={item.handler}
+                                                    disabled={isGeneratingPdf}
+                                                    className="w-full py-2.5 px-3 text-left text-sm text-text-main hover:bg-surface-highlight transition-colors flex items-center justify-between disabled:opacity-50"
+                                                >
+                                                    <span>{item.name}</span>
+                                                    {isGeneratingPdf ? (
+                                                        <RefreshCw className="w-3 h-3 text-text-muted animate-spin" />
+                                                    ) : (
+                                                        <Download className="w-3 h-3 text-text-muted" />
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleImportFromTransactions}
+                                    className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    取引データ転記
+                                </button>
+
+                                <div className="border-t border-border my-2"></div>
+
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm('入力内容をすべてリセットしますか？')) {
+                                            TaxReturnInputService.resetData();
+                                            setData(initialTaxReturnInputData);
+                                            setHasUnsavedChanges(true);
+                                        }
+                                    }}
+                                    className="w-full py-2.5 px-4 bg-transparent text-text-muted rounded-lg font-medium hover:bg-red-50 hover:text-red-500 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                    リセット
+                                </button>
+
+                                {/* 開発者ツール */}
+                                <a
+                                    href="/tools/coordinate_picker.html"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full py-2 px-4 bg-surface border border-border text-text-muted rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2 text-sm"
+                                >
+                                    <Wrench className="w-4 h-4" />
+                                    座標キャリブレーター
+                                </a>
                             </div>
                         </div>
-                        <a
-                            href="/tools/coordinate_picker.html"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-ghost text-sm flex items-center gap-1"
-                        >
-                            開く
-                            <ArrowRight className="w-4 h-4" />
-                        </a>
                     </div>
                 </div>
 
@@ -333,24 +365,30 @@ export const TaxReturnInputForm: React.FC = () => {
                     </p>
                 </div>
             </div>
+
+            {/* Preview Modal */}
+            {showPreviewModal && previewBlobUrl && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                            <h3 className="font-bold text-text-main">プレビュー</h3>
+                            <button
+                                onClick={closePreviewModal}
+                                className="text-text-muted hover:text-text-main transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="flex-1">
+                            <iframe
+                                src={previewBlobUrl}
+                                className="w-full h-full"
+                                title="PDF Preview"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
-
-const TabButton: React.FC<{
-    active: boolean;
-    onClick: () => void;
-    icon: React.ElementType;
-    label: string;
-}> = ({ active, onClick, icon: Icon, label }) => (
-    <button
-        onClick={onClick}
-        className={`flex items-center gap-2 px-6 py-4 font-medium text-sm transition-colors whitespace-nowrap border-b-2 ${active
-            ? 'border-primary text-primary bg-primary-light/10'
-            : 'border-transparent text-text-muted hover:text-text-main hover:bg-surface-highlight'
-            }`}
-    >
-        <Icon className={`w-4 h-4 ${active ? 'text-primary' : 'text-text-muted'}`} />
-        {label}
-    </button>
-);
