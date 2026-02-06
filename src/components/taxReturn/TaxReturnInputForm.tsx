@@ -193,14 +193,14 @@ export const TaxReturnInputForm: React.FC = () => {
         {
             id: 'kakutei_1_2',
             name: '確定申告書 第一表・第二表',
-            handler: () => handleDownloadOfficialTemplate('/templates/kakutei1&2.pdf', '確定申告書_第一表第二表'),
-            hasAutoFill: false
+            handler: handleDownloadTaxReturnPDF,
+            hasAutoFill: true
         },
         {
             id: 'aoiro_kessan',
             name: '青色申告決算書',
-            handler: () => handleDownloadOfficialTemplate('/templates/aoirokessansyo.pdf', '青色申告決算書'),
-            hasAutoFill: false
+            handler: handleDownloadBlueReturnPDF,
+            hasAutoFill: true
         },
         {
             id: 'syotoku_aoiro',
