@@ -542,46 +542,48 @@
         const personalForms = {
             kakutei_1_2: {
                 name: '確定申告書 第一表・第二表',
-                pages: 2,
+                pages: 4,
                 fields: {
                     // ===== 第一表 (ページ1) =====
                     1: [
                         // 収入金額
-                        { id: '事業収入_ア', type: 'digit', x: 480, y: 720, label: 'ア' },
-                        { id: '給与収入_カ', type: 'digit', x: 480, y: 680, label: 'カ' },
-                        { id: '雑収入_ク', type: 'digit', x: 480, y: 640, label: 'ク' },
-                        { id: '収入合計_⑫', type: 'digit', x: 480, y: 600, label: '⑫' },
+                        { id: '事業収入_ア', type: 'digit', x: 286.7, y: 672.6, label: 'ア' },
+                        { id: '給与収入_カ', type: 'digit', x: 286.7, y: 605.3, label: 'カ' },
+                        { id: '雑収入_ク', type: 'digit', x: 286.7, y: 553.9, label: 'ク' },
+                        { id: '収入合計_⑫', type: 'digit', x: 286.7, y: 292.6, label: '⑫' },
                         // 所得金額
-                        { id: '事業所得_①', type: 'digit', x: 480, y: 540, label: '①' },
-                        { id: '給与所得_⑥', type: 'digit', x: 480, y: 500, label: '⑥' },
-                        { id: '所得合計_⑫', type: 'digit', x: 480, y: 460, label: '⑫' },
+                        { id: '事業所得_①', type: 'digit', x: 286, y: 483.9, label: '①' },
+                        { id: '給与所得_⑥', type: 'digit', x: 286.7, y: 396.6, label: '⑥' },
+                        { id: '所得合計_⑫', type: 'digit', x: 286, y: 292.1, label: '⑫' },
                         // 所得控除
-                        { id: '基礎控除_㊲', type: 'digit', x: 480, y: 380, label: '㊲' },
-                        { id: '社会保険料控除_⑬', type: 'digit', x: 480, y: 340, label: '⑬' },
-                        { id: '控除合計_㉕', type: 'digit', x: 480, y: 300, label: '㉕' },
+                        { id: '基礎控除_㊲', type: 'digit', x: 551.3, y: 570.6, label: '㊲' },
+                        { id: '社会保険料控除_⑬', type: 'digit', x: 286.7, y: 274.8, label: '⑬' },
+                        { id: '控除合計_㉕', type: 'digit', x: 287.3, y: 120.1, label: '㉕' },
                         // 税額計算
-                        { id: '課税所得_㉖', type: 'digit', x: 480, y: 260, label: '㉖' },
-                        { id: '所得税額_㉗', type: 'digit', x: 480, y: 220, label: '㉗' },
-                        { id: '申告納税額_㊷', type: 'digit', x: 480, y: 140, label: '㊷' },
+                        { id: '課税所得_㉖', type: 'digit', x: 287.3, y: 102.8, label: '㉖' },
+                        { id: '所得税額_㉗', type: 'digit', x: 286.7, y: 84.7, label: '㉗' },
+                        { id: '申告納税額_㊷', type: 'digit', x: 552, y: 553.5, label: '㊷' },
                         // ヘッダー
-                        { id: '氏名', type: 'text', x: 100, y: 780, label: '氏' },
-                        { id: '住所', type: 'text', x: 100, y: 750, label: '住' },
-                        { id: '税務署名', type: 'text', x: 100, y: 810, label: '税' },
+                        { id: '氏名', type: 'text', x: 364.7, y: 738.8, label: '氏' },
+                        { id: '住所', type: 'text', x: 89.3, y: 758.8, label: '住' },
+                        { id: '税務署名', type: 'text', x: 48, y: 818.1, label: '税' },
                     ],
                     // ===== 第二表 (ページ2) =====
                     2: [
                         // 源泉徴収税額
-                        { id: '源泉_給与', type: 'digit', x: 350, y: 650, label: '源給' },
-                        { id: '源泉_年金', type: 'digit', x: 350, y: 600, label: '源年' },
+                        { id: '源泉_給与', type: 'digit', x: 236.7, y: 581.3, label: '源給' },
+                        { id: '源泉_年金', type: 'digit', x: 237.3, y: 555.3, label: '源年' },
                         // 社会保険料
-                        { id: '社保_国民健康', type: 'digit', x: 350, y: 500, label: '国健' },
-                        { id: '社保_国民年金', type: 'digit', x: 350, y: 450, label: '国年' },
+                        { id: '社保_国民健康', type: 'digit', x: 486, y: 769.3, label: '国健' },
+                        { id: '社保_国民年金', type: 'digit', x: 486, y: 747.9, label: '国年' },
                         // 生命保険料
-                        { id: '生命保険_一般', type: 'digit', x: 350, y: 350, label: '生一' },
-                        { id: '生命保険_個人年金', type: 'digit', x: 350, y: 300, label: '生年' },
+                        { id: '生命保険_一般', type: 'digit', x: 486, y: 667.9, label: '生一' },
+                        { id: '生命保険_個人年金', type: 'digit', x: 484.7, y: 708.6, label: '生年' },
                         // ヘッダー
-                        { id: '氏名_2表', type: 'text', x: 100, y: 780, label: '氏' },
-                    ]
+                        { id: '氏名_2表', type: 'text', x: 100, y: 682.1, label: '氏' },
+                    ],
+                    3: [],
+                    4: []
                 }
             },
             aoiro_kessan: {
