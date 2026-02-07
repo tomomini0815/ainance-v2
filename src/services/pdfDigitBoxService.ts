@@ -152,21 +152,99 @@ export const BEPPYO15_TEXT: { [key: string]: TextFieldConfig } = {
 
 // ===== BEPPYO16 (1) (減価償却 定額法) COORDINATE CONFIG =====
 export const BEPPYO16_1_FIELDS: { [key: string]: DigitBoxConfig } = {
-    '取得口__row1': { anchorX: 300, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
-    '当期償却額_row1': { anchorX: 450, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 1
+    '取得価額_row1': { anchorX: 200, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row1': { anchorX: 280, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row1': { anchorX: 360, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row1': { anchorX: 440, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row1': { anchorX: 520, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 2
+    '取得価額_row2': { anchorX: 200, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row2': { anchorX: 280, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row2': { anchorX: 360, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row2': { anchorX: 440, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row2': { anchorX: 520, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 3
+    '取得価額_row3': { anchorX: 200, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row3': { anchorX: 280, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row3': { anchorX: 360, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row3': { anchorX: 440, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row3': { anchorX: 520, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 4
+    '取得価額_row4': { anchorX: 200, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row4': { anchorX: 280, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row4': { anchorX: 360, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row4': { anchorX: 440, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row4': { anchorX: 520, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 5
+    '取得価額_row5': { anchorX: 200, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row5': { anchorX: 280, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row5': { anchorX: 360, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row5': { anchorX: 440, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row5': { anchorX: 520, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 6
+    '取得価額_row6': { anchorX: 200, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row6': { anchorX: 280, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row6': { anchorX: 360, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row6': { anchorX: 440, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row6': { anchorX: 520, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
 };
 export const BEPPYO16_1_TEXT: { [key: string]: TextFieldConfig } = {
     '資産名_row1': { x: 100, y: 700, fontSize: 9 },
+    '資産名_row2': { x: 100, y: 676, fontSize: 9 },
+    '資産名_row3': { x: 100, y: 652, fontSize: 9 },
+    '資産名_row4': { x: 100, y: 628, fontSize: 9 },
+    '資産名_row5': { x: 100, y: 604, fontSize: 9 },
+    '資産名_row6': { x: 100, y: 580, fontSize: 9 },
     '法人名': { x: 100, y: 780, fontSize: 9 },
 };
 
 // ===== BEPPYO16 (2) (減価償却 定率法) COORDINATE CONFIG =====
 export const BEPPYO16_2_FIELDS: { [key: string]: DigitBoxConfig } = {
-    '取得価額_row1': { anchorX: 300, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
-    '当期償却額_row1': { anchorX: 450, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 1
+    '取得価額_row1': { anchorX: 200, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row1': { anchorX: 280, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row1': { anchorX: 360, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row1': { anchorX: 440, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row1': { anchorX: 520, anchorY: 700, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 2
+    '取得価額_row2': { anchorX: 200, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row2': { anchorX: 280, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row2': { anchorX: 360, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row2': { anchorX: 440, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row2': { anchorX: 520, anchorY: 676, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 3
+    '取得価額_row3': { anchorX: 200, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row3': { anchorX: 280, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row3': { anchorX: 360, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row3': { anchorX: 440, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row3': { anchorX: 520, anchorY: 652, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 4
+    '取得価額_row4': { anchorX: 200, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row4': { anchorX: 280, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row4': { anchorX: 360, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row4': { anchorX: 440, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row4': { anchorX: 520, anchorY: 628, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 5
+    '取得価額_row5': { anchorX: 200, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row5': { anchorX: 280, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row5': { anchorX: 360, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row5': { anchorX: 440, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row5': { anchorX: 520, anchorY: 604, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    // Row 6
+    '取得価額_row6': { anchorX: 200, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '期末帳簿価額_row6': { anchorX: 280, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却限度額_row6': { anchorX: 360, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '当期償却額_row6': { anchorX: 440, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
+    '償却超過額_row6': { anchorX: 520, anchorY: 580, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },
 };
 export const BEPPYO16_2_TEXT: { [key: string]: TextFieldConfig } = {
     '資産名_row1': { x: 100, y: 700, fontSize: 9 },
+    '資産名_row2': { x: 100, y: 676, fontSize: 9 },
+    '資産名_row3': { x: 100, y: 652, fontSize: 9 },
+    '資産名_row4': { x: 100, y: 628, fontSize: 9 },
+    '資産名_row5': { x: 100, y: 604, fontSize: 9 },
+    '資産名_row6': { x: 100, y: 580, fontSize: 9 },
     '法人名': { x: 100, y: 780, fontSize: 9 },
 };
 
@@ -880,47 +958,95 @@ export async function fillBeppyo16WithDigitBoxes(
 
         const assets = data.beppyo16?.assets || [];
 
-        // Page 1
-        const straightAsset = assets.find(a => a.depreciationMethod === 'straight_line');
-        if (straightAsset && pages.length > 0) {
+        // Page 1: Straight Line
+        const straightAssets = assets.filter(a => a.depreciationMethod === 'straight_line');
+        if (straightAssets.length > 0 && pages.length > 0) {
             const page1 = pages[0];
-            const items = [
-                { fieldKey: '取得口__row1', value: straightAsset.acquisitionCost },
-                { fieldKey: '当期償却額_row1', value: straightAsset.currentDepreciation }
-            ];
 
-            for (const item of items) {
-                const config = BEPPYO16_1_FIELDS[item.fieldKey];
-                if (config) {
-                    report.fieldsAttempted++;
-                    const result = fillDigitBoxField(page1, item.value, config, font, calibration);
-                    if (result.success) report.fieldsSucceeded++;
+            straightAssets.forEach((asset, index) => {
+                const rowNum = index + 1;
+                if (rowNum > 6) return; // Limit to 6 rows
+
+                const items = [
+                    { fieldKey: `取得価額_row${rowNum}`, value: asset.acquisitionCost },
+                    { fieldKey: `期末帳簿価額_row${rowNum}`, value: asset.bookValueEnd },
+                    { fieldKey: `償却限度額_row${rowNum}`, value: asset.allowableLimit },
+                    { fieldKey: `当期償却額_row${rowNum}`, value: asset.currentDepreciation },
+                    { fieldKey: `償却超過額_row${rowNum}`, value: Math.max(0, asset.currentDepreciation - asset.allowableLimit) }
+                ];
+
+                for (const item of items) {
+                    const config = BEPPYO16_1_FIELDS[item.fieldKey];
+                    if (config) {
+                        report.fieldsAttempted++;
+                        const result = fillDigitBoxField(page1, item.value, config, font, calibration);
+                        if (result.success) report.fieldsSucceeded++;
+                        report.fieldDetails.push({
+                            fieldName: item.fieldKey,
+                            value: item.value,
+                            success: result.success,
+                            coordinates: { x: config.anchorX, y: config.anchorY }
+                        });
+                    }
                 }
-            }
-            if (data.companyInfo?.corporateName && BEPPYO16_1_TEXT['法人名']) {
-                fillTextField(page1, data.companyInfo.corporateName, BEPPYO16_1_TEXT['法人名'], font, calibration);
+
+                // Asset Name
+                const nameConfig = BEPPYO16_1_TEXT[`資産名_row${rowNum}`];
+                if (nameConfig) {
+                    fillTextField(page1, asset.name, nameConfig, font, calibration);
+                    report.fieldsSucceeded++;
+                }
+            });
+
+            if (data.companyInfo?.corporateName) {
+                const config = BEPPYO16_1_TEXT['法人名'];
+                if (config) fillTextField(page1, data.companyInfo.corporateName, config, font, calibration);
             }
         }
 
-        // Page 2
-        const decliningAsset = assets.find(a => a.depreciationMethod === 'declining_balance');
-        if (decliningAsset && pages.length > 1) {
+        // Page 2: Declining Balance
+        const decliningAssets = assets.filter(a => a.depreciationMethod === 'declining_balance');
+        if (decliningAssets.length > 0 && pages.length > 1) {
             const page2 = pages[1];
-            const items = [
-                { fieldKey: '取得価額_row1', value: decliningAsset.acquisitionCost },
-                { fieldKey: '当期償却額_row1', value: decliningAsset.currentDepreciation }
-            ];
 
-            for (const item of items) {
-                const config = BEPPYO16_2_FIELDS[item.fieldKey];
-                if (config) {
-                    report.fieldsAttempted++;
-                    const result = fillDigitBoxField(page2, item.value, config, font, calibration);
-                    if (result.success) report.fieldsSucceeded++;
+            decliningAssets.forEach((asset, index) => {
+                const rowNum = index + 1;
+                if (rowNum > 6) return; // Limit to 6 rows
+
+                const items = [
+                    { fieldKey: `取得価額_row${rowNum}`, value: asset.acquisitionCost },
+                    { fieldKey: `期末帳簿価額_row${rowNum}`, value: asset.bookValueEnd },
+                    { fieldKey: `償却限度額_row${rowNum}`, value: asset.allowableLimit },
+                    { fieldKey: `当期償却額_row${rowNum}`, value: asset.currentDepreciation },
+                    { fieldKey: `償却超過額_row${rowNum}`, value: Math.max(0, asset.currentDepreciation - asset.allowableLimit) }
+                ];
+
+                for (const item of items) {
+                    const config = BEPPYO16_2_FIELDS[item.fieldKey];
+                    if (config) {
+                        report.fieldsAttempted++;
+                        const result = fillDigitBoxField(page2, item.value, config, font, calibration);
+                        if (result.success) report.fieldsSucceeded++;
+                        report.fieldDetails.push({
+                            fieldName: item.fieldKey,
+                            value: item.value,
+                            success: result.success,
+                            coordinates: { x: config.anchorX, y: config.anchorY }
+                        });
+                    }
                 }
-            }
-            if (data.companyInfo?.corporateName && BEPPYO16_2_TEXT['法人名']) {
-                fillTextField(page2, data.companyInfo.corporateName, BEPPYO16_2_TEXT['法人名'], font, calibration);
+
+                // Asset Name
+                const nameConfig = BEPPYO16_2_TEXT[`資産名_row${rowNum}`];
+                if (nameConfig) {
+                    fillTextField(page2, asset.name, nameConfig, font, calibration);
+                    report.fieldsSucceeded++;
+                }
+            });
+
+            if (data.companyInfo?.corporateName) {
+                const config = BEPPYO16_2_TEXT['法人名'];
+                if (config) fillTextField(page2, data.companyInfo.corporateName, config, font, calibration);
             }
         }
     }
