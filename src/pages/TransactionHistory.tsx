@@ -660,7 +660,7 @@ const TransactionHistory: React.FC = () => {
                   setViewMode('all');
                   setCurrentPage(1);
                 }}
-                className={`flex items-center gap-2.5 px-6 py-2 text-xs font-bold rounded-full transition-all duration-300 ${viewMode === 'all'
+                className={`flex items-center gap-2.5 px-6 py-2 text-xs font-medium rounded-full transition-all duration-300 ${viewMode === 'all'
                   ? 'bg-[#1e293b] text-indigo-400 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                   }`}
@@ -673,13 +673,13 @@ const TransactionHistory: React.FC = () => {
                   setViewMode('depreciation');
                   setCurrentPage(1);
                 }}
-                className={`flex items-center gap-2.5 px-6 py-2 text-xs font-bold rounded-full transition-all duration-300 ${viewMode === 'depreciation'
+                className={`flex items-center gap-2.5 px-6 py-2 text-xs font-medium rounded-full transition-all duration-300 ${viewMode === 'depreciation'
                   ? 'bg-[#1e293b] text-indigo-400 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
                   }`}
               >
-                <Clock className={`w-4 h-4 ${viewMode === 'depreciation' ? 'text-indigo-400' : 'text-slate-400'}`} />
-                <span>減価償却資産</span>
+                <Clock className={`w-4 h-4 ${viewMode === 'depreciation' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                <span className={viewMode === 'depreciation' ? '' : 'opacity-75'}>減価償却資産</span>
               </button>
             </div>
 
@@ -695,7 +695,7 @@ const TransactionHistory: React.FC = () => {
                     />
                   </th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider">項目</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-medium text-primary uppercase tracking-wider">金額</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-medium text-text-muted uppercase tracking-wider">金額</th>
                   {viewMode === 'depreciation' && (
                     <th className="px-4 py-3 text-right text-[10px] font-medium text-text-muted uppercase tracking-wider">償却総額</th>
                   )}
@@ -743,7 +743,7 @@ const TransactionHistory: React.FC = () => {
                         </div>
 
                       </td>
-                      <td className={`px-4 py-2.5 whitespace-nowrap text-right text-sm font-bold ${transaction.tags?.includes('depreciation_asset') ? 'text-primary' : 'text-text-main'}`}>
+                      <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-bold text-text-main">
                         {(() => {
                           if (transaction.tags?.includes('depreciation_asset')) {
                             const newMatch = transaction.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
@@ -797,7 +797,7 @@ const TransactionHistory: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={viewMode === 'depreciation' ? 7 : 6} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <FileText className="w-12 h-12 text-text-muted mb-4" />
                         <h3 className="text-lg font-medium text-text-main mb-1">取引が見つかりません</h3>

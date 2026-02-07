@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-    Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles,
+    Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles, Target,
     Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -40,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { path: '/receipt-processing', label: 'レシート処理', icon: Receipt },
         { path: '/invoice-creation', label: '書類作成管理', icon: FileText },
         { path: '/csv-import', label: 'CSV入出力管理', icon: Upload },
-        { path: '/subsidy-matching', label: '補助金マッチ', icon: Sparkles },
+        { path: '/subsidy-matching', label: '補助金マッチ', icon: Target },
         { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
         // 法人の場合は法人税申告サポート、個人の場合は確定申告サポート
         {

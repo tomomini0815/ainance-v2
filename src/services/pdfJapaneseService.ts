@@ -1233,24 +1233,57 @@ export async function fillSingleOfficialCorporateTaxPDF(data: CorporateTaxInputD
   const pureType = templateType.replace('_debug', '');
   const isDebugMode = templateType.includes('_debug');
 
-  // Beppyo1はdigit-boxで処理
-  if (pureType === 'beppyo1') {
-    const { fillBeppyo1WithDigitBoxes } = await import('./pdfDigitBoxService');
+  // Beppyo1, 4, 5, 15, 16 use digit-box method
+  const digitBoxTemplates = ['beppyo1', 'beppyo4', 'beppyo5_1', 'beppyo5_2', 'beppyo15', 'beppyo16'];
+  if (digitBoxTemplates.includes(pureType)) {
+    const {
+      fillBeppyo1WithDigitBoxes,
+      fillBeppyo4WithDigitBoxes,
+      fillBeppyo5_1WithDigitBoxes,
+      fillBeppyo5_2WithDigitBoxes,
+      fillBeppyo15WithDigitBoxes,
+      fillBeppyo16WithDigitBoxes,
+      DEFAULT_CALIBRATION
+    } = await import('./pdfDigitBoxService');
 
-    const url = '/templates/beppyo1_official.pdf';
+    const templates: { [key: string]: string } = {
+      'beppyo1': '/templates/beppyo1_official.pdf',
+      'beppyo4': '/templates/beppyo4_official.pdf',
+      'beppyo5_1': '/templates/beppyo5_1_official.pdf',
+      'beppyo5_2': '/templates/beppyo5_2_official.pdf',
+      'beppyo15': '/templates/beppyo15_official.pdf',
+      'beppyo16': '/templates/beppyo16_official.pdf',
+    };
+
+    const url = templates[pureType];
     const bytes = await fetch(`${url}?t=${Date.now()}`).then(r => r.arrayBuffer()).then(ab => new Uint8Array(ab));
 
     const calibration = {
-      globalShiftX: data.calibration?.globalShiftX || 0,
-      globalShiftY: data.calibration?.globalShiftY || 0,
-      digitCenterOffsetX: -3,
+      globalShiftX: data.calibration?.globalShiftX || DEFAULT_CALIBRATION.globalShiftX,
+      globalShiftY: data.calibration?.globalShiftY || DEFAULT_CALIBRATION.globalShiftY,
+      digitCenterOffsetX: -5,
       digitCenterOffsetY: 2,
     };
 
-    const { pdfBytes, report } = await fillBeppyo1WithDigitBoxes(bytes, data, calibration, isDebugMode);
+    let result;
+    if (pureType === 'beppyo1') {
+      result = await fillBeppyo1WithDigitBoxes(bytes, data, calibration, isDebugMode);
+    } else if (pureType === 'beppyo4') {
+      result = await fillBeppyo4WithDigitBoxes(bytes, data, calibration, isDebugMode);
+    } else if (pureType === 'beppyo5_1') {
+      result = await fillBeppyo5_1WithDigitBoxes(bytes, data, calibration, isDebugMode);
+    } else if (pureType === 'beppyo5_2') {
+      result = await fillBeppyo5_2WithDigitBoxes(bytes, data, calibration, isDebugMode);
+    } else if (pureType === 'beppyo15') {
+      result = await fillBeppyo15WithDigitBoxes(bytes, data, calibration, isDebugMode);
+    } else if (pureType === 'beppyo16') {
+      result = await fillBeppyo16WithDigitBoxes(bytes, data, calibration, isDebugMode);
+    }
 
-    console.log('[Beppyo1] Digit-box filling complete:', report);
-    return pdfBytes;
+    if (result) {
+      console.log(`[${pureType}] Digit-box filling complete:`, result.report);
+      return result.pdfBytes;
+    }
   }
 
   // 他の別表は3層アプローチ

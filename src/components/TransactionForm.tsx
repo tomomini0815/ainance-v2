@@ -438,7 +438,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   name="date"
                   value={formData.date}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
+                  className="w-full min-w-0 appearance-none pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                   required
                 />
               </div>
@@ -733,7 +733,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     name="recurring_start_date"
                     value={formData.recurring_start_date}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
+                    className="w-full min-w-0 appearance-none px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                   />
                 </div>
                 <div>
@@ -743,7 +743,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                     name="recurring_end_date"
                     value={formData.recurring_end_date}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
+                    className="w-full min-w-0 appearance-none px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                   />
                 </div>
               </div>

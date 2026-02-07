@@ -83,6 +83,7 @@ export interface CorporateInfo {
   representativeName: string;
   corporateNumber?: string;
   address?: string;
+  taxOffice?: string;         // 所轄税務署
   capital: number;            // 資本金
   fiscalYearStart: string;    // 事業年度開始日
   fiscalYearEnd: string;      // 事業年度終了日

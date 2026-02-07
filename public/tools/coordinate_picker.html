@@ -417,7 +417,11 @@
             </div>
             <button class="btn-info" id="addFieldBtn">＋ 追加</button>
 
-            <h2>📋 フィールド (<span id="fieldCount">0</span>)</h2>
+            <h2>📋 フィールド (ページ <span id="currentPageIndicator">1</span>/<span id="totalPageIndicator">1</span>) - <span
+                    id="fieldCount">0</span>件</h2>
+            <p id="pageGuidance" style="font-size: 0.8em; color: #888; margin: 4px 0 8px 0;">
+                ※ PDFを読み込み後、ページを切り替えてフィールドを追加できます
+            </p>
             <div class="legend">
                 <div class="legend-item">
                     <div class="dot" style="background:#e94560"></div> 数字
@@ -430,7 +434,7 @@
 
             <h2>📤 エクスポート / インポート</h2>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-                <button class="btn-success" id="exportJson">📥 JSONダウンロード</button>
+                <button class="btn-success" id="updateCoordsBtn">💾 座標を更新 (Source)</button>
                 <button class="btn-info" id="importJsonBtn">📤 JSONインポート</button>
             </div>
             <input type="file" id="importJsonFile" accept=".json" style="display: none;">
@@ -464,6 +468,7 @@
                 pages: 1,
                 fields: {
                     1: [
+                        // Left Column
                         { id: '所得金額_row1', type: 'digit', x: 292.7, y: 568.6, label: '1' },
                         { id: '法人税額_row2', type: 'digit', x: 293.3, y: 549.9, label: '2' },
                         { id: '特別控除額_row3', type: 'digit', x: 293.3, y: 533.3, label: '3' },
@@ -476,10 +481,38 @@
                         { id: 'row10', type: 'digit', x: 294, y: 386.6, label: '10' },
                         { id: 'row11', type: 'digit', x: 293.3, y: 368.6, label: '11' },
                         { id: 'row12', type: 'digit', x: 292.7, y: 351.3, label: '12' },
+                        { id: '差引法人税額_row13', type: 'digit', x: 292.7, y: 333.9, label: '13' },
+                        { id: '中間申告_row14', type: 'digit', x: 294.7, y: 316.8, label: '14' },
+                        { id: 'row15', type: 'digit', x: 293.3, y: 295.3, label: '15' },
                         { id: '法人税額計_row28', type: 'digit', x: 293.3, y: 276.1, label: '28' },
-                        { id: '税務署名', type: 'text', x: 114, y: 781.5, label: '税' },
-                        { id: '法人名', type: 'text', x: 85.3, y: 716.1, label: '法' },
+
+                        // Right Column
+                        { id: 'row16', type: 'digit', x: 560, y: 565.3, label: '16' },
+                        { id: 'row17', type: 'digit', x: 560, y: 547.3, label: '17' },
+                        { id: '所得合計_row18', type: 'digit', x: 560, y: 527.3, label: '18' },
+                        { id: 'row19', type: 'digit', x: 559.3, y: 509.9, label: '19' },
+                        { id: 'row20', type: 'digit', x: 560, y: 492.1, label: '20' },
+                        { id: 'row21', type: 'digit', x: 559.3, y: 470.8, label: '21' },
+                        { id: 'row22', type: 'digit', x: 560, y: 447.5, label: '22' },
+                        { id: 'row23', type: 'digit', x: 560, y: 421.5, label: '23' },
+                        { id: 'row24', type: 'digit', x: 560, y: 394.1, label: '24' },
+                        { id: 'row25', type: 'digit', x: 558.7, y: 340.1, label: '25' },
+                        { id: 'row26', type: 'digit', x: 558.7, y: 316.8, label: '26' },
+                        { id: 'row27', type: 'digit', x: 560, y: 295.5, label: '27' },
+
+                        // Text Fields
+                        { id: '税務署名', type: 'text', x: 114, y: 781.5, label: '署' },
+                        { id: '法人名', type: 'text', x: 85.3, y: 716.1, label: '名' },
+                        { id: '法人番号', type: 'text', x: 83.3, y: 695.3, label: '番' },
+                        { id: '納税地', type: 'text', x: 84, y: 752.1, label: '住' },
+                        { id: '電話番号', type: 'text', x: 170, y: 745.5, label: '電' },
                         { id: '代表者氏名', type: 'text', x: 85.3, y: 665.9, label: '代' },
+                        { id: '事業年度_年_自', type: 'text', x: 420.7, y: 772.6, label: '自年' },
+                        { id: '事業年度_月_自', type: 'text', x: 461.3, y: 772.6, label: '自月' },
+                        { id: '事業年度_日_自', type: 'text', x: 489.3, y: 772.6, label: '自日' },
+                        { id: '事業年度_年_至', type: 'text', x: 508.7, y: 772.6, label: '至年' },
+                        { id: '事業年度_月_至', type: 'text', x: 541.3, y: 772.6, label: '至月' },
+                        { id: '事業年度_日_至', type: 'text', x: 572.7, y: 772.6, label: '至日' },
                     ]
                 }
             },
@@ -488,11 +521,15 @@
                 pages: 1,
                 fields: {
                     1: [
-                        { id: '当期利益_row1', type: 'digit', x: 450, y: 700, label: '1' },
-                        { id: '加算_row2', type: 'digit', x: 450, y: 650, label: '2' },
-                        { id: '減算_row3', type: 'digit', x: 450, y: 600, label: '3' },
-                        { id: '所得金額_row52', type: 'digit', x: 450, y: 200, label: '52' },
-                        { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
+                        { id: '当期利益_row1', type: 'digit', x: 318.7, y: 723.3, label: '1' },
+                        { id: '損金算入法人税_row2', type: 'digit', x: 321.3, y: 539.3, label: '2' },
+                        { id: '損金算入住民税_row3', type: 'digit', x: 321.3, y: 520, label: '3' },
+                        { id: '交際費不算入額_row4', type: 'digit', x: 321.3, y: 500, label: '4' },
+                        { id: '減価償却超過額_row5', type: 'digit', x: 321.3, y: 480, label: '5' },
+                        { id: '法人税等還付金_row33', type: 'digit', x: 318.7, y: 348.6, label: '33' },
+                        { id: '支出事業税_row34', type: 'digit', x: 318.7, y: 330, label: '34' },
+                        { id: '所得金額_row52', type: 'digit', x: 321.3, y: 68.6, label: '52' },
+                        { id: '法人名', type: 'text', x: 434.7, y: 788.6, label: '法' },
                     ]
                 }
             },
@@ -501,8 +538,24 @@
                 pages: 1,
                 fields: {
                     1: [
-                        { id: '期首利益積立金_row1', type: 'digit', x: 400, y: 650, label: '1' },
-                        { id: '当期増_row2', type: 'digit', x: 400, y: 600, label: '2' },
+                        // 利益準備金 (Row 1)
+                        { id: '利益準備金_1', type: 'digit', x: 400, y: 650, label: '1①' },
+                        { id: '利益準備金_2', type: 'digit', x: 430, y: 650, label: '1②' },
+                        { id: '利益準備金_3', type: 'digit', x: 460, y: 650, label: '1③' },
+                        { id: '利益準備金_4', type: 'digit', x: 490, y: 650, label: '1④' },
+                        // 繰越損益金 (Row 31)
+                        { id: '繰越損益金_1', type: 'digit', x: 400, y: 630, label: '31①' },
+                        { id: '繰越損益金_2', type: 'digit', x: 430, y: 630, label: '31②' },
+                        { id: '繰越損益金_3', type: 'digit', x: 460, y: 630, label: '31③' },
+                        { id: '繰越損益金_4', type: 'digit', x: 490, y: 630, label: '31④' },
+                        // 納税充当金 (Row 32)
+                        { id: '納税充当金_1', type: 'digit', x: 400, y: 400, label: '32①' },
+                        { id: '納税充当金_2', type: 'digit', x: 430, y: 400, label: '32②' },
+                        { id: '納税充当金_3', type: 'digit', x: 460, y: 400, label: '32③' },
+                        { id: '納税充当金_4', type: 'digit', x: 490, y: 400, label: '32④' },
+                        // 資本金 (Row 33)
+                        { id: '資本金_1', type: 'digit', x: 400, y: 200, label: '33①' },
+                        { id: '資本金_4', type: 'digit', x: 490, y: 200, label: '33④' },
                         { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
                     ]
                 }
@@ -512,9 +565,24 @@
                 pages: 1,
                 fields: {
                     1: [
-                        { id: '期首租税公課_row1', type: 'digit', x: 400, y: 650, label: '1' },
-                        { id: '当期発生_row2', type: 'digit', x: 400, y: 600, label: '2' },
-                        { id: '当期納付_row3', type: 'digit', x: 400, y: 550, label: '3' },
+                        // 法人税 (Row 1)
+                        { id: '法人税_1', type: 'digit', x: 400, y: 650, label: '1①' },
+                        { id: '法人税_2', type: 'digit', x: 430, y: 650, label: '1②' },
+                        { id: '法人税_3', type: 'digit', x: 460, y: 650, label: '1③' },
+                        { id: '法人税_4', type: 'digit', x: 490, y: 650, label: '1④' },
+                        // 住民税 (都道府県) (Row 2)
+                        { id: '住民税_1', type: 'digit', x: 400, y: 600, label: '2①' },
+                        { id: '住民税_2', type: 'digit', x: 430, y: 600, label: '2②' },
+                        { id: '住民税_3', type: 'digit', x: 460, y: 600, label: '2③' },
+                        { id: '住民税_4', type: 'digit', x: 490, y: 600, label: '2④' },
+                        // 事業税 (Row 4)
+                        { id: '事業税_1', type: 'digit', x: 400, y: 550, label: '4①' },
+                        { id: '事業税_2', type: 'digit', x: 430, y: 550, label: '4②' },
+                        { id: '事業税_3', type: 'digit', x: 460, y: 550, label: '4③' },
+                        { id: '事業税_4', type: 'digit', x: 490, y: 550, label: '4④' },
+                        // 納税充当金 (Rows 33, 34)
+                        { id: '納税充当金_繰入', type: 'digit', x: 400, y: 300, label: '33' },
+                        { id: '納税充当金_取崩', type: 'digit', x: 430, y: 300, label: '34' },
                         { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
                     ]
                 }
@@ -524,20 +592,22 @@
                 pages: 1,
                 fields: {
                     1: [
-                        { id: '交際費_row1', type: 'digit', x: 450, y: 650, label: '1' },
-                        { id: '接待飲食費_row2', type: 'digit', x: 450, y: 600, label: '2' },
+                        { id: '支出交際費等の額_row1', type: 'digit', x: 450, y: 650, label: '1' },
+                        { id: '接待飲食費の額_row2', type: 'digit', x: 450, y: 600, label: '2' },
+                        { id: '指定限度額_row17', type: 'digit', x: 450, y: 300, label: '17' },
+                        { id: '損金不算入額_row18', type: 'digit', x: 450, y: 250, label: '18' },
                         { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
                     ]
                 }
             },
             beppyo16: {
-                name: '別表十六',
+                name: '別表十六(一)',
                 pages: 1,
                 fields: {
                     1: [
-                        { id: '減価償却資産_row1', type: 'digit', x: 450, y: 700, label: '1' },
-                        { id: '取得価額_row2', type: 'digit', x: 450, y: 650, label: '2' },
-                        { id: '償却額_row3', type: 'digit', x: 450, y: 600, label: '3' },
+                        { id: '資産名_row1', type: 'text', x: 100, y: 700, label: '法' },
+                        { id: '取得口__row1', type: 'digit', x: 300, y: 700, label: '1' },
+                        { id: '当期償却額_row1', type: 'digit', x: 450, y: 700, label: '22' },
                         { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
                     ]
                 }
@@ -547,13 +617,14 @@
                 pages: 1,
                 fields: {
                     1: [
-                        { id: '減価償却資産_row1', type: 'digit', x: 450, y: 700, label: '1' },
-                        { id: '取得価額_row2', type: 'digit', x: 450, y: 650, label: '2' },
-                        { id: '償却額_row3', type: 'digit', x: 450, y: 600, label: '3' },
+                        { id: '資産名_row1', type: 'text', x: 100, y: 700, label: '法' },
+                        { id: '取得価額_row1', type: 'digit', x: 300, y: 700, label: '1' },
+                        { id: '当期償却額_row1', type: 'digit', x: 450, y: 700, label: '21' },
                         { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
                     ]
                 }
-            }
+            },
+
         };
 
         // ===== PERSONAL TAX FORMS (所得税・個人) =====
@@ -763,6 +834,10 @@
             } else {
                 pageNav.style.display = 'none';
             }
+
+            // Update sidebar page indicators
+            document.getElementById('currentPageIndicator').textContent = currentPageNum;
+            document.getElementById('totalPageIndicator').textContent = totalPages;
         }
 
         // Page navigation
@@ -855,8 +930,12 @@
                 if (field.hidden) classNames += ' hidden-field';
                 point.className = classNames;
                 point.textContent = field.label;
-                point.style.left = pos.left + 'px';
-                point.style.top = pos.top + 'px';
+                // Clamp positions to visible area to ensure points are accessible
+                const safeLeft = Math.max(0, Math.min(pos.left, canvas.width - 20)); // -20 for point width
+                const safeTop = Math.max(0, Math.min(pos.top, canvas.height - 20));
+
+                point.style.left = safeLeft + 'px';
+                point.style.top = safeTop + 'px';
                 point.dataset.index = index;
                 point.addEventListener('mousedown', startDrag);
                 wrapper.appendChild(point);
@@ -926,19 +1005,24 @@
                 <div class="field-item${f.hidden ? ' hidden-item' : ''}" data-index="${i}">
                     <div class="num ${f.type}">${f.label}</div>
                     ${f.required ? '<span style="color:#ffcc00;margin-right:2px;">★</span>' : ''}
-                    <span>${f.id}</span>
+                    <span title="${f.id}">${f.id.length > 20 ? f.id.substring(0, 17) + '...' : f.id}</span>
                     <span style="margin-left:auto;color:#888;font-family:monospace;font-size:0.85em;">(${f.x}, ${f.y})</span>
-                    <button class="toggle-visibility-btn" data-index="${i}" style="margin-left:4px;width:12px;height:12px;padding:0;font-size:8px;cursor:pointer;background:${f.hidden ? '#e94560' : '#10ac84'};border:none;border-radius:0;color:white;display:flex;align-items:center;justify-content:center;">
-                        ${f.hidden ? '×' : '○'}
-                    </button>
+                    <div style="display: flex; gap: 4px; margin-left: 8px;">
+                        <button class="toggle-visibility-btn" data-index="${i}" title="表示/非表示" style="width:16px;height:16px;padding:0;font-size:10px;cursor:pointer;background:${f.hidden ? '#e94560' : '#10ac84'};border:none;border-radius:4px;color:white;display:flex;align-items:center;justify-content:center;">
+                            ${f.hidden ? '○' : '×'}
+                        </button>
+                        <button class="delete-field-btn" data-index="${i}" title="削除" style="width:16px;height:16px;padding:0;font-size:10px;cursor:pointer;background:#6c757d;border:none;border-radius:4px;color:white;display:flex;align-items:center;justify-content:center;">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
             `).join('');
 
             // クリックでフィールド選択
             list.querySelectorAll('.field-item').forEach(item => {
                 item.addEventListener('click', (e) => {
-                    // トグルボタンのクリックは無視
-                    if (e.target.classList.contains('toggle-visibility-btn')) return;
+                    // ボタンのクリックは無視
+                    if (e.target.closest('button')) return;
 
                     const index = parseInt(item.dataset.index);
                     const point = document.querySelector(`.draggable-point[data-index="${index}"]`);
@@ -959,15 +1043,21 @@
                     const index = parseInt(btn.dataset.index);
                     const field = fields[index];
                     field.hidden = !field.hidden;
-
-                    // ポイントの表示/非表示を切り替え
-                    const point = document.querySelector(`.draggable-point[data-index="${index}"]`);
-                    if (point) {
-                        point.classList.toggle('hidden-field', field.hidden);
-                    }
-
-                    // リストを再描画
                     renderFieldList();
+                    createPoints();
+                });
+            });
+
+            // 削除
+            list.querySelectorAll('.delete-field-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const index = parseInt(btn.dataset.index);
+                    if (confirm(`「${fields[index].id}」を削除しますか？`)) {
+                        fields.splice(index, 1);
+                        renderFieldList();
+                        createPoints();
+                    }
                 });
             });
         }
@@ -1026,35 +1116,147 @@
             document.getElementById('output').textContent = output;
         });
 
-        // JSON Export - Download coordinates as JSON file
-        document.getElementById('exportJson').addEventListener('click', () => {
-            const allConfigs = {};
+        // Update Coordinates in Source Code
+        document.getElementById('updateCoordsBtn').addEventListener('click', async () => {
+            if (!confirm('ソースコード(pdfDigitBoxService.ts)の座標定義を上書きしますか？\n※サーバーが起動している必要があります。')) {
+                return;
+            }
 
-            // Export all corporate forms
-            Object.keys(corporateForms).forEach(key => {
-                allConfigs[key] = corporateForms[key];
-            });
+            // Generate TypeScript code
+            let output = `// ===== COORDINATE CONFIGURATION =====
 
-            // Export all personal forms
-            Object.keys(personalForms).forEach(key => {
-                allConfigs[key] = personalForms[key];
-            });
+/**
+ * Box configuration for digit placement
+ * Values are in PDF points (1pt = 1/72 inch ≈ 0.35mm)
+ */
+export interface DigitBoxConfig {
+    anchorX: number;      // Rightmost digit box center X
+    anchorY: number;      // Text baseline Y
+    boxWidth: number;     // Width of each digit box
+    boxSpacing: number;   // Center-to-center spacing
+    fontSize: number;     // Font size for digits
+    maxDigits: number;    // Maximum digits
+}
 
-            const jsonData = {
-                version: '1.0',
-                exportedAt: new Date().toISOString(),
-                configs: allConfigs
+/**
+ * Text field configuration for company info
+ */
+export interface TextFieldConfig {
+    x: number;
+    y: number;
+    fontSize: number;
+    maxWidth?: number;
+    align?: 'left' | 'center' | 'right';
+}
+
+// ===================================================================
+// IMPORTANT: Coordinates calibrated using drag-and-drop tool
+// Digit boxes standardized to 16pt width/spacing and 10pt font size
+// ===================================================================
+`;
+
+            // Helper to generate field config string
+            const generateFieldConfig = (fields) => {
+                if (!fields || fields.length === 0) return '';
+                // Sort by ID to keep order somewhat consistent
+                // Custom sort order based on field contents might be better but simple sort for now
+                return fields.map(f => {
+                    if (f.type === 'digit') {
+                        return `    '${f.id}': { anchorX: ${f.x}, anchorY: ${f.y}, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },`;
+                    } else {
+                        return `    '${f.id}': { x: ${f.x}, y: ${f.y}, fontSize: 9 },`;
+                    }
+                }).join('\n');
             };
 
-            const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `coordinate_config_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
+            // Beppyo 1
+            output += `
+export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo1.fields[1].filter(f => f.type === 'digit'))}
+};
 
-            document.getElementById('output').textContent = '✅ JSONファイルをダウンロードしました';
+export const BEPPYO1_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo1.fields[1].filter(f => f.type === 'text'))}
+};
+`;
+
+            // Beppyo 4
+            output += `
+// ===== BEPPYO4 COORDINATE CONFIG =====
+export const BEPPYO4_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo4.fields[1].filter(f => f.type === 'digit'))}
+};
+
+export const BEPPYO4_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo4.fields[1].filter(f => f.type === 'text'))}
+};
+`;
+
+            // Beppyo 5 (Page 1 only for now as per current structure)
+            output += `
+// ===== BEPPYO5 (利益積立金) COORDINATE CONFIG =====
+export const BEPPYO5_PAGE1_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo5.fields[1].filter(f => f.type === 'digit'))}
+};
+
+export const BEPPYO5_PAGE1_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo5.fields[1].filter(f => f.type === 'text'))}
+};
+
+// ===== BEPPYO5 (2) (租税公課) COORDINATE CONFIG =====
+export const BEPPYO5_PAGE2_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo5_2.fields[1].filter(f => f.type === 'digit'))}
+};
+export const BEPPYO5_PAGE2_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo5_2.fields[1].filter(f => f.type === 'text'))}
+};
+
+// ===== BEPPYO15 (交際費) COORDINATE CONFIG =====
+export const BEPPYO15_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo15.fields[1].filter(f => f.type === 'digit'))}
+};
+export const BEPPYO15_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo15.fields[1].filter(f => f.type === 'text'))}
+};
+
+// ===== BEPPYO16 (1) (減価償却 定額法) COORDINATE CONFIG =====
+export const BEPPYO16_1_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo16.fields[1].filter(f => f.type === 'digit'))}
+};
+export const BEPPYO16_1_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo16.fields[1].filter(f => f.type === 'text'))}
+};
+
+// ===== BEPPYO16 (2) (減価償却 定率法) COORDINATE CONFIG =====
+export const BEPPYO16_2_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo16_2.fields[1].filter(f => f.type === 'digit'))}
+};
+export const BEPPYO16_2_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo16_2.fields[1].filter(f => f.type === 'text'))}
+};
+`;
+
+            try {
+                const response = await fetch('http://localhost:3001/api/update-coordinates', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: output }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ 座標を更新しました！\n\n【重要】変更を反映するには:\n1. npm run dev を Ctrl+C で停止\n2. npm run dev で再起動\n\nまたは任意の.tsファイルを保存してHMRをトリガーしてください。');
+                    document.getElementById('output').textContent = '✅ 座標更新成功: ' + new Date().toLocaleTimeString() + ' (サーバー再起動が必要)';
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (err) {
+                alert('❌ 更新に失敗しました: ' + err.message);
+                document.getElementById('output').textContent = '❌ エラー: ' + err.message;
+            }
         });
 
         // JSON Import - Load coordinates from JSON file

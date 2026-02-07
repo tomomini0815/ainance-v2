@@ -24,12 +24,32 @@ export interface CompanyInfo {
 }
 
 export interface Beppyo1Data {
+    // National Tax (Corporate Tax)
     taxableIncome: number;
     corporateTaxAmount: number;
     specialTaxCredit: number;
-    interimPayment: number;
-    refundAmount: number;
+    nationalInterimPayment: number;
+    nationalTaxPayable: number;
+
+    // Local Corporate Tax
+    localCorporateTaxAmount: number; // 10.3% of national
+    localInterimPayment: number;
+    localTaxPayable: number;
+
+    // Corporate Inhabitant Tax
+    prefecturalTax: number;
+    municipalTax: number;
+    inhabitantInterimPayment: number;
+    inhabitantTaxPayable: number;
+
+    // Corporate Enterprise Tax
+    enterpriseTax: number;
+    specialLocalEnterpriseTax: number;
+    enterpriseInterimPayment: number;
+    enterpriseTaxPayable: number;
+
     totalTaxAmount: number;
+    refundAmount: number;
 }
 
 export interface Beppyo4Item {
@@ -37,22 +57,43 @@ export interface Beppyo4Item {
     description: string;
     amount: number;
     note?: string;
+    category?: 'retained' | 'outflow' | 'other'; // 留保, 社外流出, その他
 }
 
 export interface Beppyo4Data {
     netIncomeFromPL: number; // 当期利益または当期欠損の額
-    additions: Beppyo4Item[]; // 加算（損金不算入など）
-    subtractions: Beppyo4Item[]; // 減算（益金不算入など）
+
+    // Additions (加算)
+    nonDeductibleTaxes: number; // 法人税・住民税
+    nonDeductibleEntertainment: number; // 交際費等の損金不算入額
+    excessDepreciation: number; // 償却超過額
+    otherAdditions: Beppyo4Item[];
+
+    // Subtractions (減算)
+    deductibleEnterpriseTax: number; // 事業税等の損金算入額
+    dividendExclusion: number; // 受取配当等の益金不算入額
+    otherSubtractions: Beppyo4Item[];
+
     taxableIncome: number; // 所得金額または欠損金額
 }
 
-export interface Beppyo5Data {
-    retainedEarningsBegin: number; // 期首現在利益積立金額
-    currentIncrease: number; // 当期増減（増）
-    currentDecrease: number; // 当期増減（減）
-    retainedEarningsEnd: number; // 差引翌期首現在利益積立金額
+export interface Beppyo5Item {
+    id: string;
+    description: string;
+    beginAmount: number;
+    increase: number;
+    decrease: number;
+    endAmount: number;
+}
 
-    capitalBegin: number; // 期首資本金等の額
+export interface Beppyo5Data {
+    retainedEarningsItems: Beppyo5Item[];
+    retainedEarningsBegin: number;  // 期首現在利益積立金額
+    currentIncrease: number;        // 当期の増
+    currentDecrease: number;        // 当期の減
+    totalRetainedEarningsEnd: number; // 翌期首現在利益積立金額
+
+    capitalBegin: number;
     capitalIncrease: number;
     capitalDecrease: number;
     capitalEnd: number;
@@ -98,9 +139,10 @@ export interface Beppyo16Data {
 }
 
 export interface Beppyo15Data {
-    socialExpenses: number; // 交際費等の額
-    deductibleExpenses: number; // 接待飲食費の額
-    capitalAmount: number; // 資本金の額 (通常はbeppyo5から参照可能だが入力も可)
+    totalEntertainmentExpenses: number; // 交際費等の支出額
+    foodAndDrinkExpenses: number; // うち接待飲食費の額
+    otherEntertainmentExpenses: number; // その他の交際費
+    capitalAmount: number; // 資本金の額
     deductionLimit: number; // 損金算入限度額
     excessAmount: number; // 損金不算入額
 }
@@ -178,27 +220,45 @@ export const initialCorporateTaxInputData: CorporateTaxInputData = {
         taxableIncome: 0,
         corporateTaxAmount: 0,
         specialTaxCredit: 0,
-        interimPayment: 0,
-        refundAmount: 0,
+        nationalInterimPayment: 0,
+        nationalTaxPayable: 0,
+        localCorporateTaxAmount: 0,
+        localInterimPayment: 0,
+        localTaxPayable: 0,
+        prefecturalTax: 0,
+        municipalTax: 0,
+        inhabitantInterimPayment: 0,
+        inhabitantTaxPayable: 0,
+        enterpriseTax: 0,
+        specialLocalEnterpriseTax: 0,
+        enterpriseInterimPayment: 0,
+        enterpriseTaxPayable: 0,
         totalTaxAmount: 0,
+        refundAmount: 0,
     },
     beppyo4: {
         netIncomeFromPL: 0,
-        additions: [
-            { id: '1', description: '法人税等の損金不算入額', amount: 0 },
-            { id: '2', description: '交際費等の損金不算入額', amount: 0 },
-            { id: '3', description: '役員給与の損金不算入額', amount: 0 },
-        ],
-        subtractions: [
-            { id: '1', description: '事業税等の損金算入額', amount: 0 },
-        ],
+        nonDeductibleTaxes: 0,
+        nonDeductibleEntertainment: 0,
+        excessDepreciation: 0,
+        otherAdditions: [],
+        deductibleEnterpriseTax: 0,
+        dividendExclusion: 0,
+        otherSubtractions: [],
         taxableIncome: 0,
     },
     beppyo5: {
+        retainedEarningsItems: [
+            { id: '1', description: '利益準備金', beginAmount: 0, increase: 0, decrease: 0, endAmount: 0 },
+            { id: '2', description: '別途積立金', beginAmount: 0, increase: 0, decrease: 0, endAmount: 0 },
+            { id: '3', description: '繰越利益剰余金', beginAmount: 0, increase: 0, decrease: 0, endAmount: 0 },
+            { id: '4', description: '未払法人税等', beginAmount: 0, increase: 0, decrease: 0, endAmount: 0 },
+            { id: '5', description: '未払事業税', beginAmount: 0, increase: 0, decrease: 0, endAmount: 0 },
+        ],
         retainedEarningsBegin: 0,
         currentIncrease: 0,
         currentDecrease: 0,
-        retainedEarningsEnd: 0,
+        totalRetainedEarningsEnd: 0,
         capitalBegin: 1000000,
         capitalIncrease: 0,
         capitalDecrease: 0,
@@ -221,8 +281,9 @@ export const initialCorporateTaxInputData: CorporateTaxInputData = {
         excessAmount: 0
     },
     beppyo15: {
-        socialExpenses: 0,
-        deductibleExpenses: 0,
+        totalEntertainmentExpenses: 0,
+        foodAndDrinkExpenses: 0,
+        otherEntertainmentExpenses: 0,
         capitalAmount: 1000000,
         deductionLimit: 8000000,
         excessAmount: 0

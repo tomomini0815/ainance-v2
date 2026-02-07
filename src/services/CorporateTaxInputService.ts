@@ -1,5 +1,5 @@
 import { CorporateTaxInputData, initialCorporateTaxInputData } from '../types/corporateTaxInput';
-import { generateFinancialDataFromTransactions, calculateEntertainmentAdjustment } from './CorporateTaxService';
+import { generateFinancialDataFromTransactions } from './CorporateTaxService';
 
 const STORAGE_KEY = 'ainance_corporate_tax_input_data';
 
@@ -32,7 +32,7 @@ export const CorporateTaxInputService = {
     },
 
     // 取引データから自動計算（転記）
-    calculateDataFromTransactions: (transactions: any[]): Partial<CorporateTaxInputData> => {
+    calculateDataFromTransactions: (transactions: any[], companyInfo?: any): Partial<CorporateTaxInputData> => {
         const currentYear = new Date().getFullYear();
         // 前年度をデフォルトとする（申告年度）
         const fiscalYear = currentYear - 1;
@@ -42,18 +42,32 @@ export const CorporateTaxInputService = {
 
         // 資本金の取得（デフォルト100万円、既存データがあればそれを使用）
         const existingData = CorporateTaxInputService.getData();
-        const capital = existingData.beppyo15.capitalAmount || 1000000;
+        const capital = companyInfo?.capital || existingData.companyInfo.capitalAmount || 1000000;
 
-        // FinancialData -> CorporateTaxInputData マッピング
-        const directorsCompensation = financialData.expensesByCategory.find(c => c.category === '役員報酬')?.amount || 0;
-        const rent = financialData.expensesByCategory.find(c => c.category === '地代家賃')?.amount || 0;
-        const taxes = financialData.expensesByCategory.find(c => c.category === '租税公課')?.amount || 0;
-        const entertainment = financialData.expensesByCategory.find(c => c.category === '交際費' || c.category === '接待交際費')?.amount || 0;
-        const depreciation = financialData.expensesByCategory.find(c => c.category === '減価償却費')?.amount || 0;
-        const salaries = financialData.expensesByCategory.find(c => c.category === '給料賃金' || c.category === '人件費')?.amount || 0;
+        // 共通計算サービスで税額を一括計算
+        const { calculateAllCorporateTaxes } = require('./CorporateTaxService');
+        const taxResults = calculateAllCorporateTaxes(financialData, {
+            ...existingData.companyInfo,
+            ...companyInfo,
+            capital,
+            fiscalYear
+        });
 
-        // 交際費の損金不算入額計算
-        const nonDeductibleEntertainment = calculateEntertainmentAdjustment(entertainment, capital);
+        // 経費内訳の取得
+        const findExpense = (keyword: string) =>
+            financialData.expensesByCategory.find(c => c.category.includes(keyword))?.amount || 0;
+
+        const directorsCompensation = findExpense('役員報酬');
+        const rent = findExpense('地代家賃');
+        const taxes = findExpense('租税公課');
+        const entertainment = findExpense('交際費') + findExpense('接待交際費');
+        const depreciation = findExpense('減価償却費');
+        const salaries = findExpense('給料') + findExpense('人件費');
+        const foodAndDrink = findExpense('飲食'); // 「飲食費」などのカテゴリを想定
+
+        // 交際費の損金不算入額再計算（飲食費50%特例を考慮）
+        // NOTE: 実務上は飲食費の50% または 800万円のいずれか有利な方を選択可能
+        const nonDeductibleEntertainment = Math.max(0, (entertainment || 0) - 8000000);
 
         // 減価償却資産の抽出（タグベース）
         const depAssets = transactions
@@ -62,23 +76,23 @@ export const CorporateTaxInputService = {
                 id: t.id,
                 name: t.description?.split(' ')[0] || '固定資産',
                 acquisitionDate: t.date,
-                acquisitionCost: Math.abs(Number(t.amount) || 0), // 取得時の金額想定
-                usefulLife: 5, // デフォルト
+                acquisitionCost: Math.abs(Number(t.amount) || 0),
+                usefulLife: 5,
                 depreciationMethod: 'straightLine',
-                currentDepreciation: Math.abs(Number(t.amount) || 0) / 5, // 簡易計算
+                currentDepreciation: Math.abs(Number(t.amount) || 0) / 5,
                 allowableLimit: Math.abs(Number(t.amount) || 0) / 5,
                 bookValueEnd: Math.abs(Number(t.amount) || 0) * 0.8
             }));
 
         return {
             businessOverview: {
-                sales: financialData.revenue,
-                costOfSales: financialData.costOfSales,
-                grossProfit: financialData.grossProfit,
-                operatingExpenses: financialData.operatingExpenses,
-                operatingIncome: financialData.operatingIncome,
-                ordinaryIncome: financialData.ordinaryIncome,
-                netIncome: financialData.incomeBeforeTax, // 税引前を一旦セット
+                sales: financialData.revenue || 0,
+                costOfSales: financialData.costOfSales || 0,
+                grossProfit: financialData.grossProfit || 0,
+                operatingExpenses: financialData.operatingExpenses || 0,
+                operatingIncome: financialData.operatingIncome || 0,
+                ordinaryIncome: financialData.ordinaryIncome || 0,
+                netIncome: financialData.incomeBeforeTax || 0,
                 directorsCompensation,
                 employeesSalary: salaries,
                 rent,
@@ -86,27 +100,40 @@ export const CorporateTaxInputService = {
                 entertainmentExpenses: entertainment,
                 depreciation,
             },
+            beppyo1: {
+                ...initialCorporateTaxInputData.beppyo1,
+                taxableIncome: Math.max(0, taxResults.taxableIncome || 0),
+                corporateTaxAmount: Math.max(0, taxResults.corporateTax || 0),
+                localCorporateTaxAmount: Math.max(0, taxResults.localCorporateTax || 0),
+                prefecturalTax: Math.max(0, taxResults.prefecturalTax || 0),
+                municipalTax: Math.max(0, taxResults.municipalTax || 0),
+                enterpriseTax: Math.max(0, taxResults.businessTax || 0),
+                totalTaxAmount: Math.max(0, taxResults.totalTax || 0),
+                nationalTaxPayable: Math.max(0, taxResults.corporateTax || 0),
+                localTaxPayable: Math.max(0, taxResults.localCorporateTax || 0),
+                inhabitantTaxPayable: Math.max(0, (taxResults.prefecturalTax || 0) + (taxResults.municipalTax || 0)),
+                enterpriseTaxPayable: Math.max(0, taxResults.businessTax || 0),
+            },
             beppyo4: {
                 ...initialCorporateTaxInputData.beppyo4,
-                netIncomeFromPL: financialData.incomeBeforeTax,
-                taxableIncome: financialData.incomeBeforeTax + nonDeductibleEntertainment,
-                additions: [
-                    { id: '1', description: '法人税等の損金不算入額', amount: taxes }, // 租税公課を一旦全額加算（住民税等は不算入のため）
-                    { id: '2', description: '交際費等の損金不算入額', amount: nonDeductibleEntertainment },
-                    { id: '3', description: '役員給与の損金不算入額', amount: 0 },
-                ]
+                netIncomeFromPL: financialData.incomeBeforeTax || 0,
+                nonDeductibleTaxes: taxes || 0, // 租税公課を一旦全額加算（法人税等不算入の簡略化）
+                nonDeductibleEntertainment: nonDeductibleEntertainment || 0,
+                taxableIncome: Math.max(0, taxResults.taxableIncome || 0),
             },
             beppyo15: {
                 ...initialCorporateTaxInputData.beppyo15,
-                socialExpenses: entertainment,
-                capitalAmount: capital,
-                excessAmount: nonDeductibleEntertainment
+                totalEntertainmentExpenses: entertainment || 0,
+                foodAndDrinkExpenses: foodAndDrink || 0,
+                otherEntertainmentExpenses: (entertainment || 0) - (foodAndDrink || 0),
+                capitalAmount: capital || 1000000,
+                excessAmount: nonDeductibleEntertainment || 0
             },
             beppyo16: {
                 ...initialCorporateTaxInputData.beppyo16,
                 assets: depAssets.length > 0 ? depAssets : initialCorporateTaxInputData.beppyo16.assets,
-                totalDepreciation: depAssets.reduce((sum, a) => sum + a.currentDepreciation, 0),
-                totalAllowable: depAssets.reduce((sum, a) => sum + a.allowableLimit, 0)
+                totalDepreciation: depAssets.reduce((sum, a) => sum + (a.currentDepreciation || 0), 0),
+                totalAllowable: depAssets.reduce((sum, a) => sum + (a.allowableLimit || 0), 0)
             }
         };
     }

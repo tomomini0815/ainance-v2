@@ -38,18 +38,24 @@ export const useSpeechRecognition = ({
             // Android quirk: maxAlternatives might help with stability
             recognition.maxAlternatives = 1;
 
+            // Track processed results to handle Android duplicate bugs
+            let processedIndex = 0;
+
             recognition.onstart = () => {
                 setIsListening(true);
                 setError(null);
+                processedIndex = 0;
             };
 
             recognition.onresult = (event: any) => {
                 let finalTranscript = '';
                 let interimTranscript = '';
 
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                // Use local processedIndex instead of event.resultIndex to avoid duplicates on Android
+                for (let i = processedIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
                         finalTranscript += event.results[i][0].transcript;
+                        processedIndex = i + 1;
                     } else {
                         interimTranscript += event.results[i][0].transcript;
                     }

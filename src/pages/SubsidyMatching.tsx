@@ -16,7 +16,7 @@ import {
     Lightbulb,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useBusinessType } from '../hooks/useBusinessType';
+import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 import { useTransactions } from '../hooks/useTransactions';
 import {
     fetchSubsidies,
@@ -34,7 +34,7 @@ import SubsidyDraftWizard from '../components/SubsidyDraftWizard';
 const SubsidyMatching: React.FC = () => {
     const { user } = useAuth();
     const userId = user?.id; // 固定のアクセスのために
-    const { currentBusinessType } = useBusinessType(user?.id);
+    const { currentBusinessType } = useBusinessTypeContext();
     const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
 
     const [matches, setMatches] = useState<SubsidyMatch[]>([]);

@@ -67,10 +67,21 @@ const CorporateTaxFilingPage: React.FC = () => {
 
     const handleOpenInEditor = () => {
         if (window.confirm('現在の計算結果を詳細エディタに転記して開きますか？\n（エディタの既存データは上書きされます）')) {
-            const calculatedData = CorporateTaxInputService.calculateDataFromTransactions(transactions);
+            const calculatedData = CorporateTaxInputService.calculateDataFromTransactions(transactions, corporateInfo);
             CorporateTaxInputService.saveData({
                 ...initialCorporateTaxInputData,
-                ...calculatedData
+                ...calculatedData,
+                companyInfo: {
+                    ...initialCorporateTaxInputData.companyInfo,
+                    corporateName: corporateInfo.companyName,
+                    representativeName: corporateInfo.representativeName,
+                    corporateNumber: corporateInfo.corporateNumber || '',
+                    address: corporateInfo.address || '',
+                    taxOffice: corporateInfo.taxOffice || '',
+                    capitalAmount: corporateInfo.capital,
+                    fiscalYearStart: corporateInfo.fiscalYearStart,
+                    fiscalYearEnd: corporateInfo.fiscalYearEnd,
+                }
             });
             navigate('/corporate-tax/input');
         }
@@ -83,12 +94,17 @@ const CorporateTaxFilingPage: React.FC = () => {
         representativeName: '',
         corporateNumber: '',
         address: '',
+        taxOffice: '',
         capital: 10000000, // デフォルト1000万円
         fiscalYearStart: `${currentYear - 1}-04-01`,
         fiscalYearEnd: `${currentYear}-03-31`,
         fiscalYear: currentYear - 1,
         employeeCount: 1,
     });
+
+    const handleInfoChange = (updates: Partial<CorporateInfo>) => {
+        setCorporateInfo(prev => ({ ...prev, ...updates }));
+    };
 
     // 減価償却データ
     const [depreciationAssets, setDepreciationAssets] = useState<DepreciationAsset[]>([]);
@@ -290,7 +306,7 @@ const CorporateTaxFilingPage: React.FC = () => {
                     <input
                         type="date"
                         value={corporateInfo.fiscalYearStart}
-                        onChange={(e) => setCorporateInfo({ ...corporateInfo, fiscalYearStart: e.target.value })}
+                        onChange={(e) => handleInfoChange({ fiscalYearStart: e.target.value })}
                         className="input-base"
                     />
                 </div>
@@ -301,8 +317,20 @@ const CorporateTaxFilingPage: React.FC = () => {
                     <input
                         type="date"
                         value={corporateInfo.fiscalYearEnd}
-                        onChange={(e) => setCorporateInfo({ ...corporateInfo, fiscalYearEnd: e.target.value })}
+                        onChange={(e) => handleInfoChange({ fiscalYearEnd: e.target.value })}
                         className="input-base"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-text-main mb-2">
+                        所轄税務署
+                    </label>
+                    <input
+                        type="text"
+                        value={corporateInfo.taxOffice || ''}
+                        onChange={(e) => handleInfoChange({ taxOffice: e.target.value })}
+                        className="input-base"
+                        placeholder="例：芝税務署"
                     />
                 </div>
             </div>
