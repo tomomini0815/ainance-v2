@@ -154,7 +154,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                 <div className="hidden md:block bg-surface rounded-xl border border-border overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-surface-highlight text-text-muted font-medium border-b border-border">
+                            <thead className="bg-surface-highlight dark:bg-slate-800 text-text-muted font-medium border-b border-border">
                                 <tr>
                                     <th className="px-4 py-3 whitespace-nowrap min-w-[150px]">資産名称</th>
                                     <th className="px-4 py-3 whitespace-nowrap">取得日</th>
@@ -174,7 +174,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                                     </tr>
                                 ) : (
                                     beppyo16.assets.map((item) => (
-                                        <tr key={item.id} className="hover:bg-surface-highlight/50">
+                                        <tr key={item.id} className="hover:bg-surface-highlight/50 dark:hover:bg-slate-800/50">
                                             <td className="px-4 py-2">
                                                 <input
                                                     type="text"
@@ -232,7 +232,7 @@ export const Beppyo16Input: React.FC<Props> = ({ data, onChange }) => {
                                     ))
                                 )}
                             </tbody>
-                            <tfoot className="bg-surface-highlight font-bold">
+                            <tfoot className="bg-surface-highlight dark:bg-slate-800 font-bold">
                                 <tr>
                                     <td colSpan={3} className="px-4 py-3 text-right">合計</td>
                                     <td className="px-4 py-3 text-right font-mono">{totalAllowable.toLocaleString()}</td>

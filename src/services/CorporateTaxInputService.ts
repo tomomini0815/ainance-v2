@@ -1,5 +1,5 @@
 import { CorporateTaxInputData, initialCorporateTaxInputData } from '../types/corporateTaxInput';
-import { generateFinancialDataFromTransactions } from './CorporateTaxService';
+import { generateFinancialDataFromTransactions, calculateAllCorporateTaxes } from './CorporateTaxService';
 
 const STORAGE_KEY = 'ainance_corporate_tax_input_data';
 
@@ -18,7 +18,21 @@ export const CorporateTaxInputService = {
         try {
             const storedData = localStorage.getItem(STORAGE_KEY);
             if (storedData) {
-                return JSON.parse(storedData);
+                const parsed = JSON.parse(storedData);
+                return {
+                    ...initialCorporateTaxInputData,
+                    ...parsed,
+                    companyInfo: { ...initialCorporateTaxInputData.companyInfo, ...(parsed.companyInfo || {}) },
+                    beppyo1: { ...initialCorporateTaxInputData.beppyo1, ...(parsed.beppyo1 || {}) },
+                    beppyo4: { ...initialCorporateTaxInputData.beppyo4, ...(parsed.beppyo4 || {}) },
+                    beppyo5: { ...initialCorporateTaxInputData.beppyo5, ...(parsed.beppyo5 || {}) },
+                    beppyo5_2: { ...initialCorporateTaxInputData.beppyo5_2, ...(parsed.beppyo5_2 || {}) },
+                    beppyo16: { ...initialCorporateTaxInputData.beppyo16, ...(parsed.beppyo16 || {}) },
+                    beppyo15: { ...initialCorporateTaxInputData.beppyo15, ...(parsed.beppyo15 || {}) },
+                    beppyo2: { ...initialCorporateTaxInputData.beppyo2, ...(parsed.beppyo2 || {}) },
+                    businessOverview: { ...initialCorporateTaxInputData.businessOverview, ...(parsed.businessOverview || {}) },
+                    calibration: { ...initialCorporateTaxInputData.calibration, ...(parsed.calibration || {}) },
+                };
             }
         } catch (error) {
             console.error('Failed to load corporate tax input data:', error);
@@ -45,7 +59,7 @@ export const CorporateTaxInputService = {
         const capital = companyInfo?.capital || existingData.companyInfo.capitalAmount || 1000000;
 
         // 共通計算サービスで税額を一括計算
-        const { calculateAllCorporateTaxes } = require('./CorporateTaxService');
+        // 共通計算サービスで税額を一括計算
         const taxResults = calculateAllCorporateTaxes(financialData, {
             ...existingData.companyInfo,
             ...companyInfo,

@@ -1261,8 +1261,8 @@ export async function fillSingleOfficialCorporateTaxPDF(data: CorporateTaxInputD
     const calibration = {
       globalShiftX: data.calibration?.globalShiftX || DEFAULT_CALIBRATION.globalShiftX,
       globalShiftY: data.calibration?.globalShiftY || DEFAULT_CALIBRATION.globalShiftY,
-      digitCenterOffsetX: -5,
-      digitCenterOffsetY: 2,
+      digitCenterOffsetX: 0,
+      digitCenterOffsetY: 0,
     };
 
     let result;

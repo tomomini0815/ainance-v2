@@ -69,7 +69,7 @@ export const CorporateTaxInputForm: React.FC = () => {
             setHasUnsavedChanges(true);
 
             // 転記された内容を要約して通知
-            const additionCount = calculated.beppyo4?.additions?.length || 0;
+            const additionCount = calculated.beppyo4?.otherAdditions?.length || 0;
             const assetCount = calculated.beppyo16?.assets?.length || 0;
 
             toast.success(
@@ -142,6 +142,7 @@ export const CorporateTaxInputForm: React.FC = () => {
     };
 
     const handleDownloadSingleOfficialPDF = async (templateId: string, name: string) => {
+        console.log('Generating PDF for', templateId, 'with data:', data);
         setIsGeneratingPdf(true);
         try {
             const pdfBytes = await fillSingleOfficialCorporateTaxPDF(data, templateId);
@@ -226,7 +227,7 @@ export const CorporateTaxInputForm: React.FC = () => {
 
                 {/* Styled Tabs Section */}
                 <div className="mb-6 overflow-x-auto pb-2 scrollbar-hide">
-                    <nav className="inline-flex bg-[#1e293b]/80 backdrop-blur-md p-1 rounded-full border border-white/10 min-w-max items-stretch">
+                    <nav className="inline-flex bg-white dark:bg-[#1e293b]/80 backdrop-blur-md p-1 rounded-full border border-transparent dark:border-white/10 shadow-sm dark:shadow-none min-w-max items-stretch">
                         {Object.entries(tabDetails).map(([id, detail]) => {
                             const Icon = detail.icon;
                             const isActive = activeTab === id;
@@ -243,28 +244,28 @@ export const CorporateTaxInputForm: React.FC = () => {
                                     key={id}
                                     onClick={() => setActiveTab(id as any)}
                                     className={`
-                                        relative flex flex-col items-center justify-center px-4 py-2 rounded-full transition-colors duration-200 min-h-[56px] min-w-[100px]
+                                        relative flex flex-col items-center justify-center px-4 py-2 rounded-full transition-colors duration-200 min-h-[56px] min-w-[100px] overflow-hidden
                                         ${isActive
-                                            ? 'text-primary'
-                                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                                            ? 'text-primary bg-white dark:bg-transparent'
+                                            : 'text-slate-500 bg-white hover:text-slate-700 hover:bg-slate-50 dark:text-slate-400 dark:bg-transparent dark:hover:text-slate-200 dark:hover:bg-white/5'
                                         }
                                     `}
                                 >
                                     {isActive && (
                                         <motion.div
                                             layoutId="activeTabIndicator"
-                                            className="absolute bottom-0 left-3 right-3 h-[3px] bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(var(--color-primary),0.5)]"
+                                            className="absolute bottom-0 left-3 right-3 h-[4px] bg-primary rounded-sm shadow-[0_-2px_8px_rgba(var(--color-primary),0.5)]"
                                             transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
                                         />
                                     )}
 
                                     <div className="relative z-10 flex flex-col items-center leading-tight">
                                         <div className="flex items-center gap-1.5 mb-0.5">
-                                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-primary' : 'text-slate-500'}`} />
+                                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`} />
                                             <span className="text-sm font-bold tracking-tight whitespace-nowrap">{mainLabel}</span>
                                         </div>
                                         {subLabel && (
-                                            <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-primary/80' : 'text-slate-500'}`}>
+                                            <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-primary/80' : 'text-slate-500 dark:text-slate-400'}`}>
                                                 {subLabel}
                                             </span>
                                         )}
@@ -292,7 +293,11 @@ export const CorporateTaxInputForm: React.FC = () => {
                             </div>
 
                             {activeTab === 'overview' && (
-                                <BusinessOverviewInput data={data} onChange={handleDataChange} />
+                                <BusinessOverviewInput
+                                    data={data}
+                                    onChange={handleDataChange}
+                                    currentBusinessType={currentBusinessType}
+                                />
                             )}
                             {activeTab === 'beppyo4' && (
                                 <Beppyo4Input data={data} onChange={handleDataChange} />

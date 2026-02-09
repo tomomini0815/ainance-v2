@@ -274,7 +274,7 @@ export const TaxReturnInputForm: React.FC = () => {
 
                 {/* Styled Tabs Section */}
                 <div className="mb-6 overflow-x-auto pb-2 scrollbar-hide">
-                    <nav className="inline-flex bg-[#1e293b]/80 backdrop-blur-md p-1 rounded-full border border-white/10 min-w-max items-stretch">
+                    <nav className="inline-flex bg-white dark:bg-[#1e293b]/80 backdrop-blur-md p-1 rounded-full border border-transparent dark:border-white/10 min-w-max items-stretch shadow-sm dark:shadow-none">
                         {Object.entries(tabDetails).map(([id, detail]) => {
                             const Icon = detail.icon;
                             const isActive = activeTab === id;
@@ -289,8 +289,8 @@ export const TaxReturnInputForm: React.FC = () => {
                                     className={`
                                         relative flex flex-col items-center justify-center px-4 py-2 rounded-full transition-colors duration-200 min-h-[56px] min-w-[100px]
                                         ${isActive
-                                            ? 'text-primary'
-                                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                                            ? 'text-primary bg-white dark:bg-transparent'
+                                            : 'text-slate-500 bg-white hover:text-slate-700 hover:bg-slate-50 dark:text-slate-400 dark:bg-transparent dark:hover:text-slate-200 dark:hover:bg-white/5'
                                         }
                                     `}
                                 >
@@ -304,11 +304,11 @@ export const TaxReturnInputForm: React.FC = () => {
 
                                     <div className="relative z-10 flex flex-col items-center leading-tight">
                                         <div className="flex items-center gap-1.5 mb-0.5">
-                                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-primary' : 'text-slate-500'}`} />
+                                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`} />
                                             <span className="text-sm font-bold tracking-tight whitespace-nowrap">{mainLabel}</span>
                                         </div>
                                         {subLabel && (
-                                            <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-primary/80' : 'text-slate-500'}`}>
+                                            <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-primary/80' : 'text-slate-500 dark:text-slate-400'}`}>
                                                 {subLabel}
                                             </span>
                                         )}

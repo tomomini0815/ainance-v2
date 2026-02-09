@@ -91,7 +91,7 @@ export const Beppyo4Input: React.FC<Props> = ({ data, onChange }) => {
                 <div className="space-y-4">
                     {/* Fixed Addition Items */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 bg-slate-50/50 rounded-lg border border-border">
+                        <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-border">
                             <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wider">法人税・住民税の損金不算入</label>
                             <MoneyInput
                                 value={data.beppyo4.nonDeductibleTaxes}
@@ -99,7 +99,7 @@ export const Beppyo4Input: React.FC<Props> = ({ data, onChange }) => {
                                 className="input-base w-full font-mono text-base"
                             />
                         </div>
-                        <div className="p-4 bg-slate-50/50 rounded-lg border border-border">
+                        <div className="p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-border">
                             <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wider">交際費等の損金不算入</label>
                             <MoneyInput
                                 value={data.beppyo4.nonDeductibleEntertainment}
@@ -107,7 +107,7 @@ export const Beppyo4Input: React.FC<Props> = ({ data, onChange }) => {
                                 className="input-base w-full font-mono text-base"
                             />
                         </div>
-                        <div className="p-4 bg-slate-50/50 rounded-lg border border-border">
+                        <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-border">
                             <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wider">減価償却の償却超過額</label>
                             <MoneyInput
                                 value={data.beppyo4.excessDepreciation}
@@ -168,7 +168,7 @@ export const Beppyo4Input: React.FC<Props> = ({ data, onChange }) => {
                 <div className="space-y-4">
                     {/* Fixed Subtraction Items */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 bg-blue-50/20 rounded-lg border border-border">
+                        <div className="p-4 bg-blue-50/20 dark:bg-blue-900/20 rounded-lg border border-border">
                             <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wider">事業税等の損金算入</label>
                             <MoneyInput
                                 value={data.beppyo4.deductibleEnterpriseTax}
@@ -176,7 +176,7 @@ export const Beppyo4Input: React.FC<Props> = ({ data, onChange }) => {
                                 className="input-base w-full font-mono text-base"
                             />
                         </div>
-                        <div className="p-4 bg-blue-50/20 rounded-lg border border-border">
+                        <div className="p-4 bg-blue-50/20 dark:bg-blue-900/20 rounded-lg border border-border">
                             <label className="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wider">受取配当等の益金不算入</label>
                             <MoneyInput
                                 value={data.beppyo4.dividendExclusion}

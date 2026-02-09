@@ -78,7 +78,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
         <div className="space-y-10">
             {/* 1. 利益積立金額の計算 */}
             <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-border bg-slate-50/50">
+                <div className="p-6 border-b border-border bg-white dark:bg-slate-800/50">
                     <div className="flex justify-between items-center">
                         <h4 className="flex items-center gap-2 text-md font-black text-text-main uppercase tracking-tight">
                             <Calculator className="w-5 h-5 text-primary" />
@@ -93,17 +93,17 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50 text-[10px] uppercase font-black text-text-muted tracking-widest border-b border-border">
+                            <tr className="bg-white dark:bg-slate-800 text-[10px] uppercase font-black text-text-muted tracking-widest border-b border-border">
                                 <th className="px-4 py-3 w-48">区分 (明細)</th>
                                 <th className="px-4 py-3 text-right">① 期首現在高</th>
                                 <th className="px-4 py-3 text-right">② 当期中の減</th>
                                 <th className="px-4 py-3 text-right">③ 当期中の増</th>
-                                <th className="px-4 py-3 text-right bg-slate-100/50">④ 翌期首現在高</th>
+                                <th className="px-4 py-3 text-right bg-white dark:bg-slate-800">④ 翌期首現在高</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                             {beppyo5.retainedEarningsItems.map((item) => (
-                                <tr key={item.id} className="hover:bg-slate-50/30 transition-colors">
+                                <tr key={item.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-4 py-3">
                                         <div className="font-bold text-xs text-text-main">{item.description}</div>
                                         <div className="text-[9px] text-text-muted mt-1 leading-tight">
@@ -131,19 +131,19 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                             className="w-full bg-transparent border-none text-right font-mono text-sm focus:ring-0 text-emerald-600"
                                         />
                                     </td>
-                                    <td className="px-4 py-3 bg-slate-50/30 font-bold text-right font-mono text-sm">
+                                    <td className="px-4 py-3 bg-slate-50/30 dark:bg-slate-800/30 font-bold text-right font-mono text-sm">
                                         {item.endAmount.toLocaleString()}
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                         <tfoot>
-                            <tr className="bg-slate-900 text-white font-bold">
+                            <tr className="bg-white dark:bg-slate-900 text-text-main dark:text-white font-bold border-t-2 border-primary/20">
                                 <td className="px-4 py-4 text-xs uppercase tracking-widest">合計 (利益積立金)</td>
                                 <td className="px-4 py-4 text-right font-mono">{beppyo5.retainedEarningsBegin.toLocaleString()}</td>
-                                <td className="px-4 py-4 text-right font-mono text-red-300">△ {beppyo5.currentDecrease.toLocaleString()}</td>
-                                <td className="px-4 py-4 text-right font-mono text-emerald-300">{beppyo5.currentIncrease.toLocaleString()}</td>
-                                <td className="px-4 py-4 text-right font-mono text-primary-light text-lg">{beppyo5.totalRetainedEarningsEnd.toLocaleString()}</td>
+                                <td className="px-4 py-4 text-right font-mono text-error dark:text-red-300">△ {beppyo5.currentDecrease.toLocaleString()}</td>
+                                <td className="px-4 py-4 text-right font-mono text-success dark:text-emerald-300">{beppyo5.currentIncrease.toLocaleString()}</td>
+                                <td className="px-4 py-4 text-right font-mono text-primary dark:text-primary-light text-lg">{beppyo5.totalRetainedEarningsEnd.toLocaleString()}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -152,7 +152,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
 
             {/* 2. 資本金等の額の計算 */}
             <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-border bg-slate-50/50">
+                <div className="p-6 border-b border-border bg-white dark:bg-slate-800/50">
                     <h4 className="flex items-center gap-2 text-md font-black text-text-main uppercase tracking-tight">
                         <Landmark className="w-5 h-5 text-secondary" />
                         II. 資本金等の額の計算
@@ -167,7 +167,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo5.capitalBegin}
                                     onChange={(val) => handleMainFieldChange('capitalBegin', val)}
-                                    className="w-full pl-5 pr-10 py-3 border border-border rounded-xl font-mono text-xl text-right bg-slate-50/50"
+                                    className="w-full pl-5 pr-10 py-3 border border-border rounded-xl font-mono text-xl text-right bg-white dark:bg-slate-800/50"
                                 />
                                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">円</span>
                             </div>
@@ -179,7 +179,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo5.capitalIncrease}
                                     onChange={(val) => handleMainFieldChange('capitalIncrease', val)}
-                                    className="w-full px-3 py-2 border border-emerald-500/20 rounded-lg font-mono text-sm text-right bg-emerald-50/10"
+                                    className="w-full px-3 py-2 border border-emerald-500/20 rounded-lg font-mono text-sm text-right bg-emerald-50/10 dark:bg-emerald-900/20"
                                 />
                             </div>
                             <div>
@@ -187,7 +187,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                                 <MoneyInput
                                     value={beppyo5.capitalDecrease}
                                     onChange={(val) => handleMainFieldChange('capitalDecrease', val)}
-                                    className="w-full px-3 py-2 border border-red-500/20 rounded-lg font-mono text-sm text-right bg-red-50/10"
+                                    className="w-full px-3 py-2 border border-red-500/20 rounded-lg font-mono text-sm text-right bg-red-50/10 dark:bg-red-900/20"
                                 />
                             </div>
                         </div>
@@ -205,7 +205,7 @@ export const Beppyo5_1Input: React.FC<Props> = ({ data, onChange }) => {
                 </div>
             </div>
 
-            <div className="flex items-start gap-4 p-5 bg-amber-50/30 rounded-2xl border border-amber-500/10">
+            <div className="flex items-start gap-4 p-5 bg-amber-50/30 dark:bg-amber-900/20 rounded-2xl border border-amber-500/10">
                 <HelpCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div className="text-xs text-amber-900/80 leading-relaxed">
                     <p className="font-extrabold text-amber-900 mb-1 tracking-tight uppercase">法務・税務担当者へのアドバイス</p>

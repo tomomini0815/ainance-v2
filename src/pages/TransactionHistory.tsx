@@ -654,18 +654,18 @@ const TransactionHistory: React.FC = () => {
           {/* デスクトップ: テーブル表示 */}
           <div className="hidden md:block overflow-x-auto">
             {/* View Mode Tabs */}
-            <div className="flex bg-[#2a3245] p-1 rounded-full border border-slate-800 w-fit shadow-md mt-4 mb-4 ml-4">
+            <div className="flex bg-white dark:bg-[#2a3245] p-1 rounded-full border border-slate-200 dark:border-slate-800 w-fit shadow-md mt-4 mb-4 ml-4">
               <button
                 onClick={() => {
                   setViewMode('all');
                   setCurrentPage(1);
                 }}
                 className={`flex items-center gap-2.5 px-6 py-2 text-xs font-medium rounded-full transition-all duration-300 ${viewMode === 'all'
-                  ? 'bg-[#1e293b] text-indigo-400 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  ? 'bg-slate-100 dark:bg-[#1e293b] text-primary dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5'
                   }`}
               >
-                <Wallet className={`w-4 h-4 ${viewMode === 'all' ? 'text-indigo-400' : 'text-slate-400'}`} />
+                <Wallet className={`w-4 h-4 ${viewMode === 'all' ? 'text-primary dark:text-indigo-400' : 'text-slate-400'}`} />
                 <span>全ての取引</span>
               </button>
               <button
@@ -674,17 +674,17 @@ const TransactionHistory: React.FC = () => {
                   setCurrentPage(1);
                 }}
                 className={`flex items-center gap-2.5 px-6 py-2 text-xs font-medium rounded-full transition-all duration-300 ${viewMode === 'depreciation'
-                  ? 'bg-[#1e293b] text-indigo-400 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                  ? 'bg-slate-100 dark:bg-[#1e293b] text-primary dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
                   }`}
               >
-                <Clock className={`w-4 h-4 ${viewMode === 'depreciation' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                <Clock className={`w-4 h-4 ${viewMode === 'depreciation' ? 'text-primary dark:text-indigo-400' : 'text-slate-500'}`} />
                 <span className={viewMode === 'depreciation' ? '' : 'opacity-75'}>減価償却資産</span>
               </button>
             </div>
 
             <table className="min-w-full divide-y divide-border">
-              <thead className="bg-[#2a3245]">
+              <thead className="bg-slate-50 dark:bg-[#2a3245]">
                 <tr>
                   <th className="px-4 py-3 text-left w-12">
                     <input

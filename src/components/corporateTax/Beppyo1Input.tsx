@@ -94,7 +94,7 @@ export const Beppyo1Input: React.FC<Props> = ({ data, onChange }) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-surface p-4 rounded-xl border border-border shadow-sm bg-slate-50/50">
+                    <div className="bg-surface p-4 rounded-xl border border-border shadow-sm bg-white dark:bg-slate-800">
                         <label className="block text-xs font-bold text-text-muted mb-3 uppercase tracking-wider">地方法人税 算出税額 (法人税×10.3%)</label>
                         <MoneyInput
                             value={data.beppyo1.localCorporateTaxAmount}
@@ -187,7 +187,7 @@ export const Beppyo1Input: React.FC<Props> = ({ data, onChange }) => {
             </div>
 
             {/* 確定税額 (法人税のみ) */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden group">
+            <div className="bg-white dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-800 p-8 rounded-2xl border border-primary/20 dark:border-white/5 shadow-xl shadow-primary/5 dark:shadow-2xl relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
                     <Calculator size={120} />
                 </div>
@@ -196,9 +196,9 @@ export const Beppyo1Input: React.FC<Props> = ({ data, onChange }) => {
                     <div>
                         <div className="flex items-center gap-3 mb-3">
                             <span className="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-lg font-bold text-lg shadow-lg shadow-primary/30">13</span>
-                            <h3 className="text-2xl font-black text-white tracking-tight">差引所得に対する法人税額</h3>
+                            <h3 className="text-2xl font-black text-text-main dark:text-white tracking-tight">差引所得に対する法人税額</h3>
                         </div>
-                        <p className="text-slate-400 text-sm max-w-md leading-relaxed">
+                        <p className="text-text-muted dark:text-slate-400 text-sm max-w-md leading-relaxed">
                             (2 - 10 - 12)<br />
                             税額控除および中間納付額を差し引いた、国に納めるべき確定申告額です。
                         </p>
@@ -206,7 +206,7 @@ export const Beppyo1Input: React.FC<Props> = ({ data, onChange }) => {
 
                     <div className="flex flex-col items-center md:items-end">
                         <div className="text-sm font-bold text-primary mb-1 uppercase tracking-widest">Final National Tax Due</div>
-                        <div className="text-5xl md:text-6xl font-mono font-black text-white drop-shadow-[0_4px_12px_rgba(255,255,255,0.2)]">
+                        <div className="text-5xl md:text-6xl font-mono font-black text-primary dark:text-white dark:drop-shadow-[0_4px_12px_rgba(255,255,255,0.2)]">
                             ¥{Math.max(0, finalNationalTax).toLocaleString()}
                         </div>
                         {finalNationalTax < 0 && (
@@ -287,7 +287,7 @@ export const Beppyo1Input: React.FC<Props> = ({ data, onChange }) => {
                     </div>
                 </div>
 
-                <div className="mt-6 flex items-start gap-2 p-3 bg-blue-500/5 rounded-xl border border-blue-500/10">
+                <div className="mt-6 flex items-start gap-2 p-3 bg-blue-500/5 dark:bg-blue-900/20 rounded-xl border border-blue-500/10">
                     <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                     <p className="text-[10px] text-blue-600/80 leading-relaxed">
                         印字が枠のあとに続く場合は「右方向・下方向」に、枠の前に来る場合は「左方向・上方向」にスライダーを動かしてください。

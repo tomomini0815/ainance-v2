@@ -57,7 +57,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
     return (
         <div className="space-y-8">
             {/* 資本金情報 */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-border flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Info className="w-4 h-4 text-slate-400" />
                     <span className="text-sm font-medium text-text-secondary">適用判定用 資本金の額:</span>
@@ -91,7 +91,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                                         <MoneyInput
                                             value={beppyo15.totalEntertainmentExpenses}
                                             onChange={(val) => handleChange('totalEntertainmentExpenses', val)}
-                                            className="w-full pr-12 pl-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono text-xl bg-surface-highlight/30"
+                                            className="w-full pr-12 pl-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono text-xl bg-surface-highlight/30 dark:bg-slate-800"
                                         />
                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted font-bold pointer-events-none">円</span>
                                     </div>
@@ -101,7 +101,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                                 </div>
                             </div>
 
-                            <div className="space-y-4 p-4 bg-emerald-50/20 rounded-xl border border-emerald-500/10">
+                            <div className="space-y-4 p-4 bg-emerald-50/20 dark:bg-emerald-900/20 rounded-xl border border-emerald-500/10">
                                 <label className="block text-[11px] font-black text-emerald-700 uppercase tracking-widest mb-3">支出内訳の入力</label>
                                 <div className="space-y-4">
                                     <div>
@@ -126,7 +126,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                                             <MoneyInput
                                                 value={beppyo15.otherEntertainmentExpenses}
                                                 onChange={(val) => handleChange('otherEntertainmentExpenses', val)}
-                                                className="w-full pr-10 pl-3 py-2 border border-border rounded-lg text-right font-mono text-base bg-slate-50/50"
+                                                className="w-full pr-10 pl-3 py-2 border border-border rounded-lg text-right font-mono text-base bg-white dark:bg-slate-800/50"
                                             />
                                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-text-muted font-bold">円</span>
                                         </div>
@@ -136,18 +136,18 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                         </div>
 
                         {/* 計算結果 */}
-                        <div className="bg-slate-900 text-white p-6 rounded-2xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl -mr-16 -mt-16"></div>
+                        <div className="bg-white dark:bg-slate-900 text-text-main dark:text-white p-6 rounded-2xl relative overflow-hidden border border-border shadow-md dark:shadow-none">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 dark:bg-primary/20 blur-3xl -mr-16 -mt-16"></div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
                                 <div className="space-y-6">
                                     <div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">損金算入限度額の判定</span>
+                                        <span className="text-[10px] font-bold text-text-muted dark:text-slate-400 uppercase tracking-widest block mb-2">損金算入限度額の判定</span>
                                         <div className="flex items-baseline gap-3">
                                             <span className="text-2xl font-mono font-bold text-primary">
                                                 ¥{beppyo15.deductionLimit.toLocaleString()}
                                             </span>
-                                            <p className="text-[10px] text-slate-500 italic">
+                                            <p className="text-[10px] text-text-muted dark:text-slate-500 italic">
                                                 ※ 年800万円 vs 飲食費×50% の大きい方を適用
                                             </p>
                                         </div>
@@ -156,7 +156,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
 
                                 <div className="flex flex-col items-center md:items-end justify-center">
                                     <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">損金不算入額 (別表四 加算分)</span>
-                                    <div className="text-4xl font-mono font-black text-white">
+                                    <div className="text-4xl font-mono font-black text-text-main dark:text-white">
                                         ¥{beppyo15.excessAmount.toLocaleString()}
                                     </div>
                                     {beppyo15.excessAmount > 0 ? (
@@ -176,7 +176,7 @@ export const Beppyo15Input: React.FC<Props> = ({ data, onChange }) => {
                 </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 bg-blue-50/30 rounded-xl border border-blue-500/10">
+            <div className="flex items-start gap-3 p-4 bg-blue-50/30 dark:bg-blue-900/20 rounded-xl border border-blue-500/10">
                 <HelpCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
                 <div className="text-xs text-blue-700/80 leading-relaxed">
                     <p className="font-extrabold text-blue-900 mb-1 tracking-tight">申告実務のヒント</p>
