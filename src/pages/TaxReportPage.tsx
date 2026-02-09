@@ -191,10 +191,58 @@ const TaxReportPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-surface p-6 rounded-2xl border border-border shadow-sm flex flex-col justify-center">
+                    <div className="bg-white dark:bg-surface p-6 rounded-2xl border border-border shadow-sm flex flex-col">
                         <h2 className="text-lg font-bold text-text-main mb-4">税目別構成比</h2>
-                        <div className="h-64 flex justify-center">
-                            <Doughnut data={chartData} options={chartOptions} />
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 h-full">
+                            {/* Chart with Center Text */}
+                            <div className="relative w-48 h-48 shrink-0">
+                                <Doughnut
+                                    data={chartData}
+                                    options={{
+                                        ...chartOptions,
+                                        cutout: '70%',
+                                        plugins: {
+                                            ...chartOptions.plugins,
+                                            legend: { display: false }
+                                        }
+                                    }}
+                                />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <span className="text-xs text-text-muted">合計</span>
+                                    <span className="text-lg font-bold text-text-main">
+                                        {Math.round(taxData.totalTax / 10000).toLocaleString()}
+                                        <span className="text-xs font-normal text-text-muted ml-0.5">万円</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Custom Legend */}
+                            <div className="flex-1 w-full max-w-sm">
+                                <div className="space-y-3">
+                                    {chartData.labels?.map((label, i) => {
+                                        const value = chartData.datasets[0].data[i] as number;
+                                        const total = (chartData.datasets[0].data as number[]).reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                        const color = chartData.datasets[0].backgroundColor?.[i] as string;
+
+                                        return (
+                                            <div key={i} className="flex items-center justify-between group">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-2.5 h-2.5 rounded-full shadow-sm ring-2 ring-white dark:ring-surface" style={{ backgroundColor: color }} />
+                                                    <span className="text-sm font-medium text-text-main">{label as string}</span>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-xs text-text-muted">{percentage}%</span>
+                                                    <span className="text-sm font-bold text-text-main tabular-nums">
+                                                        {Math.round(value).toLocaleString()}
+                                                        <span className="text-[10px] font-normal text-text-muted ml-0.5">円</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

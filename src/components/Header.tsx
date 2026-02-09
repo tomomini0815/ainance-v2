@@ -1,18 +1,27 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, Bell, Menu, Settings, LogOut, Building, User } from 'lucide-react'
+import { Search, Bell, Menu, Settings, LogOut, Building, User, TrendingUp, TrendingDown, FileText, CheckSquare, Calendar, AlertCircle } from 'lucide-react'
 import BusinessTypeSwitcher from './BusinessTypeSwitcher'
 import CreateBusinessTypeModal from './CreateBusinessTypeModal'
 import { useAuth } from '../hooks/useAuth'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
-
 import { useGlobalSearch } from '../hooks/useGlobalSearch'
-import { TrendingUp, TrendingDown } from 'lucide-react'
-
 import { createPortal } from 'react-dom'
+import { getReceipts, Receipt } from '../services/receiptService'
+import { useTransactions } from '../hooks/useTransactions'
 
 interface HeaderProps {
   onMenuClick: () => void;
+}
+
+interface NotificationItem {
+  id: string;
+  type: 'receipt' | 'transaction' | 'tax' | 'system';
+  title: string;
+  message: string;
+  link?: string;
+  date?: string;
+  priority: 'high' | 'medium' | 'low';
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
@@ -24,10 +33,100 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const notificationRef = useRef<HTMLDivElement>(null)
 
-  const { pages, transactions } = useGlobalSearch(searchTerm)
+  const { pages, transactions: searchTransactions } = useGlobalSearch(searchTerm)
+  const { transactions: allTransactions } = useTransactions(user?.id, currentBusinessType?.business_type)
 
+  // 通知データの取得と生成
+  useEffect(() => {
+    if (!user || !currentBusinessType) return;
 
+    const fetchNotifications = async () => {
+      const newNotifications: NotificationItem[] = [];
+
+      // 1. 未処理のレシート (Inboxにあるもの)
+      try {
+        const receipts = await getReceipts(user.id);
+        const pendingReceipts = receipts.filter(r => r.status === 'pending');
+        if (pendingReceipts.length > 0) {
+          newNotifications.push({
+            id: 'receipts-pending',
+            type: 'receipt',
+            title: '未処理のレシート',
+            message: `${pendingReceipts.length}件のレシートが確認待ちです`,
+            link: '/receipts',
+            priority: 'high'
+          });
+        }
+      } catch (error) {
+        console.error('レシート取得エラー:', error);
+      }
+
+      // 2. 承認待ちの取引 (AI登録など)
+      // useTransactionsですでに取得しているデータを使用
+      const pendingTransactions = allTransactions.filter(t => t.approval_status === 'pending');
+      if (pendingTransactions.length > 0) {
+        newNotifications.push({
+          id: 'transactions-pending',
+          type: 'transaction',
+          title: '承認待ちの取引',
+          message: `${pendingTransactions.length}件の取引が承認待ちです`,
+          link: '/transaction-history', // または承認画面
+          priority: 'medium'
+        });
+      }
+
+      // 3. 確定申告期限 (個人事業主の場合)
+      if (currentBusinessType.business_type === 'individual') {
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        // 確定申告期間: 2/16 - 3/15 (翌年)
+        // 現在が1/1 - 3/15なら、前年分の申告期限
+        let deadlineYear = currentYear;
+        if (today.getMonth() + 1 <= 3 && today.getDate() <= 15) {
+          // そのまま
+        } else {
+          // 3/16以降は来年の3/15
+          deadlineYear = currentYear + 1;
+        }
+
+        const deadline = new Date(deadlineYear, 2, 15); // 3月15日 (Month is 0-indexed)
+        const diffTime = deadline.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 0 && diffDays <= 60) { // 60日前から通知
+          newNotifications.push({
+            id: 'tax-deadline',
+            type: 'tax',
+            title: '確定申告期限',
+            message: `申告期限まであと${diffDays}日です`,
+            link: '/tax-return',
+            priority: diffDays <= 14 ? 'high' : 'medium'
+          });
+        }
+      }
+
+      setNotifications(newNotifications);
+    };
+
+    fetchNotifications();
+  }, [user, currentBusinessType, allTransactions]);
+
+  // クリック外側の検知（通知用）
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -58,6 +157,22 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     setIsSearchExpanded(false)
     setSearchTerm('')
   }
+
+  const handleNotificationClick = (link?: string) => {
+    if (link) {
+      navigate(link);
+      setShowNotifications(false);
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'receipt': return <FileText className="w-4 h-4 text-blue-500" />;
+      case 'transaction': return <CheckSquare className="w-4 h-4 text-green-500" />;
+      case 'tax': return <Calendar className="w-4 h-4 text-orange-500" />;
+      default: return <AlertCircle className="w-4 h-4 text-gray-500" />;
+    }
+  };
 
   return (
     <>
@@ -130,7 +245,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 </form>
 
                 {/* Search Results Dropdown */}
-                {isSearchExpanded && searchTerm && (pages.length > 0 || transactions.length > 0) && (
+                {isSearchExpanded && searchTerm && (pages.length > 0 || searchTransactions.length > 0) && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                     {pages.length > 0 && (
                       <div className="py-2">
@@ -153,12 +268,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       </div>
                     )}
 
-                    {pages.length > 0 && transactions.length > 0 && <div className="h-px bg-white/5 mx-2" />}
+                    {pages.length > 0 && searchTransactions.length > 0 && <div className="h-px bg-white/5 mx-2" />}
 
-                    {transactions.length > 0 && (
+                    {searchTransactions.length > 0 && (
                       <div className="py-2">
                         <div className="px-4 py-1 text-xs font-semibold text-text-muted uppercase tracking-wider">最近の取引</div>
-                        {transactions.map((t) => (
+                        {searchTransactions.map((t) => (
                           <button
                             key={t.id}
                             onClick={() => handleTransactionClick(t.item)}
@@ -182,13 +297,62 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 )}
               </div>
 
-
-
               {/* Notifications */}
-              <button className="relative p-2 text-text-muted hover:text-primary rounded-full hover:bg-white/5 transition-colors">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-accent shadow-[0_0_8px_rgba(244,114,182,0.5)]"></span>
-              </button>
+              <div className="relative" ref={notificationRef}>
+                <button
+                  className={`relative p-2 rounded-full transition-colors ${showNotifications ? 'bg-white/10 text-primary' : 'text-text-muted hover:text-primary hover:bg-white/5'}`}
+                  onClick={() => setShowNotifications(!showNotifications)}
+                >
+                  <Bell className="h-5 w-5" />
+                  {notifications.length > 0 && (
+                    <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse"></span>
+                  )}
+                </button>
+
+                {/* Notification Dropdown */}
+                {showNotifications && (
+                  <div className="absolute top-full right-0 mt-2 w-80 bg-surface border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+                      <h3 className="font-semibold text-text-main">お知らせ</h3>
+                      {notifications.length > 0 && (
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                          {notifications.length}件の未読
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.length > 0 ? (
+                        <div className="py-2">
+                          {notifications.map((notification) => (
+                            <button
+                              key={notification.id}
+                              onClick={() => handleNotificationClick(notification.link)}
+                              className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-start gap-3 transition-colors border-l-2 border-transparent hover:border-primary/50"
+                            >
+                              <div className={`mt-0.5 p-1.5 rounded-lg bg-surface border border-white/5 shadow-sm`}>
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-text-main">{notification.title}</div>
+                                <div className="text-xs text-text-muted mt-0.5">{notification.message}</div>
+                              </div>
+                              {notification.priority === 'high' && (
+                                <span className="h-2 w-2 rounded-full bg-red-500 mt-2"></span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-8 text-center text-text-muted">
+                          <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                          <p className="text-sm">新しいお知らせはありません</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* User Menu */}
               <div className="relative">
@@ -294,7 +458,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </div>
         </div>
       </header>
-
       <CreateBusinessTypeModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}

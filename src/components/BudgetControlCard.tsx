@@ -197,14 +197,8 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
             return { ...t, amount };
         });
 
-        const allExpensesFromReceipts = receipts.filter(r => r.status === 'pending').map(r => ({
-            id: r.id || 'temp',
-            item: r.merchant,
-            amount: r.amount,
-            category: r.category,
-            date: r.date,
-            type: 'expense' as const
-        }));
+        // receipts（未承認）は集計から除外
+        const allExpensesFromReceipts: any[] = [];
 
         const allExpensesList = [...allExpensesFromTx, ...allExpensesFromReceipts];
         const total = allExpensesList.reduce((sum, t) => sum + getAmount(t.amount), 0);
@@ -381,7 +375,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                         </div>
 
                         {/* Chart Section */}
-                        <div className="flex-1 min-h-0 bg-surface-highlight/30 rounded-xl p-3 border border-border/50 flex flex-col">
+                        <div className="bg-surface-highlight/30 rounded-xl p-3 border border-border/50 flex flex-col">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="text-[10px] font-bold text-text-main">支出TOPカテゴリ 予実</h4>
                                 <div className="flex gap-2 text-[8px]">
@@ -389,7 +383,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded bg-gray-300"></div>目安</div>
                                 </div>
                             </div>
-                            <div className="h-[330px] relative">
+                            <div className="relative" style={{ height: `${Math.max(150, budgetData.chartData.labels.length * 50)}px` }}>
                                 <Bar data={budgetData.chartData} options={chartOptions} />
                             </div>
                         </div>
@@ -441,14 +435,14 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                         </div>
 
                         {/* Chart Section */}
-                        <div className="flex-1 min-h-0 bg-surface-highlight/30 rounded-xl p-3 border border-border/50 flex flex-col">
+                        <div className="bg-surface-highlight/30 rounded-xl p-3 border border-border/50 flex flex-col">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="text-[10px] font-bold text-text-main">累計支出内訳</h4>
                                 <div className="flex gap-2 text-[8px]">
                                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded bg-emerald-500"></div>累計実績</div>
                                 </div>
                             </div>
-                            <div className="h-[330px] relative">
+                            <div className="relative" style={{ height: `${Math.max(150, totalBudgetData.chartData.labels.length * 50)}px` }}>
                                 <Bar data={totalBudgetData.chartData} options={chartOptions} />
                             </div>
                         </div>
@@ -486,9 +480,9 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                         </div>
 
                         {/* Tax Breakdown Detail */}
-                        <div className="flex-1 min-h-0 bg-surface-highlight/30 rounded-xl p-3 border border-border/50 flex flex-col">
+                        <div className="bg-surface-highlight/30 rounded-xl p-3 border border-border/50 flex flex-col">
                             <h4 className="text-[10px] font-bold text-text-main mb-2">税目別内訳（着地予想）</h4>
-                            <div className="space-y-2.5 flex-1 overflow-auto">
+                            <div className="space-y-2.5">
                                 {businessType === 'corporation' ? (
                                     // Corporate Tax Breakdown
                                     [
