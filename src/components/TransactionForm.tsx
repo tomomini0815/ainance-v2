@@ -61,6 +61,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
   const [usefulLife, setUsefulLife] = useState<number>(5)
   const [depreciationMethod, setDepreciationMethod] = useState<string>('定額法')
   const [businessRatio, setBusinessRatio] = useState<number>(100)
+  const [showBusinessRatioInput, setShowBusinessRatioInput] = useState<boolean>(false)
   const [acqDate, setAcqDate] = useState<string>(transaction?.date || new Date().toISOString().split('T')[0])
 
   const annualDepreciation = useMemo(() => {
@@ -140,6 +141,46 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         recurring_end_date: transaction.recurring_end_date || new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
         creator: transaction.creator || ''
       })
+
+      // 減価償却資産の場合、説明欄から取得日や事業割合を復元
+      if (transaction.tags?.includes('depreciation_asset')) {
+        setActiveTab('depreciation');
+        const acqMatch = transaction.description?.match(/取得日:(\d{4}-\d{2}-\d{2})/);
+        if (acqMatch) {
+          setAcqDate(acqMatch[1]);
+        } else {
+          // 取得日が説明欄にない場合は取引日を使用（古いデータなど）
+          setAcqDate(transaction.date);
+        }
+
+        const ratioMatch = transaction.description?.match(/事業割合:(\d+)%/);
+        if (ratioMatch) {
+          setBusinessRatio(parseInt(ratioMatch[1], 10));
+        }
+
+        // 取得価額の復元
+        const amountMatch = transaction.description?.match(/取得価額:¥([\d,]+)/);
+        if (amountMatch) {
+          // フォーム上の金額は取得価額として表示したい（保存時は今期償却額になるが、入力時は取得価額）
+          setFormData(prev => ({ ...prev, amount: parseInt(amountMatch[1].replace(/,/g, ''), 10) }));
+        } else {
+          // 取得価額がない場合（古いデータ）、年数と償却額から逆算するか、transaction.amount（これまでの仕様ではここが取得価額だった可能性がある）を使う
+          // しかし、直近の修正でtransaction.amountは今期償却額になっている可能性がある。
+          // ひとまずtransaction.amountをそのまま使う。
+        }
+      } else if (transaction.tags?.includes('business_ratio_applied')) {
+        // 通常の家事按分の場合
+        const ratioMatch = transaction.description?.match(/事業割合: (\d+)%/);
+        if (ratioMatch) {
+          setBusinessRatio(parseInt(ratioMatch[1], 10));
+          setShowBusinessRatioInput(true);
+          // 支払総額の復元
+          const totalMatch = transaction.description?.match(/支払総額: ¥([\d,]+)/);
+          if (totalMatch) {
+            setFormData(prev => ({ ...prev, amount: parseInt(totalMatch[1].replace(/,/g, ''), 10) }));
+          }
+        }
+      }
     }
   }, [transaction])
 
@@ -148,6 +189,26 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
       setUsefulLife(1)
     }
   }, [depreciationMethod])
+
+  // カテゴリ変更時の家事按分デフォルト設定
+  useEffect(() => {
+    const category = formData.category;
+    if (activeTab === 'normal') {
+      if (['家賃', '地代家賃'].includes(category)) {
+        setShowBusinessRatioInput(true);
+        setBusinessRatio(30);
+      } else if (['水道代', 'ガス代', '電気代', '水道光熱費'].includes(category)) {
+        setShowBusinessRatioInput(true);
+        setBusinessRatio(20);
+      } else if (['インターネット接続料', '電話料金', '通信費'].includes(category)) {
+        setShowBusinessRatioInput(true);
+        setBusinessRatio(50);
+      } else {
+        setShowBusinessRatioInput(false);
+        setBusinessRatio(100);
+      }
+    }
+  }, [formData.category, activeTab])
 
   const categoryOptions = useMemo(() => {
     return [...new Set([...favoriteCategories, ...STANDARD_CATEGORIES])]
@@ -239,9 +300,27 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         calcBasis = `12ヶ月分`;
       }
 
-      const depreciationInfo = `\n[固定資産台帳] 取得日:${acqDate}, 計上日:${reportDate}, 償却方法:${depreciationMethod}, 耐用年数:${usefulLife}年, 事業割合:${businessRatio}%, 今期(${year}年)償却額:¥${Math.round(annualDepreciation).toLocaleString()} (${calcBasis})`;
+      const depreciationInfo = `\n[固定資産台帳] 取得日:${acqDate}, 計上日:${reportDate}, 取得価額:¥${formData.amount}, 償却方法:${depreciationMethod}, 耐用年数:${usefulLife}年, 事業割合:${businessRatio}%, 今期(${year}年)償却額:¥${Math.round(annualDepreciation).toLocaleString()} (${calcBasis})`;
       dataToSubmit.description = (dataToSubmit.description || '') + depreciationInfo;
       dataToSubmit.tags = [...(dataToSubmit.tags || []), 'depreciation_asset'];
+
+      // 金額を今期償却額に上書き
+      dataToSubmit.amount = Math.round(annualDepreciation);
+      console.log(`減価償却資産: 取得価額 ${formData.amount} -> 今期償却額 ${dataToSubmit.amount}`);
+    } else {
+      // 通常取引での家事按分計算（経費の場合のみ）
+      if (showBusinessRatioInput && businessRatio < 100 && dataToSubmit.type === 'expense') {
+        const originalAmount = typeof dataToSubmit.amount === 'string' ? parseFloat(dataToSubmit.amount) : dataToSubmit.amount;
+        // 端数切り捨て（安全側）
+        const deductibleAmount = Math.floor(originalAmount * (businessRatio / 100));
+
+        const ratioInfo = ` (支払総額: ¥${originalAmount.toLocaleString()}, 事業割合: ${businessRatio}%)`;
+        dataToSubmit.description = (dataToSubmit.description || '') + ratioInfo;
+        dataToSubmit.amount = deductibleAmount;
+        dataToSubmit.tags = [...(dataToSubmit.tags || []), 'business_ratio_applied'];
+
+        console.log(`家事按分適用: 総額 ${originalAmount} -> 計上額 ${deductibleAmount} (割合 ${businessRatio}%)`);
+      }
     }
 
     // 編集モードの場合、creatorの検証をスキップ
@@ -339,13 +418,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     <form onSubmit={handleSubmit} className="space-y-6 text-text-main">
       {/* Tabs */}
       {/* Tabs */}
-      <div className="flex bg-slate-900/60 p-1 rounded-full mb-8 border border-slate-700/50 w-full shadow-inner backdrop-blur-md">
+      {/* Tabs */}
+      <div className="flex bg-slate-100 dark:bg-slate-900/60 p-1 rounded-full mb-8 border border-slate-200 dark:border-slate-700/50 w-full shadow-inner backdrop-blur-md">
         <button
           type="button"
           onClick={() => setActiveTab('normal')}
           className={`flex-1 flex items-center justify-center py-2.5 px-2 sm:px-4 rounded-full text-xs sm:text-sm font-bold transition-all duration-500 whitespace-nowrap ${activeTab === 'normal'
-            ? 'bg-slate-800 text-primary shadow-lg shadow-black/20 transform scale-[1.02]'
-            : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+            ? 'bg-white dark:bg-slate-800 text-primary shadow-lg shadow-black/5 dark:shadow-black/20 transform scale-[1.02]'
+            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'
             }`}
         >
           <Wallet className={`w-4 h-4 mr-2 transition-colors duration-500 ${activeTab === 'normal' ? 'text-primary' : 'text-slate-500'}`} />
@@ -355,8 +435,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
           type="button"
           onClick={() => setActiveTab('depreciation')}
           className={`flex-1 flex items-center justify-center py-2.5 px-2 sm:px-4 rounded-full text-xs sm:text-sm font-bold transition-all duration-500 whitespace-nowrap ${activeTab === 'depreciation'
-            ? 'bg-slate-800 text-primary shadow-lg shadow-black/20 transform scale-[1.02]'
-            : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+            ? 'bg-white dark:bg-slate-800 text-primary shadow-lg shadow-black/5 dark:shadow-black/20 transform scale-[1.02]'
+            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'
             }`}
         >
           <Clock className={`w-4 h-4 mr-2 transition-colors duration-500 ${activeTab === 'depreciation' ? 'text-primary' : 'text-slate-500'}`} />
@@ -519,6 +599,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   <option value="家賃" className="bg-surface-highlight">家賃</option>
                   <option value="インターネット接続料" className="bg-surface-highlight">インターネット接続料</option>
                   <option value="電話料金" className="bg-surface-highlight">電話料金</option>
+                  <option value="携帯代" className="bg-surface-highlight">携帯代</option>
                   <option value="水道代" className="bg-surface-highlight">水道代</option>
                   <option value="ガス代" className="bg-surface-highlight">ガス代</option>
                   <option value="出張費" className="bg-surface-highlight">出張費</option>
@@ -602,6 +683,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                   className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main placeholder-text-muted transition-all"
                   list="location-options"
                 />
+
+
                 <datalist id="location-options">
                   <option value="自宅" />
                   <option value="オフィス" />
@@ -638,6 +721,49 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
               )}
             </div>
           </div>
+
+          {/* Business Ratio Input (Moved outside grid for full width) */}
+          {showBusinessRatioInput && formData.type === 'expense' && (
+            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30 animate-in fade-in slide-in-from-top-2">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+                <div>
+                  <h4 className="text-sm font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                    <Wallet className="w-4 h-4" />
+                    家事按分 (事業利用割合)
+                  </h4>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    自宅兼事務所の家賃や光熱費など、プライベートと事業の兼用経費の割合を設定します。
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-text-muted">経費計上額</div>
+                  <div className="text-xl font-bold text-primary">
+                    ¥{Math.floor((Number(formData.amount) || 0) * (businessRatio / 100)).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 mt-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={businessRatio}
+                  onChange={(e) => setBusinessRatio(Number(e.target.value))}
+                  className="flex-1 h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer dark:bg-blue-800"
+                />
+                <div className="w-16 text-right font-medium text-text-main">
+                  {businessRatio}%
+                </div>
+              </div>
+              <div className="flex justify-between text-xs text-text-muted mt-1 px-1">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1.5">説明</label>
@@ -965,14 +1091,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
           </div>
 
           {/* Info Box */}
-          <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/30 mt-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-500/30 mt-4">
             <div className="flex items-start gap-3">
               <div className="mt-0.5">
-                <Clock className="w-5 h-5 text-blue-400" />
+                <Clock className="w-5 h-5 text-blue-500 dark:text-blue-400" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white mb-1">減価償却の記帳について</h4>
-                <p className="text-xs text-blue-200/80 leading-relaxed">
+                <h4 className="text-sm font-bold text-blue-800 dark:text-white mb-1">減価償却の記帳について</h4>
+                <p className="text-xs text-blue-700 dark:text-blue-200/80 leading-relaxed">
                   ここで計算された償却費の合計額は、自動的に損益計算書の「減価償却費」として計上されます。
                   10万円未満の資産は消耗品費として処理できます（青色申告の場合は30万円未満を少額減価償却資産として即時償却できる特例もあります）。
                 </p>

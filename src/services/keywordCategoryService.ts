@@ -96,6 +96,7 @@ const KEYWORD_RULES: { keyword: string; category: StandardCategory }[] = [
   { keyword: 'KDDI', category: '通信費' },
   { keyword: 'Au', category: '通信費' },
   { keyword: 'Rakuten Mobile', category: '通信費' },
+  { keyword: '携帯', category: '通信費' },
   { keyword: '切手', category: '通信費' },
   { keyword: '配送', category: '通信費' },
   { keyword: '送料', category: '通信費' },

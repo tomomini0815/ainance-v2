@@ -57,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             type: 'receipt',
             title: '未処理のレシート',
             message: `${pendingReceipts.length}件のレシートが確認待ちです`,
-            link: '/receipts',
+            link: '/receipt-processing',
             priority: 'high'
           });
         }
@@ -74,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           type: 'transaction',
           title: '承認待ちの取引',
           message: `${pendingTransactions.length}件の取引が承認待ちです`,
-          link: '/transaction-history', // または承認画面
+          link: '/transaction-inbox', // または承認画面
           priority: 'medium'
         });
       }
@@ -311,7 +311,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
                 {/* Notification Dropdown */}
                 {showNotifications && (
-                  <div className="absolute top-full right-0 mt-2 w-80 bg-surface border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="fixed top-16 right-4 left-4 w-auto md:absolute md:top-full md:right-0 md:left-auto md:w-80 md:mt-2 bg-surface border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                     <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
                       <h3 className="font-semibold text-text-main">お知らせ</h3>
                       {notifications.length > 0 && (

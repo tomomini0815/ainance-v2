@@ -697,7 +697,7 @@ const TransactionHistory: React.FC = () => {
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-text-muted uppercase tracking-wider">項目</th>
                   <th className="px-4 py-3 text-right text-[10px] font-medium text-text-muted uppercase tracking-wider">金額</th>
                   {viewMode === 'depreciation' && (
-                    <th className="px-4 py-3 text-right text-[10px] font-medium text-text-muted uppercase tracking-wider">償却総額</th>
+                    <th className="px-4 py-3 text-right text-[10px] font-medium text-text-muted uppercase tracking-wider">取得価額</th>
                   )}
                   <th className="px-4 py-3 text-center text-[10px] font-medium text-text-muted uppercase tracking-wider hidden sm:table-cell">日付</th>
                   <th className="px-4 py-3 text-center text-[10px] font-medium text-text-muted uppercase tracking-wider">カテゴリ</th>
@@ -757,7 +757,26 @@ const TransactionHistory: React.FC = () => {
 
                       {viewMode === 'depreciation' && (
                         <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium text-text-muted">
-                          ¥{transaction.amount.toLocaleString()}
+                          {(() => {
+                            if (transaction.tags?.includes('depreciation_asset')) {
+                              // 新しい形式: 取得価額が明記されている場合
+                              const acqMatch = transaction.description?.match(/取得価額:¥([\d,]+)/);
+                              if (acqMatch) return `¥${acqMatch[1]}`;
+
+                              // 古い形式: 年間償却費の記載がある場合、transaction.amountが取得価額だった
+                              const oldDepMatch = transaction.description?.match(/年間償却費: ¥([\d,]+)/);
+                              if (oldDepMatch) return `¥${transaction.amount.toLocaleString()}`;
+
+                              // 中間の形式: 今期償却額のみ記載があり、取得価額がない場合 (バグ期間のデータ)
+                              // この場合、transaction.amountは今期償却額になってしまっているため、取得価額は不明。
+                              // 暫定的に「-」を表示するか、transaction.amountを表示する
+                              const currentDepMatch = transaction.description?.match(/今期\(\d+年\)償却額:¥([\d,]+)/);
+                              if (currentDepMatch) return `(不明)`;
+
+                              return `¥${transaction.amount.toLocaleString()}`;
+                            }
+                            return `¥${transaction.amount.toLocaleString()}`;
+                          })()}
                         </td>
                       )}
                       <td className="px-4 py-2.5 whitespace-nowrap text-center text-[11px] text-text-muted hidden sm:table-cell">

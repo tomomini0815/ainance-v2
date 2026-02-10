@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
+import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 
 interface Transaction {
   id: string;
@@ -152,17 +153,21 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
         const bulkData = [transactionPayload];
         const startDate = new Date(effectiveDate); // effectiveDateを使用
         const endDate = new Date(transaction.recurring_end_date);
-        let nextDate = new Date(startDate);
 
+        let i = 1;
         while (true) {
+          let nextDate: Date;
+
           if (transaction.recurring_frequency === 'daily') {
-            nextDate.setDate(nextDate.getDate() + 1);
+            nextDate = addDays(startDate, i);
           } else if (transaction.recurring_frequency === 'weekly') {
-            nextDate.setDate(nextDate.getDate() + 7);
+            nextDate = addWeeks(startDate, i);
           } else if (transaction.recurring_frequency === 'monthly') {
-            nextDate.setMonth(nextDate.getMonth() + 1);
+            nextDate = addMonths(startDate, i);
           } else if (transaction.recurring_frequency === 'yearly') {
-            nextDate.setFullYear(nextDate.getFullYear() + 1);
+            nextDate = addYears(startDate, i);
+          } else {
+            break; // 未知の頻度はループ終了
           }
 
           if (nextDate > endDate) break;
@@ -171,6 +176,8 @@ export const useTransactions = (userId?: string, businessType?: 'individual' | '
             ...transactionPayload,
             date: nextDate.toISOString().split('T')[0]
           });
+
+          i++;
         }
 
         console.log(`createTransaction - 一括保存実行 (${bulkData.length}件):`, bulkData);

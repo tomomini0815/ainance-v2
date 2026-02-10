@@ -47,7 +47,18 @@ const CumulativeAnalysisPage: React.FC = () => {
         };
 
         // Filter all expenses across all time
-        const allExpenses = transactions.filter(t => {
+        const allExpenses = transactions.map(t => {
+            // 減価償却資産の場合、説明欄から今期償却額を抽出して金額として扱う
+            // (過去データが取得価額で登録されている場合の互換性維持)
+            if (t.tags?.includes('depreciation_asset') && t.description) {
+                const match = t.description.match(/今期.*?償却額:¥([0-9,]+)/);
+                if (match) {
+                    const depreciationAmount = parseInt(match[1].replace(/,/g, ''), 10);
+                    return { ...t, amount: depreciationAmount };
+                }
+            }
+            return t;
+        }).filter(t => {
             const rawAmount = t.amount as any;
             const amountStr = typeof rawAmount === 'string' ? rawAmount : String(rawAmount || 0);
             const amount = parseFloat(amountStr.replace(/,/g, ''));
