@@ -301,7 +301,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
       }
 
       const depreciationInfo = `\n[固定資産台帳] 取得日:${acqDate}, 計上日:${reportDate}, 取得価額:¥${formData.amount}, 償却方法:${depreciationMethod}, 耐用年数:${usefulLife}年, 事業割合:${businessRatio}%, 今期(${year}年)償却額:¥${Math.round(annualDepreciation).toLocaleString()} (${calcBasis})`;
-      dataToSubmit.description = (dataToSubmit.description || '') + depreciationInfo;
+
+      // 既存の説明から古い固定資産台帳情報を削除（重複防止）
+      let cleanDescription = dataToSubmit.description || '';
+      // $アンカーを削除し、すべての行の固定資産台帳情報を削除
+      cleanDescription = cleanDescription.replace(/\n\[固定資産台帳\].*/g, '');
+
+      dataToSubmit.description = cleanDescription + depreciationInfo;
       dataToSubmit.tags = [...(dataToSubmit.tags || []), 'depreciation_asset'];
 
       // 金額を今期償却額に上書き
@@ -315,7 +321,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
         const deductibleAmount = Math.floor(originalAmount * (businessRatio / 100));
 
         const ratioInfo = ` (支払総額: ¥${originalAmount.toLocaleString()}, 事業割合: ${businessRatio}%)`;
-        dataToSubmit.description = (dataToSubmit.description || '') + ratioInfo;
+
+        // 既存の説明から古い家事按分情報を削除（重複防止）
+        let cleanDescription = dataToSubmit.description || '';
+        // カッコつきの支払総額情報を削除。複数ある場合も考慮して末尾アンカー削除
+        cleanDescription = cleanDescription.replace(/\s*\(支払総額:.*?\%\)/g, '');
+
+        dataToSubmit.description = cleanDescription + ratioInfo;
         dataToSubmit.amount = deductibleAmount;
         dataToSubmit.tags = [...(dataToSubmit.tags || []), 'business_ratio_applied'];
 
