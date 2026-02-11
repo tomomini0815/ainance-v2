@@ -1,0 +1,3 @@
+# 全てのファイルに適用されるヘッダー
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:3001; font-src 'self' data:;

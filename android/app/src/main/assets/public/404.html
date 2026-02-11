@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Ainance</title>
+    <script>
+      // GitHub PagesでSPAを正しく動作させるためのリダイレクトスクリプト
+      (function() {
+        // GitHub Pagesの404ページからアプリケーションのルートにリダイレクト
+        var path = location.pathname;
+        var hash = location.hash;
+        var search = location.search;
+        
+        // ルートパスまたはindex.htmlの場合はリダイレクトしない
+        if (path === '/ainance-v2/' || path === '/ainance-v2/index.html') {
+          return;
+        }
+        
+        // それ以外の場合はルートパスにリダイレクト
+        // HashRouterを使用しているので、ハッシュも保持する
+        location.replace('/ainance-v2/' + hash);
+      })();
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
