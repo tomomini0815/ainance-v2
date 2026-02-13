@@ -26,6 +26,13 @@ const Login: React.FC = () => {
     // リダイレクト先のパスを取得（デフォルトは/dashboard）
     const from = location.state?.from?.pathname || '/dashboard';
 
+    // 既にログインしている場合はリダイレクト
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate(from, { replace: true });
+        }
+    }, [isAuthenticated, navigate, from]);
+
     // ネットワーク状態の監視
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
