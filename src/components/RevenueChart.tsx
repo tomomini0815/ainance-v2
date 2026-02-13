@@ -27,11 +27,12 @@ ChartJS.register(
 
 interface RevenueChartProps {
   transactions: any[];
+  selectedYear?: number;
 }
 
 type Period = 'monthly' | 'quarterly' | 'yearly';
 
-const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
+const RevenueChart: React.FC<RevenueChartProps> = ({ transactions, selectedYear }) => {
   const [period, setPeriod] = useState<Period>('monthly');
 
   const chartData = useMemo(() => {
@@ -284,7 +285,9 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions }) => {
   return (
     <div className="bg-white dark:bg-surface rounded-2xl p-5 border border-border shadow-sm transition-all duration-200 hover:shadow-md h-full flex flex-col">
       <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
-        <h3 className="text-sm sm:text-lg font-semibold text-text-main whitespace-nowrap">収益・支出・利益推移</h3>
+        <h3 className="text-sm sm:text-lg font-semibold text-text-main whitespace-nowrap">
+          収益・支出・利益推移 {selectedYear ? `(${selectedYear}年度)` : ''}
+        </h3>
         <div className="flex p-1 bg-surface-highlight rounded-xl w-fit">
           <button
             onClick={() => setPeriod('monthly')}

@@ -14,9 +14,10 @@ ChartJS.register(ArcElement, Tooltip, Legend)
 
 interface ExpenseChartProps {
   transactions: any[];
+  selectedYear?: number;
 }
 
-const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
+const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions, selectedYear }) => {
   const calculateExpenseByCategory = () => {
     const expenseTransactions = transactions.filter(t => t.type === 'expense' && t.approval_status !== 'pending');
     // 保留中は除外
@@ -120,7 +121,9 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
   return (
     <div className="bg-white dark:bg-surface rounded-2xl p-6 border border-border shadow-sm transition-all duration-200 hover:shadow-md h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold text-text-main">支出カテゴリ</h3>
+        <h3 className="text-lg font-semibold text-text-main">
+          支出カテゴリ {selectedYear ? `(${selectedYear}年度)` : ''}
+        </h3>
         <Link to="/expense-breakdown" className="flex items-center text-sm text-primary hover:text-primary/80 transition-colors">
           詳細を見る
           <ChevronRight className="w-4 h-4 ml-1" />

@@ -1,10 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, TrendingDown, JapaneseYen, Calendar, Filter, Download, AlertCircle, Loader2, Sparkles, CheckCircle, AlertTriangle, Info, Target, RefreshCw } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, JapaneseYen, Download, AlertCircle, Loader2, RefreshCw, Target, FileText } from 'lucide-react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
-import { generateBusinessAdvice, isAIEnabled, BusinessAdvice } from '../services/geminiAIService';
+import { useFiscalYear } from '../context/FiscalYearContext';
+// import { generateBusinessAdvice, isAIEnabled, BusinessAdvice } from '../services/geminiAIService';
+import { yearlySettlementService, YearlySettlement } from '../services/yearlySettlementService';
+import { yearlyBalanceSheetService, YearlyBalanceSheet } from '../services/yearlyBalanceSheetService';
+import PreviousYearImportModal from '../components/PreviousYearImportModal';
+import BalanceSheetImportModal from '../components/BalanceSheetImportModal';
 
 // 型定義
 interface MonthlyData {
@@ -46,19 +51,44 @@ const calculatePercentageChange = (current: number, previous: number): number =>
 const BusinessAnalysis: React.FC = () => {
   const { user } = useAuth();
   const { currentBusinessType } = useBusinessTypeContext();
+  const { selectedYear } = useFiscalYear();
+
+  // selectedYearを文字列として扱うためのエイリアス
+  const year = selectedYear.toString();
+
   const businessType = currentBusinessType?.business_type || 'individual';
 
   const { transactions, loading } = useTransactions(user?.id, businessType);
 
-  const [period, setPeriod] = useState('yearly');
-  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [period, setPeriod] = useState<'yearly' | 'monthly' | 'quarterly'>('yearly');
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
 
-  // 年の選択肢を生成（現在年から過去5年）
-  const yearOptions = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return Array.from({ length: 5 }, (_, i) => currentYear - i);
-  }, []);
+  // 前年度決算データの状態
+  const [yearlySettlements, setYearlySettlements] = useState<YearlySettlement[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [yearlyBalanceSheets, setYearlyBalanceSheets] = useState<YearlyBalanceSheet[]>([]);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isBSModalOpen, setIsBSModalOpen] = useState(false);
+
+  // 決算データを取得
+  const fetchSettlements = React.useCallback(async () => {
+    if (user?.id) {
+      try {
+        const [plData, bsData] = await Promise.all([
+          yearlySettlementService.getAllByBusinessType(user.id, businessType),
+          yearlyBalanceSheetService.getAllByBusinessType(user.id, businessType)
+        ]);
+        setYearlySettlements(plData);
+        setYearlyBalanceSheets(bsData);
+      } catch (error) {
+        console.error('Fetch Settlements/BS Error:', error);
+      }
+    }
+  }, [user?.id, businessType]);
+
+  React.useEffect(() => {
+    fetchSettlements();
+  }, [fetchSettlements]);
 
   // 期間でフィルタリングされたトランザクション
   const filteredTransactions = useMemo(() => {
@@ -157,16 +187,28 @@ const BusinessAnalysis: React.FC = () => {
     };
 
     const prevTransactions = getPreviousPeriodTransactions();
-    const prevRevenue = prevTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const prevExpense = prevTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    let prevRevenue = prevTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    let prevExpense = prevTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+
+    // 取引データがない場合、決算データテーブルから補完（年次の時のみ）
+    if (period === 'yearly' && prevRevenue === 0 && prevExpense === 0) {
+      const prevYear = parseInt(year) - 1;
+      const s = yearlySettlements.find(item => item.year === prevYear);
+      if (s) {
+        prevRevenue = s.revenue;
+        prevExpense = s.operating_expenses + s.cost_of_sales;
+      }
+    }
+
     const prevProfit = prevRevenue - prevExpense;
 
     return {
       revenue: calculatePercentageChange(totals.revenue, prevRevenue),
       expense: calculatePercentageChange(totals.expense, prevExpense),
-      profit: calculatePercentageChange(totals.profit, prevProfit)
+      profit: calculatePercentageChange(totals.profit, prevProfit),
+      hasPreviousData: prevRevenue > 0 || prevExpense > 0
     };
-  }, [transactions, totals, period, year, month]);
+  }, [transactions, totals, period, year, month, yearlySettlements]);
 
   // カテゴリ別データを計算
   const categoryData = useMemo((): { income: CategoryData[]; expense: CategoryData[] } => {
@@ -206,6 +248,44 @@ const BusinessAnalysis: React.FC = () => {
       expense: processCategory(expenseByCategory, totals.expense)
     };
   }, [filteredTransactions, totals]);
+
+  // 推定BSデータの計算 (期首BS + 今期損益)
+  const estimatedBS = useMemo(() => {
+    // 選択された年度の「前期」のBSを探す
+    const prevYear = parseInt(year) - 1;
+    const baseBS = yearlyBalanceSheets.find(bs => bs.year === prevYear);
+
+    if (!baseBS) return null;
+
+    const currentProfit = totals.revenue - totals.expense;
+
+    // 単純計算: 現金 ＝ 期首現金 ＋ 売上 ー 経費
+    const estimatedCash = baseBS.assets_current_cash + currentProfit;
+
+    // 利益剰余金 ＝ 期首利益剰余金 ＋ 今期利益
+    const estimatedRetainedEarnings = baseBS.net_assets_retained_earnings + currentProfit;
+
+    // 資産合計 ＝ 期首資産合計 ＋ 今期利益分（現金増加と仮定）
+    const estimatedAssets = baseBS.assets_total + currentProfit;
+
+    // 純資産合計 ＝ 期首純資産合計 ＋ 今期利益
+    const estimatedNetAssets = baseBS.net_assets_total + currentProfit;
+
+    // 自己資本比率の計算
+    const equityRatio = estimatedAssets > 0 ? (estimatedNetAssets / estimatedAssets) * 100 : 0;
+    const prevEquityRatio = baseBS.assets_total > 0 ? (baseBS.net_assets_total / baseBS.assets_total) * 100 : 0;
+
+    return {
+      baseYear: prevYear,
+      cash: estimatedCash,
+      retainedEarnings: estimatedRetainedEarnings,
+      assets: estimatedAssets,
+      netAssets: estimatedNetAssets,
+      equityRatio,
+      equityRatioChange: equityRatio - prevEquityRatio,
+      cashChange: currentProfit
+    };
+  }, [yearlyBalanceSheets, year, totals]);
 
   const exportReport = () => {
     // CSVエクスポートロジック
@@ -258,14 +338,24 @@ const BusinessAnalysis: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center mb-6">
-          <Link to="/dashboard" className="mr-4">
-            <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-text-main">経営分析</h1>
-            <p className="text-text-muted">売上・経費の推移や予実管理を行い、経営判断をサポートします</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Link to="/dashboard" className="mr-4">
+              <ArrowLeft className="w-6 h-6 text-text-muted hover:text-text-main" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-text-main">経営分析</h1>
+              <p className="text-text-muted hidden sm:block">売上・経費の推移や予実管理を行い、経営判断をサポートします</p>
+            </div>
           </div>
+          <button
+            onClick={exportReport}
+            className="flex items-center px-4 py-2 bg-surface text-text-main border border-border rounded-lg hover:bg-surface-highlight transition-colors text-sm font-medium shadow-sm"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">エクスポート</span>
+            <span className="sm:hidden">出力</span>
+          </button>
         </div>
 
         {/* データがない場合の表示 */}
@@ -286,53 +376,99 @@ const BusinessAnalysis: React.FC = () => {
         )}
 
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <h2 className="text-lg font-semibold text-text-main mb-4 md:mb-0">財務状況</h2>
-            <div className="flex flex-wrap gap-3">
-              <div className="flex items-center">
-                <Calendar className="w-4 h-4 text-text-muted mr-2" />
+          <div className="space-y-4 mb-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text-main">財務状況</h2>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-white/5 p-1.5 rounded-lg border border-white/10">
+                <div className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-md">
+                  <span className="text-sm font-bold text-primary">{year}年度</span>
+                </div>
+                <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
                 <select
                   value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
-                  className="px-3 py-1 bg-background border border-border rounded-md text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+                  onChange={(e) => setPeriod(e.target.value as any)}
+                  className="bg-transparent text-sm font-medium text-text-main focus:outline-none cursor-pointer py-1.5 px-1 underline underline-offset-4 decoration-primary/30"
                 >
-                  <option value="monthly">月次</option>
-                  <option value="quarterly">四半期</option>
-                  <option value="yearly">年次</option>
+                  <option value="yearly" className="bg-[#0f172a]">通期</option>
+                  <option value="quarterly" className="bg-[#0f172a]">四半期</option>
+                  <option value="monthly" className="bg-[#0f172a]">月次</option>
                 </select>
+                {period === 'monthly' && (
+                  <select
+                    value={month}
+                    onChange={(e) => setMonth(e.target.value)}
+                    className="px-2 py-1 bg-background border border-border rounded-md text-xs sm:text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                      <option key={m} value={m.toString().padStart(2, '0')}>{m}月</option>
+                    ))}
+                  </select>
+                )}
               </div>
-              <div className="flex items-center">
-                <Filter className="w-4 h-4 text-text-muted mr-2" />
-                <select
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  className="px-3 py-1 bg-background border border-border rounded-md text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  {yearOptions.map(y => (
-                    <option key={y} value={y.toString()}>{y}年</option>
-                  ))}
-                </select>
-              </div>
-              {period === 'monthly' && (
-                <select
-                  value={month}
-                  onChange={(e) => setMonth(e.target.value)}
-                  className="px-3 py-1 bg-background border border-border rounded-md text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                    <option key={m} value={m.toString().padStart(2, '0')}>{m}月</option>
-                  ))}
-                </select>
-              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={exportReport}
-                className="flex items-center px-3 py-1 bg-surface text-text-main border border-border rounded-md hover:bg-surface-highlight transition-colors text-sm"
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center justify-center px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors text-xs sm:text-sm font-medium"
               >
-                <Download className="w-4 h-4 mr-1" />
-                エクスポート
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                前年度PL取込
+              </button>
+              <button
+                onClick={() => setIsBSModalOpen(true)}
+                className="flex items-center justify-center px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20 transition-colors text-xs sm:text-sm font-medium"
+              >
+                <FileText className="w-3.5 h-3.5 mr-1.5" />
+                貸借対照表取込
               </button>
             </div>
           </div>
+
+          {/* 推定現在の財務状態 (BS連携時のみ表示) */}
+          {estimatedBS && (
+            <div className="mb-8 bg-gradient-to-r from-surface-highlight to-surface border border-border rounded-xl p-4 sm:p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="p-1.5 bg-primary/10 rounded-md mr-2">
+                    <Target className="w-4 h-4 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-bold text-text-main">
+                    推定現在の財務状態 <span className="text-xs font-normal text-text-muted ml-1">({estimatedBS.baseYear}年度末BS ＋ 今期損益)</span>
+                  </h3>
+                </div>
+                <div className="text-xs text-text-muted">
+                  自動計算
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[10px] sm:text-xs text-text-muted uppercase tracking-wider">推定残高（現金）</p>
+                  <p className="text-lg sm:text-xl font-mono font-bold text-text-main">{formatCurrency(estimatedBS.cash)}</p>
+                  <p className={`text-[10px] sm:text-xs flex items-center ${estimatedBS.cashChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {estimatedBS.cashChange >= 0 ? '+' : ''}{formatCurrency(estimatedBS.cashChange)}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] sm:text-xs text-text-muted uppercase tracking-wider">推定利益剰余金</p>
+                  <p className="text-lg sm:text-xl font-mono font-bold text-text-main">{formatCurrency(estimatedBS.retainedEarnings)}</p>
+                  <p className="text-[10px] sm:text-xs text-text-muted">当期純利益を加算</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] sm:text-xs text-text-muted uppercase tracking-wider">自己資本比率</p>
+                  <p className="text-lg sm:text-xl font-mono font-bold text-text-main">{estimatedBS.equityRatio.toFixed(1)}%</p>
+                  <p className={`text-[10px] sm:text-xs flex items-center ${estimatedBS.equityRatioChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    前期比 {estimatedBS.equityRatioChange >= 0 ? '+' : ''}{estimatedBS.equityRatioChange.toFixed(1)}%
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] sm:text-xs text-text-muted uppercase tracking-wider">推定純資産</p>
+                  <p className="text-lg sm:text-xl font-mono font-bold text-text-main">{formatCurrency(estimatedBS.netAssets)}</p>
+                  <p className="text-[10px] sm:text-xs text-text-muted">企業の体力(蓄積)</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* サマリーカード */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
@@ -556,6 +692,27 @@ const BusinessAnalysis: React.FC = () => {
           transactionCount={filteredTransactions.length}
         />
       </main>
+
+      {/* インポートモーダル */}
+      {user?.id && (
+        <PreviousYearImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          userId={user.id}
+          businessType={businessType}
+          onImportSuccess={fetchSettlements}
+        />
+      )}
+
+      {user?.id && (
+        <BalanceSheetImportModal
+          isOpen={isBSModalOpen}
+          onClose={() => setIsBSModalOpen(false)}
+          userId={user.id}
+          businessType={businessType}
+          onImportSuccess={fetchSettlements}
+        />
+      )}
     </div>
   );
 };

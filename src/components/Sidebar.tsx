@@ -2,10 +2,11 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles, Target,
-    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit, Sun, Moon
+    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit, Sun, Moon, Calendar, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
+import { useFiscalYear } from '../context/FiscalYearContext';
 import { useTheme } from '../context/ThemeContext';
 
 interface SidebarProps {
@@ -28,6 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const { theme, toggleTheme } = useTheme();
     // BusinessTypeContextから現在のビジネスタイプを取得
     const { currentBusinessType } = useBusinessTypeContext();
+    const { selectedYear, setSelectedYear, yearOptions } = useFiscalYear();
 
     // 法人かどうかを判定
     const isCorporation = currentBusinessType?.business_type === 'corporation';
@@ -124,8 +126,49 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </button>
                     </div>
 
+                    {/* Fiscal Year Selector */}
+                    <div className="mb-6 px-1 relative group">
+                        <div className={`
+                            flex items-center bg-white/5 border border-white/10 rounded-xl p-2.5 
+                            transition-all duration-200 relative
+                            ${(isExpanded || isOpen) ? 'space-x-3 w-full' : 'justify-center w-12 mx-auto'}
+                            group-hover:bg-white/10 group-hover:border-white/20
+                        `}>
+                            <Calendar size={20} className="text-secondary flex-shrink-0" />
+
+                            {(isExpanded || isOpen) && (
+                                <div className="flex-1 min-w-0 pr-6 relative">
+                                    <p className="text-[10px] text-text-muted uppercase tracking-wider mb-0.5">会計年度</p>
+                                    <div className="flex items-center">
+                                        <span className="text-sm font-bold text-text-main truncate">
+                                            {selectedYear}年度
+                                        </span>
+                                    </div>
+                                    <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-text-muted" />
+                                </div>
+                            )}
+
+                            {/* Always render select, but make it transparent and overlay when collapsed */}
+                            <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                className={`
+                                    absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10
+                                    ${(isExpanded || isOpen) ? '' : 'text-center'}
+                                `}
+                                title={`${selectedYear}年度`}
+                            >
+                                {yearOptions.map(y => (
+                                    <option key={y} value={y} className="bg-[#0f172a] text-text-main">
+                                        {y}年度
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
                     {/* Navigation */}
-                    <nav className="flex-1 space-y-2">
+                    <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
                         {navItems.map((item) => (
                             <Link
                                 key={item.path}

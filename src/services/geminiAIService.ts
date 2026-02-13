@@ -77,6 +77,45 @@ export interface AIReceiptAnalysis {
   tax_classification?: string; // 推論フィールド
 }
 
+/**
+ * 損益計算書（決算書）の解析結果インターフェース
+ */
+export interface AIPLSettlementAnalysis {
+  year: number | null;
+  revenue: number | null;
+  cost_of_sales: number | null;
+  operating_expenses: number | null;
+  non_operating_income: number | null;
+  non_operating_expenses: number | null;
+  extraordinary_income: number | null;
+  extraordinary_loss: number | null;
+  income_before_tax: number | null;
+  net_income: number | null;
+  category_breakdown: {
+    category: string;
+    amount: number;
+  }[];
+  confidence: number;
+}
+
+/**
+ * 貸借対照表（BS）の解析結果インターフェース
+ */
+export interface AIBSAnalysis {
+  year: number | null;
+  assets_current_cash: number | null;
+  assets_current_total: number | null;
+  assets_total: number | null;
+  liabilities_total: number | null;
+  net_assets_capital: number | null;
+  net_assets_retained_earnings: number | null;
+  net_assets_retained_earnings_total: number | null;
+  net_assets_shareholders_equity: number | null;
+  net_assets_total: number | null;
+  liabilities_and_net_assets_total: number | null;
+  confidence: number;
+}
+
 // ... helper logic to map flat fields ...
 
 /**
@@ -883,4 +922,285 @@ export async function parseChatTransactionWithAI(
     console.error('AIチャット解析エラー:', error);
     return null;
   }
+}
+
+/**
+ * Gemini AIを使用して損益計算書（決算書）を分析
+ */
+export async function analyzePLDocumentWithAI(
+  ocrText: string
+): Promise<AIPLSettlementAnalysis | null> {
+  if (!GEMINI_API_KEY) return null;
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      console.log(`Trying P&L analysis with model (Text): ${model}`);
+      const result = await analyzePLWithModelInternal(model, ocrText, undefined);
+      if (result) return result;
+    } catch (error) {
+      console.warn(`Model ${model} failed for P&L Text:`, error);
+      if (model === GEMINI_MODELS[GEMINI_MODELS.length - 1]) throw error;
+    }
+  }
+  return null;
+}
+
+/**
+ * Gemini AI (Vision)を使用して画像から損益計算書を分析
+ */
+export async function analyzePLDocumentWithVision(
+  imageBase64: string
+): Promise<AIPLSettlementAnalysis | null> {
+  if (!GEMINI_API_KEY) return null;
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      console.log(`Trying P&L analysis with model (Vision): ${model}`);
+      const result = await analyzePLWithModelInternal(model, undefined, imageBase64);
+      if (result) return result;
+    } catch (error) {
+      console.warn(`Model ${model} failed for P&L Vision:`, error);
+      if (model === GEMINI_MODELS[GEMINI_MODELS.length - 1]) throw error;
+    }
+  }
+  return null;
+}
+
+/**
+ * 内部用の共通AI分析関数
+ */
+async function analyzePLWithModelInternal(
+  model: string,
+  ocrText?: string,
+  imageBase64?: string
+): Promise<AIPLSettlementAnalysis | null> {
+  const currentYear = new Date().getFullYear();
+  const isVision = !!imageBase64;
+
+  const prompt = isVision
+    ? `あなたは日本の税理士レベルの視覚理解力を持つAIです。
+画像から損益計算書（P&L）を読み取り、主要な財務データを抽出してください。
+
+### コンテキスト:
+- 表の構造（特に「当期実績」の列）を正確に特定してください。
+- 漢字の読み間違い（例: 費と賃など）に注意してください。
+- 単位（千円、百万円など）が指定されている場合は、円単位に換算してください。
+
+### 出力形式（Strict JSON）:
+{
+  "year": number,
+  "revenue": number,
+  "cost_of_sales": number,
+  "operating_expenses": number,
+  "non_operating_income": number,
+  "non_operating_expenses": number,
+  "extraordinary_income": number,
+  "extraordinary_loss": number,
+  "income_before_tax": number,
+  "net_income": number,
+  "category_breakdown": [
+    { "category": "カテゴリ名", "amount": 数値 }
+  ],
+  "confidence": 0-100
+}
+
+年度補完: ${currentYear - 1}年または${currentYear}年を優先。`
+    : `あなたは日本の税理士・会計士レベルの知識を持つAIです。
+以下のOCRテキストから損益計算書（P&L）の数値を抽出し、JSON形式で返してください。
+
+OCRテキスト:
+"""
+${ocrText}
+"""
+
+### 抽出項目:
+1. **対象年度**: 決算書の対象期間（例: 2024年度、令和6年度など）から西暦4桁を特定。
+2. **売上高**: 売上、収入金額。
+3. **売上原価**: 仕入など。
+4. **販売費及び一般管理費**: 経費の合計（販管費）。
+5. **営業利益**: (売上 - 原価 - 販管費)。
+6. **営業外損益**: 受取利息、支払利息など。
+7. **特別損益**: 固定資産売却益、火災損失など。
+8. **税引前当期純利益**: (営業利益 + 営業外損益 + 特別損益)。
+9. **当期純利益**: 最終的な純利益。
+10. **経費内訳**: 主な経費カテゴリ名と金額。
+
+### 出力形式（Strict JSON）:
+{
+  "year": number,
+  "revenue": number,
+  "cost_of_sales": number,
+  "operating_expenses": number,
+  "non_operating_income": number,
+  "non_operating_expenses": number,
+  "extraordinary_income": number,
+  "extraordinary_loss": number,
+  "income_before_tax": number,
+  "net_income": number,
+  "category_breakdown": [
+    { "category": "カテゴリ名", "amount": 数値 }
+  ],
+  "confidence": 0-100
+}
+
+注意: 年度が不明な場合は ${currentYear - 1} または ${currentYear} と推測してください。金額はカンマを除去した数値で返してください。`;
+
+  const apiUrl = getApiUrl(model);
+  const parts: any[] = [{ text: prompt }];
+
+  if (isVision) {
+    let mimeType = 'image/jpeg';
+    if (imageBase64!.includes('data:')) {
+      const match = imageBase64!.match(/data:([^;]+);/);
+      if (match) mimeType = match[1];
+    }
+    const pureBase64 = imageBase64!.includes(',') ? imageBase64!.split(',')[1] : imageBase64;
+    parts.push({ inline_data: { mime_type: mimeType, data: pureBase64 } });
+  }
+
+  const response = await fetch(`${apiUrl}?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: {
+        temperature: 0.1,
+        response_mime_type: "application/json"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Gemini API Error (${model}):`, response.status, errorText);
+    throw new Error(`API Error ${response.status}: ${errorText}`);
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!text) {
+    throw new Error(`Empty response from model ${model}`);
+  }
+
+  // 堅牢なJSON抽出
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error('Failed to extract JSON from AI response:', text);
+    throw new Error('Invalid JSON format in AI response');
+  }
+
+  return JSON.parse(jsonMatch[0]);
+}
+/**
+ * Gemini AI (Vision)を使用して画像から貸借対照表を分析
+ */
+export async function analyzeBSDocumentWithVision(
+  imageBase64: string
+): Promise<AIBSAnalysis | null> {
+  if (!GEMINI_API_KEY) return null;
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      console.log(`Trying Balance Sheet analysis with model: ${model}`);
+      const result = await analyzeBSWithModelInternal(model, imageBase64);
+      if (result) return result;
+    } catch (error) {
+      console.warn(`Model ${model} failed for Balance Sheet Vision:`, error);
+      if (model === GEMINI_MODELS[GEMINI_MODELS.length - 1]) throw error;
+    }
+  }
+  return null;
+}
+
+/**
+ * 内部用の共通BS分析関数
+ */
+async function analyzeBSWithModelInternal(
+  model: string,
+  imageBase64: string
+): Promise<AIBSAnalysis | null> {
+  const currentYear = new Date().getFullYear();
+
+  const prompt = `あなたは日本の税理士レベルの視覚理解力を持つAIです。
+画像から貸借対照表（BS）を読み取り、主要な財務データを抽出してください。
+
+### コンテキスト:
+- 表の構造（資産の部、負債の部、純資産の部）を正確に特定してください。
+- 単位（千円、百万円など）が指定されている場合は、円単位に換算してください。
+- 負の数値（例: △100、(100)）は、マイナス記号を付けて返してください。
+
+### 抽出項目（JSONキー）:
+1. **year**: 対象年度（西暦4桁）
+2. **assets_current_cash**: 現金及び預金
+3. **assets_current_total**: 流動資産合計
+4. **assets_total**: 資産の部合計
+5. **liabilities_total**: 負債の部合計
+6. **net_assets_capital**: 資本金
+7. **net_assets_retained_earnings**: 繰越利益剰余金
+8. **net_assets_retained_earnings_total**: 利益剰余金合計 / その他利益剰余金合計
+9. **net_assets_shareholders_equity**: 株主資本合計
+10. **net_assets_total**: 純資産の部合計
+11. **liabilities_and_net_assets_total**: 負債及び純資産の部合計
+
+### 出力形式（Strict JSON）:
+{
+  "year": number,
+  "assets_current_cash": number,
+  "assets_current_total": number,
+  "assets_total": number,
+  "liabilities_total": number,
+  "net_assets_capital": number,
+  "net_assets_retained_earnings": number,
+  "net_assets_retained_earnings_total": number,
+  "net_assets_shareholders_equity": number,
+  "net_assets_total": number,
+  "liabilities_and_net_assets_total": number,
+  "confidence": 0-100
+}
+
+年度補完: ${currentYear - 1}年または${currentYear}年を優先。`;
+
+  const apiUrl = getApiUrl(model);
+  const parts: any[] = [{ text: prompt }];
+
+  let mimeType = 'image/jpeg';
+  if (imageBase64.includes('data:')) {
+    const match = imageBase64.match(/data:([^;]+);/);
+    if (match) mimeType = match[1];
+  }
+  const pureBase64 = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+  parts.push({ inline_data: { mime_type: mimeType, data: pureBase64 } });
+
+  const response = await fetch(`${apiUrl}?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: {
+        temperature: 0.1,
+        response_mime_type: "application/json"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Gemini API Error (BS - ${model}):`, response.status, errorText);
+    throw new Error(`API Error ${response.status}: ${errorText}`);
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!text) {
+    throw new Error(`Empty response from model ${model}`);
+  }
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('Invalid JSON format in AI response');
+  }
+
+  return JSON.parse(jsonMatch[0]);
 }

@@ -19,13 +19,30 @@ import BudgetControlCard from '../components/BudgetControlCard';
 // これらのコンポーネントはReact.lazyで遅延読み込みされるため、明示的なプリロードは不要です
 
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
+import { useFiscalYear } from '../context/FiscalYearContext';
 
 const Dashboard: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext();
+  const { selectedYear } = useFiscalYear();
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
-  const { transactions, loading, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const { transactions: allTransactions, loading, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type);
+  const [allReceipts, setAllReceipts] = useState<Receipt[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+
+  // フィルタリングされたデータ
+  const transactions = useMemo(() => {
+    return allTransactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === selectedYear;
+    });
+  }, [allTransactions, selectedYear]);
+
+  const receipts = useMemo(() => {
+    return allReceipts.filter(r => {
+      const d = new Date(r.date);
+      return d.getFullYear() === selectedYear;
+    });
+  }, [allReceipts, selectedYear]);
 
   console.log('ダッシュボード - currentBusinessType:', currentBusinessType);
   console.log('ダッシュボード - transactions:', transactions);
@@ -59,7 +76,7 @@ const Dashboard: React.FC = () => {
     if (authUser?.id) {
       const data = await getReceipts(authUser.id);
       // 未承認・未却下のもののみ
-      setReceipts(data.filter(r => r.status === 'pending'));
+      setAllReceipts(data.filter(r => r.status === 'pending'));
     }
   };
 
@@ -100,9 +117,6 @@ const Dashboard: React.FC = () => {
 
     window.addEventListener('transactionApproved', handleTransactionApproved);
 
-    return () => {
-      window.removeEventListener('transactionApproved', handleTransactionApproved);
-    };
   }, [currentBusinessType, fetchTransactions]);
 
   // 統計情報
@@ -315,12 +329,12 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Suspense fallback={<div className="h-[620px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
           <div className="h-[620px]">
-            <RevenueChart transactions={transactions} />
+            <RevenueChart transactions={transactions} selectedYear={selectedYear} />
           </div>
         </Suspense>
         <Suspense fallback={<div className="h-[620px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center"><div className="text-gray-400">読み込み中...</div></div>}>
           <div className="h-[620px]">
-            <ExpenseChart transactions={transactions} />
+            <ExpenseChart transactions={transactions} selectedYear={selectedYear} />
           </div>
         </Suspense>
       </div>
@@ -342,6 +356,7 @@ const Dashboard: React.FC = () => {
               transactions={transactions}
               receipts={receipts}
               businessType={currentBusinessType?.business_type}
+              selectedYear={selectedYear}
             />
           </div>
         </Suspense>

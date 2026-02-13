@@ -31,9 +31,10 @@ interface BudgetControlCardProps {
     transactions: Transaction[];
     receipts?: Receipt[];
     businessType?: 'individual' | 'corporation';
+    selectedYear?: number;
 }
 
-const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, receipts = [], businessType = 'individual' }) => {
+const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, receipts = [], businessType = 'individual', selectedYear }) => {
     const [activeTab, setActiveTab] = useState<'month' | 'total' | 'tax'>('total');
     // Simple budget state (persisted in local storage for demo)
     const [budget, setBudget] = useState<number>(() => {
@@ -72,7 +73,9 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
     const budgetData = useMemo(() => {
         const now = new Date();
         const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
+        const currentYear = selectedYear || now.getFullYear();
+        // 選択された年度が現在のカレンダー年でない場合は、その年度の最終月または全期間を表示するのが適切かもしれないが、
+        // 現状のUIを活かすため年度を優先的に考慮。
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
         const currentDay = now.getDate();
 
@@ -248,12 +251,10 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
     // However, since we need to render one or the other, we can call both and assume lightweight calculation, OR refactor to a single hook with a param.
     // Given the constraints and existing code, calling both is acceptable if they are light, or better yet, we just change the component structure.
     // But since hooks must be top-level, we MUST call them unconditionally or create a unified hook.
-    // The implementation plan suggested logic inside the component, but hooks rules apply.
-    // Refactoring plan: Call both, use one result.
-    const individualTaxData = useTaxCalculation(transactions, receipts);
-    const corporateTaxData = useCorporateTaxCalculation(transactions, receipts);
+    const individualTax = useTaxCalculation(transactions, receipts, { year: selectedYear });
+    const corpTax = useCorporateTaxCalculation(transactions, receipts, { year: selectedYear });
 
-    const taxData = businessType === 'corporation' ? corporateTaxData : individualTaxData;
+    const taxData = businessType === 'corporation' ? corpTax : individualTax;
 
     const chartOptions = {
         indexAxis: 'y' as const,
@@ -285,6 +286,9 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
             <div className="flex flex-col gap-3 mb-3">
                 <div className="flex items-center justify-between">
                     <div>
+                        <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">
+                            {selectedYear || new Date().getFullYear()}年度累計実績
+                        </h4>
                         <h3 className="text-base font-bold text-text-main leading-tight">経営管理コックピット</h3>
                         <p className="text-[10px] text-text-muted">財務状況をリアルタイムに把握</p>
                     </div>

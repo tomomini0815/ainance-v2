@@ -5,12 +5,14 @@ import TransactionIcon from '../components/TransactionIcon'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionForm from '../components/TransactionForm'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
+import { useFiscalYear } from '../context/FiscalYearContext'
 import { useAuth } from '../hooks/useAuth'
 import OmniEntryPortal from '../components/OmniEntryPortal'
 
 const TransactionHistory: React.FC = () => {
   const { currentBusinessType } = useBusinessTypeContext()
   const { user: authUser } = useAuth();
+  const { selectedYear } = useFiscalYear();
   const { transactions, loading, updateTransaction, deleteTransaction, fetchTransactions } = useTransactions(authUser?.id, currentBusinessType?.business_type)
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -154,8 +156,14 @@ const TransactionHistory: React.FC = () => {
       }
     })
 
+    // 年度フィルタ
+    result = result.filter(transaction => {
+      const transYear = new Date(transaction.date).getFullYear();
+      return transYear === selectedYear;
+    });
+
     return result
-  }, [transactions, searchTerm, categoryFilter, dateRange, amountRange, sortBy, sortOrder, viewMode])
+  }, [transactions, searchTerm, categoryFilter, dateRange, amountRange, sortBy, sortOrder, viewMode, selectedYear])
 
   // ページネーション
   const totalPages = Math.ceil(filteredAndSortedTransactions.length / itemsPerPage)

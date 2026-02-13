@@ -7,6 +7,7 @@ import './App.css'
 import { AuthProvider } from './components/AuthProvider'
 import { BusinessTypeProvider } from './context/BusinessTypeContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { FiscalYearProvider } from './context/FiscalYearContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 
@@ -132,289 +133,291 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BusinessTypeProvider>
-          <Toaster position="top-right" />
-          <React.Suspense fallback={<PageLoader />}>
-            <Routes>
-              {/* パブリックルート */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+        <FiscalYearProvider>
+          <BusinessTypeProvider>
+            <Toaster position="top-right" />
+            <React.Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* パブリックルート */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
 
-              {/* 保護されたルート - Layoutでラップ */}
-              <Route element={<Layout />}>
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/receipt-processing"
-                  element={
-                    <ProtectedRoute>
-                      <ReceiptProcessing />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/quick-scan"
-                  element={
-                    <ProtectedRoute>
-                      <QuickReceiptScan />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/invoice-creation"
-                  element={
-                    <ProtectedRoute>
-                      <InvoiceCreation />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/business-analysis"
-                  element={
-                    <ProtectedRoute>
-                      <BusinessAnalysis />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/cumulative-analysis"
-                  element={
-                    <ProtectedRoute>
-                      <CumulativeAnalysisPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/tax-report"
-                  element={
-                    <ProtectedRoute>
-                      <TaxReportPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/chat-to-book"
-                  element={
-                    <ProtectedRoute>
-                      <ChatToBook />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/business-conversion"
-                  element={
-                    <ProtectedRoute>
-                      <BusinessConversion />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/integration-settings"
-                  element={
-                    <ProtectedRoute>
-                      <IntegrationSettings />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/transaction-history"
-                  element={
-                    <ProtectedRoute>
-                      <TransactionHistory />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/expense-breakdown"
-                  element={
-                    <ProtectedRoute>
-                      <ExpenseCategoryDetailsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/ai-transaction-list"
-                  element={
-                    <ProtectedRoute>
-                      <AITransactionList />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/transaction-inbox"
-                  element={
-                    <ProtectedRoute>
-                      <TransactionInbox />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/subsidy-matching"
-                  element={
-                    <ProtectedRoute>
-                      <SubsidyMatching />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/tax-filing-wizard"
-                  element={
-                    <ProtectedRoute>
-                      <TaxFilingWizard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/tax-return-input"
-                  element={
-                    <ProtectedRoute>
-                      <TaxReturnInputForm />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/corporate-tax-input"
-                  element={
-                    <ProtectedRoute>
-                      <CorporateTaxInputForm />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/tax-filing-guide"
-                  element={
-                    <ProtectedRoute>
-                      <TaxFilingGuidePage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/corporate-tax"
-                  element={
-                    <ProtectedRoute>
-                      <CorporateTaxFilingPage />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* 保護されたルート - Layoutでラップ */}
+                <Route element={<Layout />}>
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/receipt-processing"
+                    element={
+                      <ProtectedRoute>
+                        <ReceiptProcessing />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/quick-scan"
+                    element={
+                      <ProtectedRoute>
+                        <QuickReceiptScan />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/invoice-creation"
+                    element={
+                      <ProtectedRoute>
+                        <InvoiceCreation />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/business-analysis"
+                    element={
+                      <ProtectedRoute>
+                        <BusinessAnalysis />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/cumulative-analysis"
+                    element={
+                      <ProtectedRoute>
+                        <CumulativeAnalysisPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/tax-report"
+                    element={
+                      <ProtectedRoute>
+                        <TaxReportPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/chat-to-book"
+                    element={
+                      <ProtectedRoute>
+                        <ChatToBook />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/business-conversion"
+                    element={
+                      <ProtectedRoute>
+                        <BusinessConversion />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/integration-settings"
+                    element={
+                      <ProtectedRoute>
+                        <IntegrationSettings />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/transaction-history"
+                    element={
+                      <ProtectedRoute>
+                        <TransactionHistory />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/expense-breakdown"
+                    element={
+                      <ProtectedRoute>
+                        <ExpenseCategoryDetailsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-transaction-list"
+                    element={
+                      <ProtectedRoute>
+                        <AITransactionList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/transaction-inbox"
+                    element={
+                      <ProtectedRoute>
+                        <TransactionInbox />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/subsidy-matching"
+                    element={
+                      <ProtectedRoute>
+                        <SubsidyMatching />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/tax-filing-wizard"
+                    element={
+                      <ProtectedRoute>
+                        <TaxFilingWizard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/tax-return-input"
+                    element={
+                      <ProtectedRoute>
+                        <TaxReturnInputForm />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/corporate-tax-input"
+                    element={
+                      <ProtectedRoute>
+                        <CorporateTaxInputForm />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/tax-filing-guide"
+                    element={
+                      <ProtectedRoute>
+                        <TaxFilingGuidePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/corporate-tax"
+                    element={
+                      <ProtectedRoute>
+                        <CorporateTaxFilingPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                <Route
-                  path="/corporate-tax-guide"
-                  element={
-                    <ProtectedRoute>
-                      <CorporateTaxGuidePage />
-                    </ProtectedRoute>
-                  }
-                />
+                  <Route
+                    path="/corporate-tax-guide"
+                    element={
+                      <ProtectedRoute>
+                        <CorporateTaxGuidePage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                <Route
-                  path="/csv-import"
-                  element={
-                    <ProtectedRoute>
-                      <CSVImportPage />
-                    </ProtectedRoute>
-                  }
-                />
+                  <Route
+                    path="/csv-import"
+                    element={
+                      <ProtectedRoute>
+                        <CSVImportPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                <Route
-                  path="/quick-tax-filing"
-                  element={
-                    <ProtectedRoute>
-                      <QuickTaxFilingPage />
-                    </ProtectedRoute>
-                  }
-                />
+                  <Route
+                    path="/quick-tax-filing"
+                    element={
+                      <ProtectedRoute>
+                        <QuickTaxFilingPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                <Route
-                  path="/database-test"
-                  element={
-                    <ProtectedRoute>
-                      <DatabaseTestPage />
-                    </ProtectedRoute>
-                  }
-                />
-              </Route>
+                  <Route
+                    path="/database-test"
+                    element={
+                      <ProtectedRoute>
+                        <DatabaseTestPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Route>
 
-              {/* Public Pages */}
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<TermsOfService />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/how-to-use" element={<HowToUse />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/support/receipt-tips" element={<ReceiptTips />} />
-              <Route path="/support/invoice-compliance" element={<InvoiceCompliance />} />
-              <Route path="/support/account-deletion" element={<AccountDeletion />} />
-              <Route path="/support/multi-device" element={<MultiDevice />} />
-              <Route path="/support/account" element={<AccountHelp />} />
-              <Route path="/support/payment" element={<PaymentHelp />} />
-              <Route path="/support/features" element={<FeatureHelp />} />
-              <Route path="/support/troubleshooting" element={<Troubleshooting />} />
-              <Route path="/support/account/create" element={<AccountCreate />} />
-              <Route path="/support/account/login-issues" element={<LoginIssues />} />
-              <Route path="/support/account/social-login" element={<SocialLogin />} />
-              <Route path="/support/account/2fa" element={<TwoFactorAuth />} />
-              <Route path="/support/account/change-password" element={<ChangePassword />} />
-              <Route path="/support/account/forgot-password" element={<ForgotPassword />} />
-              <Route path="/support/account/login-history" element={<LoginHistory />} />
-              <Route path="/support/account/suspicious-activity" element={<SuspiciousActivity />} />
-              <Route path="/support/account/profile-edit" element={<ProfileEdit />} />
-              <Route path="/support/account/email-change" element={<EmailChange />} />
-              <Route path="/support/account/notification-settings" element={<NotificationSettings />} />
-              <Route path="/support/payment/plans" element={<PaymentPlans />} />
-              <Route path="/support/payment/free-vs-paid" element={<FreeVsPaid />} />
-              <Route path="/support/payment/upgrade" element={<PlanUpgrade />} />
-              <Route path="/support/payment/cancellation" element={<Cancellation />} />
-              <Route path="/support/payment/methods" element={<PaymentMethods />} />
-              <Route path="/support/payment/update-card" element={<UpdateCard />} />
-              <Route path="/support/payment/bank-transfer" element={<BankTransfer />} />
-              <Route path="/support/payment/billing-date" element={<BillingDate />} />
-              <Route path="/support/payment/invoice-issuance" element={<InvoiceIssuance />} />
-              <Route path="/support/payment/receipt-download" element={<ReceiptDownload />} />
-              <Route path="/support/payment/qualified-invoice" element={<QualifiedInvoice />} />
-              <Route path="/support/payment/billing-history" element={<BillingHistory />} />
-              <Route path="/support/features/receipt-photo" element={<ReceiptPhotoGuide />} />
-              <Route path="/support/features/manual-entry" element={<ManualEntry />} />
-              <Route path="/support/features/csv-import" element={<CsvImport />} />
-              <Route path="/support/features/chat-usage" element={<ChatUsage />} />
-              <Route path="/support/features/voice-input" element={<VoiceInputTips />} />
-              <Route path="/support/features/line-integration" element={<LineIntegration />} />
-              <Route path="/support/features/unknown-entry" element={<UnknownEntry />} />
-              <Route path="/support/features/tax-return" element={<TaxReturnGuide />} />
-              <Route path="/support/features/etax-linkage" element={<EtaxLinkage />} />
-              <Route path="/support/features/invoice-creation" element={<InvoiceCreationGuide />} />
-              <Route path="/support/features/form-download" element={<FormDownload />} />
-              <Route path="/support/features/dashboard" element={<DashboardGuide />} />
-              <Route path="/support/features/management-report" element={<ManagementReport />} />
-              <Route path="/support/features/cash-flow" element={<CashFlowForecast />} />
-              <Route path="/support/features/custom-report" element={<CustomReport />} />
-              <Route path="/support/troubleshooting/login-failed" element={<LoginFailedError />} />
-              <Route path="/support/troubleshooting/image-upload" element={<ImageUploadError />} />
-              <Route path="/support/troubleshooting/button-not-responding" element={<ButtonNotResponding />} />
-              <Route path="/support/troubleshooting/white-screen" element={<WhiteScreen />} />
-              <Route path="/support/troubleshooting/offline-mode" element={<OfflineMode />} />
-              <Route path="/support/troubleshooting/sync-error" element={<SyncError />} />
-              <Route path="/support/troubleshooting/bank-linkage" element={<BankLinkageError />} />
-              <Route path="/support/troubleshooting/slow-performance" element={<SlowPerformance />} />
-              <Route path="/support/troubleshooting/app-update" element={<AppUpdate />} />
-              <Route path="/support/troubleshooting/system-requirements" element={<SystemRequirements />} />
-              <Route path="/support/troubleshooting/clear-cache" element={<ClearCache />} />
-              <Route path="/support/troubleshooting/bug-report" element={<BugReport />} />
-              <Route path="/legal" element={<LegalNotice />} />
+                {/* Public Pages */}
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/features" element={<Features />} />
+                <Route path="/how-to-use" element={<HowToUse />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/support/receipt-tips" element={<ReceiptTips />} />
+                <Route path="/support/invoice-compliance" element={<InvoiceCompliance />} />
+                <Route path="/support/account-deletion" element={<AccountDeletion />} />
+                <Route path="/support/multi-device" element={<MultiDevice />} />
+                <Route path="/support/account" element={<AccountHelp />} />
+                <Route path="/support/payment" element={<PaymentHelp />} />
+                <Route path="/support/features" element={<FeatureHelp />} />
+                <Route path="/support/troubleshooting" element={<Troubleshooting />} />
+                <Route path="/support/account/create" element={<AccountCreate />} />
+                <Route path="/support/account/login-issues" element={<LoginIssues />} />
+                <Route path="/support/account/social-login" element={<SocialLogin />} />
+                <Route path="/support/account/2fa" element={<TwoFactorAuth />} />
+                <Route path="/support/account/change-password" element={<ChangePassword />} />
+                <Route path="/support/account/forgot-password" element={<ForgotPassword />} />
+                <Route path="/support/account/login-history" element={<LoginHistory />} />
+                <Route path="/support/account/suspicious-activity" element={<SuspiciousActivity />} />
+                <Route path="/support/account/profile-edit" element={<ProfileEdit />} />
+                <Route path="/support/account/email-change" element={<EmailChange />} />
+                <Route path="/support/account/notification-settings" element={<NotificationSettings />} />
+                <Route path="/support/payment/plans" element={<PaymentPlans />} />
+                <Route path="/support/payment/free-vs-paid" element={<FreeVsPaid />} />
+                <Route path="/support/payment/upgrade" element={<PlanUpgrade />} />
+                <Route path="/support/payment/cancellation" element={<Cancellation />} />
+                <Route path="/support/payment/methods" element={<PaymentMethods />} />
+                <Route path="/support/payment/update-card" element={<UpdateCard />} />
+                <Route path="/support/payment/bank-transfer" element={<BankTransfer />} />
+                <Route path="/support/payment/billing-date" element={<BillingDate />} />
+                <Route path="/support/payment/invoice-issuance" element={<InvoiceIssuance />} />
+                <Route path="/support/payment/receipt-download" element={<ReceiptDownload />} />
+                <Route path="/support/payment/qualified-invoice" element={<QualifiedInvoice />} />
+                <Route path="/support/payment/billing-history" element={<BillingHistory />} />
+                <Route path="/support/features/receipt-photo" element={<ReceiptPhotoGuide />} />
+                <Route path="/support/features/manual-entry" element={<ManualEntry />} />
+                <Route path="/support/features/csv-import" element={<CsvImport />} />
+                <Route path="/support/features/chat-usage" element={<ChatUsage />} />
+                <Route path="/support/features/voice-input" element={<VoiceInputTips />} />
+                <Route path="/support/features/line-integration" element={<LineIntegration />} />
+                <Route path="/support/features/unknown-entry" element={<UnknownEntry />} />
+                <Route path="/support/features/tax-return" element={<TaxReturnGuide />} />
+                <Route path="/support/features/etax-linkage" element={<EtaxLinkage />} />
+                <Route path="/support/features/invoice-creation" element={<InvoiceCreationGuide />} />
+                <Route path="/support/features/form-download" element={<FormDownload />} />
+                <Route path="/support/features/dashboard" element={<DashboardGuide />} />
+                <Route path="/support/features/management-report" element={<ManagementReport />} />
+                <Route path="/support/features/cash-flow" element={<CashFlowForecast />} />
+                <Route path="/support/features/custom-report" element={<CustomReport />} />
+                <Route path="/support/troubleshooting/login-failed" element={<LoginFailedError />} />
+                <Route path="/support/troubleshooting/image-upload" element={<ImageUploadError />} />
+                <Route path="/support/troubleshooting/button-not-responding" element={<ButtonNotResponding />} />
+                <Route path="/support/troubleshooting/white-screen" element={<WhiteScreen />} />
+                <Route path="/support/troubleshooting/offline-mode" element={<OfflineMode />} />
+                <Route path="/support/troubleshooting/sync-error" element={<SyncError />} />
+                <Route path="/support/troubleshooting/bank-linkage" element={<BankLinkageError />} />
+                <Route path="/support/troubleshooting/slow-performance" element={<SlowPerformance />} />
+                <Route path="/support/troubleshooting/app-update" element={<AppUpdate />} />
+                <Route path="/support/troubleshooting/system-requirements" element={<SystemRequirements />} />
+                <Route path="/support/troubleshooting/clear-cache" element={<ClearCache />} />
+                <Route path="/support/troubleshooting/bug-report" element={<BugReport />} />
+                <Route path="/legal" element={<LegalNotice />} />
 
-              {/* デフォルトルート */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/budget-analysis" element={<React.Suspense fallback={<div className="flex justify-center p-8">Loading...</div>}><BudgetAnalysisPage /></React.Suspense>} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </React.Suspense>
-        </BusinessTypeProvider>
+                {/* デフォルトルート */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/budget-analysis" element={<React.Suspense fallback={<div className="flex justify-center p-8">Loading...</div>}><BudgetAnalysisPage /></React.Suspense>} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </React.Suspense>
+          </BusinessTypeProvider>
+        </FiscalYearProvider>
       </AuthProvider>
     </ThemeProvider >
   )

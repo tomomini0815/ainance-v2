@@ -8,6 +8,7 @@ import ReceiptResultModal from '../components/ReceiptResultModal';
 import { getReceipts, updateReceiptStatus, approveReceiptAndCreateTransaction } from '../services/receiptService'
 import { useAuth } from '../components/AuthProvider'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
+import { useFiscalYear } from '../context/FiscalYearContext'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionIcon from '../components/TransactionIcon';
 import { parseGeminiError } from '../utils/geminiErrorUtils';
@@ -74,6 +75,7 @@ export interface ExtractedReceiptData {
 const ReceiptProcessing: React.FC = () => {
   const { user } = useAuth(); // 認証されたユーザーを取得
   const { currentBusinessType } = useBusinessTypeContext(); // 事業タイプを取得
+  const { selectedYear } = useFiscalYear();
   useTransactions(user?.id, currentBusinessType?.business_type as 'individual' | 'corporation'); // トランザクション追加用フック
 
   const [uploadedReceipts, setUploadedReceipts] = useState<ReceiptData[]>([])
@@ -117,13 +119,18 @@ const ReceiptProcessing: React.FC = () => {
       confidenceScores: r.confidence_scores
     }));
     // 承認済み・却下済みのレシートは除外（ToDoリストとして機能させるため）
-    const activeReceipts = formattedReceipts.filter(r => r.status !== 'approved' && r.status !== 'rejected');
+    // また、選択された会計年度に一致するもののみ表示
+    const activeReceipts = formattedReceipts.filter(r => {
+      const isStatusActive = r.status !== 'approved' && r.status !== 'rejected';
+      const isYearMatch = new Date(r.date).getFullYear() === selectedYear;
+      return isStatusActive && isYearMatch;
+    });
     setUploadedReceipts(activeReceipts);
   };
 
   useEffect(() => {
     loadReceipts();
-  }, [user]);
+  }, [user, selectedYear]);
 
   // カメラ開始処理
   const startCamera = () => {
