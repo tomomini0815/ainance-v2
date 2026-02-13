@@ -145,17 +145,17 @@ export const approveReceiptAndCreateTransaction = async (
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     console.log('レシート承認と取引作成を開始:', { receiptId, receipt, businessType, userId });
-    
+
     // userIdが有効か確認
     if (!userId) {
       throw new Error('ユーザーIDが無効です');
     }
-    
+
     // businessTypeが有効か確認
     if (!businessType) {
       throw new Error('業態情報が無効です');
     }
-    
+
     // 1. レシートステータスを'approved'に更新
     const updatedReceipt = await updateReceiptStatus(receiptId, 'approved');
     if (!updatedReceipt) {
@@ -179,8 +179,8 @@ export const approveReceiptAndCreateTransaction = async (
     };
 
     // 3. 事業タイプに応じて適切なテーブルに保存
-    const tableName = businessType === 'individual' 
-      ? 'individual_transactions' 
+    const tableName = businessType === 'individual'
+      ? 'individual_transactions'
       : 'corporation_transactions';
 
     // 既存の保留中トランザクションを検索（receipt_idタグで検索）
@@ -199,7 +199,7 @@ export const approveReceiptAndCreateTransaction = async (
       // 既存のトランザクションを更新
       const { data: updatedTx, error: updateError } = await supabase
         .from(tableName)
-        .update({ 
+        .update({
           approval_status: 'approved',
           updated_at: new Date().toISOString()
         })
@@ -208,8 +208,8 @@ export const approveReceiptAndCreateTransaction = async (
         .single();
 
       if (updateError) {
-         console.error('既存トランザクションの更新エラー:', updateError);
-         throw new Error(`${tableName}の更新に失敗しました: ${updateError.message}`);
+        console.error('既存トランザクションの更新エラー:', updateError);
+        throw new Error(`${tableName}の更新に失敗しました: ${updateError.message}`);
       }
       transactionResult = updatedTx;
       console.log(`${tableName}の更新成功:`, transactionResult);
@@ -218,19 +218,19 @@ export const approveReceiptAndCreateTransaction = async (
       // 新規作成（既存が見つからない場合）
       const transactionPayload = businessType === 'corporation'
         ? {
-            ...transactionData,
-            tags: ['receipt_created', `receipt_id:${receiptId}`], // タグにIDを含める
-            department: null,
-            project_code: null,
-            approval_status: 'approved' as const,
-          }
+          ...transactionData,
+          tags: ['receipt_created', `receipt_id:${receiptId}`], // タグにIDを含める
+          department: null,
+          project_code: null,
+          approval_status: 'approved' as const,
+        }
         : {
-            ...transactionData,
-            tags: ['receipt_created', `receipt_id:${receiptId}`], // タグにIDを含める
+          ...transactionData,
+          tags: ['receipt_created', `receipt_id:${receiptId}`], // タグにIDを含める
         };
 
       console.log('トランザクションを保存中（新規）:', { tableName, transactionPayload });
-      
+
       // トランザクションを保存
       const { data: newTx, error: transactionError } = await supabase
         .from(tableName)
@@ -302,6 +302,7 @@ const mapToAiCategory = (category: string): '交通費' | '食費' | '消耗品�
     '通信費': '通信費',
     '水道光熱費': '光熱費',
     '光熱費': '光熱費',
+    '役員報酬': 'その他',
   };
 
   return categoryMap[category] || 'その他';

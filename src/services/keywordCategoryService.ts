@@ -13,6 +13,7 @@ export type StandardCategory =
   | '接待交際費'
   | '会議費'
   | '水道光熱費'
+  | '役員報酬'
   | '広告宣伝費'
   | '外注費'
   | '新聞図書費'
@@ -56,7 +57,8 @@ export const STANDARD_CATEGORIES: StandardCategory[] = [
   '給与',
   '燃料費',
   '設備費',
-  '車両費'
+  '車両費',
+  '役員報酬'
 ];
 
 // キーワードとカテゴリのマッピング
@@ -103,6 +105,13 @@ const KEYWORD_RULES: { keyword: string; category: StandardCategory }[] = [
   { keyword: 'ヤマト運輸', category: '通信費' },
   { keyword: '佐川急便', category: '通信費' },
   { keyword: 'レターパック', category: '通信費' },
+
+  { keyword: '役員報酬', category: '役員報酬' },
+  { keyword: '代表者報酬', category: '役員報酬' },
+  { keyword: '役員給与', category: '役員報酬' },
+  { keyword: '社長給与', category: '役員報酬' },
+  { keyword: '役員手当', category: '役員報酬' },
+  { keyword: '理事報酬', category: '役員報酬' },
 
   // 旅費交通費
   { keyword: 'Uber', category: '旅費交通費' },

@@ -2,7 +2,8 @@ export interface ReceiptData {
   store_name: string;
   date: string;
   total_amount: number | null;
-  category: '消耗品費' | '交際費' | '旅費交通費' | '通信費' | '会議費' | '事務用品費' | '雑費' | '不明' | string; // 柔軟性のためstringも許容するが推奨は列挙型
+  category: '消耗品費' | '交際費' | '旅費交通費' | '通信費' | '会議費' | '事務用品費' | '役員報酬' | '雑費' | '不明' | string;
+  // 柔軟性のためstringも許容するが推奨は列挙型
   tax_classification: '課税仕入10%' | '課税仕入8%' | '非課税' | '不課税' | '不明' | string;
   confidence: number | null;
   items: ReceiptItem[];

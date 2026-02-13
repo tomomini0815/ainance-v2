@@ -38,6 +38,7 @@ const CATEGORIES = [
     { value: '接待交際費', label: '🍻 接待交際費', description: '取引先との飲食、贈答品など' },
     { value: '通信費', label: '📱 通信費', description: '携帯電話、インターネットなど' },
     { value: '水道光熱費', label: '💡 水道光熱費', description: '電気、ガス、水道など' },
+    { value: '役員報酬', label: '👔 役員報酬', description: '代表者への給与・報酬支払い' },
     { value: '家賃', label: '🏠 家賃', description: '事務所家賃、駐車場代など' },
     { value: '雑費', label: '📝 雑費', description: 'その他の経費' },
 ];

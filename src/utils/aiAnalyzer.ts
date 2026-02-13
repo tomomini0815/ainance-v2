@@ -75,6 +75,9 @@ export class AIAnalyzer {
         { id: 'outsourcing_design', name: 'デザイン外注', accountTitle: '外注費', taxDeductible: true, keywords: ['デザイン', 'ロゴ', 'グラフィック'] },
         { id: 'outsourcing_development', name: '開発外注', accountTitle: '外注費', taxDeductible: true, keywords: ['開発', 'プログラミング', 'システム'] },
 
+        // 役員報酬
+        { id: 'executive_remuneration', name: '役員報酬', accountTitle: '役員報酬', taxDeductible: true, keywords: ['役員報酬', '代表者報酬', '社長給与', '役員手当'] },
+
         // その他
         { id: 'other_insurance', name: '保険料', accountTitle: '保険料', taxDeductible: true, keywords: ['保険', '損保', '生保'] },
         { id: 'other_subscription', name: 'サブスクリプション', accountTitle: '通信費', taxDeductible: true, keywords: ['Netflix', 'Amazon', 'サブスク', 'Adobe'] },

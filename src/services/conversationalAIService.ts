@@ -69,11 +69,11 @@ export const analyzeTransactionContext = (
   transactions.forEach(t => {
     const category = t.category;
     const amount = typeof t.amount === 'number' ? Math.abs(t.amount) : 0;
-    
+
     if (!categoryMap.has(category)) {
       categoryMap.set(category, { count: 0, totalAmount: 0 });
     }
-    
+
     const data = categoryMap.get(category)!;
     data.count++;
     data.totalAmount += amount;
@@ -134,9 +134,9 @@ ${context.frequentCategories.map(c => `- ${c.category} (${c.count}回, 平均¥$
 ${context.commonVendors.join(', ')}
 
 【最近の取引】
-${context.recentTransactions.slice(0, 5).map(t => 
-  `- ${t.date}: ${t.description} ¥${Math.abs(t.amount).toLocaleString()} (${t.category})`
-).join('\n')}
+${context.recentTransactions.slice(0, 5).map(t =>
+      `- ${t.date}: ${t.description} ¥${Math.abs(t.amount).toLocaleString()} (${t.category})`
+    ).join('\n')}
 `;
 
     // 会話履歴を文字列化
@@ -214,7 +214,7 @@ const parseConversationFallback = (
   context: TransactionContext
 ): ConversationResponse => {
   const transactions: ParsedTransaction[] = [];
-  
+
   // 金額を抽出
   const amountPattern = /(\d+(?:,\d{3})*(?:\.\d+)?)\s*円?/g;
   const amounts: number[] = [];
@@ -228,6 +228,7 @@ const parseConversationFallback = (
   const categoryKeywords: Array<{ keywords: string[]; category: string; type: 'income' | 'expense' }> = [
     { keywords: ['売上', '収入', '入金'], category: '業務委託収入', type: 'income' },
     { keywords: ['交通費', '電車', 'タクシー', '出張'], category: '旅費交通費', type: 'expense' },
+    { keywords: ['役員報酬', '報酬', '社長の給与', '役員給与'], category: '役員報酬', type: 'expense' },
     { keywords: ['食事', 'ランチ', 'ディナー', '会食'], category: '接待交際費', type: 'expense' },
     { keywords: ['文具', 'コピー', '消耗品'], category: '消耗品費', type: 'expense' },
     { keywords: ['ホテル', '宿泊'], category: '旅費交通費', type: 'expense' },

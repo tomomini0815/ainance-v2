@@ -220,10 +220,19 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
     const { name, value, type } = e.target
     const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      };
+
+      // 特殊処理: 取引項目が「役員報酬」の場合、カテゴリを「役員報酬」に自動設定
+      if (name === 'item' && value === '役員報酬') {
+        newData.category = '役員報酬';
+      }
+
+      return newData;
+    })
   }
 
   const handleQuickAmountSelect = (amount: number) => {
@@ -599,6 +608,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
                 >
                   <option value="" className="bg-surface-highlight text-text-muted">取引項目を選択</option>
                   <option value="売上" className="bg-surface-highlight">売上</option>
+                  <option value="役員報酬" className="bg-surface-highlight">役員報酬</option>
                   <option value="コンビニ買い物" className="bg-surface-highlight">コンビニ買い物</option>
                   <option value="飲食代" className="bg-surface-highlight">飲食代</option>
                   <option value="事務用品" className="bg-surface-highlight">事務用品</option>

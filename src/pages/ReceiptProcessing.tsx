@@ -664,7 +664,8 @@ const ReceiptProcessing: React.FC = () => {
                             <option value="接待交際費">接待交際費</option>
                             <option value="旅費交通費">旅費交通費</option>
                             <option value="通信費">通信費</option>
-                            <option value="水道光熱費">水道光熱費</option>
+                            <option value="役員報酬">役員報酬</option>
+                            <option value="雜費">雜費</option>
                           </select>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-highlight text-text-main border border-border">
