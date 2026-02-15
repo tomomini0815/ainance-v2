@@ -185,16 +185,14 @@ const TransactionHistory: React.FC = () => {
       return 0;
     };
 
-    const incomeTransactions = transactions.filter(t => {
-      if (t.approval_status === 'pending') return false;
+    const incomeTransactions = filteredAndSortedTransactions.filter(t => {
       if (t.type === 'income') return true;
       if (t.type === 'expense') return false;
       const val = getAmountValue(t.amount);
       return !isNaN(val) && isFinite(val) && val > 0;
     });
 
-    const expenseTransactions = transactions.filter(t => {
-      if (t.approval_status === 'pending') return false;
+    const expenseTransactions = filteredAndSortedTransactions.filter(t => {
       if (t.type === 'expense') return true;
       if (t.type === 'income') return false;
       const val = getAmountValue(t.amount);
@@ -234,15 +232,15 @@ const TransactionHistory: React.FC = () => {
     }, 0);
 
     return {
-      total: transactions.length,
+      total: filteredAndSortedTransactions.length,
       income: totalIncome,
       expense: totalExpense,
       balance: totalIncome - totalExpense,
       pendingCount: transactions.filter(t => t.approval_status === 'pending').length,
-      depreciationCount: transactions.filter(t => t.tags?.includes('depreciation_asset') && t.approval_status !== 'pending').length,
-      allCount: transactions.filter(t => t.approval_status !== 'pending').length
+      depreciationCount: filteredAndSortedTransactions.filter(t => t.tags?.includes('depreciation_asset')).length,
+      allCount: filteredAndSortedTransactions.length
     };
-  }, [transactions])
+  }, [filteredAndSortedTransactions, transactions])
 
   // チェックボックス操作
   const toggleSelectAll = () => {

@@ -40,40 +40,27 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ transactions, selectedYear 
     let labels: string[] = [];
 
     const now = new Date();
-    const currentYear = now.getFullYear();
+    const effectiveYear = selectedYear || now.getFullYear();
 
     if (period === 'monthly') {
-      // 過去13ヶ月 (前年同月を含むため)
-      // 今日が2026年1月の場合、2025年1月〜2026年1月を表示
-      const startYear = now.getMonth() >= 12 ? currentYear : currentYear - 1;
-      const startMonth = now.getMonth(); // 現在の月に合わせる。12ヶ月前 = 同じ月
-
-      for (let i = 0; i < 13; i++) {
-        const d = new Date(startYear, startMonth + i, 1);
+      // 選択された年度の1月から12月を表示
+      for (let m = 0; m < 12; m++) {
+        const d = new Date(effectiveYear, m, 1);
         const key = `${d.getFullYear()}年${d.getMonth() + 1}月`;
         labels.push(key);
         data[key] = { revenue: 0, expense: 0, count: 0 };
       }
     } else if (period === 'quarterly') {
-      // 過去4四半期 (例: 2024 Q1, 2024 Q2...)
-      // 現在の四半期を含めて過去4つ
-      const currentQ = Math.floor(now.getMonth() / 3) + 1;
-
-      for (let i = 3; i >= 0; i--) {
-        let y = currentYear;
-        let q = currentQ - i;
-        if (q <= 0) {
-          y -= 1;
-          q += 4;
-        }
-        const key = `${y}年 Q${q}`;
+      // 選択された年度の4四半期を表示
+      for (let q = 1; q <= 4; q++) {
+        const key = `${effectiveYear}年 Q${q}`;
         labels.push(key);
         data[key] = { revenue: 0, expense: 0, count: 0 };
       }
     } else if (period === 'yearly') {
-      // 過去5年
+      // 選択された年度を含めた過去5年を表示
       for (let i = 4; i >= 0; i--) {
-        const y = currentYear - i;
+        const y = effectiveYear - i;
         const key = `${y}年`;
         labels.push(key);
         data[key] = { revenue: 0, expense: 0, count: 0 };

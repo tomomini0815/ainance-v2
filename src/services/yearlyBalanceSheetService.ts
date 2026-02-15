@@ -25,6 +25,7 @@ export interface YearlyBalanceSheet {
     liabilities_and_net_assets_total: number;
 
     metadata: any;
+    document_path?: string;
     created_at?: string;
     updated_at?: string;
 }
@@ -70,29 +71,30 @@ export const yearlyBalanceSheetService = {
         return data || [];
     },
 
-    /**
-     * データの保存
-     */
     async save(bsData: Omit<YearlyBalanceSheet, 'id' | 'created_at' | 'updated_at'>): Promise<YearlyBalanceSheet> {
+        console.log('--- yearlyBalanceSheetService.save Start ---', bsData);
         const { data, error } = await supabase
             .from('yearly_balance_sheets')
             .upsert({
                 ...bsData,
                 updated_at: new Date().toISOString()
             }, {
-                onConflict: 'user_id, business_type, year'
+                onConflict: 'user_id,business_type,year'
             })
             .select()
             .single();
 
         if (error) {
-            console.error('saveYearlyBalanceSheet Error:', error);
+            console.error('saveYearlyBalanceSheet Error Full:', error);
+            console.error('Error Details:', error.details);
+            console.error('Error Hint:', error.hint);
+            console.error('Error Code:', error.code);
             throw error;
         }
 
+        console.log('saveYearlyBalanceSheet Success:', data);
         return data;
     },
-
     /**
      * AI解析結果をBSデータ形式に変換（堅牢なマッピング）
      */

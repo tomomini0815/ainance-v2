@@ -1,11 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { storageService } from '../services/storageService';
 import {
     X,
     Upload,
     FileText,
     AlertCircle,
     Save,
-    Loader2
+    Loader2,
+    Sparkles,
+    Check,
+    ArrowRight,
+    ArrowLeft
 } from 'lucide-react';
 import { analyzeBSDocumentWithVision } from '../services/geminiAIService';
 import { yearlyBalanceSheetService, YearlyBalanceSheet } from '../services/yearlyBalanceSheetService';
@@ -26,14 +31,17 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
     businessType,
     onImportSuccess
 }) => {
-    const [activeTab, setActiveTab] = useState<'upload' | 'manual'>('upload');
+    // Step 1: Upload/Select, Step 2: Verify/Edit, Step 3: Complete
+    const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // 編集用データ (貸借対照表)
-    const [formData, setFormData] = useState<Omit<YearlyBalanceSheet, 'id' | 'created_at' | 'updated_at'>>({
+    const [formData, setFormData] = useState<Omit<YearlyBalanceSheet, 'id' | 'created_at' | 'updated_at'> & { document_path?: string }>({
         user_id: userId,
         business_type: businessType,
         year: new Date().getFullYear() - 1,
@@ -47,8 +55,35 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
         net_assets_shareholders_equity: 0,
         net_assets_total: 0,
         liabilities_and_net_assets_total: 0,
-        metadata: {}
+        metadata: {},
+        document_path: undefined
     });
+
+    useEffect(() => {
+        if (isOpen) {
+            setCurrentStep(1);
+            setSelectedFile(null);
+            setIsAnalyzing(false);
+            setIsSaving(false);
+            setFormData({
+                user_id: userId,
+                business_type: businessType,
+                year: new Date().getFullYear() - 1,
+                assets_current_cash: 0,
+                assets_current_total: 0,
+                assets_total: 0,
+                liabilities_total: 0,
+                net_assets_capital: 0,
+                net_assets_retained_earnings: 0,
+                net_assets_retained_earnings_total: 0,
+                net_assets_shareholders_equity: 0,
+                net_assets_total: 0,
+                liabilities_and_net_assets_total: 0,
+                metadata: {},
+                document_path: undefined
+            });
+        }
+    }, [isOpen, userId, businessType]);
 
     if (!isOpen) return null;
 
@@ -62,6 +97,7 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
             return;
         }
 
+        setSelectedFile(file);
         setIsAnalyzing(true);
         try {
             const reader = new FileReader();
@@ -77,11 +113,11 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
                         { fileName: file.name }
                     );
                     setFormData(bsData);
-                    setActiveTab('manual');
+                    setCurrentStep(2);
                     toast.success('解析が完了しました。内容を確認してください。');
                 } else {
                     toast.error('解析に失敗しました。数値を直接入力してください。');
-                    setActiveTab('manual');
+                    setCurrentStep(2);
                 }
                 setIsAnalyzing(false);
             };
@@ -90,6 +126,7 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
             console.error('BS Analysis Error:', error);
             toast.error('解析中にエラーが発生しました');
             setIsAnalyzing(false);
+            setCurrentStep(2);
         }
     };
 
@@ -100,7 +137,7 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault(); e.stopPropagation();
-        if (!isAnalyzing) setIsDragging(true);
+        if (!isAnalyzing && currentStep === 1) setIsDragging(true);
     };
 
     const handleDragLeave = (e: React.DragEvent) => {
@@ -111,7 +148,7 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault(); e.stopPropagation();
         setIsDragging(false);
-        if (!isAnalyzing) {
+        if (!isAnalyzing && currentStep === 1) {
             const file = e.dataTransfer.files?.[0];
             if (file) processFile(file);
         }
@@ -125,16 +162,71 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await yearlyBalanceSheetService.save(formData);
-            toast.success('貸借対照表を保存しました');
+            let documentPath = undefined;
+            if (selectedFile) {
+                try {
+                    toast.loading('ファイルをアップロード中...', { id: 'upload-toast' });
+                    documentPath = await storageService.uploadFinancialDocument(
+                        userId,
+                        selectedFile,
+                        formData.year,
+                        'bs'
+                    );
+                    if (documentPath) {
+                        toast.success('ファイルのアップロード完了', { id: 'upload-toast' });
+                    }
+                } catch (uploadError) {
+                    console.error('File Upload Error:', uploadError);
+                    toast.error('ファイルのアップロードに失敗しました', { id: 'upload-toast' });
+                }
+            }
+
+            const dataToSave = {
+                ...formData,
+                document_path: documentPath || formData.document_path
+            };
+
+            await yearlyBalanceSheetService.save(dataToSave);
             onImportSuccess();
-            onClose();
+            setCurrentStep(3);
+            setIsSaving(false);
         } catch (error) {
             console.error('Save BS Error:', error);
             toast.error('保存に失敗しました');
-        } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleManualInput = () => {
+        setSelectedFile(null);
+        setFormData({
+            ...formData,
+            year: new Date().getFullYear() - 1
+        });
+        setCurrentStep(2);
+    };
+
+    const handleReset = () => {
+        setCurrentStep(1);
+        setSelectedFile(null);
+        // Reset form data... (simplified reset for brevity, same as useEffect)
+        setFormData({
+            user_id: userId,
+            business_type: businessType,
+            year: new Date().getFullYear() - 1,
+            assets_current_cash: 0,
+            assets_current_total: 0,
+            assets_total: 0,
+            liabilities_total: 0,
+            net_assets_capital: 0,
+            net_assets_retained_earnings: 0,
+            net_assets_retained_earnings_total: 0,
+            net_assets_shareholders_equity: 0,
+            net_assets_total: 0,
+            liabilities_and_net_assets_total: 0,
+            metadata: {},
+            document_path: undefined
+        });
     };
 
     // 金額のフォーマット表示
@@ -166,6 +258,10 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
     }) => {
         const [isEditing, setIsEditing] = useState(false);
         const [editValue, setEditValue] = useState(value.toString());
+
+        useEffect(() => {
+            setEditValue(value.toString());
+        }, [value]);
 
         const handleBlur = () => {
             setIsEditing(false);
@@ -210,172 +306,229 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
     // バランスチェック
     const isUnbalanced = formData.assets_total !== formData.liabilities_and_net_assets_total;
 
-    return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-border animate-in fade-in zoom-in duration-200">
-                <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-surface-highlight">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-primary" />
-                        </div>
-                        <h3 className="text-lg font-bold text-text-main">貸借対照表（BS）のインポート</h3>
+    const renderStepIndicator = () => (
+        <div className="flex items-center justify-center mb-8">
+            {[1, 2, 3].map((step) => (
+                <div key={step} className="flex items-center">
+                    <div className={`
+                        flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
+                        ${currentStep >= step ? 'bg-primary text-white' : 'bg-surface-highlight text-text-muted'}
+                        transition-colors duration-300
+                    `}>
+                        {currentStep > step ? <Check className="w-5 h-5" /> : step}
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-text-muted" />
+                    <span className={`ml-2 text-sm font-medium ${currentStep >= step ? 'text-text-main' : 'text-text-muted'}`}>
+                        {step === 1 && 'アップロード'}
+                        {step === 2 && 'データ確認'}
+                        {step === 3 && '完了'}
+                    </span>
+                    {step < 3 && (
+                        <div className={`w-12 h-0.5 mx-4 ${currentStep > step ? 'bg-primary' : 'bg-surface-highlight'}`} />
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div
+                className="bg-surface border border-border rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-text-main flex items-center">
+                        <FileText className="w-5 h-5 mr-2 text-primary" />
+                        貸借対照表（BS）のインポート
+                    </h2>
+                    <button onClick={onClose} className="text-text-muted hover:text-text-main transition-colors">
+                        <X className="w-6 h-6" />
                     </button>
                 </div>
 
-                <div className="flex border-b border-border">
-                    <button onClick={() => setActiveTab('upload')} className={`flex-1 py-3 text-sm font-medium border-b-2 ${activeTab === 'upload' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-text-muted'}`}>
-                        AI解析
-                    </button>
-                    <button onClick={() => setActiveTab('manual')} className={`flex-1 py-3 text-sm font-medium border-b-2 ${activeTab === 'manual' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-text-muted'}`}>
-                        BSフォーム入力
-                    </button>
-                </div>
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                    {renderStepIndicator()}
 
-                <div className="p-6 max-h-[75vh] overflow-y-auto bg-white dark:bg-zinc-950">
-                    {activeTab === 'upload' ? (
-                        <div className="space-y-6">
+                    {/* Step 1: Upload or Select */}
+                    {currentStep === 1 && (
+                        <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
                             <div
-                                onClick={() => !isAnalyzing && fileInputRef.current?.click()}
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                                className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-4 transition-all cursor-pointer ${isAnalyzing ? 'border-primary/50' : isDragging ? 'border-primary bg-primary/10' : 'border-border'}`}
+                                onClick={() => fileInputRef.current?.click()}
+                                className={`
+                                    w-full max-w-2xl text-center p-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-300
+                                    ${isDragging
+                                        ? 'border-primary bg-primary/10 scale-[1.02]'
+                                        : 'border-border hover:border-primary/50 hover:bg-surface-highlight'
+                                    }
+                                `}
                             >
                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,.pdf" />
-                                {isAnalyzing ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <Upload className="w-10 h-10 text-text-muted" />}
-                                <p className="font-bold">{isAnalyzing ? '解析中...' : 'ここにファイルをドロップ'}</p>
-                                <button className="btn-primary" disabled={isAnalyzing}>ファイルを選択</button>
+                                <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    {isAnalyzing ? (
+                                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                                    ) : (
+                                        <Upload className="w-10 h-10 text-primary" />
+                                    )}
+                                </div>
+                                <h3 className="text-xl font-bold text-text-main mb-2">
+                                    {isAnalyzing ? 'AI解析中...' : '貸借対照表をアップロード'}
+                                </h3>
+                                <p className="text-text-muted mb-6">
+                                    {isAnalyzing
+                                        ? '画像を解析してデータを抽出しています'
+                                        : 'PDFまたは画像ファイル（JPG/PNG）をドラッグ＆ドロップ'
+                                    }
+                                </p>
+                                {!isAnalyzing && (
+                                    <button className="btn-primary px-8 py-3 rounded-full shadow-lg hover:shadow-primary/25">
+                                        ファイルを選択
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="mt-8 flex items-center w-full max-w-2xl">
+                                <div className="h-px bg-border flex-1"></div>
+                                <span className="px-4 text-text-muted text-sm">または</span>
+                                <div className="h-px bg-border flex-1"></div>
+                            </div>
+
+                            <button
+                                onClick={handleManualInput}
+                                className="mt-8 flex items-center text-text-muted hover:text-primary transition-colors font-medium group"
+                            >
+                                手動で入力する
+                                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Step 2: Verification / Edit */}
+                    {currentStep === 2 && (
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-surface-highlight/30 rounded-lg p-4 mb-6 border border-border/50">
+                                <h3 className="text-sm font-semibold text-text-main mb-2 flex items-center">
+                                    <Sparkles className="w-4 h-4 text-primary mr-2" />
+                                    データ確認・修正
+                                </h3>
+                                <p className="text-sm text-text-muted">
+                                    {selectedFile ? 'AI解析によって抽出されたデータです。内容を確認してください。' : '手動でデータを入力してください。'}
+                                </p>
+                                {selectedFile && (
+                                    <div className="mt-3 flex items-center text-xs text-text-muted bg-surface/50 p-2 rounded border border-border">
+                                        <FileText className="w-3 h-3 mr-2" />
+                                        参照ファイル: {selectedFile.name}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="font-serif bg-white dark:bg-zinc-950 p-8 rounded-xl shadow-inner border border-border/50 text-zinc-900 dark:text-zinc-100">
+                                <h2 className="text-2xl text-center mb-2 font-bold">貸借対照表</h2>
+                                <div className="text-center text-sm mb-8 flex items-center justify-center gap-2">
+                                    <input
+                                        type="number"
+                                        value={formData.year}
+                                        onChange={(e) => handleInputChange('year', e.target.value)}
+                                        className="w-20 bg-transparent border-b border-zinc-300 text-center font-bold outline-none"
+                                    />
+                                    <span>年12月31日 現在</span>
+                                </div>
+
+                                <div className="space-y-8">
+                                    {/* 資産の部 */}
+                                    <div>
+                                        <h3 className="text-lg font-bold border-b-2 border-zinc-500 mb-4 pb-1">資産の部</h3>
+                                        <div className="space-y-1">
+                                            <div className="pl-4 text-xs font-bold text-zinc-500 mb-1">【流動資産】</div>
+                                            <RenderBSField label="現金 及び 預金" value={formData.assets_current_cash} onChange={(val) => handleInputChange('assets_current_cash', val)} indent />
+                                            <RenderBSField label="流動資産合計" value={formData.assets_current_total} onChange={(val) => handleInputChange('assets_current_total', val)} indent />
+                                            <RenderBSField label="資産の部合計" value={formData.assets_total} onChange={(val) => handleInputChange('assets_total', val)} isBold isTotal />
+                                        </div>
+                                    </div>
+
+                                    {/* 負債の部 */}
+                                    <div>
+                                        <h3 className="text-lg font-bold border-b-2 border-zinc-500 mb-4 pb-1">負債の部</h3>
+                                        <RenderBSField label="負債の部合計" value={formData.liabilities_total} onChange={(val) => handleInputChange('liabilities_total', val)} />
+                                    </div>
+
+                                    {/* 純資産の部 */}
+                                    <div>
+                                        <h3 className="text-lg font-bold border-b-2 border-zinc-500 mb-4 pb-1">純資産の部</h3>
+                                        <div className="space-y-1">
+                                            <div className="pl-4 text-xs font-bold text-zinc-500 mb-1">【株主資本】</div>
+                                            <RenderBSField label="資 本 金" value={formData.net_assets_capital} onChange={(val) => handleInputChange('net_assets_capital', val)} indent />
+                                            <div className="pl-4 text-xs text-zinc-500 py-1">その他利益剰余金</div>
+                                            <RenderBSField label="繰越利益剰余金" value={formData.net_assets_retained_earnings} onChange={(val) => handleInputChange('net_assets_retained_earnings', val)} indentPlus />
+                                            <RenderBSField label="利益剰余金合計" value={formData.net_assets_retained_earnings_total} onChange={(val) => handleInputChange('net_assets_retained_earnings_total', val)} indent />
+                                            <RenderBSField label="株主資本合計" value={formData.net_assets_shareholders_equity} onChange={(val) => handleInputChange('net_assets_shareholders_equity', val)} indent isBold />
+                                            <RenderBSField label="純資産の部合計" value={formData.net_assets_total} onChange={(val) => handleInputChange('net_assets_total', val)} isBold />
+                                            <RenderBSField label="負債及び純資産の部合計" value={formData.liabilities_and_net_assets_total} onChange={(val) => handleInputChange('liabilities_and_net_assets_total', val)} isBold isTotal />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {isUnbalanced && (
+                                    <div className="mt-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-600 dark:text-red-400 text-xs font-bold">
+                                        <AlertCircle className="w-4 h-4 shrink-0" />
+                                        <span>資産合計と負債・純資産合計が一致していません（差額: ¥{(formData.assets_total - formData.liabilities_and_net_assets_total).toLocaleString()}）</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    ) : (
-                        <div className="font-serif max-w-lg mx-auto py-8 px-4 text-zinc-900 dark:text-zinc-100">
-                            <h2 className="text-2xl text-center mb-2">貸借対照表</h2>
-                            <div className="text-center text-sm mb-8 flex items-center justify-center gap-2">
-                                <input
-                                    type="number"
-                                    value={formData.year}
-                                    onChange={(e) => handleInputChange('year', e.target.value)}
-                                    className="w-20 bg-transparent border-b border-zinc-300 text-center font-bold outline-none"
-                                />
-                                <span>年12月31日 現在</span>
+                    )}
+
+                    {/* Step 3: Complete */}
+                    {currentStep === 3 && (
+                        <div className="flex flex-col items-center justify-center h-full py-12">
+                            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-6">
+                                <Check className="w-10 h-10 text-green-500" />
                             </div>
-
-                            <div className="space-y-8">
-                                {/* 資産の部 */}
-                                <div>
-                                    <h3 className="text-lg font-bold border-b border-zinc-800 mb-4 pb-1">資産の部</h3>
-                                    <div className="space-y-1">
-                                        <div className="pl-4 text-xs font-bold text-zinc-500 mb-1">【流動資産】</div>
-
-                                        <RenderBSField
-                                            label="現金 及び 預金"
-                                            value={formData.assets_current_cash}
-                                            onChange={(val) => handleInputChange('assets_current_cash', val)}
-                                            indent
-                                        />
-
-                                        <RenderBSField
-                                            label="流動資産合計"
-                                            value={formData.assets_current_total}
-                                            onChange={(val) => handleInputChange('assets_current_total', val)}
-                                            indent
-                                        />
-
-                                        <RenderBSField
-                                            label="資産の部合計"
-                                            value={formData.assets_total}
-                                            onChange={(val) => handleInputChange('assets_total', val)}
-                                            isBold
-                                            isTotal
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* 負債の部 */}
-                                <div>
-                                    <h3 className="text-lg font-bold border-b border-zinc-800 mb-4 pb-1">負債の部</h3>
-                                    <RenderBSField
-                                        label="負債の部合計"
-                                        value={formData.liabilities_total}
-                                        onChange={(val) => handleInputChange('liabilities_total', val)}
-                                    />
-                                </div>
-
-                                {/* 純資産の部 */}
-                                <div>
-                                    <h3 className="text-lg font-bold border-b border-zinc-800 mb-4 pb-1">純資産の部</h3>
-                                    <div className="space-y-1">
-                                        <div className="pl-4 text-xs font-bold text-zinc-500 mb-1">【株主資本】</div>
-
-                                        <RenderBSField
-                                            label="資 本 金"
-                                            value={formData.net_assets_capital}
-                                            onChange={(val) => handleInputChange('net_assets_capital', val)}
-                                            indent
-                                        />
-
-                                        <div className="pl-4 text-xs text-zinc-500 py-1">その他利益剰余金</div>
-
-                                        <RenderBSField
-                                            label="繰越利益剰余金"
-                                            value={formData.net_assets_retained_earnings}
-                                            onChange={(val) => handleInputChange('net_assets_retained_earnings', val)}
-                                            indentPlus
-                                        />
-
-                                        <RenderBSField
-                                            label="利益剰余金合計"
-                                            value={formData.net_assets_retained_earnings_total}
-                                            onChange={(val) => handleInputChange('net_assets_retained_earnings_total', val)}
-                                            indent
-                                        />
-
-                                        <RenderBSField
-                                            label="株主資本合計"
-                                            value={formData.net_assets_shareholders_equity}
-                                            onChange={(val) => handleInputChange('net_assets_shareholders_equity', val)}
-                                            indent
-                                            isBold
-                                        />
-
-                                        <RenderBSField
-                                            label="純資産の部合計"
-                                            value={formData.net_assets_total}
-                                            onChange={(val) => handleInputChange('net_assets_total', val)}
-                                            isBold
-                                        />
-
-                                        <RenderBSField
-                                            label="負債及び純資産の部合計"
-                                            value={formData.liabilities_and_net_assets_total}
-                                            onChange={(val) => handleInputChange('liabilities_and_net_assets_total', val)}
-                                            isBold
-                                            isTotal
-                                        />
-                                    </div>
-                                </div>
+                            <h3 className="text-2xl font-bold text-text-main mb-2">インポート完了</h3>
+                            <p className="text-text-muted mb-8 text-center max-w-md">
+                                貸借対照表データの保存が完了しました。<br />
+                                経営分析の比較データとして利用されます。
+                            </p>
+                            <div className="flex gap-4">
+                                <button onClick={onClose} className="btn-ghost">閉じる</button>
+                                <button onClick={handleReset} className="btn-primary">続けてインポートする</button>
                             </div>
-
-                            {isUnbalanced && (
-                                <div className="mt-6 p-3 bg-error/10 border border-error/20 rounded-lg flex items-center gap-2 text-error text-xs">
-                                    <AlertCircle className="w-4 h-4 shrink-0" />
-                                    <span>資産合計と負債・純資産合計が一致していません（差額: ¥{(formData.assets_total - formData.liabilities_and_net_assets_total).toLocaleString()}）</span>
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
 
-                <div className="px-6 py-4 border-t border-border flex justify-end gap-3 bg-surface-highlight">
-                    <button onClick={onClose} className="btn-ghost" disabled={isSaving}>キャンセル</button>
-                    <button onClick={handleSave} disabled={isSaving || (activeTab === 'manual' && formData.assets_total === 0)} className="btn-primary min-w-[120px]">
-                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                        保存する
-                    </button>
-                </div>
+                {/* Footer (Navigation) */}
+                {currentStep === 2 && (
+                    <div className="px-6 py-4 border-t border-border flex items-center justify-between bg-surface-highlight/30">
+                        <button
+                            onClick={() => setCurrentStep(1)}
+                            className="flex items-center text-text-muted hover:text-text-main transition-colors"
+                        >
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            戻る
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="btn-primary min-w-[140px]"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    保存中...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4 mr-2" />
+                                    保存して完了
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

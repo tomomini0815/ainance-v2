@@ -2,11 +2,10 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles, Target,
-    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit, Sun, Moon, Calendar, ChevronDown
+    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
-import { useFiscalYear } from '../context/FiscalYearContext';
 import { useTheme } from '../context/ThemeContext';
 
 interface SidebarProps {
@@ -29,7 +28,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     const { theme, toggleTheme } = useTheme();
     // BusinessTypeContextから現在のビジネスタイプを取得
     const { currentBusinessType } = useBusinessTypeContext();
-    const { selectedYear, setSelectedYear, yearOptions } = useFiscalYear();
 
     // 法人かどうかを判定
     const isCorporation = currentBusinessType?.business_type === 'corporation';
@@ -74,14 +72,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     };
 
     // Common link classes
-    const getLinkClasses = (path: string) => `
-    flex items-center px-3 py-3 rounded-xl transition-all duration-200 group
+    const getLinkClasses = (path: string) => {
+        const collapsed = !isExpanded && !isOpen;
+        return `
+    flex items-center transition-all duration-300 group relative
+    ${collapsed ? 'justify-center w-11 h-11 mx-auto rounded-full' : 'px-4 py-2.5 rounded-xl mx-1'}
     ${isActive(path)
-            ? 'bg-primary/10 text-primary shadow-[0_0_20px_rgba(99,102,241,0.3)]'
-            : 'text-text-muted hover:bg-white/5 hover:text-text-main'
-        }
-    ${(!isExpanded && !isOpen) ? 'justify-center' : ''}
+                ? 'bg-primary/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.3)]'
+                : 'text-text-muted hover:bg-white/5 hover:text-text-main'
+            }
   `;
+    };
 
     return (
         <>
@@ -100,10 +101,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           bg-[#0f172a] border-r border-white/5
           transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          ${(isExpanded || isOpen) ? 'w-72' : 'w-20'}
+          ${(isExpanded || isOpen) ? 'w-full md:w-72' : 'w-20'}
+          overflow-visible
         `}
             >
-                <div className="flex flex-col h-full p-4">
+                <div className={`flex flex-col h-full overflow-visible ${(isExpanded || isOpen) ? 'p-4' : 'px-1 py-4'}`}>
                     {/* Header / Logo Area */}
                     <div className={`flex items-center h-16 mb-6 ${(isExpanded || isOpen) ? 'justify-between' : 'justify-center'}`}>
                         {(isExpanded || isOpen) ? (
@@ -114,7 +116,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 </h1>
                             </div>
                         ) : (
-                            <img src="/ainance-logo-header.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
+                            <div className="relative">
+                                <img src="/ainance-logo-header.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
+                            </div>
                         )}
 
                         {/* Mobile Close Button */}
@@ -126,49 +130,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </button>
                     </div>
 
-                    {/* Fiscal Year Selector */}
-                    <div className="mb-6 px-1 relative group">
-                        <div className={`
-                            flex items-center bg-white/5 border border-white/10 rounded-xl p-2.5 
-                            transition-all duration-200 relative
-                            ${(isExpanded || isOpen) ? 'space-x-3 w-full' : 'justify-center w-12 mx-auto'}
-                            group-hover:bg-white/10 group-hover:border-white/20
-                        `}>
-                            <Calendar size={20} className="text-secondary flex-shrink-0" />
-
-                            {(isExpanded || isOpen) && (
-                                <div className="flex-1 min-w-0 pr-6 relative">
-                                    <p className="text-[10px] text-text-muted uppercase tracking-wider mb-0.5">会計年度</p>
-                                    <div className="flex items-center">
-                                        <span className="text-sm font-bold text-text-main truncate">
-                                            {selectedYear}年度
-                                        </span>
-                                    </div>
-                                    <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-text-muted" />
-                                </div>
-                            )}
-
-                            {/* Always render select, but make it transparent and overlay when collapsed */}
-                            <select
-                                value={selectedYear}
-                                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                                className={`
-                                    absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10
-                                    ${(isExpanded || isOpen) ? '' : 'text-center'}
-                                `}
-                                title={`${selectedYear}年度`}
-                            >
-                                {yearOptions.map(y => (
-                                    <option key={y} value={y} className="bg-[#0f172a] text-text-main">
-                                        {y}年度
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
                     {/* Navigation */}
-                    <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
+                    <nav className={`flex-1 space-y-4 overflow-y-auto overflow-x-visible pt-10 pb-16 scrollbar-hide ${(isExpanded || isOpen) ? 'px-4' : 'px-0'}`}>
                         {navItems.map((item) => (
                             <Link
                                 key={item.path}
@@ -177,23 +140,23 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onClick={onCloseMobile}
                                 title={(!isExpanded && !isOpen) ? item.label : undefined}
                             >
-                                <item.icon size={24} className={`transition-transform duration-200 ${isActive(item.path) ? 'scale-110' : 'group-hover:scale-110'}`} />
+                                <item.icon size={22} className={`flex-shrink-0 transition-all duration-300 ${isActive(item.path) ? 'scale-110 drop-shadow-[0_0_3px_rgba(99,102,241,0.6)] text-white' : 'group-hover:scale-110'}`} />
                                 {(isExpanded || isOpen) && (
-                                    <span className="ml-3 font-medium">{item.label}</span>
+                                    <span className={`ml-3 font-medium truncate ${isActive(item.path) ? 'text-white' : ''}`}>{item.label}</span>
                                 )}
                             </Link>
                         ))}
                     </nav>
 
                     {/* Bottom Actions */}
-                    <div className="pt-4 border-t border-white/5 space-y-2">
+                    <div className={`pt-4 border-t border-white/5 space-y-2 ${(isExpanded || isOpen) ? '' : 'px-0'}`}>
                         <button
                             onClick={toggleTheme}
                             className={getLinkClasses('theme-toggle')}
                             title={(!isExpanded && !isOpen) ? (theme === 'dark' ? 'ライトモード' : 'ダークモード') : undefined}
                         >
-                            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
-                            {(isExpanded || isOpen) && <span className="ml-3 font-medium">{theme === 'dark' ? 'ライトモード' : 'ダークモード'}</span>}
+                            {theme === 'dark' ? <Sun size={24} className="flex-shrink-0" /> : <Moon size={24} className="flex-shrink-0" />}
+                            {(isExpanded || isOpen) && <span className="ml-3 font-medium truncate">{theme === 'dark' ? 'ライトモード' : 'ダークモード'}</span>}
                         </button>
 
                         <Link
@@ -202,8 +165,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                             onClick={onCloseMobile}
                             title={(!isExpanded && !isOpen) ? '設定' : undefined}
                         >
-                            <Settings size={24} />
-                            {(isExpanded || isOpen) && <span className="ml-3 font-medium">設定</span>}
+                            <Settings size={24} className="flex-shrink-0" />
+                            {(isExpanded || isOpen) && <span className="ml-3 font-medium truncate">設定</span>}
                         </Link>
 
                         <button
@@ -211,8 +174,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                             className={`w-full ${getLinkClasses('')}`}
                             title={(!isExpanded && !isOpen) ? 'ログアウト' : undefined}
                         >
-                            <LogOut size={24} />
-                            {(isExpanded || isOpen) && <span className="ml-3 font-medium">ログアウト</span>}
+                            <LogOut size={24} className="flex-shrink-0" />
+                            {(isExpanded || isOpen) && <span className="ml-3 font-medium truncate">ログアウト</span>}
                         </button>
                     </div>
 

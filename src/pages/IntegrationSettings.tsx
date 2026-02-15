@@ -1,7 +1,15 @@
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Plus, Check, X, RefreshCw, AlertCircle, Settings, Eye, EyeOff, Copy } from 'lucide-react'
+import { ArrowLeft, Plus, Check, RefreshCw, AlertCircle, Settings, Eye, EyeOff, Copy, Building2, User, Save, Loader2, Upload, FileText, ExternalLink } from 'lucide-react'
+import { useBusinessTypeContext } from '../context/BusinessTypeContext'
+import { useAuth } from '../hooks/useAuth'
+import PreviousYearImportModal from '../components/PreviousYearImportModal'
+import BalanceSheetImportModal from '../components/BalanceSheetImportModal'
+import { yearlySettlementService, YearlySettlement } from '../services/yearlySettlementService'
+import { yearlyBalanceSheetService, YearlyBalanceSheet } from '../services/yearlyBalanceSheetService'
+import { storageService } from '../services/storageService'
+import toast from 'react-hot-toast'
 
 interface Integration {
   id: string
@@ -25,8 +33,85 @@ interface APIKey {
 }
 
 const IntegrationSettings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'integrations' | 'api' | 'sync'>('integrations')
+  const { user } = useAuth();
+  const { currentBusinessType, businessTypes, switchBusinessType, updateBusinessType } = useBusinessTypeContext();
+  const [activeTab, setActiveTab] = useState<'integrations' | 'api' | 'sync' | 'setup' | 'invoice'>('setup')
   const [showApiKey, setShowApiKey] = useState<{ [key: string]: boolean }>({})
+
+  // モーダル管理
+  const [isPLModalOpen, setIsPLModalOpen] = useState(false);
+  const [isBSModalOpen, setIsBSModalOpen] = useState(false);
+
+  // フォーム用ステート
+  const [taxNumber, setTaxNumber] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 保存済みデータ
+  const [savedPL, setSavedPL] = useState<YearlySettlement | null>(null);
+  const [savedBS, setSavedBS] = useState<YearlyBalanceSheet | null>(null);
+
+  const fetchFinancialData = useCallback(async () => {
+    if (!user || !currentBusinessType) return;
+    try {
+      // 最新のデータを取得（前年度分を想定）
+      // ここでは全件取得して最新のものを採用、または特定年度を指定することも可能
+      // 今回はシンプルに最新のものを取得して表示する
+      const plList = await yearlySettlementService.getAllByBusinessType(user.id, currentBusinessType.business_type);
+      const bsList = await yearlyBalanceSheetService.getAllByBusinessType(user.id, currentBusinessType.business_type);
+
+      if (plList.length > 0) setSavedPL(plList[0]);
+      if (bsList.length > 0) setSavedBS(bsList[0]);
+    } catch (error) {
+      console.error('Fetch Financial Data Error:', error);
+    }
+  }, [user, currentBusinessType]);
+
+  useEffect(() => {
+    fetchFinancialData();
+  }, [fetchFinancialData]);
+
+  const handleViewDocument = async (path: string) => {
+    if (!path) return;
+    const toastId = toast.loading('書類を開いています...');
+    try {
+      const url = await storageService.getSignedUrl(path);
+      if (url) {
+        window.open(url, '_blank');
+        toast.success('書類を開きました', { id: toastId });
+      } else {
+        toast.error('書類の取得に失敗しました', { id: toastId });
+      }
+    } catch (error) {
+      console.error('View Document Error:', error);
+      toast.error('エラーが発生しました', { id: toastId });
+    }
+  };
+
+  // 業態が切り替わった時にステートを同期
+  useEffect(() => {
+    if (currentBusinessType) {
+      setTaxNumber(currentBusinessType.tax_number || '');
+      setCompanyName(currentBusinessType.company_name || '');
+    }
+  }, [currentBusinessType]);
+
+  const handleSaveSettings = async () => {
+    if (!currentBusinessType) return;
+    setIsSaving(true);
+    try {
+      await updateBusinessType(currentBusinessType.id, {
+        tax_number: taxNumber,
+        company_name: companyName
+      });
+      toast.success('設定を保存しました');
+    } catch (error) {
+      console.error('Save Settings Error:', error);
+      toast.error('保存に失敗しました');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const [integrations] = useState<Integration[]>([
     {
@@ -220,8 +305,26 @@ const IntegrationSettings: React.FC = () => {
           <div>
             <nav className="flex space-x-8 px-6">
               <button
+                onClick={() => setActiveTab('setup')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'setup'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-main'
+                  }`}
+              >
+                初期設定
+              </button>
+              <button
+                onClick={() => setActiveTab('invoice')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'invoice'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-main'
+                  }`}
+              >
+                インボイス設定
+              </button>
+              <button
                 onClick={() => setActiveTab('integrations')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'integrations'
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'integrations'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-text-muted hover:text-text-main'
                   }`}
@@ -230,7 +333,7 @@ const IntegrationSettings: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('api')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'api'
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'api'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-text-muted hover:text-text-main'
                   }`}
@@ -239,7 +342,7 @@ const IntegrationSettings: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('sync')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'sync'
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'sync'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-text-muted hover:text-text-main'
                   }`}
@@ -599,6 +702,258 @@ const IntegrationSettings: React.FC = () => {
               </table>
             </div>
           </div>
+        )}
+
+        {/* 初期設定タブ */}
+        {activeTab === 'setup' && (
+          <div className="space-y-6">
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold mb-6 text-text-main">
+                初期設定 ({currentBusinessType?.business_type === 'individual' ? '個人事業主' : '法人'})
+              </h2>
+              <div className="space-y-6 max-w-2xl">
+                <div>
+                  <label className="block text-sm font-medium text-text-main mb-2">事業形態の切り替え</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {['individual', 'corporation'].map((type) => {
+                      const targetType = businessTypes.find(bt => bt.business_type === type);
+                      const isActive = currentBusinessType?.business_type === type;
+                      return (
+                        <button
+                          key={type}
+                          onClick={() => targetType && switchBusinessType(targetType.id)}
+                          className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg font-medium transition-all ${isActive
+                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                            : 'border-border text-text-muted hover:border-primary/30 hover:text-text-main'
+                            }`}
+                        >
+                          {type === 'individual' ? <User size={18} /> : <Building2 size={18} />}
+                          {type === 'individual' ? '個人事業主' : '法人'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-main mb-2">決算開始月（会計初月）</label>
+                  <select
+                    className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-text-main focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                    defaultValue={currentBusinessType?.business_type === 'individual' ? "1" : "4"}
+                  >
+                    {[...Array(12)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>{i + 1}月</option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-text-muted">
+                    {currentBusinessType?.business_type === 'individual'
+                      ? '個人事業主は通常1月開始です。'
+                      : '法人の定款に定められた会計年度の開始月を選択してください。'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-border">
+                <h3 className="text-md font-medium text-text-main mb-4">前期データの引き継ぎ</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* P&L Section */}
+                  <div className="bg-surface-highlight p-4 rounded-lg border border-dashed border-border flex flex-col gap-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm text-text-main font-medium">前期損益計算書 (P&L)</p>
+                        <p className="text-xs text-text-muted mt-1">
+                          {savedPL ? `${savedPL.year}年度データ取込済` : '前期の実績を取り込みます'}
+                        </p>
+                      </div>
+                      {savedPL && (
+                        <Check className="w-4 h-4 text-green-500" />
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 mt-auto">
+                      <button
+                        onClick={() => setIsPLModalOpen(true)}
+                        className="flex-1 bg-primary hover:bg-primary/90 text-white px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Upload size={14} /> {savedPL ? '再インポート' : 'P&Lインポート'}
+                      </button>
+                      {savedPL?.document_path && (
+                        <button
+                          onClick={() => handleViewDocument(savedPL.document_path!)}
+                          className="bg-surface hover:bg-surface-highlight border border-border text-text-main px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-center"
+                          title="書類を表示"
+                        >
+                          <FileText size={14} className="mr-1" />
+                          <ExternalLink size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* B/S Section */}
+                  <div className="bg-surface-highlight p-4 rounded-lg border border-dashed border-border flex flex-col gap-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm text-text-main font-medium">前期貸借対照表 (B/S)</p>
+                        <p className="text-xs text-text-muted mt-1">
+                          {savedBS ? `${savedBS.year}年度データ取込済` : '期首残高を設定します'}
+                        </p>
+                      </div>
+                      {savedBS && (
+                        <Check className="w-4 h-4 text-green-500" />
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 mt-auto">
+                      <button
+                        onClick={() => setIsBSModalOpen(true)}
+                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Upload size={14} /> {savedBS ? '再インポート' : 'B/Sインポート'}
+                      </button>
+                      {savedBS?.document_path && (
+                        <button
+                          onClick={() => handleViewDocument(savedBS.document_path!)}
+                          className="bg-surface hover:bg-surface-highlight border border-border text-text-main px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-center"
+                          title="書類を表示"
+                        >
+                          <FileText size={14} className="mr-1" />
+                          <ExternalLink size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6">
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={isSaving}
+                  className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-lg shadow-primary/20 flex items-center gap-2"
+                >
+                  {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  {currentBusinessType?.business_type === 'individual' ? '個人事業主' : '法人'}の設定を保存
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* インボイス設定タブ */}
+        {activeTab === 'invoice' && (
+          <div className="space-y-6">
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold mb-6 text-text-main">
+                インボイス制度の設定 ({currentBusinessType?.business_type === 'individual' ? '個人事業主' : '法人'})
+              </h2>
+              <div className="space-y-6 max-w-2xl">
+                <div>
+                  <label className="block text-sm font-medium text-text-main mb-2">事業形態の切り替え</label>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    {['individual', 'corporation'].map((type) => {
+                      const targetType = businessTypes.find(bt => bt.business_type === type);
+                      const isActive = currentBusinessType?.business_type === type;
+                      return (
+                        <button
+                          key={type}
+                          onClick={() => targetType && switchBusinessType(targetType.id)}
+                          className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg font-medium transition-all ${isActive
+                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                            : 'border-border text-text-muted hover:border-primary/30 hover:text-text-main'
+                            }`}
+                        >
+                          {type === 'individual' ? <User size={18} /> : <Building2 size={18} />}
+                          {type === 'individual' ? '個人事業主' : '法人'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-main mb-2">適格請求書発行事業者の登録状態</label>
+                  <div className="flex flex-col gap-3">
+                    <label className="flex items-center p-4 border border-primary bg-primary/5 rounded-lg cursor-pointer">
+                      <input type="radio" name="invoice_status" className="w-4 h-4 text-primary" defaultChecked />
+                      <div className="ml-3">
+                        <span className="block text-sm font-medium text-text-main">登録済み</span>
+                        <span className="block text-xs text-text-muted">適格請求書発行事業者として登録しています</span>
+                      </div>
+                    </label>
+                    <label className="flex items-center p-4 border border-border rounded-lg cursor-pointer hover:bg-surface-highlight">
+                      <input type="radio" name="invoice_status" className="w-4 h-4 text-primary" />
+                      <div className="ml-3">
+                        <span className="block text-sm font-medium text-text-main">未登録 / 免税事業者</span>
+                        <span className="block text-xs text-text-muted">現在は登録していません</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-main mb-2">登録番号</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-medium">T</span>
+                    <input
+                      type="text"
+                      placeholder="13桁の数字を入力"
+                      value={taxNumber.replace(/^T/, '')}
+                      onChange={(e) => setTaxNumber('T' + e.target.value.replace(/\D/g, '').slice(0, 13))}
+                      className="w-full bg-surface-highlight border border-border rounded-lg pl-8 pr-4 py-2.5 text-text-main focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-text-muted">Tから始まる13桁の登録番号を入力してください。</p>
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <label className="block text-sm font-medium text-text-main mb-2">デフォルトの消費税設定</label>
+                  <select className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-text-main focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all">
+                    <option value="10">標準税率 (10%)</option>
+                    <option value="8">軽減税率 (8%)</option>
+                    <option value="0">非課税 / 免税</option>
+                  </select>
+                </div>
+
+                <div className="pt-6">
+                  <button
+                    onClick={handleSaveSettings}
+                    disabled={isSaving}
+                    className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-lg shadow-primary/20 flex items-center gap-2"
+                  >
+                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                    {currentBusinessType?.business_type === 'individual' ? '個人事業主' : '法人'}のインボイス設定を保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* モーダル類 */}
+        {user && currentBusinessType && (
+          <>
+            <PreviousYearImportModal
+              isOpen={isPLModalOpen}
+              onClose={() => setIsPLModalOpen(false)}
+              userId={user.id}
+              businessType={currentBusinessType.business_type}
+              onImportSuccess={() => {
+                toast.success('P&Lのインポートが完了しました');
+                fetchFinancialData();
+              }}
+            />
+            <BalanceSheetImportModal
+              isOpen={isBSModalOpen}
+              onClose={() => setIsBSModalOpen(false)}
+              userId={user.id}
+              businessType={currentBusinessType.business_type}
+              onImportSuccess={() => {
+                toast.success('B/Sのインポートが完了しました');
+                fetchFinancialData();
+              }}
+            />
+          </>
         )}
       </main>
     </div>

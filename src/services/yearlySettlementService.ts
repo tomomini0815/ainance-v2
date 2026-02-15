@@ -20,6 +20,7 @@ export interface YearlySettlement {
         amount: number;
     }[];
     metadata: any;
+    document_path?: string;
     created_at?: string;
     updated_at?: string;
 }
@@ -69,22 +70,27 @@ export const yearlySettlementService = {
      * 決算データを保存（新規作成または更新）
      */
     async save(settlement: Omit<YearlySettlement, 'id' | 'created_at' | 'updated_at'>): Promise<YearlySettlement> {
+        console.log('--- yearlySettlementService.save Start ---', settlement);
         const { data, error } = await supabase
             .from('yearly_settlements')
             .upsert({
                 ...settlement,
                 updated_at: new Date().toISOString()
             }, {
-                onConflict: 'user_id, business_type, year'
+                onConflict: 'user_id,business_type,year'
             })
             .select()
             .single();
 
         if (error) {
-            console.error('saveYearlySettlement Error:', error);
+            console.error('saveYearlySettlement Error Full:', error);
+            console.error('Error Details:', error.details);
+            console.error('Error Hint:', error.hint);
+            console.error('Error Code:', error.code);
             throw error;
         }
 
+        console.log('saveYearlySettlement Success:', data);
         return data;
     },
 

@@ -1,14 +1,17 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { storageService } from '../services/storageService';
 import {
     X,
     Upload,
     FileText,
-    Sparkles,
-    AlertCircle,
     Save,
     Loader2,
+    Plus,
     Trash2,
-    Plus
+    Sparkles,
+    Check,
+    ArrowRight,
+    ArrowLeft
 } from 'lucide-react';
 import { analyzePLDocumentWithVision } from '../services/geminiAIService';
 import { yearlySettlementService, YearlySettlement } from '../services/yearlySettlementService';
@@ -29,13 +32,15 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
     businessType,
     onImportSuccess
 }) => {
-    const [activeTab, setActiveTab] = useState<'upload' | 'manual'>('upload');
+    // Step 1: Upload/Select, Step 2: Verify/Edit, Step 3: Complete
+    const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // 編集用データ
     const [formData, setFormData] = useState<Omit<YearlySettlement, 'id' | 'created_at' | 'updated_at'>>({
         user_id: userId,
         business_type: businessType,
@@ -50,8 +55,36 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
         income_before_tax: 0,
         net_income: 0,
         category_breakdown: [],
-        metadata: {}
+        metadata: {},
+        document_path: undefined
     });
+
+    useEffect(() => {
+        if (isOpen) {
+            // Reset state when modal opens
+            setCurrentStep(1);
+            setSelectedFile(null);
+            setIsAnalyzing(false);
+            setIsSaving(false);
+            setFormData({
+                user_id: userId,
+                business_type: businessType,
+                year: new Date().getFullYear() - 1,
+                revenue: 0,
+                cost_of_sales: 0,
+                operating_expenses: 0,
+                non_operating_income: 0,
+                non_operating_expenses: 0,
+                extraordinary_income: 0,
+                extraordinary_loss: 0,
+                income_before_tax: 0,
+                net_income: 0,
+                category_breakdown: [],
+                metadata: {},
+                document_path: undefined
+            });
+        }
+    }, [isOpen, userId, businessType]);
 
     if (!isOpen) return null;
 
@@ -66,7 +99,9 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
             return;
         }
 
+        setSelectedFile(file);
         setIsAnalyzing(true);
+
         try {
             const reader = new FileReader();
             reader.onloadend = async () => {
@@ -81,11 +116,14 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
                         { fileName: file.name }
                     );
                     setFormData(settlement);
-                    setActiveTab('manual');
+                    setCurrentStep(2); // Move to verification step
                     toast.success('解析が完了しました。内容を確認してください。');
                 } else {
                     toast.error('解析に失敗しました。手動で入力してください。');
-                    setActiveTab('manual');
+                    // Even if failed, maybe let them go to manual?
+                    // For now, stay on step 1 with error? Or go to step 2 with empty data?
+                    // Let's go to step 2 so they can manually enter.
+                    setCurrentStep(2);
                 }
                 setIsAnalyzing(false);
             };
@@ -94,34 +132,29 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
             console.error('File Analysis Error:', error);
             toast.error('解析中にエラーが発生しました');
             setIsAnalyzing(false);
+            setCurrentStep(2); // Allow manual input even on error
         }
     };
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) processFile(file);
     };
 
     const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (activeTab === 'upload' && !isAnalyzing) {
-            setIsDragging(true);
-        }
+        e.preventDefault(); e.stopPropagation();
+        if (!isAnalyzing && currentStep === 1) setIsDragging(true);
     };
 
     const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         setIsDragging(false);
     };
 
     const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         setIsDragging(false);
-
-        if (activeTab === 'upload' && !isAnalyzing) {
+        if (!isAnalyzing && currentStep === 1) {
             const file = e.dataTransfer.files?.[0];
             if (file) processFile(file);
         }
@@ -130,36 +163,80 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // データの検証
             if (!formData.year || formData.year < 2000 || formData.year > 2100) {
                 toast.error('有効な年度を入力してください');
                 setIsSaving(false);
                 return;
             }
 
-            await yearlySettlementService.save(formData);
-            toast.success('データを保存しました');
+            let documentPath = undefined;
+            if (selectedFile) {
+                try {
+                    toast.loading('ファイルをアップロード中...', { id: 'upload-toast' });
+                    documentPath = await storageService.uploadFinancialDocument(
+                        userId,
+                        selectedFile,
+                        formData.year,
+                        'pl'
+                    );
+                    if (documentPath) {
+                        toast.success('ファイルのアップロード完了', { id: 'upload-toast' });
+                    }
+                } catch (uploadError) {
+                    console.error('File Upload Error:', uploadError);
+                    toast.error('ファイルのアップロードに失敗しました', { id: 'upload-toast' });
+                }
+            }
+
+            const dataToSave = {
+                ...formData,
+                document_path: documentPath || formData.document_path
+            };
+
+            await yearlySettlementService.save(dataToSave);
             onImportSuccess();
-            onClose();
+            setCurrentStep(3); // Move to complete step
+            setIsSaving(false);
         } catch (error) {
             console.error('Save Error:', error);
             toast.error('保存に失敗しました');
-        } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleManualInput = () => {
+        setSelectedFile(null);
+        setFormData({
+            ...formData,
+            year: new Date().getFullYear() - 1
+        });
+        setCurrentStep(2);
+    };
+
+    const handleReset = () => {
+        setCurrentStep(1);
+        setSelectedFile(null);
+        setFormData({
+            ...formData,
+            year: new Date().getFullYear() - 1,
+            revenue: 0,
+            cost_of_sales: 0,
+            operating_expenses: 0,
+            non_operating_income: 0,
+            non_operating_expenses: 0,
+            extraordinary_income: 0,
+            extraordinary_loss: 0,
+            income_before_tax: 0,
+            net_income: 0,
+            category_breakdown: [],
+            document_path: undefined
+        });
     };
 
     const handleInputChange = (field: string, value: any) => {
         setFormData(prev => {
             const newData: any = { ...prev, [field]: value };
-
-            // 利益の自動計算
-            if (['revenue', 'cost_of_sales', 'operating_expenses', 'non_operating_income', 'non_operating_expenses', 'extraordinary_income', 'extraordinary_loss'].includes(field)) {
-                const opIncome = newData.revenue - newData.cost_of_sales - newData.operating_expenses;
-                newData.income_before_tax = opIncome + newData.non_operating_income - newData.non_operating_expenses + newData.extraordinary_income - newData.extraordinary_loss;
-                newData.net_income = newData.income_before_tax; // 簡易的に同じにする
-            }
-
+            // Simple re-calc for display consistency if needed, but for now rely on manual input
             return newData;
         });
     };
@@ -167,11 +244,11 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
     const addCategory = () => {
         setFormData(prev => ({
             ...prev,
-            category_breakdown: [...prev.category_breakdown, { category: '', amount: 0 }]
+            category_breakdown: [...prev.category_breakdown, { category: '', amount: 0, percentage: 0 }]
         }));
     };
 
-    const updateCategory = (index: number, field: 'category' | 'amount', value: any) => {
+    const updateCategory = (index: number, field: string, value: any) => {
         setFormData(prev => {
             const newBreakdown = [...prev.category_breakdown];
             newBreakdown[index] = { ...newBreakdown[index], [field]: value };
@@ -186,244 +263,345 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
         }));
     };
 
-    return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-border animate-in fade-in zoom-in duration-200">
-                {/* ヘッダー */}
-                <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-surface-highlight">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-primary" />
-                        </div>
-                        <h3 className="text-lg font-bold text-text-main">前年度データのインポート</h3>
+    // --- Render Helpers ---
+
+    const renderStepIndicator = () => (
+        <div className="flex items-center justify-center mb-8">
+            {[1, 2, 3].map((step) => (
+                <div key={step} className="flex items-center">
+                    <div className={`
+                        flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
+                        ${currentStep >= step ? 'bg-primary text-white' : 'bg-surface-highlight text-text-muted'}
+                        transition-colors duration-300
+                    `}>
+                        {currentStep > step ? <Check className="w-5 h-5" /> : step}
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-text-muted" />
+                    <span className={`ml-2 text-sm font-medium ${currentStep >= step ? 'text-text-main' : 'text-text-muted'}`}>
+                        {step === 1 && 'アップロード'}
+                        {step === 2 && 'データ確認'}
+                        {step === 3 && '完了'}
+                    </span>
+                    {step < 3 && (
+                        <div className={`w-12 h-0.5 mx-4 ${currentStep > step ? 'bg-primary' : 'bg-surface-highlight'}`} />
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div
+                className="bg-surface border border-border rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-text-main flex items-center">
+                        <FileText className="w-5 h-5 mr-2 text-primary" />
+                        前年度決算データのインポート
+                    </h2>
+                    <button onClick={onClose} className="text-text-muted hover:text-text-main transition-colors">
+                        <X className="w-6 h-6" />
                     </button>
                 </div>
 
-                {/* タブ */}
-                <div className="flex border-b border-border">
-                    <button
-                        onClick={() => setActiveTab('upload')}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'upload' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-text-muted hover:text-text-main hover:bg-surface-highlight'}`}
-                    >
-                        <div className="flex items-center justify-center gap-2">
-                            <Sparkles className="w-4 h-4" />
-                            AI解析 (推奨)
-                        </div>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('manual')}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'manual' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-text-muted hover:text-text-main hover:bg-surface-highlight'}`}
-                    >
-                        <div className="flex items-center justify-center gap-2">
-                            <Upload className="w-4 h-4" />
-                            手動入力・確認
-                        </div>
-                    </button>
-                </div>
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto p-6">
+                    {renderStepIndicator()}
 
-                <div className="p-6 max-h-[70vh] overflow-y-auto">
-                    {activeTab === 'upload' ? (
-                        <div className="space-y-6">
+                    {/* Step 1: Upload or Select */}
+                    {currentStep === 1 && (
+                        <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
                             <div
-                                onClick={() => !isAnalyzing && fileInputRef.current?.click()}
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                                className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-4 transition-all cursor-pointer ${isAnalyzing ? 'border-primary/50 bg-primary/5 cursor-not-allowed' : isDragging ? 'border-primary bg-primary/10 scale-[1.02]' : 'border-border hover:border-primary/50 hover:bg-surface-highlight'}`}
+                                onClick={() => fileInputRef.current?.click()}
+                                className={`
+                                    w-full max-w-2xl text-center p-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-300
+                                    ${isDragging
+                                        ? 'border-primary bg-primary/10 scale-[1.02]'
+                                        : 'border-border hover:border-primary/50 hover:bg-surface-highlight'
+                                    }
+                                `}
                             >
                                 <input
                                     type="file"
                                     ref={fileInputRef}
-                                    onChange={handleFileChange}
                                     className="hidden"
                                     accept="image/*,.pdf"
+                                    onChange={handleFileChange}
                                 />
 
-                                {isAnalyzing ? (
-                                    <>
-                                        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                                        <div className="text-center">
-                                            <p className="text-lg font-bold text-text-main">損益計算書を解析中...</p>
-                                            <p className="text-sm text-text-muted mt-1">AIが数値を抽出しています。しばらくお待ちください。</p>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-2 transition-colors ${isDragging ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}`}>
-                                            <Upload className={`w-8 h-8 ${isDragging ? 'animate-bounce' : ''}`} />
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-lg font-bold text-text-main">
-                                                {isDragging ? 'そのままドロップしてください' : '決算書の画像またはPDFをアップロード'}
-                                            </p>
-                                            <p className="text-sm text-text-muted mt-1">損益計算書（P&L）を撮影・選択またはドラッグ＆ドロップ</p>
-                                        </div>
-                                        <button className="btn-primary px-8 mt-2" disabled={isAnalyzing}>ファイルを選択</button>
-                                    </>
+                                <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    {isAnalyzing ? (
+                                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                                    ) : (
+                                        <Upload className="w-10 h-10 text-primary" />
+                                    )}
+                                </div>
+
+                                <h3 className="text-xl font-bold text-text-main mb-2">
+                                    {isAnalyzing ? 'AI解析中...' : '決算書をアップロード'}
+                                </h3>
+                                <p className="text-text-muted mb-6">
+                                    {isAnalyzing
+                                        ? '画像を解析してデータを抽出しています'
+                                        : 'PDFまたは画像ファイル（JPG/PNG）をドラッグ＆ドロップ'
+                                    }
+                                </p>
+
+                                {!isAnalyzing && (
+                                    <button className="btn-primary px-8 py-3 rounded-full shadow-lg hover:shadow-primary/25">
+                                        ファイルを選択
+                                    </button>
                                 )}
                             </div>
 
-                            <div className="bg-info-light/50 border border-info/20 rounded-xl p-4 flex gap-3">
-                                <AlertCircle className="w-5 h-5 text-info shrink-0 mt-0.5" />
-                                <div className="text-sm text-text-main">
-                                    <p className="font-bold">AI解析について</p>
-                                    <p className="text-text-muted mt-1">アップロードされた画像やPDFから売上高、販管費、純利益などの主要項目を自動で抽出します。解析後、数値が正しいか確認・修正いただけます。</p>
-                                </div>
+                            <div className="mt-8 flex items-center w-full max-w-2xl">
+                                <div className="h-px bg-border flex-1"></div>
+                                <span className="px-4 text-text-muted text-sm">または</span>
+                                <div className="h-px bg-border flex-1"></div>
                             </div>
+
+                            <button
+                                onClick={handleManualInput}
+                                className="mt-8 flex items-center text-text-muted hover:text-primary transition-colors font-medium group"
+                            >
+                                手動で入力する
+                                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                            </button>
                         </div>
-                    ) : (
+                    )}
+
+                    {/* Step 2: Verification / Edit */}
+                    {currentStep === 2 && (
                         <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="col-span-2">
-                                    <label className="block text-sm font-medium text-text-muted mb-1.5">対象年度 (西暦)</label>
-                                    <input
-                                        type="number"
-                                        value={formData.year}
-                                        onChange={(e) => handleInputChange('year', parseInt(e.target.value))}
-                                        className="input-base text-lg font-bold"
-                                        placeholder="2024"
-                                    />
+                            <div className="bg-surface-highlight/30 rounded-lg p-4 mb-6 border border-border/50">
+                                <h3 className="text-sm font-semibold text-text-main mb-2 flex items-center">
+                                    <Sparkles className="w-4 h-4 text-primary mr-2" />
+                                    データ確認・修正
+                                </h3>
+                                <p className="text-sm text-text-muted">
+                                    {selectedFile ? 'AI解析によって抽出されたデータです。誤りがないか確認し、必要に応じて修正してください。' : '手動でデータを入力してください。'}
+                                </p>
+                                {selectedFile && (
+                                    <div className="mt-3 flex items-center text-xs text-text-muted bg-surface/50 p-2 rounded border border-border">
+                                        <FileText className="w-3 h-3 mr-2" />
+                                        参照ファイル: {selectedFile.name}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Basic Info */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-text-muted mb-1">対象年度</label>
+                                        <input
+                                            type="number"
+                                            value={formData.year}
+                                            onChange={(e) => handleInputChange('year', parseInt(e.target.value))}
+                                            className="input-field"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-text-muted mb-1">売上高</label>
+                                        <input
+                                            type="number"
+                                            value={formData.revenue}
+                                            onChange={(e) => handleInputChange('revenue', parseInt(e.target.value))}
+                                            className="input-field"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-text-muted mb-1">売上原価</label>
+                                        <input
+                                            type="number"
+                                            value={formData.cost_of_sales}
+                                            onChange={(e) => handleInputChange('cost_of_sales', parseInt(e.target.value))}
+                                            className="input-field"
+                                        />
+                                    </div>
                                 </div>
 
+                                {/* Profit Calc Flow */}
                                 <div className="space-y-4">
-                                    <h4 className="font-bold text-text-main border-l-2 border-success pl-2">収益</h4>
                                     <div>
-                                        <label className="block text-xs font-medium text-text-muted mb-1">売上高 (収入金額)</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
-                                            <input
-                                                type="number"
-                                                value={formData.revenue}
-                                                onChange={(e) => handleInputChange('revenue', parseInt(e.target.value))}
-                                                className="input-base pl-8"
-                                            />
-                                        </div>
+                                        <label className="block text-xs font-medium text-text-muted mb-1">販売費及び一般管理費</label>
+                                        <input
+                                            type="number"
+                                            value={formData.operating_expenses}
+                                            onChange={(e) => handleInputChange('operating_expenses', parseInt(e.target.value))}
+                                            className="input-field"
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-text-muted mb-1">営業外収益</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
-                                            <input
-                                                type="number"
-                                                value={formData.non_operating_income}
-                                                onChange={(e) => handleInputChange('non_operating_income', parseInt(e.target.value))}
-                                                className="input-base pl-8"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h4 className="font-bold text-text-main border-l-2 border-error pl-2">費用</h4>
-                                    <div>
-                                        <label className="block text-xs font-medium text-text-muted mb-1">売上原価</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
-                                            <input
-                                                type="number"
-                                                value={formData.cost_of_sales}
-                                                onChange={(e) => handleInputChange('cost_of_sales', parseInt(e.target.value))}
-                                                className="input-base pl-8"
-                                            />
-                                        </div>
+                                        <input
+                                            type="number"
+                                            value={formData.non_operating_income}
+                                            onChange={(e) => handleInputChange('non_operating_income', parseInt(e.target.value))}
+                                            className="input-field"
+                                        />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-text-muted mb-1">販管費 (経費合計)</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
-                                            <input
-                                                type="number"
-                                                value={formData.operating_expenses}
-                                                onChange={(e) => handleInputChange('operating_expenses', parseInt(e.target.value))}
-                                                className="input-base pl-8"
-                                            />
-                                        </div>
+                                        <label className="block text-xs font-medium text-text-muted mb-1">営業外費用</label>
+                                        <input
+                                            type="number"
+                                            value={formData.non_operating_expenses}
+                                            onChange={(e) => handleInputChange('non_operating_expenses', parseInt(e.target.value))}
+                                            className="input-field"
+                                        />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-surface-highlight rounded-xl p-4 border border-border">
+                            {/* Category Breakdown Section */}
+                            <div className="bg-surface-highlight/10 rounded-xl p-5 border border-border mt-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h4 className="font-bold text-text-main">経費内訳 (任意)</h4>
-                                    <button onClick={addCategory} className="text-primary text-sm flex items-center gap-1 hover:underline">
-                                        <Plus className="w-4 h-4" />
-                                        追加
+                                    <h3 className="text-sm font-bold text-text-main flex items-center">
+                                        <div className="w-2 h-2 rounded-full bg-purple-500 mr-2" />
+                                        主要カテゴリ別内訳（任意）
+                                    </h3>
+                                    <button
+                                        onClick={addCategory}
+                                        className="text-xs flex items-center text-primary hover:text-primary-light transition-colors"
+                                    >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        カテゴリを追加
                                     </button>
                                 </div>
-
-                                <div className="space-y-2">
-                                    {formData.category_breakdown.map((cat, idx) => (
-                                        <div key={idx} className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={cat.category}
-                                                onChange={(e) => updateCategory(idx, 'category', e.target.value)}
-                                                placeholder="カテゴリ名"
-                                                className="input-base flex-1 text-sm bg-surface"
-                                            />
-                                            <div className="relative w-32">
+                                <div className="space-y-3">
+                                    {formData.category_breakdown.map((item, index) => (
+                                        <div key={index} className="flex items-center gap-3 bg-surface-highlight/20 p-3 rounded-lg border border-border/50 group">
+                                            <div className="flex-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="カテゴリ名（例: 商品売上）"
+                                                    value={item.category}
+                                                    onChange={(e) => updateCategory(index, 'category', e.target.value)}
+                                                    className="w-full bg-transparent border-none p-0 text-sm focus:ring-0 text-text-main placeholder-text-muted/50"
+                                                />
+                                            </div>
+                                            <div className="w-32 relative">
                                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">¥</span>
                                                 <input
                                                     type="number"
-                                                    value={cat.amount}
-                                                    onChange={(e) => updateCategory(idx, 'amount', parseInt(e.target.value))}
-                                                    className="input-base pl-6 text-sm bg-surface text-right"
+                                                    placeholder="金額"
+                                                    value={item.amount}
+                                                    onChange={(e) => updateCategory(index, 'amount', parseInt(e.target.value))}
+                                                    className="w-full bg-surface-highlight/50 border border-border rounded-md pl-6 pr-2 py-1 text-right text-sm font-mono focus:ring-1 focus:ring-primary"
                                                 />
                                             </div>
-                                            <button onClick={() => removeCategory(idx)} className="p-2 text-error hover:bg-error/10 rounded-lg">
+                                            <button
+                                                onClick={() => removeCategory(index)}
+                                                className="w-6 h-6 flex items-center justify-center text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded opacity-0 group-hover:opacity-100 transition-all"
+                                            >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
                                     ))}
                                     {formData.category_breakdown.length === 0 && (
-                                        <p className="text-xs text-text-muted text-center py-2">内訳を登録すると、統計比較がより詳細になります。</p>
+                                        <p className="text-xs text-text-muted text-center py-4 border-2 border-dashed border-border/50 rounded-lg">
+                                            内訳を登録すると、統計比較がより詳細になります。
+                                        </p>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="bg-primary/5 rounded-xl p-5 border border-primary/20 flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-primary">計算後の当期純利益</p>
-                                    <p className="text-2xl font-black text-text-main mt-1">¥{formData.net_income.toLocaleString()}</p>
+                            <div className="border-t border-border pt-6 mt-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <label className="block text-xs font-medium text-text-muted mb-1">特別利益</label>
+                                        <input
+                                            type="number"
+                                            value={formData.extraordinary_income}
+                                            onChange={(e) => handleInputChange('extraordinary_income', parseInt(e.target.value))}
+                                            className="input-field"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-text-muted mb-1">特別損失</label>
+                                        <input
+                                            type="number"
+                                            value={formData.extraordinary_loss}
+                                            onChange={(e) => handleInputChange('extraordinary_loss', parseInt(e.target.value))}
+                                            className="input-field"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-primary mb-1">当期純利益</label>
+                                        <input
+                                            type="number"
+                                            value={formData.net_income}
+                                            onChange={(e) => handleInputChange('net_income', parseInt(e.target.value))}
+                                            className="input-field border-primary/50 bg-primary/5 font-bold"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="p-3 bg-white/5 rounded-2xl">
-                                    <Sparkles className="w-8 h-8 text-primary/40" />
-                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 3: Complete */}
+                    {currentStep === 3 && (
+                        <div className="flex flex-col items-center justify-center h-full py-12">
+                            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-6">
+                                <Check className="w-10 h-10 text-green-500" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-text-main mb-2">インポート完了</h3>
+                            <p className="text-text-muted mb-8 text-center max-w-md">
+                                前年度データの保存が完了しました。<br />
+                                経営分析の比較データとして利用されます。
+                            </p>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={onClose}
+                                    className="btn-ghost"
+                                >
+                                    閉じる
+                                </button>
+                                <button
+                                    onClick={handleReset}
+                                    className="btn-primary"
+                                >
+                                    続けてインポートする
+                                </button>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* フッター */}
-                <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 bg-surface-highlight/50">
-                    <button
-                        onClick={onClose}
-                        className="btn-ghost"
-                        disabled={isSaving}
-                    >
-                        キャンセル
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving || (activeTab === 'manual' && formData.revenue === 0)}
-                        className="btn-primary min-w-[120px]"
-                    >
-                        {isSaving ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                保存中...
-                            </>
-                        ) : (
-                            <>
-                                <Save className="w-4 h-4" />
-                                保存する
-                            </>
-                        )}
-                    </button>
-                </div>
+                {/* Footer (Navigation) */}
+                {currentStep === 2 && (
+                    <div className="px-6 py-4 border-t border-border flex items-center justify-between bg-surface-highlight/30">
+                        <button
+                            onClick={() => setCurrentStep(1)}
+                            className="flex items-center text-text-muted hover:text-text-main transition-colors"
+                        >
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            戻る
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="btn-primary min-w-[140px]"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    保存中...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4 mr-2" />
+                                    保存して完了
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

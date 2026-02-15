@@ -466,6 +466,15 @@ input[type=number] {
   background: var(--text-muted);
 }
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ============== セレクション ============== */
 ::selection {
   background: var(--primary);

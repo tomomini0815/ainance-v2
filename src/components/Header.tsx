@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, Bell, Menu, Settings, LogOut, Building, User, TrendingUp, TrendingDown, FileText, CheckSquare, Calendar, AlertCircle } from 'lucide-react'
+import { Search, Bell, Menu, Settings, LogOut, Building, User, TrendingUp, TrendingDown, FileText, CheckSquare, Calendar, AlertCircle, ChevronDown } from 'lucide-react'
 import BusinessTypeSwitcher from './BusinessTypeSwitcher'
 import CreateBusinessTypeModal from './CreateBusinessTypeModal'
 import { useAuth } from '../hooks/useAuth'
 import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useGlobalSearch } from '../hooks/useGlobalSearch'
 import { createPortal } from 'react-dom'
-import { getReceipts, Receipt } from '../services/receiptService'
+import { getReceipts } from '../services/receiptService'
 import { useTransactions } from '../hooks/useTransactions'
+import { useFiscalYear } from '../context/FiscalYearContext'
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -36,6 +37,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const notificationRef = useRef<HTMLDivElement>(null)
+  const { selectedYear, setSelectedYear, yearOptions } = useFiscalYear()
 
   const { pages, transactions: searchTransactions } = useGlobalSearch(searchTerm)
   const { transactions: allTransactions } = useTransactions(user?.id, currentBusinessType?.business_type)
@@ -183,36 +185,17 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             <div className="md:hidden flex items-center gap-2">
               <Link to="/dashboard" className="flex items-center gap-2">
                 <img src="/ainance-logo.png" alt="Ainance" className="w-8 h-8 object-contain" />
-                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Ainance</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hidden sm:block">Ainance</h1>
               </Link>
             </div>
 
-            {/* Center: Business Type Display (Desktop only) */}
-            <div className="hidden md:flex items-center">
-              {currentBusinessType ? (
-                <div className="flex items-center space-x-2 bg-surface border border-white/10 px-3 py-1.5 rounded-lg">
-                  {currentBusinessType.business_type === 'individual' ? (
-                    <User className="w-4 h-4 text-primary" />
-                  ) : (
-                    <Building className="w-4 h-4 text-green-400" />
-                  )}
-                  <span className="text-sm font-medium text-text-main">
-                    {currentBusinessType.business_type === 'individual' ? '個人' : '法人'}
-                  </span>
-                  <span className="text-sm text-text-muted truncate max-w-xs">
-                    - {currentBusinessType.company_name}
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2 bg-surface border border-white/10 px-3 py-1.5 rounded-lg">
-                  <User className="w-4 h-4 text-text-muted" />
-                  <span className="text-sm text-text-muted">業態形態を選択</span>
-                </div>
-              )}
+            {/* Left/Center: Empty space or Search (Adjusted) */}
+            <div className="hidden md:flex flex-1 items-center justify-center">
+              {/* This space can be used for search or global announcements */}
             </div>
 
             {/* Right: Actions */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Search (Desktop) */}
               <div className="hidden md:block relative">
                 <form onSubmit={handleSearch} className={`relative flex items-center transition-all duration-300 ${isSearchExpanded ? 'w-64' : 'w-10'}`}>
@@ -297,6 +280,30 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 )}
               </div>
 
+              {/* Fiscal Year Selector (Pill Design) */}
+              <div className="relative group">
+                <div className="flex items-center bg-surface border border-white/10 px-2 sm:px-3 py-1.5 rounded-full transition-all duration-200 hover:bg-white/5 hover:border-white/20">
+                  <Calendar className="w-4 h-4 text-secondary mr-2" />
+                  <span className="text-sm font-bold text-text-main mr-1">
+                    {selectedYear}
+                    <span className="hidden sm:inline">年度</span>
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-text-muted transition-transform group-hover:rotate-180" />
+                </div>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  title="会計年度を選択"
+                >
+                  {yearOptions.map(y => (
+                    <option key={y} value={y} className="bg-surface text-text-main">
+                      {y}年度
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Notifications */}
               <div className="relative" ref={notificationRef}>
                 <button
@@ -371,13 +378,17 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
                     >
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
-                        <span className="text-white text-sm font-bold">
-                          {user.name ? user.name.charAt(0) : 'U'}
+                        {currentBusinessType?.business_type === 'corporation' ? (
+                          <Building className="w-4 h-4 text-white" />
+                        ) : (
+                          <User className="w-4 h-4 text-white" />
+                        )}
+                      </div>
+                      <div className="hidden md:flex flex-col items-start leading-tight">
+                        <span className="text-sm font-medium text-text-main truncate max-w-[120px]">
+                          {currentBusinessType?.company_name || user.name || 'ユーザー'}
                         </span>
                       </div>
-                      <span className="hidden md:block text-sm font-medium text-text-secondary dark:text-text-secondary text-slate-700">
-                        {user.name || 'ユーザー'}
-                      </span>
                     </button>
 
                     {showUserMenu && createPortal(

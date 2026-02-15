@@ -69,7 +69,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onOpe
     };
   }, [currentBusinessType, fetchTransactions]);
 
-  const latestTransactions = [...(transactions.length > 0 ? transactions : fetchedTransactions)]
+  const latestTransactions = [...(Array.isArray(transactions) ? transactions : fetchedTransactions)]
     .filter(t => t.approval_status !== 'pending')
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
