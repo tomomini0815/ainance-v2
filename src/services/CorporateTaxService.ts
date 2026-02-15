@@ -450,9 +450,12 @@ export function generateFinancialDataFromTransactions(
   fiscalYear: number
 ): FinancialData {
   // 該当年度の取引をフィルター
+  // 減価償却資産（depreciation_asset）は計算の重複を避けるため除外（別ステップで集計）
   const yearTransactions = transactions.filter(t => {
     const date = new Date(t.date);
-    return date.getFullYear() === fiscalYear;
+    const isTargetYear = date.getFullYear() === fiscalYear;
+    const isDepreciation = t.tags?.includes('depreciation_asset');
+    return isTargetYear && !isDepreciation;
   });
 
   // 収入と経費を集計
@@ -522,4 +525,62 @@ export function formatCurrency(amount: number): string {
  */
 export function formatPercentage(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
+}
+/**
+ * 取引データから減価償却資産を抽出
+ */
+export function extractDepreciationAssetsFromTransactions(
+  transactions: any[],
+  fiscalYear: number
+): DepreciationAsset[] {
+  return transactions
+    .filter(t => t.tags?.includes('depreciation_asset'))
+    .map(t => {
+      const desc = t.description || '';
+      const acqDateMatch = desc.match(/取得日:(\d{4}-\d{2}-\d{2})/);
+      const acqCostMatch = desc.match(/取得価額:¥([\d,]+)/);
+      const methodMatch = desc.match(/償却方法:(定額法|定率法|一括償却 \(3年\)|少額減価償却資産 \(特例\))/);
+      const lifeMatch = desc.match(/耐用年数:(\d+)年/);
+      const ratioMatch = desc.match(/事業割合:(\d+)%/);
+
+      const mapping: Record<string, DepreciationAsset['depreciationMethod']> = {
+        '定額法': 'straightLine',
+        '定率法': 'decliningBalance',
+        '一括償却 (3年)': 'lumpSum',
+        '少額減価償却資産 (特例)': 'immediateSME'
+      };
+
+      // 取得月を計算（計上年度と等しい場合。それ以外は12ヶ月または償却完了の判定が必要だが、
+      // 転記時点では「現在の資産状態」を反映するため一旦簡易的に扱う）
+      const acqDateStr = acqDateMatch ? acqDateMatch[1] : t.date;
+      const acqDate = new Date(acqDateStr);
+      const isSameYear = acqDate.getFullYear() === fiscalYear;
+      const currentYearMonths = isSameYear ? (12 - acqDate.getMonth()) : 12;
+
+      return {
+        id: t.id || Math.random().toString(36).substr(2, 9),
+        name: t.item,
+        quantity: 1,
+        unit: '台',
+        acquisitionDate: acqDateStr,
+        acquisitionCost: acqCostMatch ? parseInt(acqCostMatch[1].replace(/,/g, ''), 10) : Math.abs(t.amount),
+        depreciationMethod: mapping[methodMatch ? methodMatch[1] : '定額法'] || 'straightLine',
+        usefulLife: lifeMatch ? parseInt(lifeMatch[1], 10) : 5,
+        businessRatio: ratioMatch ? parseInt(ratioMatch[1], 10) : 100,
+        currentYearMonths: currentYearMonths
+      };
+    })
+    .filter(asset => {
+      // 該当年度以前に取得されたもののみ
+      const acqYear = new Date(asset.acquisitionDate).getFullYear();
+      return acqYear <= fiscalYear;
+    })
+    .reduce((unique: DepreciationAsset[], asset) => {
+      // 同じ資産名と取得日の組み合わせを重複として排除
+      const isDuplicate = unique.some(u => u.name === asset.name && u.acquisitionDate === asset.acquisitionDate);
+      if (!isDuplicate) {
+        unique.push(asset);
+      }
+      return unique;
+    }, []);
 }

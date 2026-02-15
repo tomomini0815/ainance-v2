@@ -38,6 +38,7 @@ import {
     downloadXTXFile,
     TaxFilingInfo,
 } from '../services/eTaxExportService';
+import { extractDepreciationAssetsFromTransactions, DepreciationAsset } from '../services/CorporateTaxService';
 import {
     downloadPDF,
     previewPDF,
@@ -79,6 +80,14 @@ const TaxFilingWizard: React.FC = () => {
     const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
     const [estimatedSavings, setEstimatedSavings] = useState(0);
     const [depreciationAmount, setDepreciationAmount] = useState(0);
+    const [depreciationAssets, setDepreciationAssets] = useState<DepreciationAsset[]>([]);
+
+    // 個人情報・事業所情報
+    const [basicInfo, setBasicInfo] = useState({
+        name: '',
+        address: '',
+        idNumber: '',
+    });
 
     // 初期控除を設定
     useEffect(() => {
@@ -94,10 +103,27 @@ const TaxFilingWizard: React.FC = () => {
             deductions
         );
 
-        // 減価償却費を加算
+        // 減価償却費をカテゴリ一覧に追加（表示用）
+        const expensesByCategory = [...baseData.expensesByCategory];
+        const totalExpenses = baseData.totalExpenses + depreciationAmount;
+
+        if (depreciationAmount > 0) {
+            expensesByCategory.push({
+                category: '減価償却費',
+                amount: depreciationAmount,
+                percentage: totalExpenses > 0 ? (depreciationAmount / totalExpenses) * 100 : 0
+            });
+            // パーセンテージを再計算してソート
+            expensesByCategory.forEach(cat => {
+                cat.percentage = totalExpenses > 0 ? (cat.amount / totalExpenses) * 100 : 0;
+            });
+            expensesByCategory.sort((a, b) => b.amount - a.amount);
+        }
+
         return {
             ...baseData,
-            totalExpenses: baseData.totalExpenses + depreciationAmount,
+            totalExpenses,
+            expensesByCategory,
             netIncome: baseData.netIncome - depreciationAmount,
             taxableIncome: Math.max(0, baseData.taxableIncome - depreciationAmount),
         };
@@ -114,6 +140,44 @@ const TaxFilingWizard: React.FC = () => {
         if (currentStep > 1) {
             setCurrentStep(currentStep - 1);
         }
+    };
+
+    // 登録データから転記
+    const handleTranscribe = () => {
+        if (!currentBusinessType) {
+            import('react-hot-toast').then(t => t.default.error('登録された事業情報が見つかりません。連携設定で登録してください。'));
+            return;
+        }
+
+        setBasicInfo({
+            name: isCorporation ? currentBusinessType.company_name : currentBusinessType.representative_name,
+            address: currentBusinessType.address || '',
+            idNumber: currentBusinessType.tax_number || '',
+        });
+
+        import('react-hot-toast').then(t => t.default.success('事業情報を転記しました'));
+    };
+
+    // 減価償却資産の転記
+    const handleDepreciationTranscribe = () => {
+        if (!transactions || transactions.length === 0) {
+            import('react-hot-toast').then(t => t.default.error('取引データが見つかりません。'));
+            return;
+        }
+
+        const extractedAssets = extractDepreciationAssetsFromTransactions(transactions, fiscalYear);
+        if (extractedAssets.length === 0) {
+            import('react-hot-toast').then(t => t.default.error('転記可能な減価償却資産（タグ: depreciation_asset）が見つかりません。'));
+            return;
+        }
+
+        setDepreciationAssets(extractedAssets);
+        import('react-hot-toast').then(t => t.default.success(`${extractedAssets.length}件の減価償却資産を転記しました`));
+    };
+
+    const handleDepreciationCalculate = (total: number, assets: DepreciationAsset[]) => {
+        setDepreciationAmount(total);
+        setDepreciationAssets(assets);
     };
 
     // 控除を追加
@@ -157,7 +221,6 @@ const TaxFilingWizard: React.FC = () => {
             setIsLoading(false);
         }
     };
-
     // PDF生成（簡易版）- ダウンロードとプレビューを同時に実行
     const generatePDF = () => {
         // 申告書の内容を作成
@@ -165,6 +228,10 @@ const TaxFilingWizard: React.FC = () => {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
            ${isCorporation ? '法人税申告書' : '確定申告書'}（${fiscalYear}年度）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+氏名:       ${basicInfo.name || '（未入力）'}
+納税地:     ${basicInfo.address || '（未入力）'}
+${isCorporation ? '法人番号' : '個人番号'}:   ${basicInfo.idNumber || '（未入力）'}
 
 申告方法: ${hasBlueReturn ? '青色申告' : '白色申告'}
 作成日時: ${new Date().toLocaleString('ja-JP')}
@@ -367,14 +434,61 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
     // ステップ1: 基本情報
     const Step1BasicInfo = () => (
         <div className="space-y-6">
-            <div>
-                <h3 className="text-lg font-semibold text-text-main mb-4">{isCorporation ? '法人税申告' : '確定申告'}の基本設定</h3>
-                <p className="text-text-muted mb-6">
-                    {isCorporation ? '法人税申告' : '確定申告'}を行う年度と申告方法を選択してください。
-                </p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h3 className="text-lg font-semibold text-text-main mb-1">{isCorporation ? '法人税申告' : '確定申告'}の基本設定</h3>
+                    <p className="text-text-muted">
+                        申告年度、方法、および基本情報を設定してください。
+                    </p>
+                </div>
+                <button
+                    onClick={handleTranscribe}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors text-primary text-sm font-medium whitespace-nowrap"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    登録データから転記
+                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-text-main mb-2">
+                            氏名 / 氏名（名称）
+                        </label>
+                        <input
+                            type="text"
+                            value={basicInfo.name}
+                            onChange={(e) => setBasicInfo({ ...basicInfo, name: e.target.value })}
+                            className="input-base"
+                            placeholder="山田 太郎"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-text-main mb-2">
+                            納税地 / 住所
+                        </label>
+                        <input
+                            type="text"
+                            value={basicInfo.address}
+                            onChange={(e) => setBasicInfo({ ...basicInfo, address: e.target.value })}
+                            className="input-base"
+                            placeholder="東京都渋谷区..."
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-text-main mb-2">
+                            {isCorporation ? '法人番号' : '個人番号'}
+                        </label>
+                        <input
+                            type="text"
+                            value={basicInfo.idNumber}
+                            onChange={(e) => setBasicInfo({ ...basicInfo, idNumber: e.target.value })}
+                            className="input-base"
+                            placeholder="123456789012"
+                        />
+                    </div>
+                </div>
                 <div>
                     <label className="block text-sm font-medium text-text-main mb-2">
                         申告年度
@@ -514,6 +628,32 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                     </div>
                 </div>
             )}
+        </div>
+    );
+
+    // ステップ3: 減価償却
+    const Step3Depreciation = () => (
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h3 className="text-lg font-semibold text-text-main mb-1">減価償却資産の登録</h3>
+                    <p className="text-text-muted">
+                        固定資産の登録と今期の償却額を計算します。
+                    </p>
+                </div>
+                <button
+                    onClick={handleDepreciationTranscribe}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors text-primary text-sm font-medium whitespace-nowrap"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    取引データから転記
+                </button>
+            </div>
+
+            <DepreciationCalculator
+                initialAssets={depreciationAssets}
+                onCalculate={handleDepreciationCalculate}
+            />
         </div>
     );
 
@@ -1172,25 +1312,13 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
     // ステップコンテンツを取得
     const renderStepContent = () => {
         switch (currentStep) {
-            case 1:
-                return <Step1BasicInfo />;
-            case 2:
-                return <Step2IncomeExpense />;
-            case 3:
-                return (
-                    <DepreciationCalculator
-                        onCalculate={(amount) => setDepreciationAmount(amount)}
-                        initialAssets={[]} // TODO: Load from persistence if needed
-                    />
-                );
-            case 4:
-                return <Step3Deductions />;
-            case 5:
-                return <Step4AIDiagnosis />;
-            case 6:
-                return <Step5CreateDocument />;
-            default:
-                return null;
+            case 1: return <Step1BasicInfo />;
+            case 2: return <Step2IncomeExpense />;
+            case 3: return <Step3Depreciation />;
+            case 4: return <Step3Deductions />;
+            case 5: return <Step4AIDiagnosis />;
+            case 6: return <Step5CreateDocument />;
+            default: return null;
         }
     };
 

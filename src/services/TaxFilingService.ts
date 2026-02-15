@@ -138,9 +138,12 @@ export const calculateTaxFilingData = (
   deductions: Deduction[] = []
 ): TaxFilingData => {
   // 該当年度の取引をフィルター
+  // 減価償却資産（depreciation_asset）は計算の重複を避けるため除外（別ステップで集計）
   const yearTransactions = transactions.filter(t => {
     const date = new Date(t.date);
-    return date.getFullYear() === fiscalYear;
+    const isTargetYear = date.getFullYear() === fiscalYear;
+    const isDepreciation = t.tags?.includes('depreciation_asset');
+    return isTargetYear && !isDepreciation;
   });
 
   // 収入と経費を集計
@@ -169,8 +172,8 @@ export const calculateTaxFilingData = (
     .filter(d => d.isApplicable)
     .reduce((sum, d) => sum + d.amount, 0);
 
-  // 課税所得
-  const taxableIncome = Math.max(0, netIncome - totalDeductions);
+  // 課税所得 (所得税法では1,000円未満を切り捨て)
+  const taxableIncome = Math.max(0, Math.floor((netIncome - totalDeductions) / 1000) * 1000);
 
   // 所得税計算
   const estimatedTax = calculateIncomeTax(taxableIncome);

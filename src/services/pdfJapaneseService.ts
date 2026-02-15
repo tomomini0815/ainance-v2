@@ -127,7 +127,8 @@ async function loadJapaneseFont(pdfDoc: PDFDocument): Promise<{ regular: PDFFont
     return { regular, bold };
   } catch (error) {
     console.error('日本語フォントのロードに失敗:', error);
-    throw new Error('日本語フォントのロードに失敗しました。public/fonts/にフォントファイルを配置してください。');
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`日本語フォントのロードに失敗しました (${message})。public/fonts/にフォントファイルを正しく配置してください。`);
   }
 }
 
@@ -603,7 +604,7 @@ export async function generateFinancialStatementPDF(data: JpTaxFormData): Promis
  */
 export async function generateTaxReturnBPDF(data: JpTaxFormData): Promise<Uint8Array> {
   // 公式テンプレートを読み込み
-  const url = '/templates/kakutei_1_2.pdf';
+  const url = '/templates/kakutei1&2.pdf'; // 修正: kakutei_1_2.pdf -> kakutei1&2.pdf
   const templateBytes = await fetch(`${url}?t=${Date.now()}`).then(r => r.arrayBuffer());
 
   // JpTaxFormDataをTaxFormDataに変換
@@ -1311,7 +1312,7 @@ export async function fillSingleOfficialCorporateTaxPDF(data: CorporateTaxInputD
   }
 
   const templates: { [key: string]: string } = {
-    'beppyo1': '/templates/01-01-a.pdf',
+    'beppyo1': '/templates/beppyo1_official.pdf', // 修正: 01-01-a.pdf -> beppyo1_official.pdf
     'beppyo4': '/templates/beppyo4_official.pdf',
     'beppyo5_1': '/templates/beppyo5_1_official.pdf',
     'beppyo5_2': '/templates/beppyo5_2_official.pdf',

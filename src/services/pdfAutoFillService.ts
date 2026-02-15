@@ -77,11 +77,12 @@ const TAX_RETURN_B_DIGIT_FIELDS: { [key: string]: DigitFieldConfig } = {
   '控除_19_配偶者': { anchorX: 227.3, anchorY: 189.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
   '控除_20_配偶者特別': { anchorX: 286.0, anchorY: 189.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
   '控除_21_扶養': { anchorX: 286.0, anchorY: 171.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_22_基礎控除': { anchorX: 286.0, anchorY: 153.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_23_雑損': { anchorX: 286.0, anchorY: 135.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_24_医療費': { anchorX: 286.0, anchorY: 117.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_25_寄附金': { anchorX: 286.0, anchorY: 99.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
-  '控除_26_合計': { anchorX: 286, anchorY: 81.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_23_扶養': { anchorX: 286.0, anchorY: 153.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS }, // 旧 21
+  '控除_25_基礎控除': { anchorX: 286.0, anchorY: 117.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS }, // 旧 22
+  '控除_26_合計': { anchorX: 286, anchorY: 99.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS }, // 修正：Row 25の次
+  '控除_27_雑損': { anchorX: 286.0, anchorY: 81.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS },
+  '控除_28_医療費': { anchorX: 286.0, anchorY: 63.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS }, // 旧 24
+  '控除_29_寄附金': { anchorX: 286.0, anchorY: 45.6, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: CALIBRATED_FONT_SIZE, maxDigits: DEFAULT_MAX_DIGITS }, // 旧 25
 
   // ============================================
   // 右側上部 - 税金の計算 (31番以降)
@@ -187,6 +188,23 @@ function drawDigitInBox(
   const reversedDigits = [...digits].reverse();
 
   reversedDigits.forEach((digit, index) => {
+    // === 特殊対応：下位桁の表示抑制（ユーザー要望） ===
+    // 判定精度を上げるため、座標のわずかな誤差を許容する (±2.0pt)
+    // 1. 基礎控除 (Row 25, Y=117.6)
+    // 左側カラム (anchorX < 300) で、基礎控除周辺の場合、下4桁を空欄にする。
+    // ※ ⑬から㉕までの計 (Row 26, Y=99.6) は、ゼロが必要なため対象外。
+    const isBasicDeductionRow = config.anchorX < 300 && Math.abs(config.anchorY - 117.6) < 2.0;
+    if (isBasicDeductionRow && index < 4 && digit === '0') {
+      return;
+    }
+
+    // 2. 課税所得 (Row 31, Y=672.6)
+    // 右側カラム (anchorX > 500) で、課税所得周辺の場合、下3桁を空欄にする。
+    const isTaxableIncomeRow = config.anchorX > 500 && Math.abs(config.anchorY - 672.6) < 2.0;
+    if (isTaxableIncomeRow && index < 3 && digit === '0') {
+      return;
+    }
+
     const textWidth = font.widthOfTextAtSize(digit, config.fontSize);
     // 右端から左へ配置
     const x = config.anchorX - (index * config.boxSpacing) - (textWidth / 2);
@@ -343,13 +361,13 @@ export async function fillTaxReturnB(
     fillDigitBox(data.deductions.spouse, TAX_RETURN_B_DIGIT_FIELDS['控除_19_配偶者']);
   }
   if (data.deductions.dependents) {
-    fillDigitBox(data.deductions.dependents, TAX_RETURN_B_DIGIT_FIELDS['控除_21_扶養']);
+    fillDigitBox(data.deductions.dependents, TAX_RETURN_B_DIGIT_FIELDS['控除_23_扶養']);
   }
   if (data.deductions.basic) {
-    fillDigitBox(data.deductions.basic, TAX_RETURN_B_DIGIT_FIELDS['控除_22_基礎控除']);
+    fillDigitBox(data.deductions.basic, TAX_RETURN_B_DIGIT_FIELDS['控除_25_基礎控除']);
   }
   if (data.medicalExpenses) {
-    fillDigitBox(data.medicalExpenses, TAX_RETURN_B_DIGIT_FIELDS['控除_24_医療費']);
+    fillDigitBox(data.medicalExpenses, TAX_RETURN_B_DIGIT_FIELDS['控除_28_医療費']);
   }
 
   // 所得控除合計 (26)
