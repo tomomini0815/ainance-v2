@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF座標キャリブレーター - 複数ページ対応</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .pdf-panel {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            padding: 20px;
+            background: #16213e;
+        }
+
+        .sidebar {
+            width: 400px;
+            background: #0f3460;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        h1 {
+            color: #e94560;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        h2 {
+            color: #0abde3;
+            margin: 10px 0 6px;
+            font-size: 0.9em;
+            border-bottom: 1px solid #2a4a6a;
+            padding-bottom: 4px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        #pdfCanvas {
+            border: 2px solid #e94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+        }
+
+        .draggable-point {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: bold;
+            color: white;
+            border: 2px solid white;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s, box-shadow 0.1s;
+            z-index: 100;
+        }
+
+        .draggable-point:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .draggable-point.dragging {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(1.3);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+            z-index: 1000;
+        }
+
+        .draggable-point.digit {
+            background: #e94560;
+        }
+
+        .draggable-point.text {
+            background: #10ac84;
+        }
+
+        .draggable-point.selected {
+            border: 3px solid #f1c40f;
+            box-shadow: 0 0 20px rgba(241, 196, 15, 0.8);
+        }
+
+        .draggable-point.required::after {
+            content: '★';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            font-size: 8px;
+            color: #ffcc00;
+        }
+
+        .draggable-point.hidden-field {
+            display: none;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 4px;
+            color: #aaa;
+            font-size: 0.8em;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 0.9em;
+        }
+
+        button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 3px 0;
+            width: 100%;
+            transition: all 0.2s;
+            font-size: 0.85em;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+
+        .btn-success {
+            background: #10ac84;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: #1a1a2e;
+        }
+
+        .btn-info {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .field-list {
+            max-height: 180px;
+            overflow-y: auto;
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 6px;
+        }
+
+        .field-item {
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            margin: 2px 0;
+            border-radius: 4px;
+            background: #2a3a5a;
+            font-size: 0.7em;
+            cursor: pointer;
+        }
+
+        .field-item:hover {
+            background: #3a4a6a;
+        }
+
+        .field-item.selected {
+            background: #f39c1233;
+            border: 1px solid #f39c12;
+        }
+
+        .field-item .num {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+            font-size: 7px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .field-item .num.digit {
+            background: #e94560;
+        }
+
+        .field-item .num.text {
+            background: #10ac84;
+        }
+
+        .field-item.hidden-item {
+            opacity: 0.5;
+            background: #1a2a3a;
+        }
+
+        #output {
+            background: #1a1a2e;
+            padding: 6px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.55em;
+            white-space: pre-wrap;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .instructions {
+            background: rgba(10, 189, 227, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.75em;
+            line-height: 1.3;
+        }
+
+        .selected-info {
+            background: #f39c1233;
+            padding: 6px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.8em;
+        }
+
+        .tax-type-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .tax-type-tab {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.8em;
+            background: #2a3a5a;
+            border: 2px solid transparent;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .tax-type-tab.active {
+            border-color: #e94560;
+            background: #e9456033;
+        }
+
+        .doc-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .doc-btn {
+            padding: 6px 4px;
+            font-size: 0.7em;
+            background: #2a3a5a;
+            border: 2px solid transparent;
+            border-radius: 4px;
+        }
+
+        .doc-btn.active {
+            border-color: #e94560;
+            background: #e9456033;
+        }
+
+        .legend {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: 0.7em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .legend-item .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .add-field {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 5px;
+            margin-bottom: 6px;
+        }
+
+        .add-field input {
+            padding: 6px;
+            font-size: 0.8em;
+        }
+
+        .add-field select {
+            width: 65px;
+            padding: 6px;
+        }
+
+        .page-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            background: #2a3a5a;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .page-nav button {
+            width: auto;
+            padding: 6px 12px;
+            margin: 0;
+        }
+
+        .page-nav span {
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="pdf-panel">
+            <div class="canvas-wrapper" id="canvasWrapper">
+                <canvas id="pdfCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h1>📍 座標キャリブレーター</h1>
+
+            <div class="instructions">
+                1. 税種類を選択 → 2. 書類 → 3. PDF読込 → 4. ドラッグ調整 → 5. エクスポート
+            </div>
+
+            <h2>🏢 税種類</h2>
+            <div class="tax-type-tabs">
+                <div class="tax-type-tab active" data-type="corporate">法人税</div>
+                <div class="tax-type-tab" data-type="personal">所得税</div>
+            </div>
+
+            <h2>📄 書類選択</h2>
+            <div class="doc-selector" id="docSelector"></div>
+
+            <div class="input-group">
+                <label>PDFファイル:</label>
+                <input type="file" id="pdfFile" accept=".pdf">
+            </div>
+
+            <!-- ページナビゲーション -->
+            <div class="page-nav" id="pageNav" style="display:none;">
+                <button class="btn-info" id="prevPage">◀</button>
+                <span>ページ <span id="currentPage">1</span> / <span id="totalPages">1</span></span>
+                <button class="btn-info" id="nextPage">▶</button>
+            </div>
+
+            <button class="btn-warning" id="showPoints">📍 点を表示</button>
+
+            <div class="selected-info" id="selectedInfo" style="display:none;">
+                <strong>選択:</strong> <span id="selectedName">-</span> (<span id="selectedCoords">-</span>)
+            </div>
+
+            <h2>➕ フィールド追加</h2>
+            <div class="add-field">
+                <input type="text" id="newFieldName" placeholder="フィールド名">
+                <select id="newFieldType">
+                    <option value="digit">数字</option>
+                    <option value="text">テキスト</option>
+                </select>
+            </div>
+            <button class="btn-info" id="addFieldBtn">＋ 追加</button>
+
+            <h2>📋 フィールド (ページ <span id="currentPageIndicator">1</span>/<span id="totalPageIndicator">1</span>) - <span
+                    id="fieldCount">0</span>件</h2>
+            <p id="pageGuidance" style="font-size: 0.8em; color: #888; margin: 4px 0 8px 0;">
+                ※ PDFを読み込み後、ページを切り替えてフィールドを追加できます
+            </p>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="dot" style="background:#e94560"></div> 数字
+                </div>
+                <div class="legend-item">
+                    <div class="dot" style="background:#10ac84"></div> テキスト
+                </div>
+            </div>
+            <div class="field-list" id="fieldList"></div>
+
+            <h2>📤 エクスポート / インポート</h2>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                <button class="btn-success" id="updateCoordsBtn">💾 座標を更新 (Source)</button>
+                <button class="btn-info" id="importJsonBtn">📤 JSONインポート</button>
+            </div>
+            <input type="file" id="importJsonFile" accept=".json" style="display: none;">
+            <button class="btn-secondary" id="exportCoords" style="font-size: 0.8em; padding: 6px 10px;">📋
+                コードコピー</button>
+            <div id="output">書類を選択してPDFを読み込んでください</div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let pdfDoc = null;
+        let scale = 1.5;
+        let pdfWidth = 0;
+        let pdfHeight = 0;
+        let currentTaxType = 'corporate';
+        let currentDoc = 'beppyo1';
+        let currentPageNum = 1;
+        let totalPages = 1;
+        let isDragging = false;
+
+        const canvas = document.getElementById('pdfCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvasWrapper');
+
+        // ===== CORPORATE TAX FORMS (法人税) =====
+        const corporateForms = {
+            beppyo1: {
+                name: '別表一',
+                pages: 1,
+                fields: {
+                    1: [
+                        // Left Column
+                        { id: '所得金額_row1', type: 'digit', x: 292.7, y: 568.6, label: '1' },
+                        { id: '法人税額_row2', type: 'digit', x: 293.3, y: 549.9, label: '2' },
+                        { id: '特別控除額_row3', type: 'digit', x: 293.3, y: 533.3, label: '3' },
+                        { id: '税額控除_row4', type: 'digit', x: 293.3, y: 514.6, label: '4' },
+                        { id: '利子税_row5', type: 'digit', x: 292, y: 496.6, label: '5' },
+                        { id: '控除税額_row6', type: 'digit', x: 292.7, y: 479.3, label: '6' },
+                        { id: '留保金額_row7', type: 'digit', x: 292.7, y: 460.6, label: '7' },
+                        { id: '同上税額_row8', type: 'digit', x: 292, y: 441.9, label: '8' },
+                        { id: '法人税額計1_row9', type: 'digit', x: 294.7, y: 407.3, label: '9' },
+                        { id: 'row10', type: 'digit', x: 294, y: 386.6, label: '10' },
+                        { id: 'row11', type: 'digit', x: 293.3, y: 368.6, label: '11' },
+                        { id: 'row12', type: 'digit', x: 292.7, y: 351.3, label: '12' },
+                        { id: '差引法人税額_row13', type: 'digit', x: 292.7, y: 333.9, label: '13' },
+                        { id: '中間申告_row14', type: 'digit', x: 294.7, y: 316.8, label: '14' },
+                        { id: 'row15', type: 'digit', x: 293.3, y: 295.3, label: '15' },
+                        { id: '法人税額計_row28', type: 'digit', x: 293.3, y: 276.1, label: '28' },
+
+                        // Right Column
+                        { id: 'row16', type: 'digit', x: 560, y: 565.3, label: '16' },
+                        { id: 'row17', type: 'digit', x: 560, y: 547.3, label: '17' },
+                        { id: '所得合計_row18', type: 'digit', x: 560, y: 527.3, label: '18' },
+                        { id: 'row19', type: 'digit', x: 559.3, y: 509.9, label: '19' },
+                        { id: 'row20', type: 'digit', x: 560, y: 492.1, label: '20' },
+                        { id: 'row21', type: 'digit', x: 559.3, y: 470.8, label: '21' },
+                        { id: 'row22', type: 'digit', x: 560, y: 447.5, label: '22' },
+                        { id: 'row23', type: 'digit', x: 560, y: 421.5, label: '23' },
+                        { id: 'row24', type: 'digit', x: 560, y: 394.1, label: '24' },
+                        { id: 'row25', type: 'digit', x: 558.7, y: 340.1, label: '25' },
+                        { id: 'row26', type: 'digit', x: 558.7, y: 316.8, label: '26' },
+                        { id: 'row27', type: 'digit', x: 560, y: 295.5, label: '27' },
+
+                        // Text Fields
+                        { id: '税務署名', type: 'text', x: 114, y: 781.5, label: '署' },
+                        { id: '法人名', type: 'text', x: 85.3, y: 716.1, label: '名' },
+                        { id: '法人番号', type: 'text', x: 83.3, y: 695.3, label: '番' },
+                        { id: '納税地', type: 'text', x: 84, y: 752.1, label: '住' },
+                        { id: '電話番号', type: 'text', x: 170, y: 745.5, label: '電' },
+                        { id: '代表者氏名', type: 'text', x: 85.3, y: 665.9, label: '代' },
+                        { id: '事業年度_年_自', type: 'text', x: 420.7, y: 772.6, label: '自年' },
+                        { id: '事業年度_月_自', type: 'text', x: 461.3, y: 772.6, label: '自月' },
+                        { id: '事業年度_日_自', type: 'text', x: 489.3, y: 772.6, label: '自日' },
+                        { id: '事業年度_年_至', type: 'text', x: 508.7, y: 772.6, label: '至年' },
+                        { id: '事業年度_月_至', type: 'text', x: 541.3, y: 772.6, label: '至月' },
+                        { id: '事業年度_日_至', type: 'text', x: 572.7, y: 772.6, label: '至日' },
+                    ]
+                }
+            },
+            beppyo4: {
+                name: '別表四',
+                pages: 1,
+                fields: {
+                    1: [
+                        { id: '当期利益_row1', type: 'digit', x: 318.7, y: 723.3, label: '1' },
+                        { id: '損金算入法人税_row2', type: 'digit', x: 321.3, y: 539.3, label: '2' },
+                        { id: '損金算入住民税_row3', type: 'digit', x: 321.3, y: 520, label: '3' },
+                        { id: '交際費不算入額_row4', type: 'digit', x: 321.3, y: 500, label: '4' },
+                        { id: '減価償却超過額_row5', type: 'digit', x: 321.3, y: 480, label: '5' },
+                        { id: '法人税等還付金_row33', type: 'digit', x: 318.7, y: 348.6, label: '33' },
+                        { id: '支出事業税_row34', type: 'digit', x: 318.7, y: 330, label: '34' },
+                        { id: '所得金額_row52', type: 'digit', x: 321.3, y: 68.6, label: '52' },
+                        { id: '法人名', type: 'text', x: 434.7, y: 788.6, label: '法' },
+                    ]
+                }
+            },
+            beppyo5: {
+                name: '別表五(一)',
+                pages: 1,
+                fields: {
+                    1: [
+                        // 利益準備金 (Row 1)
+                        { id: '利益準備金_1', type: 'digit', x: 400, y: 650, label: '1①' },
+                        { id: '利益準備金_2', type: 'digit', x: 430, y: 650, label: '1②' },
+                        { id: '利益準備金_3', type: 'digit', x: 460, y: 650, label: '1③' },
+                        { id: '利益準備金_4', type: 'digit', x: 490, y: 650, label: '1④' },
+                        // 繰越損益金 (Row 31)
+                        { id: '繰越損益金_1', type: 'digit', x: 400, y: 630, label: '31①' },
+                        { id: '繰越損益金_2', type: 'digit', x: 430, y: 630, label: '31②' },
+                        { id: '繰越損益金_3', type: 'digit', x: 460, y: 630, label: '31③' },
+                        { id: '繰越損益金_4', type: 'digit', x: 490, y: 630, label: '31④' },
+                        // 納税充当金 (Row 32)
+                        { id: '納税充当金_1', type: 'digit', x: 400, y: 400, label: '32①' },
+                        { id: '納税充当金_2', type: 'digit', x: 430, y: 400, label: '32②' },
+                        { id: '納税充当金_3', type: 'digit', x: 460, y: 400, label: '32③' },
+                        { id: '納税充当金_4', type: 'digit', x: 490, y: 400, label: '32④' },
+                        // 資本金 (Row 33)
+                        { id: '資本金_1', type: 'digit', x: 400, y: 200, label: '33①' },
+                        { id: '資本金_4', type: 'digit', x: 490, y: 200, label: '33④' },
+                        { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
+                    ]
+                }
+            },
+            beppyo5_2: {
+                name: '別表五(二)',
+                pages: 1,
+                fields: {
+                    1: [
+                        // 法人税 (Row 1)
+                        { id: '法人税_1', type: 'digit', x: 400, y: 650, label: '1①' },
+                        { id: '法人税_2', type: 'digit', x: 430, y: 650, label: '1②' },
+                        { id: '法人税_3', type: 'digit', x: 460, y: 650, label: '1③' },
+                        { id: '法人税_4', type: 'digit', x: 490, y: 650, label: '1④' },
+                        // 住民税 (都道府県) (Row 2)
+                        { id: '住民税_1', type: 'digit', x: 400, y: 600, label: '2①' },
+                        { id: '住民税_2', type: 'digit', x: 430, y: 600, label: '2②' },
+                        { id: '住民税_3', type: 'digit', x: 460, y: 600, label: '2③' },
+                        { id: '住民税_4', type: 'digit', x: 490, y: 600, label: '2④' },
+                        // 事業税 (Row 4)
+                        { id: '事業税_1', type: 'digit', x: 400, y: 550, label: '4①' },
+                        { id: '事業税_2', type: 'digit', x: 430, y: 550, label: '4②' },
+                        { id: '事業税_3', type: 'digit', x: 460, y: 550, label: '4③' },
+                        { id: '事業税_4', type: 'digit', x: 490, y: 550, label: '4④' },
+                        // 納税充当金 (Rows 33, 34)
+                        { id: '納税充当金_繰入', type: 'digit', x: 400, y: 300, label: '33' },
+                        { id: '納税充当金_取崩', type: 'digit', x: 430, y: 300, label: '34' },
+                        { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
+                    ]
+                }
+            },
+            beppyo15: {
+                name: '別表十五',
+                pages: 1,
+                fields: {
+                    1: [
+                        { id: '支出交際費等の額_row1', type: 'digit', x: 450, y: 650, label: '1' },
+                        { id: '接待飲食費の額_row2', type: 'digit', x: 450, y: 600, label: '2' },
+                        { id: '指定限度額_row17', type: 'digit', x: 450, y: 300, label: '17' },
+                        { id: '損金不算入額_row18', type: 'digit', x: 450, y: 250, label: '18' },
+                        { id: '法人名', type: 'text', x: 100, y: 780, label: '法' },
+                    ]
+                }
+            },
+            beppyo16: {
+                name: '別表十六(一)',
+                pages: 1,
+                fields: {
+                    1: [
+                        // Row 1
+                        { id: '資産名_row1', type: 'text', x: 100, y: 700, label: '名' },
+                        { id: '取得価額_row1', type: 'digit', x: 200, y: 700, label: '取得(1)' },
+                        { id: '期末帳簿価額_row1', type: 'digit', x: 280, y: 700, label: '帳簿(10)' },
+                        { id: '償却限度額_row1', type: 'digit', x: 360, y: 700, label: '限度(29)' },
+                        { id: '当期償却額_row1', type: 'digit', x: 440, y: 700, label: '償却(35)' },
+                        { id: '償却超過額_row1', type: 'digit', x: 520, y: 700, label: '超過(41)' },
+                        // Row 2
+                        { id: '資産名_row2', type: 'text', x: 100, y: 676, label: '名' },
+                        { id: '取得価額_row2', type: 'digit', x: 200, y: 676, label: '取得(1)' },
+                        { id: '期末帳簿価額_row2', type: 'digit', x: 280, y: 676, label: '帳簿(10)' },
+                        { id: '償却限度額_row2', type: 'digit', x: 360, y: 676, label: '限度(29)' },
+                        { id: '当期償却額_row2', type: 'digit', x: 440, y: 676, label: '償却(35)' },
+                        { id: '償却超過額_row2', type: 'digit', x: 520, y: 676, label: '超過(41)' },
+                        // Row 3
+                        { id: '資産名_row3', type: 'text', x: 100, y: 652, label: '名' },
+                        { id: '取得価額_row3', type: 'digit', x: 200, y: 652, label: '取得(1)' },
+                        { id: '期末帳簿価額_row3', type: 'digit', x: 280, y: 652, label: '帳簿(10)' },
+                        { id: '償却限度額_row3', type: 'digit', x: 360, y: 652, label: '限度(29)' },
+                        { id: '当期償却額_row3', type: 'digit', x: 440, y: 652, label: '償却(35)' },
+                        { id: '償却超過額_row3', type: 'digit', x: 520, y: 652, label: '超過(41)' },
+                        // Row 4
+                        { id: '資産名_row4', type: 'text', x: 100, y: 628, label: '名' },
+                        { id: '取得価額_row4', type: 'digit', x: 200, y: 628, label: '取得(1)' },
+                        { id: '期末帳簿価額_row4', type: 'digit', x: 280, y: 628, label: '帳簿(10)' },
+                        { id: '償却限度額_row4', type: 'digit', x: 360, y: 628, label: '限度(29)' },
+                        { id: '当期償却額_row4', type: 'digit', x: 440, y: 628, label: '償却(35)' },
+                        { id: '償却超過額_row4', type: 'digit', x: 520, y: 628, label: '超過(41)' },
+                        // Row 5
+                        { id: '資産名_row5', type: 'text', x: 100, y: 604, label: '名' },
+                        { id: '取得価額_row5', type: 'digit', x: 200, y: 604, label: '取得(1)' },
+                        { id: '期末帳簿価額_row5', type: 'digit', x: 280, y: 604, label: '帳簿(10)' },
+                        { id: '償却限度額_row5', type: 'digit', x: 360, y: 604, label: '限度(29)' },
+                        { id: '当期償却額_row5', type: 'digit', x: 440, y: 604, label: '償却(35)' },
+                        { id: '償却超過額_row5', type: 'digit', x: 520, y: 604, label: '超過(41)' },
+                        // Row 6
+                        { id: '資産名_row6', type: 'text', x: 100, y: 580, label: '名' },
+                        { id: '取得価額_row6', type: 'digit', x: 200, y: 580, label: '取得(1)' },
+                        { id: '期末帳簿価額_row6', type: 'digit', x: 280, y: 580, label: '帳簿(10)' },
+                        { id: '償却限度額_row6', type: 'digit', x: 360, y: 580, label: '限度(29)' },
+                        { id: '当期償却額_row6', type: 'digit', x: 440, y: 580, label: '償却(35)' },
+                        { id: '償却超過額_row6', type: 'digit', x: 520, y: 580, label: '超過(41)' },
+
+                        { id: '法人名', type: 'text', x: 100, y: 780, label: '法人名' },
+                    ]
+                }
+            },
+            beppyo16_2: {
+                name: '別表十六(二)',
+                pages: 1,
+                fields: {
+                    1: [
+                        // Row 1
+                        { id: '資産名_row1', type: 'text', x: 100, y: 700, label: '名' },
+                        { id: '取得価額_row1', type: 'digit', x: 200, y: 700, label: '取得(1)' },
+                        { id: '期末帳簿価額_row1', type: 'digit', x: 280, y: 700, label: '帳簿(10)' },
+                        { id: '償却限度額_row1', type: 'digit', x: 360, y: 700, label: '限度(29)' },
+                        { id: '当期償却額_row1', type: 'digit', x: 440, y: 700, label: '償却(35)' },
+                        { id: '償却超過額_row1', type: 'digit', x: 520, y: 700, label: '超過(41)' },
+                        // Row 2
+                        { id: '資産名_row2', type: 'text', x: 100, y: 676, label: '名' },
+                        { id: '取得価額_row2', type: 'digit', x: 200, y: 676, label: '取得(1)' },
+                        { id: '期末帳簿価額_row2', type: 'digit', x: 280, y: 676, label: '帳簿(10)' },
+                        { id: '償却限度額_row2', type: 'digit', x: 360, y: 676, label: '限度(29)' },
+                        { id: '当期償却額_row2', type: 'digit', x: 440, y: 676, label: '償却(35)' },
+                        { id: '償却超過額_row2', type: 'digit', x: 520, y: 676, label: '超過(41)' },
+                        // Row 3
+                        { id: '資産名_row3', type: 'text', x: 100, y: 652, label: '名' },
+                        { id: '取得価額_row3', type: 'digit', x: 200, y: 652, label: '取得(1)' },
+                        { id: '期末帳簿価額_row3', type: 'digit', x: 280, y: 652, label: '帳簿(10)' },
+                        { id: '償却限度額_row3', type: 'digit', x: 360, y: 652, label: '限度(29)' },
+                        { id: '当期償却額_row3', type: 'digit', x: 440, y: 652, label: '償却(35)' },
+                        { id: '償却超過額_row3', type: 'digit', x: 520, y: 652, label: '超過(41)' },
+                        // Row 4
+                        { id: '資産名_row4', type: 'text', x: 100, y: 628, label: '名' },
+                        { id: '取得価額_row4', type: 'digit', x: 200, y: 628, label: '取得(1)' },
+                        { id: '期末帳簿価額_row4', type: 'digit', x: 280, y: 628, label: '帳簿(10)' },
+                        { id: '償却限度額_row4', type: 'digit', x: 360, y: 628, label: '限度(29)' },
+                        { id: '当期償却額_row4', type: 'digit', x: 440, y: 628, label: '償却(35)' },
+                        { id: '償却超過額_row4', type: 'digit', x: 520, y: 628, label: '超過(41)' },
+                        // Row 5
+                        { id: '資産名_row5', type: 'text', x: 100, y: 604, label: '名' },
+                        { id: '取得価額_row5', type: 'digit', x: 200, y: 604, label: '取得(1)' },
+                        { id: '期末帳簿価額_row5', type: 'digit', x: 280, y: 604, label: '帳簿(10)' },
+                        { id: '償却限度額_row5', type: 'digit', x: 360, y: 604, label: '限度(29)' },
+                        { id: '当期償却額_row5', type: 'digit', x: 440, y: 604, label: '償却(35)' },
+                        { id: '償却超過額_row5', type: 'digit', x: 520, y: 604, label: '超過(41)' },
+                        // Row 6
+                        { id: '資産名_row6', type: 'text', x: 100, y: 580, label: '名' },
+                        { id: '取得価額_row6', type: 'digit', x: 200, y: 580, label: '取得(1)' },
+                        { id: '期末帳簿価額_row6', type: 'digit', x: 280, y: 580, label: '帳簿(10)' },
+                        { id: '償却限度額_row6', type: 'digit', x: 360, y: 580, label: '限度(29)' },
+                        { id: '当期償却額_row6', type: 'digit', x: 440, y: 580, label: '償却(35)' },
+                        { id: '償却超過額_row6', type: 'digit', x: 520, y: 580, label: '超過(41)' },
+
+                        { id: '法人名', type: 'text', x: 100, y: 780, label: '法人名' },
+                    ]
+                }
+            },
+
+        };
+
+        // ===== PERSONAL TAX FORMS (所得税・個人) =====
+        const personalForms = {
+            kakutei_1_2: {
+                name: '確定申告書 第一表・第二表',
+                pages: 4,
+                fields: {
+                    // ===== 第一表 (ページ1) =====
+                    1: [
+                        // --- 収入金額等 (左側) ---
+                        { id: '収入_ア_営業等', type: 'digit', x: 286.7, y: 672.6, label: 'ア', required: true },
+                        { id: '収入_イ_農業', type: 'digit', x: 286.7, y: 659, label: 'イ' },
+                        { id: '収入_ウ_不動産', type: 'digit', x: 286.7, y: 645, label: 'ウ' },
+                        { id: '収入_エ_給与', type: 'digit', x: 286.7, y: 631, label: 'エ' },
+                        { id: '収入_オ_公的年金等', type: 'digit', x: 286.7, y: 617, label: 'オ' },
+                        { id: '収入_カ_業務', type: 'digit', x: 286.7, y: 603, label: 'カ' },
+                        { id: '収入_キ_その他', type: 'digit', x: 286.7, y: 589, label: 'キ' },
+                        { id: '収入_ク_短期', type: 'digit', x: 286.7, y: 575, label: 'ク' },
+                        { id: '収入_ケ_長期', type: 'digit', x: 286.7, y: 561, label: 'ケ' },
+                        { id: '収入_コ_一時', type: 'digit', x: 286.7, y: 547, label: 'コ' },
+                        // --- 所得金額等 (左側) ---
+                        { id: '所得_1_営業等', type: 'digit', x: 286.7, y: 520, label: '①', required: true },
+                        { id: '所得_2_農業', type: 'digit', x: 286.7, y: 506, label: '②' },
+                        { id: '所得_3_不動産', type: 'digit', x: 286.7, y: 492, label: '③' },
+                        { id: '所得_4_利子', type: 'digit', x: 286.7, y: 478, label: '④' },
+                        { id: '所得_5_配当', type: 'digit', x: 286.7, y: 464, label: '⑤' },
+                        { id: '所得_6_給与', type: 'digit', x: 286.7, y: 450, label: '⑥' },
+                        { id: '所得_7_公的年金等', type: 'digit', x: 286.7, y: 436, label: '⑦' },
+                        { id: '所得_8_業務', type: 'digit', x: 286.7, y: 422, label: '⑧' },
+                        { id: '所得_9_その他', type: 'digit', x: 286.7, y: 408, label: '⑨' },
+                        { id: '所得_10_小計', type: 'digit', x: 286.7, y: 394, label: '⑩' },
+                        { id: '所得_11_総合課税', type: 'digit', x: 286.7, y: 380, label: '⑪' },
+                        { id: '所得_12_合計', type: 'digit', x: 286.7, y: 366, label: '⑫', required: true },
+                        // --- 所得控除 (左側) ---
+                        { id: '控除_13_社会保険料', type: 'digit', x: 286.7, y: 330, label: '⑬' },
+                        { id: '控除_14_小規模企業共済', type: 'digit', x: 286.7, y: 316, label: '⑭' },
+                        { id: '控除_15_生命保険料', type: 'digit', x: 286.7, y: 302, label: '⑮' },
+                        { id: '控除_16_地震保険料', type: 'digit', x: 286.7, y: 288, label: '⑯' },
+                        { id: '控除_17_寡婦ひとり親', type: 'digit', x: 286.7, y: 274, label: '⑰' },
+                        { id: '控除_18_勤労学生障害者', type: 'digit', x: 286.7, y: 260, label: '⑱' },
+                        { id: '控除_19_配偶者', type: 'digit', x: 286.7, y: 246, label: '⑲' },
+                        { id: '控除_20_配偶者特別', type: 'digit', x: 286.7, y: 232, label: '⑳' },
+                        { id: '控除_21_扶養', type: 'digit', x: 286.7, y: 218, label: '㉑' },
+                        { id: '控除_22_基礎控除', type: 'digit', x: 286.7, y: 204, label: '㉒', required: true },
+                        { id: '控除_23_雑損', type: 'digit', x: 286.7, y: 190, label: '㉓' },
+                        { id: '控除_24_医療費', type: 'digit', x: 286.7, y: 176, label: '㉔' },
+                        { id: '控除_25_寄附金', type: 'digit', x: 286.7, y: 162, label: '㉕' },
+                        { id: '控除_26_合計', type: 'digit', x: 286.7, y: 148, label: '㉖', required: true },
+                        // --- 税金の計算 (右側) ---
+                        { id: '税額_27_課税所得', type: 'digit', x: 552, y: 672.6, label: '㉗', required: true },
+                        { id: '税額_28_上の税額', type: 'digit', x: 552, y: 658, label: '㉘', required: true },
+                        { id: '税額_29_配当控除', type: 'digit', x: 552, y: 644, label: '㉙' },
+                        { id: '税額_38_住宅控除', type: 'digit', x: 552, y: 606, label: '㊳' },
+                        { id: '税額_43_災害減免額', type: 'digit', x: 552, y: 568, label: '㊸' },
+                        { id: '税額_44_再差引所得税', type: 'digit', x: 552, y: 554, label: '㊹' },
+                        { id: '税額_45_復興特別所得税', type: 'digit', x: 552, y: 540, label: '㊺' },
+                        { id: '税額_46_所得税復興税合計', type: 'digit', x: 552, y: 526, label: '㊻' },
+                        { id: '税額_47_外国税額控除等', type: 'digit', x: 552, y: 512, label: '㊼' },
+                        { id: '税額_48_源泉徴収税額', type: 'digit', x: 552, y: 498, label: '㊽' },
+                        { id: '税額_49_申告納税額', type: 'digit', x: 552, y: 484, label: '㊾' },
+                        { id: '税額_50_予定納税額', type: 'digit', x: 552, y: 470, label: '㊿' },
+                        { id: '税額_51_納める税金', type: 'digit', x: 552, y: 456, label: '51', required: true },
+                        { id: '税額_52_還付される税金', type: 'digit', x: 552, y: 442, label: '52' },
+                        // --- その他 (右側) ---
+                        { id: '他_56_公的年金以外', type: 'digit', x: 552, y: 380, label: '56' },
+                        { id: '他_57_配偶者合計', type: 'digit', x: 552, y: 366, label: '57' },
+                        { id: '他_58_専従者給与', type: 'digit', x: 552, y: 352, label: '58' },
+                        { id: '他_59_青色申告特別控除', type: 'digit', x: 552, y: 338, label: '59' },
+                        { id: '他_66_延納届出額', type: 'digit', x: 552, y: 260, label: '66' },
+                        // --- ヘッダー情報 ---
+                        { id: '氏名', type: 'text', x: 364.7, y: 738.8, label: '氏', required: true },
+                        { id: '住所', type: 'text', x: 89.3, y: 758.8, label: '住', required: true },
+                        { id: '税務署名', type: 'text', x: 48, y: 818.1, label: '税' },
+                        { id: '職業', type: 'text', x: 450, y: 770, label: '職' },
+                        { id: '屋号', type: 'text', x: 450, y: 755, label: '屋' },
+                        { id: '電話番号', type: 'text', x: 350, y: 755, label: '電' },
+                    ],
+                    // ===== 第二表 (ページ2) =====
+                    2: [
+                        // 源泉徴収税額
+                        { id: '源泉_給与', type: 'digit', x: 236.7, y: 581.3, label: '源給' },
+                        { id: '源泉_年金', type: 'digit', x: 237.3, y: 555.3, label: '源年' },
+                        // 社会保険料
+                        { id: '社保_国民健康', type: 'digit', x: 486, y: 769.3, label: '国健' },
+                        { id: '社保_国民年金', type: 'digit', x: 486, y: 747.9, label: '国年' },
+                        // 生命保険料
+                        { id: '生命保険_一般', type: 'digit', x: 486, y: 667.9, label: '生一' },
+                        { id: '生命保険_個人年金', type: 'digit', x: 484.7, y: 708.6, label: '生年' },
+                        // ヘッダー
+                        { id: '氏名_2表', type: 'text', x: 100, y: 682.1, label: '氏' },
+                    ],
+                    3: [],
+                    4: []
+                }
+            },
+            aoiro_kessan: {
+                name: '青色申告決算書',
+                pages: 4,
+                fields: {
+                    1: [
+                        { id: '売上金額', type: 'digit', x: 450, y: 700, label: '売' },
+                        { id: '売上原価', type: 'digit', x: 450, y: 650, label: '原' },
+                        { id: '経費合計', type: 'digit', x: 450, y: 400, label: '経' },
+                        { id: '青色申告特別控除', type: 'digit', x: 450, y: 200, label: '青' },
+                        { id: '所得金額', type: 'digit', x: 450, y: 150, label: '所' },
+                        { id: '屋号', type: 'text', x: 100, y: 780, label: '屋' },
+                        { id: '氏名', type: 'text', x: 300, y: 780, label: '氏' },
+                    ],
+                    2: [],
+                    3: [],
+                    4: []
+                }
+            },
+            uchiwake: {
+                name: '所得の内訳書',
+                pages: 1,
+                fields: {
+                    1: [
+                        { id: '所得種類_1', type: 'text', x: 100, y: 650, label: '種1' },
+                        { id: '収入金額_1', type: 'digit', x: 350, y: 650, label: '収1' },
+                        { id: '源泉徴収税額_1', type: 'digit', x: 480, y: 650, label: '源1' },
+                        { id: '所得種類_2', type: 'text', x: 100, y: 600, label: '種2' },
+                        { id: '収入金額_2', type: 'digit', x: 350, y: 600, label: '収2' },
+                        { id: '氏名', type: 'text', x: 100, y: 780, label: '氏' },
+                    ]
+                }
+            },
+            shushi: {
+                name: '収支内訳書',
+                pages: 2,
+                fields: {
+                    1: [
+                        { id: '売上金額', type: 'digit', x: 450, y: 700, label: '売' },
+                        { id: '仕入金額', type: 'digit', x: 450, y: 650, label: '仕' },
+                        { id: '経費合計', type: 'digit', x: 450, y: 400, label: '経' },
+                        { id: '所得金額', type: 'digit', x: 450, y: 200, label: '所' },
+                        { id: '屋号', type: 'text', x: 100, y: 780, label: '屋' },
+                        { id: '氏名', type: 'text', x: 300, y: 780, label: '氏' },
+                    ],
+                    2: []
+                }
+            }
+        };
+
+        function getCurrentForms() {
+            return currentTaxType === 'corporate' ? corporateForms : personalForms;
+        }
+
+        function getCurrentFormConfig() {
+            return getCurrentForms()[currentDoc];
+        }
+
+        function getCurrentFields() {
+            const config = getCurrentFormConfig();
+            return config?.fields[currentPageNum] || [];
+        }
+
+        function renderDocSelector() {
+            const forms = getCurrentForms();
+            const selector = document.getElementById('docSelector');
+            selector.innerHTML = '';
+
+            Object.keys(forms).forEach((key, i) => {
+                const btn = document.createElement('button');
+                btn.className = `doc-btn${i === 0 ? ' active' : ''}`;
+                btn.dataset.doc = key;
+                btn.textContent = forms[key].name;
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.doc-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentDoc = key;
+                    currentPageNum = 1;
+                    clearPoints();
+                    updatePageNav();
+                    renderFieldList();
+                });
+                selector.appendChild(btn);
+            });
+
+            currentDoc = Object.keys(forms)[0];
+            updatePageNav();
+            renderFieldList();
+        }
+
+        function updatePageNav() {
+            const config = getCurrentFormConfig();
+            // PDFがロードされている場合は実際のページ数を使用
+            if (pdfDoc) {
+                totalPages = pdfDoc.numPages;
+                // フォーム設定も更新
+                if (config && totalPages > config.pages) {
+                    config.pages = totalPages;
+                    for (let i = 1; i <= totalPages; i++) {
+                        if (!config.fields[i]) config.fields[i] = [];
+                    }
+                }
+            } else {
+                totalPages = config?.pages || 1;
+            }
+
+            const pageNav = document.getElementById('pageNav');
+            if (totalPages > 1) {
+                pageNav.style.display = 'flex';
+                document.getElementById('currentPage').textContent = currentPageNum;
+                document.getElementById('totalPages').textContent = totalPages;
+            } else {
+                pageNav.style.display = 'none';
+            }
+
+            // Update sidebar page indicators
+            document.getElementById('currentPageIndicator').textContent = currentPageNum;
+            document.getElementById('totalPageIndicator').textContent = totalPages;
+        }
+
+        // Page navigation
+        document.getElementById('prevPage').addEventListener('click', async () => {
+            if (currentPageNum > 1) {
+                currentPageNum--;
+                await renderPage();
+                updatePageNav();
+                clearPoints();
+                createPoints();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', async () => {
+            if (currentPageNum < totalPages) {
+                currentPageNum++;
+                await renderPage();
+                updatePageNav();
+                clearPoints();
+                createPoints();
+            }
+        });
+
+        // Tax type tabs
+        document.querySelectorAll('.tax-type-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tax-type-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTaxType = tab.dataset.type;
+                currentPageNum = 1;
+                renderDocSelector();
+                clearPoints();
+            });
+        });
+
+        // Load PDF
+        document.getElementById('pdfFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const arrayBuffer = await file.arrayBuffer();
+            pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
+            totalPages = pdfDoc.numPages;
+
+            // Update form config if PDF has more pages
+            const config = getCurrentFormConfig();
+            if (config && totalPages > config.pages) {
+                config.pages = totalPages;
+                for (let i = 1; i <= totalPages; i++) {
+                    if (!config.fields[i]) config.fields[i] = [];
+                }
+            }
+
+            await renderPage();
+            updatePageNav();
+            renderFieldList();
+        });
+
+        async function renderPage() {
+            if (!pdfDoc) return;
+            const page = await pdfDoc.getPage(currentPageNum);
+            const viewport = page.getViewport({ scale });
+            pdfWidth = page.getViewport({ scale: 1 }).width;
+            pdfHeight = page.getViewport({ scale: 1 }).height;
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvasContext: ctx, viewport }).promise;
+        }
+
+        function pdfToScreen(x, y) {
+            return { left: x * scale, top: (pdfHeight - y) * scale };
+        }
+
+        function screenToPdf(left, top) {
+            return { x: left / scale, y: pdfHeight - (top / scale) };
+        }
+
+        function clearPoints() {
+            document.querySelectorAll('.draggable-point').forEach(el => el.remove());
+        }
+
+        function createPoints() {
+            clearPoints();
+            const fields = getCurrentFields();
+
+            fields.forEach((field, index) => {
+                const pos = pdfToScreen(field.x, field.y);
+                const point = document.createElement('div');
+                let classNames = `draggable-point ${field.type}`;
+                if (field.required) classNames += ' required';
+                if (field.hidden) classNames += ' hidden-field';
+                point.className = classNames;
+                point.textContent = field.label;
+                // Clamp positions to visible area to ensure points are accessible
+                const safeLeft = Math.max(0, Math.min(pos.left, canvas.width - 20)); // -20 for point width
+                const safeTop = Math.max(0, Math.min(pos.top, canvas.height - 20));
+
+                point.style.left = safeLeft + 'px';
+                point.style.top = safeTop + 'px';
+                point.dataset.index = index;
+                point.addEventListener('mousedown', startDrag);
+                wrapper.appendChild(point);
+            });
+
+            renderFieldList();
+        }
+
+        function startDrag(e) {
+            e.preventDefault();
+            const point = e.target;
+            const index = parseInt(point.dataset.index);
+            const fields = getCurrentFields();
+
+            isDragging = true;
+            point.classList.add('dragging', 'selected');
+
+            document.querySelectorAll('.draggable-point').forEach(p => {
+                if (p !== point) p.classList.remove('selected');
+            });
+            document.querySelectorAll('.field-item').forEach(item => {
+                item.classList.toggle('selected', parseInt(item.dataset.index) === index);
+            });
+
+            updateSelectedInfo(fields[index]);
+
+            const onMouseMove = (e) => {
+                if (!isDragging) return;
+                const rect = wrapper.getBoundingClientRect();
+                const left = Math.max(0, Math.min(e.clientX - rect.left, canvas.width));
+                const top = Math.max(0, Math.min(e.clientY - rect.top, canvas.height));
+
+                point.style.left = left + 'px';
+                point.style.top = top + 'px';
+
+                const pdfCoords = screenToPdf(left, top);
+                fields[index].x = Math.round(pdfCoords.x * 10) / 10;
+                fields[index].y = Math.round(pdfCoords.y * 10) / 10;
+
+                updateSelectedInfo(fields[index]);
+            };
+
+            const onMouseUp = () => {
+                isDragging = false;
+                point.classList.remove('dragging');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                renderFieldList();
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+
+        function updateSelectedInfo(field) {
+            document.getElementById('selectedInfo').style.display = 'block';
+            document.getElementById('selectedName').textContent = field.id;
+            document.getElementById('selectedCoords').textContent = `${field.x}, ${field.y}`;
+        }
+
+        function renderFieldList() {
+            const fields = getCurrentFields();
+            const list = document.getElementById('fieldList');
+            document.getElementById('fieldCount').textContent = fields.length;
+
+            list.innerHTML = fields.map((f, i) => `
+                <div class="field-item${f.hidden ? ' hidden-item' : ''}" data-index="${i}">
+                    <div class="num ${f.type}">${f.label}</div>
+                    ${f.required ? '<span style="color:#ffcc00;margin-right:2px;">★</span>' : ''}
+                    <span title="${f.id}">${f.id.length > 20 ? f.id.substring(0, 17) + '...' : f.id}</span>
+                    <span style="margin-left:auto;color:#888;font-family:monospace;font-size:0.85em;">(${f.x}, ${f.y})</span>
+                    <div style="display: flex; gap: 4px; margin-left: 8px;">
+                        <button class="toggle-visibility-btn" data-index="${i}" title="表示/非表示" style="width:16px;height:16px;padding:0;font-size:10px;cursor:pointer;background:${f.hidden ? '#e94560' : '#10ac84'};border:none;border-radius:4px;color:white;display:flex;align-items:center;justify-content:center;">
+                            ${f.hidden ? '○' : '×'}
+                        </button>
+                        <button class="delete-field-btn" data-index="${i}" title="削除" style="width:16px;height:16px;padding:0;font-size:10px;cursor:pointer;background:#6c757d;border:none;border-radius:4px;color:white;display:flex;align-items:center;justify-content:center;">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // クリックでフィールド選択
+            list.querySelectorAll('.field-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    // ボタンのクリックは無視
+                    if (e.target.closest('button')) return;
+
+                    const index = parseInt(item.dataset.index);
+                    const point = document.querySelector(`.draggable-point[data-index="${index}"]`);
+                    if (point) {
+                        document.querySelectorAll('.draggable-point').forEach(p => p.classList.remove('selected'));
+                        document.querySelectorAll('.field-item').forEach(i => i.classList.remove('selected'));
+                        point.classList.add('selected');
+                        item.classList.add('selected');
+                        updateSelectedInfo(fields[index]);
+                    }
+                });
+            });
+
+            // 表示/非表示トグル
+            list.querySelectorAll('.toggle-visibility-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const index = parseInt(btn.dataset.index);
+                    const field = fields[index];
+                    field.hidden = !field.hidden;
+                    renderFieldList();
+                    createPoints();
+                });
+            });
+
+            // 削除
+            list.querySelectorAll('.delete-field-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const index = parseInt(btn.dataset.index);
+                    if (confirm(`「${fields[index].id}」を削除しますか？`)) {
+                        fields.splice(index, 1);
+                        renderFieldList();
+                        createPoints();
+                    }
+                });
+            });
+        }
+
+        // Add field
+        document.getElementById('addFieldBtn').addEventListener('click', () => {
+            const name = document.getElementById('newFieldName').value.trim();
+            const type = document.getElementById('newFieldType').value;
+            if (!name) { alert('フィールド名を入力してください'); return; }
+
+            const fields = getCurrentFields();
+            const newLabel = type === 'digit' ? String(fields.length + 1) : name.charAt(0);
+            fields.push({ id: name, type: type, x: 300, y: 400, label: newLabel });
+
+            document.getElementById('newFieldName').value = '';
+            createPoints();
+        });
+
+        document.getElementById('showPoints').addEventListener('click', () => {
+            if (!pdfDoc) { alert('PDFを先に読み込んでください'); return; }
+            createPoints();
+        });
+
+        // Export - now exports all pages
+        document.getElementById('exportCoords').addEventListener('click', () => {
+            const config = getCurrentFormConfig();
+            const docName = currentDoc.toUpperCase();
+
+            let output = `// ===== ${docName} COORDINATE CONFIG =====\n`;
+            output += `// Total pages: ${config.pages}\n\n`;
+
+            for (let page = 1; page <= config.pages; page++) {
+                const fields = config.fields[page] || [];
+                if (fields.length === 0) continue;
+
+                const digitFields = fields.filter(f => f.type === 'digit');
+                const textFields = fields.filter(f => f.type === 'text');
+
+                output += `// ===== PAGE ${page} =====\n`;
+                output += `export const ${docName}_PAGE${page}_FIELDS: { [key: string]: DigitBoxConfig } = {\n`;
+
+                digitFields.forEach(f => {
+                    output += `    '${f.id}': { anchorX: ${f.x}, anchorY: ${f.y}, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },\n`;
+                });
+
+                output += '};\n\n';
+                output += `export const ${docName}_PAGE${page}_TEXT: { [key: string]: TextFieldConfig } = {\n`;
+
+                textFields.forEach(f => {
+                    output += `    '${f.id}': { x: ${f.x}, y: ${f.y}, fontSize: 9 },\n`;
+                });
+
+                output += '};\n\n';
+            }
+
+            document.getElementById('output').textContent = output;
+        });
+
+        // Update Coordinates in Source Code
+        document.getElementById('updateCoordsBtn').addEventListener('click', async () => {
+            if (!confirm('ソースコード(pdfDigitBoxService.ts)の座標定義を上書きしますか？\n※サーバーが起動している必要があります。')) {
+                return;
+            }
+
+            // Generate TypeScript code
+            let output = `// ===== COORDINATE CONFIGURATION =====
+
+/**
+ * Box configuration for digit placement
+ * Values are in PDF points (1pt = 1/72 inch ≈ 0.35mm)
+ */
+export interface DigitBoxConfig {
+    anchorX: number;      // Rightmost digit box center X
+    anchorY: number;      // Text baseline Y
+    boxWidth: number;     // Width of each digit box
+    boxSpacing: number;   // Center-to-center spacing
+    fontSize: number;     // Font size for digits
+    maxDigits: number;    // Maximum digits
+}
+
+/**
+ * Text field configuration for company info
+ */
+export interface TextFieldConfig {
+    x: number;
+    y: number;
+    fontSize: number;
+    maxWidth?: number;
+    align?: 'left' | 'center' | 'right';
+}
+
+// ===================================================================
+// IMPORTANT: Coordinates calibrated using drag-and-drop tool
+// Digit boxes standardized to 16pt width/spacing and 10pt font size
+// ===================================================================
+`;
+
+            // Helper to generate field config string
+            const generateFieldConfig = (fields) => {
+                if (!fields || fields.length === 0) return '';
+                // Sort by ID to keep order somewhat consistent
+                // Custom sort order based on field contents might be better but simple sort for now
+                return fields.map(f => {
+                    if (f.type === 'digit') {
+                        return `    '${f.id}': { anchorX: ${f.x}, anchorY: ${f.y}, boxWidth: 16, boxSpacing: 16, fontSize: 10, maxDigits: 12 },`;
+                    } else {
+                        return `    '${f.id}': { x: ${f.x}, y: ${f.y}, fontSize: 9 },`;
+                    }
+                }).join('\n');
+            };
+
+            // Beppyo 1
+            output += `
+export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo1.fields[1].filter(f => f.type === 'digit'))}
+};
+
+export const BEPPYO1_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo1.fields[1].filter(f => f.type === 'text'))}
+};
+`;
+
+            // Beppyo 4
+            output += `
+// ===== BEPPYO4 COORDINATE CONFIG =====
+export const BEPPYO4_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo4.fields[1].filter(f => f.type === 'digit'))}
+};
+
+export const BEPPYO4_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo4.fields[1].filter(f => f.type === 'text'))}
+};
+`;
+
+            // Beppyo 5 (Page 1 only for now as per current structure)
+            output += `
+// ===== BEPPYO5 (利益積立金) COORDINATE CONFIG =====
+export const BEPPYO5_PAGE1_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo5.fields[1].filter(f => f.type === 'digit'))}
+};
+
+export const BEPPYO5_PAGE1_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo5.fields[1].filter(f => f.type === 'text'))}
+};
+
+// ===== BEPPYO5 (2) (租税公課) COORDINATE CONFIG =====
+export const BEPPYO5_PAGE2_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo5_2.fields[1].filter(f => f.type === 'digit'))}
+};
+export const BEPPYO5_PAGE2_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo5_2.fields[1].filter(f => f.type === 'text'))}
+};
+
+// ===== BEPPYO15 (交際費) COORDINATE CONFIG =====
+export const BEPPYO15_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo15.fields[1].filter(f => f.type === 'digit'))}
+};
+export const BEPPYO15_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo15.fields[1].filter(f => f.type === 'text'))}
+};
+
+// ===== BEPPYO16 (1) (減価償却 定額法) COORDINATE CONFIG =====
+export const BEPPYO16_1_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo16.fields[1].filter(f => f.type === 'digit'))}
+};
+export const BEPPYO16_1_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo16.fields[1].filter(f => f.type === 'text'))}
+};
+
+// ===== BEPPYO16 (2) (減価償却 定率法) COORDINATE CONFIG =====
+export const BEPPYO16_2_FIELDS: { [key: string]: DigitBoxConfig } = {
+${generateFieldConfig(corporateForms.beppyo16_2.fields[1].filter(f => f.type === 'digit'))}
+};
+export const BEPPYO16_2_TEXT: { [key: string]: TextFieldConfig } = {
+${generateFieldConfig(corporateForms.beppyo16_2.fields[1].filter(f => f.type === 'text'))}
+};
+`;
+
+            try {
+                const response = await fetch('http://localhost:3001/api/update-coordinates', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: output }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ 座標を更新しました！\n\n【重要】変更を反映するには:\n1. npm run dev を Ctrl+C で停止\n2. npm run dev で再起動\n\nまたは任意の.tsファイルを保存してHMRをトリガーしてください。');
+                    document.getElementById('output').textContent = '✅ 座標更新成功: ' + new Date().toLocaleTimeString() + ' (サーバー再起動が必要)';
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (err) {
+                alert('❌ 更新に失敗しました: ' + err.message);
+                document.getElementById('output').textContent = '❌ エラー: ' + err.message;
+            }
+        });
+
+        // JSON Import - Load coordinates from JSON file
+        document.getElementById('importJsonBtn').addEventListener('click', () => {
+            document.getElementById('importJsonFile').click();
+        });
+
+        document.getElementById('importJsonFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const jsonData = JSON.parse(event.target.result);
+
+                    if (!jsonData.configs) {
+                        throw new Error('Invalid config format: missing configs property');
+                    }
+
+                    let importedCount = 0;
+
+                    // Import corporate forms
+                    Object.keys(jsonData.configs).forEach(key => {
+                        const config = jsonData.configs[key];
+                        if (corporateForms[key]) {
+                            corporateForms[key] = config;
+                            importedCount++;
+                        } else if (personalForms[key]) {
+                            personalForms[key] = config;
+                            importedCount++;
+                        }
+                    });
+
+                    // Refresh display
+                    if (pdfDoc) {
+                        createPoints();
+                    }
+                    renderFieldList();
+
+                    document.getElementById('output').textContent = `✅ ${importedCount}件の座標設定をインポートしました\n(${jsonData.exportedAt || 'unknown date'}にエクスポート)`;
+                } catch (err) {
+                    alert('JSONファイルの読み込みに失敗しました: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Reset for re-import
+        });
+
+        // Initialize
+        renderDocSelector();
+    </script>
+</body>
+
+</html>
