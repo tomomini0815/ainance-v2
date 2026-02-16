@@ -65,6 +65,7 @@ export interface Beppyo4Data {
 
     // Additions (加算)
     nonDeductibleTaxes: number; // 法人税・住民税
+    inhabitantTax?: number;      // 住民税 (Specific for B4 mapping if split from total)
     nonDeductibleEntertainment: number; // 交際費等の損金不算入額
     excessDepreciation: number; // 償却超過額
     otherAdditions: Beppyo4Item[];
@@ -72,6 +73,7 @@ export interface Beppyo4Data {
     // Subtractions (減算)
     deductibleEnterpriseTax: number; // 事業税等の損金算入額
     dividendExclusion: number; // 受取配当等の益金不算入額
+    taxRefunds?: number;        // 法人税等還付金
     otherSubtractions: Beppyo4Item[];
 
     taxableIncome: number; // 所得金額または欠損金額
