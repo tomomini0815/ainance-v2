@@ -376,7 +376,9 @@ export async function fillTaxReturnB(
   fillDigitBox(totalDeductions, TAX_RETURN_B_DIGIT_FIELDS['控除_26_合計']);
 
   // === 税金の計算 ===
-  fillDigitBox(data.taxableIncome, TAX_RETURN_B_DIGIT_FIELDS['税額_31_課税所得']);
+  // 課税される所得金額 (31): 1,000円未満切捨て
+  const truncatedTaxableIncome = Math.floor((data.taxableIncome || 0) / 1000) * 1000;
+  fillDigitBox(truncatedTaxableIncome, TAX_RETURN_B_DIGIT_FIELDS['税額_31_課税所得']);
   fillDigitBox(data.estimatedTax, TAX_RETURN_B_DIGIT_FIELDS['税額_32_上の税額']);
   fillDigitBox(data.estimatedTax, TAX_RETURN_B_DIGIT_FIELDS['税額_42_差引所得税額']);
   fillDigitBox(data.estimatedTax, TAX_RETURN_B_DIGIT_FIELDS['税額_44_再差引所得税']);
