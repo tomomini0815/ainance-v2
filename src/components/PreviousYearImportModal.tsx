@@ -23,6 +23,7 @@ interface PreviousYearImportModalProps {
     userId: string;
     businessType: 'individual' | 'corporation';
     onImportSuccess: () => void;
+    initialData?: YearlySettlement | null;
 }
 
 const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
@@ -30,7 +31,8 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
     onClose,
     userId,
     businessType,
-    onImportSuccess
+    onImportSuccess,
+    initialData
 }) => {
     // Step 1: Upload/Select, Step 2: Verify/Edit, Step 3: Complete
     const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -39,6 +41,7 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
     const [isSaving, setIsSaving] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isEditMode, setIsEditMode] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState<Omit<YearlySettlement, 'id' | 'created_at' | 'updated_at'>>({
@@ -61,30 +64,42 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
 
     useEffect(() => {
         if (isOpen) {
-            // Reset state when modal opens
-            setCurrentStep(1);
-            setSelectedFile(null);
+            if (initialData) {
+                // Edit existing data
+                const { id, created_at, updated_at, ...rest } = initialData;
+                setFormData({
+                    ...rest,
+                    user_id: userId, // Ensure userId matches
+                });
+                setIsEditMode(true);
+                setCurrentStep(2); // Jump to verification step
+            } else {
+                // New import
+                setCurrentStep(1);
+                setSelectedFile(null);
+                setIsEditMode(false);
+                setFormData({
+                    user_id: userId,
+                    business_type: businessType,
+                    year: new Date().getFullYear() - 1,
+                    revenue: 0,
+                    cost_of_sales: 0,
+                    operating_expenses: 0,
+                    non_operating_income: 0,
+                    non_operating_expenses: 0,
+                    extraordinary_income: 0,
+                    extraordinary_loss: 0,
+                    income_before_tax: 0,
+                    net_income: 0,
+                    category_breakdown: [],
+                    metadata: {},
+                    document_path: undefined
+                });
+            }
             setIsAnalyzing(false);
             setIsSaving(false);
-            setFormData({
-                user_id: userId,
-                business_type: businessType,
-                year: new Date().getFullYear() - 1,
-                revenue: 0,
-                cost_of_sales: 0,
-                operating_expenses: 0,
-                non_operating_income: 0,
-                non_operating_expenses: 0,
-                extraordinary_income: 0,
-                extraordinary_loss: 0,
-                income_before_tax: 0,
-                net_income: 0,
-                category_breakdown: [],
-                metadata: {},
-                document_path: undefined
-            });
         }
-    }, [isOpen, userId, businessType]);
+    }, [isOpen, userId, businessType, initialData]);
 
     if (!isOpen) return null;
 
@@ -383,7 +398,7 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
                                     データ確認・修正
                                 </h3>
                                 <p className="text-sm text-text-muted">
-                                    {selectedFile ? 'AI解析によって抽出されたデータです。誤りがないか確認し、必要に応じて修正してください。' : '手動でデータを入力してください。'}
+                                    {isEditMode ? 'データを修正して保存してください。' : (selectedFile ? 'AI解析によって抽出されたデータです。誤りがないか確認し、必要に応じて修正してください。' : '手動でデータを入力してください。')}
                                 </p>
                                 {selectedFile && (
                                     <div className="mt-3 flex items-center text-xs text-text-muted bg-surface/50 p-2 rounded border border-border">

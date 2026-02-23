@@ -2,7 +2,8 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles, Target,
-    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit, Sun, Moon
+    Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit, Sun, Moon,
+    History as HistoryIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
@@ -42,6 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { path: '/csv-import', label: 'CSV入出力管理', icon: Upload },
         { path: '/subsidy-matching', label: '補助金マッチ', icon: Target },
         { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
+        { path: '/settlement-history', label: '過去データ・引継ぎ', icon: HistoryIcon },
         // 法人の場合は法人税申告サポート、個人の場合は確定申告サポート
         {
             path: isCorporation ? '/corporate-tax' : '/tax-filing-wizard',

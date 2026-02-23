@@ -11,6 +11,7 @@ export interface TaxFilingData {
   
   // 収支データ
   totalRevenue: number;
+  totalMiscellaneousIncome: number;
   totalExpenses: number;
   netIncome: number;
   
@@ -150,9 +151,14 @@ export const calculateTaxFilingData = (
   const incomeTransactions = yearTransactions.filter(t => t.type === 'income');
   const expenseTransactions = yearTransactions.filter(t => t.type === 'expense');
 
-  const totalRevenue = incomeTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  // 「売上」と「業務委託収入」以外を「雑収入」として扱う
+  const revenueTransactions = incomeTransactions.filter(t => t.category === '売上' || t.category === '業務委託収入');
+  const miscellaneousIncomeTransactions = incomeTransactions.filter(t => t.category !== '売上' && t.category !== '業務委託収入');
+
+  const totalRevenue = revenueTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  const totalMiscellaneousIncome = miscellaneousIncomeTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
   const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
-  const netIncome = totalRevenue - totalExpenses;
+  const netIncome = (totalRevenue + totalMiscellaneousIncome) - totalExpenses;
 
   // カテゴリ別経費集計
   const expensesByCategory = Object.entries(
@@ -182,6 +188,7 @@ export const calculateTaxFilingData = (
     fiscalYear,
     businessType,
     totalRevenue,
+    totalMiscellaneousIncome,
     totalExpenses,
     netIncome,
     expensesByCategory,
@@ -290,7 +297,7 @@ export const mergeTaxData = (
   const base: JpTaxFormData = {
     fiscalYear: autoData.fiscalYear,
     businessType: autoData.businessType,
-    revenue: autoData.totalRevenue,
+    revenue: autoData.totalRevenue + autoData.totalMiscellaneousIncome, // 合計収入として扱うか、pdfJapaneseService側の対応が必要
     expenses: autoData.totalExpenses,
     netIncome: autoData.netIncome,
     expensesByCategory: autoData.expensesByCategory,

@@ -150,6 +150,12 @@ ${context.recentTransactions.slice(0, 5).map(t =>
 
 ${contextStr}
 
+【勘定科目（カテゴリ）の候補】
+旅費交通費, 通信費, 消耗品費, 接待交際費, 会議費, 水道光熱費, 役員報酬, 広告宣伝費, 外注費, 新聞図書費, 修繕費, 支払手数料, 福利厚生費, 地代家賃, 租税公課, 保険料, 食費, 雑費, 仕入, 売上, 業務委託収入, 給与, 燃料費, 設備費, 車両費, 雑損益
+
+【取引項目（説明）の候補】
+売上, 役員報酬, コンビニ買い物, 飲食代, 事務用品, コーヒー代, 新聞代, 書籍代, 切手代, 宅配便代, 電気代, 家賃, インターネット接続料, 電話料金, 携帯代, 水道代, ガス代, 出張費, 交通費, 電車代, 燃料代, 修理代, 高速道路料金, 固定資産税, 自動車税, 印紙税, チラシ作成費, ウェブ広告費, 看板設置費, 贈答品代, 火災保険料, 生命保険料, 振込手数料, 税理士報酬, デザイン委託費, システム開発費, 業務ツール, サブスク, 少額費用, 為替, 暗号資産, その他
+
 【会話履歴】
 ${historyStr}
 
@@ -159,7 +165,9 @@ ${userMessage}
 【タスク】
 1. ユーザーのメッセージから取引情報を抽出してください
 2. 複数の取引がある場合は、すべて抽出してください
-3. 過去の取引パターンを参考に、最適な勘定科目を提案してください
+3. 上記の【勘定科目】の候補から、最も適切なものを選択してください
+   - 取引項目 (description) については、ユーザーが「スタバ」「タクシー」「ランチ」などの具体的な表現をした場合は、その表現を優先して抽出してください。
+   - 具体的な店名や内容がある場合は、無理に標準化せず、そのまま description に記載してください。
 4. 各取引の信頼度（0-100%）を評価してください
 5. ユーザーへの返信メッセージと追加の提案を生成してください
 
@@ -168,9 +176,9 @@ ${userMessage}
 {
   "transactions": [
     {
-      "description": "取引の説明（金額を除く）",
+      "description": "具体的な取引内容（例：スタバ、タクシー代、ランチなど）",
       "amount": 金額（数値）,
-      "category": "勘定科目",
+      "category": "【勘定科目】の候補から選択",
       "type": "income" または "expense",
       "confidence": 信頼度（0-100）,
       "reasoning": "この勘定科目を選んだ理由"
@@ -199,10 +207,10 @@ ${userMessage}
     }
 
     // フォールバック: 簡易パース
-    return parseConversationFallback(userMessage, context);
+    return parseConversationFallback(userMessage);
   } catch (error) {
     console.error('AI会話解析エラー:', error);
-    return parseConversationFallback(userMessage, context);
+    return parseConversationFallback(userMessage);
   }
 };
 
@@ -210,8 +218,7 @@ ${userMessage}
  * フォールバック: ルールベースの会話解析
  */
 const parseConversationFallback = (
-  userMessage: string,
-  context: TransactionContext
+  userMessage: string
 ): ConversationResponse => {
   const transactions: ParsedTransaction[] = [];
 
@@ -225,21 +232,28 @@ const parseConversationFallback = (
   }
 
   // キーワードから勘定科目を推測
-  const categoryKeywords: Array<{ keywords: string[]; category: string; type: 'income' | 'expense' }> = [
-    { keywords: ['売上', '収入', '入金'], category: '業務委託収入', type: 'income' },
-    { keywords: ['交通費', '電車', 'タクシー', '出張'], category: '旅費交通費', type: 'expense' },
-    { keywords: ['役員報酬', '報酬', '社長の給与', '役員給与'], category: '役員報酬', type: 'expense' },
-    { keywords: ['食事', 'ランチ', 'ディナー', '会食'], category: '接待交際費', type: 'expense' },
-    { keywords: ['文具', 'コピー', '消耗品'], category: '消耗品費', type: 'expense' },
-    { keywords: ['ホテル', '宿泊'], category: '旅費交通費', type: 'expense' },
+  const categoryKeywords: Array<{ keywords: string[]; category: string; item: string; type: 'income' | 'expense' }> = [
+    { keywords: ['売上', '収入', '入金'], category: '売上', item: '売上', type: 'income' },
+    { keywords: ['交通費', '電車', 'バス'], category: '旅費交通費', item: '電車代', type: 'expense' },
+    { keywords: ['タクシー'], category: '旅費交通費', item: '交通費', type: 'expense' },
+    { keywords: ['役員報酬', '報酬', '社長の給与', '役員給与'], category: '役員報酬', item: '役員報酬', type: 'expense' },
+    { keywords: ['食事', 'ランチ', 'ディナー', '会食', '飲み会'], category: '接待交際費', item: '飲食代', type: 'expense' },
+    { keywords: ['コーヒー', 'スタバ', 'カフェ'], category: '会議費', item: 'コーヒー代', type: 'expense' },
+    { keywords: ['文具', 'コピー', '消耗品', '事務'], category: '消耗品費', item: '事務用品', type: 'expense' },
+    { keywords: ['ホテル', '宿泊', '出張'], category: '旅費交通費', item: '出張費', type: 'expense' },
+    { keywords: ['ガソリン', '給油'], category: '燃料費', item: '燃料代', type: 'expense' },
+    { keywords: ['家賃'], category: '地代家賃', item: '家賃', type: 'expense' },
+    { keywords: ['電気'], category: '水道光熱費', item: '電気代', type: 'expense' },
   ];
 
   let detectedCategory = '雑費';
+  let detectedItem = 'その他';
   let detectedType: 'income' | 'expense' = 'expense';
 
-  for (const { keywords, category, type } of categoryKeywords) {
+  for (const { keywords, category, item, type } of categoryKeywords) {
     if (keywords.some(keyword => userMessage.includes(keyword))) {
       detectedCategory = category;
+      detectedItem = item;
       detectedType = type;
       break;
     }
@@ -249,7 +263,7 @@ const parseConversationFallback = (
   if (amounts.length > 0) {
     amounts.forEach(amount => {
       transactions.push({
-        description: userMessage.replace(amountPattern, '').trim(),
+        description: detectedItem,
         amount,
         category: detectedCategory,
         type: detectedType,

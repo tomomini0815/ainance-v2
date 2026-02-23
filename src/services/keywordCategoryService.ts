@@ -31,7 +31,8 @@ export type StandardCategory =
   | '給与'
   | '燃料費'
   | '設備費'
-  | '車両費';
+  | '車両費'
+  | '雑損益';
 
 export const STANDARD_CATEGORIES: StandardCategory[] = [
   '旅費交通費',
@@ -58,8 +59,57 @@ export const STANDARD_CATEGORIES: StandardCategory[] = [
   '燃料費',
   '設備費',
   '車両費',
-  '役員報酬'
+  '役員報酬',
+  '雑損益'
 ];
+
+// 標準的な取引項目（TransactionForm.tsxと一致させる）
+export const STANDARD_ITEMS = [
+  '売上',
+  '役員報酬',
+  'コンビニ買い物',
+  '飲食代',
+  '事務用品',
+  'コーヒー代',
+  '新聞代',
+  '書籍代',
+  '切手代',
+  '宅配便代',
+  '電気代',
+  '家賃',
+  'インターネット接続料',
+  '電話料金',
+  '携帯代',
+  '水道代',
+  'ガス代',
+  '出張費',
+  '交通費',
+  '電車代',
+  '燃料代',
+  '修理代',
+  '高速道路料金',
+  '固定資産税',
+  '自動車税',
+  '印紙税',
+  'チラシ作成費',
+  'ウェブ広告費',
+  '看板設置費',
+  '贈答品代',
+  '火災保険料',
+  '生命保険料',
+  '振込手数料',
+  '税理士報酬',
+  'デザイン委託費',
+  'システム開発費',
+  '業務ツール',
+  'サブスク',
+  '少額費用',
+  '為替',
+  '暗号資産',
+  'その他'
+] as const;
+
+export type StandardItem = typeof STANDARD_ITEMS[number];
 
 // キーワードとカテゴリのマッピング
 // 優先順位が高い順に記述
@@ -316,7 +366,14 @@ const KEYWORD_RULES: { keyword: string; category: StandardCategory }[] = [
   { keyword: 'ディスプレイ', category: '設備費' },
   { keyword: 'プリンター', category: '設備費' },
   { keyword: '複合機', category: '設備費' },
-  // 車両費
+  { keyword: 'システム開発', category: '外注費' },
+  // 雑損益
+  { keyword: '為替', category: '雑損益' },
+  { keyword: '暗号資産', category: '雑損益' },
+  { keyword: 'ビットコイン', category: '雑損益' },
+  { keyword: '仮想通貨', category: '雑損益' },
+  { keyword: 'fx', category: '雑損益' },
+  // 雑費
   { keyword: '車両', category: '車両費' },
   { keyword: '自動車', category: '車両費' },
   { keyword: '車検', category: '車両費' },
@@ -352,11 +409,8 @@ export function determineCategoryByKeyword(text: string): string | null {
  * @returns 標準化された項目名
  */
 export function standardizeItemName(itemName: string, _category: string): string {
-  if (!itemName) return itemName;
-
-  // 以前は「飲食代」などに統一していましたが、
-  // ユーザー要望により店名や具体的な品目名をそのまま記録するため、
-  // 標準化処理を無効化し、元のテキストをそのまま返します。
+  // ユーザー要望（スタバ、タクシー、ランチ等を具体的に残したい）に応じ、
+  // 取引項目の強制的な標準化を無効化します。
   return itemName;
 }
 

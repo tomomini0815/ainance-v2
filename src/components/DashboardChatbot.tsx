@@ -4,7 +4,7 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 import { parseChatTransactionWithAI } from '../services/geminiAIService';
-import { determineCategoryByKeyword } from '../services/keywordCategoryService';
+import { determineCategoryByKeyword, standardizeItemName } from '../services/keywordCategoryService';
 
 const DashboardChatbot: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -86,7 +86,7 @@ const DashboardChatbot: React.FC = () => {
                 }
 
                 transactionData = {
-                    item: cleanDescription || userMessage, // 空になった場合は元に戻す
+                    item: standardizeItemName(cleanDescription || userMessage, detectedCategory),
                     description: cleanDescription || userMessage,
                     amount: amount,
                     date: selectedDate,

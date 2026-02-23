@@ -117,6 +117,15 @@ export interface FinancialData {
   accountsPayable: number;    // 買掛金
   shortTermLoans: number;     // 短期借入金
   longTermLoans: number;      // 長期借入金
+  beginningRetainedEarnings: number; // 期首利益剰余金
+  beginningCapital: number;          // 期首資本金
+  beginningCash: number;             // 期首現金預金
+  beginningReceivable: number;       // 期首売掛金
+  beginningInventory: number;        // 期首棚卸資産
+  beginningFixedAssets: number;      // 期首固定資産
+  beginningPayable: number;          // 期首買掛金
+  beginningShortTermLoans: number;   // 期首短期借入金
+  beginningLongTermLoans: number;    // 期首長期借入金
 
   // 経費内訳
   expensesByCategory: {
@@ -447,7 +456,18 @@ export function calculateDepreciation(asset: DepreciationAsset): DepreciationRes
  */
 export function generateFinancialDataFromTransactions(
   transactions: any[],
-  fiscalYear: number
+  fiscalYear: number,
+  beginningBalances: {
+    retainedEarnings?: number;
+    capital?: number;
+    cash?: number;
+    receivable?: number;
+    inventory?: number;
+    fixedAssets?: number;
+    payable?: number;
+    shortTermLoans?: number;
+    longTermLoans?: number;
+  } = {}
 ): FinancialData {
   // 該当年度の取引をフィルター
   // 減価償却資産（depreciation_asset）は計算の重複を避けるため除外（別ステップで集計）
@@ -462,10 +482,41 @@ export function generateFinancialDataFromTransactions(
   const incomeTransactions = yearTransactions.filter(t => t.type === 'income');
   const expenseTransactions = yearTransactions.filter(t => t.type === 'expense');
 
-  const revenue = incomeTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
-  const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  // 「売上」と「業務委託収入」を本業の売上として集計、それ以外は営業外収益（雑益）として集計
+  const revenueTransactions = incomeTransactions.filter(t => t.category === '売上' || t.category === '業務委託収入');
+  const nonOperatingIncomeTransactions = incomeTransactions.filter(t => t.category !== '売上' && t.category !== '業務委託収入');
 
-  // カテゴリ別経費集計
+  const revenue = revenueTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  const nonOperatingIncome = nonOperatingIncomeTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  
+  // 売上原価計上（仕入、外注費などを原価として扱う）
+  const costOfSalesTransactions = expenseTransactions.filter(t => 
+    t.category === '仕入' || t.category === '外注費' || t.category === '外注工賃'
+  );
+  const costOfSales = costOfSalesTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+
+  // 販管費計上（売上原価以外）
+  const operatingExpenseTransactions = expenseTransactions.filter(t => 
+    t.category !== '仕入' && t.category !== '外注費' && t.category !== '外注工賃'
+  );
+  const totalOperatingExpenses = operatingExpenseTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+
+  // 債務（買掛金、借入金など）
+  // 注意: 本来は支払・返済 transactions ではなく「未払」の状態を見るべきだが、
+  // 現状の簡易帳簿データでは「借入金」などのカテゴリで計上された金額を一旦反映する
+  const shortTermLoans = expenseTransactions
+    .filter(t => t.category === '借入金' || t.category === '短期借入金')
+    .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  
+  const accountsPayable = expenseTransactions
+    .filter(t => t.category === '買掛金' || t.category === '未払金')
+    .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+
+  const accountsReceivable = incomeTransactions
+    .filter(t => t.category === '売掛金' || t.category === '未収金')
+    .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+
+  // カテゴリ別経費集計（全経費）
   const expensesByCategory = Object.entries(
     expenseTransactions.reduce((acc: Record<string, number>, t) => {
       const category = t.category || '未分類';
@@ -477,34 +528,49 @@ export function generateFinancialDataFromTransactions(
     amount: amount as number,
   })).sort((a, b) => b.amount - a.amount);
 
-  // 簡易的な損益計算書データを生成
-  const grossProfit = revenue;
-  const operatingIncome = grossProfit - totalExpenses;
-  const ordinaryIncome = operatingIncome;
-  const incomeBeforeTax = ordinaryIncome;
+  // 損益計算書データを生成
+  const grossProfit = revenue - costOfSales; 
+  const operatingIncome = grossProfit - totalOperatingExpenses; 
+  const ordinaryIncome = operatingIncome + nonOperatingIncome; 
+  const incomeBeforeTax = ordinaryIncome; 
+
+  // 現金残高（簡易計算：期首残高 + 収入合計 - 支出合計）
+  const totalIncome = incomeTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  const totalOut = expenseTransactions.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+  const currentCash = totalIncome - totalOut;
+  const cash = Math.max(0, (beginningBalances.cash || 0) + currentCash);
 
   return {
     revenue,
-    costOfSales: 0,
+    costOfSales,
     grossProfit,
-    operatingExpenses: totalExpenses,
+    operatingExpenses: totalOperatingExpenses,
     operatingIncome,
-    nonOperatingIncome: 0,
+    nonOperatingIncome,
     nonOperatingExpenses: 0,
     ordinaryIncome,
     extraordinaryIncome: 0,
     extraordinaryLoss: 0,
     incomeBeforeTax,
-    totalAssets: revenue,
-    totalLiabilities: 0,
-    netAssets: revenue,
-    cash: revenue,
-    accountsReceivable: 0,
-    inventory: 0,
-    fixedAssets: 0,
-    accountsPayable: 0,
-    shortTermLoans: 0,
-    longTermLoans: 0,
+    totalAssets: cash + (accountsReceivable + (beginningBalances.receivable || 0)) + (beginningBalances.inventory || 0) + (beginningBalances.fixedAssets || 0),
+    totalLiabilities: (accountsPayable + (beginningBalances.payable || 0)) + (shortTermLoans + (beginningBalances.shortTermLoans || 0)) + (beginningBalances.longTermLoans || 0),
+    netAssets: (beginningBalances.capital || 0) + (beginningBalances.retainedEarnings || 0) + incomeBeforeTax,
+    cash,
+    accountsReceivable: accountsReceivable + (beginningBalances.receivable || 0),
+    inventory: beginningBalances.inventory || 0,
+    fixedAssets: beginningBalances.fixedAssets || 0,
+    accountsPayable: accountsPayable + (beginningBalances.payable || 0),
+    shortTermLoans: shortTermLoans + (beginningBalances.shortTermLoans || 0),
+    longTermLoans: beginningBalances.longTermLoans || 0,
+    beginningRetainedEarnings: beginningBalances.retainedEarnings || 0,
+    beginningCapital: beginningBalances.capital || 0,
+    beginningCash: beginningBalances.cash || 0,
+    beginningReceivable: beginningBalances.receivable || 0,
+    beginningInventory: beginningBalances.inventory || 0,
+    beginningFixedAssets: beginningBalances.fixedAssets || 0,
+    beginningPayable: beginningBalances.payable || 0,
+    beginningShortTermLoans: beginningBalances.shortTermLoans || 0,
+    beginningLongTermLoans: beginningBalances.longTermLoans || 0,
     expensesByCategory,
   };
 }

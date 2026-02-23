@@ -18,11 +18,14 @@ import {
     Copy,
     FileCode,
     ExternalLink,
+    Upload,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 import DepreciationCalculator from '../components/DepreciationCalculator';
+import PreviousYearImportModal from '../components/PreviousYearImportModal';
+import { yearlySettlementService, YearlySettlement } from '../services/yearlySettlementService';
 import {
     Deduction,
     calculateTaxFilingData,
@@ -88,6 +91,27 @@ const TaxFilingWizard: React.FC = () => {
         address: '',
         idNumber: '',
     });
+
+    // 前年度データ
+    const [prevYearSettlement, setPrevYearSettlement] = useState<YearlySettlement | null>(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [showComparison, setShowComparison] = useState(false);
+
+    // 前年度データを取得
+    useEffect(() => {
+        const fetchPrevData = async () => {
+            if (user?.id && currentBusinessType?.business_type) {
+                try {
+                    const latest = await yearlySettlementService.getLatest(user.id, currentBusinessType.business_type);
+                    setPrevYearSettlement(latest);
+                } catch (error) {
+                    console.error('前年度データの取得に失敗しました:', error);
+                }
+            }
+        };
+        fetchPrevData();
+    }, [user?.id, currentBusinessType?.business_type]);
+
 
     // 初期控除を設定
     useEffect(() => {
@@ -434,6 +458,44 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
     // ステップ1: 基本情報
     const Step1BasicInfo = () => (
         <div className="space-y-6">
+            {/* 前期データ取込の案内 */}
+            <div className="bg-surface border border-border rounded-xl p-5 shadow-sm">
+                <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Upload className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="font-bold text-text-main mb-1">前期データの引き継ぎ</h4>
+                        <p className="text-sm text-text-muted mb-4">
+                            前期の決算データを取り込むことで、今期の収支比較やBSの期首残高設定がスムーズに行えます。
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                            {prevYearSettlement ? (
+                                <div className="flex items-center gap-2 text-sm text-success font-medium">
+                                    <CheckCircle className="w-4 h-4" />
+                                    {prevYearSettlement.year}年度のデータが取込済みです
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => setIsImportModalOpen(true)}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    前期データをインポート
+                                </button>
+                            )}
+                            <Link
+                                to="/settlement-history"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-surface-highlight border border-border text-text-muted hover:text-text-main rounded-lg transition-colors text-sm font-medium"
+                            >
+                                <FileText className="w-4 h-4" />
+                                履歴・引継ぎ管理
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h3 className="text-lg font-semibold text-text-main mb-1">{isCorporation ? '法人税申告' : '確定申告'}の基本設定</h3>
@@ -565,47 +627,126 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                 </p>
             </div>
 
+            {/* 前期比較トグル */}
+            {prevYearSettlement && (
+                <div className="flex items-center justify-between bg-surface border border-border rounded-xl p-4">
+                    <div className="flex items-center gap-2">
+                        <RefreshCw className="w-5 h-5 text-primary" />
+                        <div>
+                            <span className="font-medium text-text-main block">前期 ({prevYearSettlement.year}年度) と比較</span>
+                            <span className="text-xs text-text-muted">カテゴリ別の増減を確認できます</span>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setShowComparison(!showComparison)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showComparison ? 'bg-primary' : 'bg-border'
+                            }`}
+                    >
+                        <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showComparison ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                        />
+                    </button>
+                </div>
+            )}
+
             {/* 収支サマリー */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-success-light border border-success/20 rounded-xl p-5">
                     <p className="text-sm text-success font-medium">売上高</p>
                     <p className="text-2xl font-bold text-text-main mt-1">
                         {formatCurrency(taxData.totalRevenue)}
                     </p>
+                    {showComparison && prevYearSettlement && (
+                        <p className={`text-xs mt-2 font-medium ${taxData.totalRevenue >= prevYearSettlement.revenue ? 'text-success' : 'text-error'}`}>
+                            {taxData.totalRevenue >= prevYearSettlement.revenue ? '↑' : '↓'}
+                            {formatCurrency(Math.abs(taxData.totalRevenue - prevYearSettlement.revenue))}
+                            <span className="text-text-muted ml-1 font-normal">({prevYearSettlement.year}度: {formatCurrency(prevYearSettlement.revenue)})</span>
+                        </p>
+                    )}
+                </div>
+                <div className="bg-success-light border border-success/20 rounded-xl p-5">
+                    <p className="text-sm text-success font-medium">雑収入</p>
+                    <p className="text-2xl font-bold text-text-main mt-1">
+                        {formatCurrency(taxData.totalMiscellaneousIncome)}
+                    </p>
+                    {showComparison && prevYearSettlement && (
+                        <p className={`text-xs mt-2 font-medium ${taxData.totalMiscellaneousIncome >= (prevYearSettlement.non_operating_income || 0) ? 'text-success' : 'text-error'}`}>
+                            {taxData.totalMiscellaneousIncome >= (prevYearSettlement.non_operating_income || 0) ? '↑' : '↓'}
+                            {formatCurrency(Math.abs(taxData.totalMiscellaneousIncome - (prevYearSettlement.non_operating_income || 0)))}
+                            <span className="text-text-muted ml-1 font-normal">({prevYearSettlement.year}度: {formatCurrency(prevYearSettlement.non_operating_income || 0)})</span>
+                        </p>
+                    )}
                 </div>
                 <div className="bg-error-light border border-error/20 rounded-xl p-5">
                     <p className="text-sm text-error font-medium">経費合計</p>
                     <p className="text-2xl font-bold text-text-main mt-1">
                         {formatCurrency(taxData.totalExpenses)}
                     </p>
+                    {showComparison && prevYearSettlement && (
+                        <p className={`text-xs mt-2 font-medium ${taxData.totalExpenses <= prevYearSettlement.operating_expenses ? 'text-success' : 'text-error'}`}>
+                            {taxData.totalExpenses <= prevYearSettlement.operating_expenses ? '↓' : '↑'}
+                            {formatCurrency(Math.abs(taxData.totalExpenses - prevYearSettlement.operating_expenses))}
+                            <span className="text-text-muted ml-1 font-normal">({prevYearSettlement.year}度: {formatCurrency(prevYearSettlement.operating_expenses)})</span>
+                        </p>
+                    )}
                 </div>
                 <div className="bg-primary-light border border-primary/20 rounded-xl p-5">
-                    <p className="text-sm text-primary font-medium">事業所得</p>
+                    <p className="text-sm text-primary font-medium">事業所得（利益）</p>
                     <p className="text-2xl font-bold text-text-main mt-1">
                         {formatCurrency(taxData.netIncome)}
                     </p>
+                    {showComparison && prevYearSettlement && (
+                        <p className={`text-xs mt-2 font-medium ${taxData.netIncome >= prevYearSettlement.net_income ? 'text-success' : 'text-error'}`}>
+                            {taxData.netIncome >= prevYearSettlement.net_income ? '↑' : '↓'}
+                            {formatCurrency(Math.abs(taxData.netIncome - prevYearSettlement.net_income))}
+                        </p>
+                    )}
                 </div>
             </div>
 
-            {/* 経費内訳 */}
+            {/* カテゴリ別内訳 */}
             <div className="bg-surface border border-border rounded-xl p-5">
-                <h4 className="font-medium text-text-main mb-4">経費内訳（上位5件）</h4>
+                <h4 className="font-medium text-text-main mb-4">経費カテゴリ内訳</h4>
                 {taxData.expensesByCategory.length > 0 ? (
-                    <div className="space-y-3">
-                        {taxData.expensesByCategory.slice(0, 5).map((cat, index) => (
-                            <div key={index} className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-surface-highlight rounded-lg flex items-center justify-center text-sm font-medium text-text-muted">
-                                        {index + 1}
+                    <div className="space-y-4">
+                        {taxData.expensesByCategory.map((cat, index) => {
+                            const prevCat = prevYearSettlement?.category_breakdown.find(p => p.category === cat.category);
+                            return (
+                                <div key={index}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-primary"></div>
+                                            <span className="text-text-main">{cat.category}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="font-medium text-text-main">{formatCurrency(cat.amount)}</span>
+                                            <span className="text-text-muted text-sm ml-2">({formatPercentage(cat.percentage)})</span>
+                                        </div>
                                     </div>
-                                    <span className="text-text-main">{cat.category}</span>
+                                    <div className="w-full bg-surface-highlight h-2 rounded-full overflow-hidden mb-1">
+                                        <div
+                                            className="bg-primary h-full rounded-full"
+                                            style={{ width: `${cat.percentage}%` }}
+                                        ></div>
+                                    </div>
+                                    {showComparison && prevYearSettlement && (
+                                        <div className="flex justify-end mt-1">
+                                            <p className={`text-[10px] font-medium ${prevCat ? (cat.amount <= prevCat.amount ? 'text-success' : 'text-error') : 'text-text-muted'}`}>
+                                                {prevCat ? (
+                                                    <>
+                                                        {cat.amount <= prevCat.amount ? '↓' : '↑'} {formatCurrency(Math.abs(cat.amount - prevCat.amount))}
+                                                        <span className="text-text-muted font-normal ml-1">({prevYearSettlement.year}度: {formatCurrency(prevCat.amount)})</span>
+                                                    </>
+                                                ) : (
+                                                    '前期データなし'
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="text-right">
-                                    <span className="font-medium text-text-main">{formatCurrency(cat.amount)}</span>
-                                    <span className="text-text-muted text-sm ml-2">({formatPercentage(cat.percentage)})</span>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <p className="text-text-muted text-center py-4">
@@ -944,6 +1085,20 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                 title="コピー"
                             >
                                 {copiedField === 'revenue' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+                    {/* 雑収入（雑損益など） */}
+                    <div className="p-4 flex justify-between items-center">
+                        <span className="text-text-muted">雑収入</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-success">{formatCurrency(taxData.totalMiscellaneousIncome)}</span>
+                            <button
+                                onClick={() => handleCopy(taxData.totalMiscellaneousIncome, 'miscellaneous')}
+                                className={`p-1.5 rounded transition-colors ${copiedField === 'miscellaneous' ? 'bg-success text-white' : 'hover:bg-surface-highlight text-text-muted'}`}
+                                title="コピー"
+                            >
+                                {copiedField === 'miscellaneous' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                             </button>
                         </div>
                     </div>
@@ -1376,6 +1531,22 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                     )}
                 </div>
             </div>
+
+            {/* 前期データインポートモーダル */}
+            <PreviousYearImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                userId={user?.id || ''}
+                businessType={currentBusinessType?.business_type || 'individual'}
+                onImportSuccess={() => {
+                    // 最新データを再取得
+                    if (user?.id && currentBusinessType?.business_type) {
+                        yearlySettlementService.getLatest(user.id, currentBusinessType.business_type)
+                            .then(setPrevYearSettlement);
+                    }
+                }}
+            />
+
         </div>
     );
 };

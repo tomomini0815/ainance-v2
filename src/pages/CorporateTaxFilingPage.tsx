@@ -18,10 +18,14 @@ import {
     BookOpen,
     Edit,
     Wrench,
+    Upload,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBusinessTypeContext } from '../context/BusinessTypeContext';
+import { yearlySettlementService, YearlySettlement } from '../services/yearlySettlementService';
+import { yearlyBalanceSheetService, YearlyBalanceSheet } from '../services/yearlyBalanceSheetService';
+import PreviousYearImportModal from '../components/PreviousYearImportModal';
 import {
     CorporateInfo,
     FinancialData,
@@ -64,11 +68,16 @@ interface Step1Props {
     setCorporateInfo: React.Dispatch<React.SetStateAction<CorporateInfo>>;
     handleInfoChange: (updates: Partial<CorporateInfo>) => void;
     handleTranscribe: () => void;
+    prevYearSettlement: YearlySettlement | null;
+    setIsImportModalOpen: (open: boolean) => void;
 }
 
 interface Step3Props {
     financialData: FinancialData;
     corporateInfo: CorporateInfo;
+    prevYearSettlement: YearlySettlement | null;
+    showComparison: boolean;
+    setShowComparison: (show: boolean) => void;
 }
 
 interface Step4Props {
@@ -92,8 +101,46 @@ interface Step6Props {
 }
 
 // ステップ1: 会社情報
-const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInfo, handleInfoChange, handleTranscribe }) => (
+const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInfo, handleInfoChange, handleTranscribe, prevYearSettlement, setIsImportModalOpen }) => (
     <div className="space-y-6">
+        {/* 前期データ取込の案内 */}
+        <div className="bg-surface border border-border rounded-xl p-5 shadow-sm">
+            <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Upload className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                    <h4 className="font-bold text-text-main mb-1">前期データの引き継ぎ</h4>
+                    <p className="text-sm text-text-muted mb-4">
+                        前期の決算データを取り込むことで、今期の収支比較やBSの期首残高設定がスムーズに行えます。
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                        {prevYearSettlement ? (
+                            <div className="flex items-center gap-2 text-sm text-success font-medium">
+                                <CheckCircle className="w-4 h-4" />
+                                {prevYearSettlement.year}年度のデータが取込済みです
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setIsImportModalOpen(true)}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                            >
+                                <Upload className="w-4 h-4" />
+                                前期データをインポート
+                            </button>
+                        )}
+                        <Link
+                            to="/settlement-history"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-surface-highlight border border-border text-text-muted hover:text-text-main rounded-lg transition-colors text-sm font-medium"
+                        >
+                            <FileText className="w-4 h-4" />
+                            履歴・引継ぎ管理
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <h3 className="text-lg font-semibold text-text-main mb-1">会社基本情報</h3>
@@ -254,7 +301,7 @@ const Step2Depreciation: React.FC<Step2Props> = ({ assets, onDepreciationCalcula
 );
 
 // ステップ3: 損益計算
-const Step2ProfitLoss: React.FC<Step3Props> = ({ financialData, corporateInfo }) => (
+const Step3ProfitLoss: React.FC<Step3Props> = ({ financialData, corporateInfo, prevYearSettlement, showComparison, setShowComparison }) => (
     <div className="space-y-6">
         <div>
             <h3 className="text-lg font-semibold text-text-main mb-4">損益計算書</h3>
@@ -263,6 +310,29 @@ const Step2ProfitLoss: React.FC<Step3Props> = ({ financialData, corporateInfo })
             </p>
         </div>
 
+        {/* 前期比較トグル */}
+        {prevYearSettlement && (
+            <div className="flex items-center justify-between bg-surface border border-border rounded-xl p-4">
+                <div className="flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 text-primary" />
+                    <div>
+                        <span className="font-medium text-text-main block">前期 ({prevYearSettlement.year}年度) と比較</span>
+                        <span className="text-xs text-text-muted">収益・費用の増減を確認できます</span>
+                    </div>
+                </div>
+                <button
+                    onClick={() => setShowComparison(!showComparison)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showComparison ? 'bg-primary' : 'bg-border'
+                        }`}
+                >
+                    <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showComparison ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                    />
+                </button>
+            </div>
+        )}
+
         {/* 損益サマリー */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-success-light border border-success/20 rounded-xl p-5">
@@ -270,18 +340,38 @@ const Step2ProfitLoss: React.FC<Step3Props> = ({ financialData, corporateInfo })
                 <p className="text-2xl font-bold text-text-main mt-1">
                     {formatCurrency(financialData.revenue)}
                 </p>
+                {showComparison && prevYearSettlement && (
+                    <p className={`text-xs mt-2 font-medium ${financialData.revenue >= prevYearSettlement.revenue ? 'text-success' : 'text-error'}`}>
+                        {financialData.revenue >= prevYearSettlement.revenue ? '↑' : '↓'}
+                        {formatCurrency(Math.abs(financialData.revenue - prevYearSettlement.revenue))}
+                        <span className="text-text-muted ml-1 font-normal">({prevYearSettlement.year}度: {formatCurrency(prevYearSettlement.revenue)})</span>
+                    </p>
+                )}
             </div>
             <div className="bg-error-light border border-error/20 rounded-xl p-5">
                 <p className="text-sm text-error font-medium">販管費</p>
                 <p className="text-2xl font-bold text-text-main mt-1">
                     {formatCurrency(financialData.operatingExpenses)}
                 </p>
+                {showComparison && prevYearSettlement && (
+                    <p className={`text-xs mt-2 font-medium ${financialData.operatingExpenses <= prevYearSettlement.operating_expenses ? 'text-success' : 'text-error'}`}>
+                        {financialData.operatingExpenses <= prevYearSettlement.operating_expenses ? '↓' : '↑'}
+                        {formatCurrency(Math.abs(financialData.operatingExpenses - prevYearSettlement.operating_expenses))}
+                        <span className="text-text-muted ml-1 font-normal">({prevYearSettlement.year}度: {formatCurrency(prevYearSettlement.operating_expenses)})</span>
+                    </p>
+                )}
             </div>
             <div className="bg-primary-light border border-primary/20 rounded-xl p-5">
-                <p className="text-sm text-primary font-medium">営業利益</p>
+                <p className="text-sm text-primary font-medium">経常利益</p>
                 <p className="text-2xl font-bold text-text-main mt-1">
-                    {formatCurrency(financialData.operatingIncome)}
+                    {formatCurrency(financialData.ordinaryIncome)}
                 </p>
+                {showComparison && prevYearSettlement && (
+                    <p className={`text-xs mt-2 font-medium ${financialData.ordinaryIncome >= (prevYearSettlement.net_income) ? 'text-success' : 'text-error'}`}>
+                        {financialData.ordinaryIncome >= (prevYearSettlement.net_income) ? '↑' : '↓'}
+                        {formatCurrency(Math.abs(financialData.ordinaryIncome - (prevYearSettlement.net_income)))}
+                    </p>
+                )}
             </div>
         </div>
 
@@ -515,8 +605,12 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
                 <span className="font-medium text-success">{formatCurrency(financialData.revenue)}</span>
             </div>
             <div className="p-4 flex justify-between items-center">
-                <span className="text-text-muted">営業利益</span>
-                <span className="font-medium text-primary">{formatCurrency(financialData.operatingIncome)}</span>
+                <span className="text-text-muted">営業外収益</span>
+                <span className="font-medium text-success">{formatCurrency(financialData.nonOperatingIncome)}</span>
+            </div>
+            <div className="p-4 flex justify-between items-center">
+                <span className="text-text-muted">経常利益</span>
+                <span className="font-medium text-primary">{formatCurrency(financialData.ordinaryIncome)}</span>
             </div>
             <div className="p-4 flex justify-between items-center">
                 <span className="text-text-muted">法人税等</span>
@@ -655,6 +749,43 @@ const CorporateTaxFilingPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
+    // 前年度データ
+    const [prevYearSettlement, setPrevYearSettlement] = useState<YearlySettlement | null>(null);
+    const [prevYearBS, setPrevYearBS] = useState<YearlyBalanceSheet | null>(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [showComparison, setShowComparison] = useState(false);
+
+    // 前年度データを取得
+    React.useEffect(() => {
+        const fetchPrevData = async () => {
+            if (user?.id && currentBusinessType?.business_type) {
+                try {
+                    const latest = await yearlySettlementService.getLatest(user.id, currentBusinessType.business_type);
+                    setPrevYearSettlement(latest);
+
+                    // BSデータも取得
+                    const latestBS = await yearlyBalanceSheetService.getByYear(
+                        user.id,
+                        currentBusinessType.business_type,
+                        (latest?.year || (new Date().getFullYear() - 1))
+                    );
+                    if (latestBS) {
+                        setPrevYearBS(latestBS);
+                        // 資本金を前期から引き継ぐ
+                        setCorporateInfo(prev => ({
+                            ...prev,
+                            capital: latestBS.net_assets_capital || prev.capital
+                        }));
+                    }
+                } catch (error) {
+                    console.error('前年度データの取得に失敗しました:', error);
+                }
+            }
+        };
+        fetchPrevData();
+    }, [user?.id, currentBusinessType?.business_type]);
+
+
     const handleOpenInEditor = () => {
         if (window.confirm('現在の計算結果を詳細エディタに転記して開きますか？\n（エディタの既存データは上書きされます）')) {
             const calculatedData = CorporateTaxInputService.calculateDataFromTransactions(transactions, corporateInfo);
@@ -707,7 +838,23 @@ const CorporateTaxFilingPage: React.FC = () => {
 
     // 決算データを計算
     const financialData = useMemo(() => {
-        const data = generateFinancialDataFromTransactions(transactions, corporateInfo.fiscalYear);
+        const beginningBalances = {
+            retainedEarnings: prevYearBS?.net_assets_retained_earnings_total || 0,
+            capital: prevYearBS?.net_assets_capital || corporateInfo.capital,
+            cash: prevYearBS?.assets_current_cash || 0,
+            receivable: prevYearBS?.assets_current_total ? (prevYearBS.assets_current_total - (prevYearBS.assets_current_cash || 0)) : 0, // 簡易的な差分
+            inventory: 0, // 必要に応じて拡張
+            fixedAssets: prevYearBS?.assets_total ? (prevYearBS.assets_total - (prevYearBS.assets_current_total || 0)) : 0,
+            payable: prevYearBS?.liabilities_total || 0,
+            shortTermLoans: 0, // 必要に応じて拡張
+            longTermLoans: 0,
+        };
+
+        const data = generateFinancialDataFromTransactions(
+            transactions,
+            corporateInfo.fiscalYear,
+            beginningBalances
+        );
 
         // 減価償却費を経費に追加・合算
         if (depreciationTotal > 0) {
@@ -817,6 +964,26 @@ const CorporateTaxFilingPage: React.FC = () => {
                 fiscalYear: corporateInfo.fiscalYear,
                 taxableIncome: taxResult.taxableIncome,
                 estimatedTax: taxResult.totalTax,
+                // 追加: 実績ベースの財務詳細
+                costOfSales: financialData.costOfSales,
+                grossProfit: financialData.grossProfit,
+                operatingExpenses: financialData.operatingExpenses,
+                operatingIncome: financialData.operatingIncome,
+                nonOperatingIncome: financialData.nonOperatingIncome,
+                nonOperatingExpenses: financialData.nonOperatingExpenses,
+                ordinaryIncome: financialData.ordinaryIncome,
+                cash: financialData.cash,
+                accountsReceivable: financialData.accountsReceivable,
+                inventory: financialData.inventory,
+                fixedAssets: financialData.fixedAssets,
+                totalAssets: financialData.totalAssets,
+                accountsPayable: financialData.accountsPayable,
+                shortTermLoans: financialData.shortTermLoans,
+                longTermLoans: financialData.longTermLoans,
+                totalLiabilities: financialData.totalLiabilities,
+                beginningRetainedEarnings: financialData.beginningRetainedEarnings,
+                beginningCapital: financialData.beginningCapital,
+                depreciation: depreciationTotal,
             };
 
             let pdfBytes: Uint8Array;
@@ -854,53 +1021,66 @@ const CorporateTaxFilingPage: React.FC = () => {
     // ステップコンテンツを取得
     const renderStepContent = () => {
         switch (currentStep) {
-            case 1: return (
-                <Step1CompanyInfo
-                    corporateInfo={corporateInfo}
-                    setCorporateInfo={setCorporateInfo}
-                    handleInfoChange={handleInfoChange}
-                    handleTranscribe={handleTranscribe}
-                />
-            );
-            case 2: return (
-                <Step2Depreciation
-                    assets={depreciationAssets}
-                    onDepreciationCalculate={handleDepreciationCalculate}
-                    handleTranscribe={handleDepreciationTranscribe}
-                />
-            );
-            case 3: return (
-                <Step2ProfitLoss
-                    financialData={financialData}
-                    corporateInfo={corporateInfo}
-                />
-            );
-            case 4: return (
-                <Step3CorporateTax
-                    taxResult={taxResult}
-                    corporateInfo={corporateInfo}
-                    handleCopy={handleCopy}
-                    copiedField={copiedField}
-                />
-            );
-            case 5: return (
-                <Step4ConsumptionTax
-                    consumptionTaxResult={consumptionTaxResult}
-                />
-            );
-            case 6: return (
-                <Step5Documents
-                    corporateInfo={corporateInfo}
-                    financialData={financialData}
-                    taxResult={taxResult}
-                    isLoading={isLoading}
-                    generatePDF={generatePDF}
-                    handleOpenInEditor={handleOpenInEditor}
-                />
-            );
-            default: return null;
+            case 1:
+                return (
+                    <Step1CompanyInfo
+                        corporateInfo={corporateInfo}
+                        setCorporateInfo={setCorporateInfo}
+                        handleInfoChange={handleInfoChange}
+                        handleTranscribe={handleTranscribe}
+                        prevYearSettlement={prevYearSettlement}
+                        setIsImportModalOpen={setIsImportModalOpen}
+                    />
+                );
+            case 2:
+                return (
+                    <Step2Depreciation
+                        assets={depreciationAssets}
+                        onDepreciationCalculate={handleDepreciationCalculate}
+                        handleTranscribe={handleDepreciationTranscribe}
+                    />
+                );
+            case 3:
+                return (
+                    <Step3ProfitLoss
+                        financialData={financialData}
+                        corporateInfo={corporateInfo}
+                        prevYearSettlement={prevYearSettlement}
+                        showComparison={showComparison}
+                        setShowComparison={setShowComparison}
+                    />
+                );
+            case 4:
+                return (
+                    <Step3CorporateTax
+                        taxResult={taxResult}
+                        corporateInfo={corporateInfo}
+                        handleCopy={handleCopy}
+                        copiedField={copiedField}
+                    />
+                );
+            case 5:
+                return (
+                    <Step4ConsumptionTax
+                        consumptionTaxResult={consumptionTaxResult}
+                    />
+                );
+            case 6:
+                return (
+                    <Step5Documents
+                        corporateInfo={corporateInfo}
+                        financialData={financialData}
+                        taxResult={taxResult}
+                        isLoading={isLoading}
+                        generatePDF={generatePDF}
+                        handleOpenInEditor={handleOpenInEditor}
+                    />
+                );
+            default:
+                return null;
         }
     };
+
 
     return (
         <div className="min-h-screen bg-background">
@@ -965,8 +1145,25 @@ const CorporateTaxFilingPage: React.FC = () => {
                     )}
                 </div>
             </main>
+
+            {/* 前期データインポートモーダル */}
+            <PreviousYearImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                userId={user?.id || ''}
+                businessType={currentBusinessType?.business_type || 'corporation'}
+                onImportSuccess={() => {
+                    // 最新データを再取得
+                    if (user?.id && currentBusinessType?.business_type) {
+                        yearlySettlementService.getLatest(user.id, currentBusinessType.business_type)
+                            .then(setPrevYearSettlement);
+                    }
+                    toast.success('前期データをインポートしました');
+                }}
+            />
         </div>
     );
 };
+
 
 export default CorporateTaxFilingPage;

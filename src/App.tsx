@@ -38,6 +38,7 @@ const QuickTaxFilingPage = React.lazy(() => import('./pages/QuickTaxFilingPage')
 const TransactionInbox = React.lazy(() => import('./pages/TransactionInbox'));
 const CumulativeAnalysisPage = React.lazy(() => import('./pages/CumulativeAnalysisPage'));
 const TaxReportPage = React.lazy(() => import('./pages/TaxReportPage'));
+const YearlySettlementHistory = React.lazy(() => import('./pages/YearlySettlementHistory'));
 
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
@@ -301,6 +302,15 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <CorporateTaxFilingPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/settlement-history"
+                    element={
+                      <ProtectedRoute>
+                        <YearlySettlementHistory />
                       </ProtectedRoute>
                     }
                   />

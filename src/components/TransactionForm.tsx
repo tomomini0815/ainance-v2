@@ -599,55 +599,58 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSubmit
             <div>
               <label className="block text-sm font-medium text-text-muted mb-1.5">取引項目</label>
               <div className="relative">
-                <select
+                <input
                   name="item"
+                  list="items-list"
                   value={formData.item}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main appearance-none transition-all"
+                  placeholder="取引項目を入力または選択"
+                  className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-main transition-all"
                   required
-                >
-                  <option value="" className="bg-surface-highlight text-text-muted">取引項目を選択</option>
-                  <option value="売上" className="bg-surface-highlight">売上</option>
-                  <option value="役員報酬" className="bg-surface-highlight">役員報酬</option>
-                  <option value="コンビニ買い物" className="bg-surface-highlight">コンビニ買い物</option>
-                  <option value="飲食代" className="bg-surface-highlight">飲食代</option>
-                  <option value="事務用品" className="bg-surface-highlight">事務用品</option>
-                  <option value="コーヒー代" className="bg-surface-highlight">コーヒー代</option>
-                  <option value="新聞代" className="bg-surface-highlight">新聞代</option>
-                  <option value="書籍代" className="bg-surface-highlight">書籍代</option>
-                  <option value="切手代" className="bg-surface-highlight">切手代</option>
-                  <option value="宅配便代" className="bg-surface-highlight">宅配便代</option>
-                  <option value="電気代" className="bg-surface-highlight">電気代</option>
-                  <option value="家賃" className="bg-surface-highlight">家賃</option>
-                  <option value="インターネット接続料" className="bg-surface-highlight">インターネット接続料</option>
-                  <option value="電話料金" className="bg-surface-highlight">電話料金</option>
-                  <option value="携帯代" className="bg-surface-highlight">携帯代</option>
-                  <option value="水道代" className="bg-surface-highlight">水道代</option>
-                  <option value="ガス代" className="bg-surface-highlight">ガス代</option>
-                  <option value="出張費" className="bg-surface-highlight">出張費</option>
-                  <option value="交通費" className="bg-surface-highlight">交通費</option>
-                  <option value="電車代" className="bg-surface-highlight">電車代</option>
-                  <option value="燃料代" className="bg-surface-highlight">燃料代</option>
-                  <option value="修理代" className="bg-surface-highlight">修理代</option>
-                  <option value="高速道路料金" className="bg-surface-highlight">高速道路料金</option>
-                  <option value="固定資産税" className="bg-surface-highlight">固定資産税</option>
-                  <option value="自動車税" className="bg-surface-highlight">自動車税</option>
-                  <option value="印紙税" className="bg-surface-highlight">印紙税</option>
-                  <option value="チラシ作成費" className="bg-surface-highlight">チラシ作成費</option>
-                  <option value="ウェブ広告費" className="bg-surface-highlight">ウェブ広告費</option>
-                  <option value="看板設置費" className="bg-surface-highlight">看板設置費</option>
-                  <option value="贈答品代" className="bg-surface-highlight">贈答品代</option>
-                  <option value="火災保険料" className="bg-surface-highlight">火災保険料</option>
-                  <option value="生命保険料" className="bg-surface-highlight">生命保険料</option>
-                  <option value="振込手数料" className="bg-surface-highlight">振込手数料</option>
-                  <option value="税理士報酬" className="bg-surface-highlight">税理士報酬</option>
-                  <option value="デザイン委託費" className="bg-surface-highlight">デザイン委託費</option>
-                  <option value="システム開発費" className="bg-surface-highlight">システム開発費</option>
-                  <option value="業務ツール" className="bg-surface-highlight">業務ツール</option>
-                  <option value="サブスク" className="bg-surface-highlight">サブスク</option>
-                  <option value="少額費用" className="bg-surface-highlight">少額費用</option>
-                  <option value="その他" className="bg-surface-highlight">その他</option>
-                </select>
+                />
+                <datalist id="items-list">
+                  <option value="売上" />
+                  <option value="役員報酬" />
+                  <option value="コンビニ買い物" />
+                  <option value="飲食代" />
+                  <option value="事務用品" />
+                  <option value="コーヒー代" />
+                  <option value="新聞代" />
+                  <option value="書籍代" />
+                  <option value="切手代" />
+                  <option value="宅配便代" />
+                  <option value="電気代" />
+                  <option value="家賃" />
+                  <option value="インターネット接続料" />
+                  <option value="電話料金" />
+                  <option value="携帯代" />
+                  <option value="水道代" />
+                  <option value="ガス代" />
+                  <option value="出張費" />
+                  <option value="交通費" />
+                  <option value="電車代" />
+                  <option value="燃料代" />
+                  <option value="修理代" />
+                  <option value="高速道路料金" />
+                  <option value="固定資産税" />
+                  <option value="自動車税" />
+                  <option value="印紙税" />
+                  <option value="チラシ作成費" />
+                  <option value="ウェブ広告費" />
+                  <option value="看板設置費" />
+                  <option value="贈答品代" />
+                  <option value="火災保険料" />
+                  <option value="生命保険料" />
+                  <option value="振込手数料" />
+                  <option value="税理士報酬" />
+                  <option value="デザイン委託費" />
+                  <option value="システム開発費" />
+                  <option value="業務ツール" />
+                  <option value="サブスク" />
+                  <option value="少額費用" />
+                  <option value="為替" />
+                  <option value="暗号資産" />
+                </datalist>
                 <div className="absolute right-3.5 top-1/2 transform -translate-y-1/2 pointer-events-none">
                   <Zap className="w-4 h-4 text-text-muted" />
                 </div>

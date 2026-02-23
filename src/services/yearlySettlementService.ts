@@ -67,6 +67,28 @@ export const yearlySettlementService = {
     },
 
     /**
+     * 最新の決算データを1件取得
+     */
+    async getLatest(userId: string, businessType: 'individual' | 'corporation'): Promise<YearlySettlement | null> {
+        const { data, error } = await supabase
+            .from('yearly_settlements')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('business_type', businessType)
+            .order('year', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) {
+            console.error('getLatestYearlySettlement Error:', error);
+            throw error;
+        }
+
+        return data;
+    },
+
+
+    /**
      * 決算データを保存（新規作成または更新）
      */
     async save(settlement: Omit<YearlySettlement, 'id' | 'created_at' | 'updated_at'>): Promise<YearlySettlement> {
@@ -110,6 +132,7 @@ export const yearlySettlementService = {
             if (val === null || val === undefined || val === '') return 0;
             if (typeof val === 'number') return val;
 
+            const originalVal = val;
             // 文字列の場合のクリーンアップ（カンマ、¥、円、空白、括弧の処理）
             let str = String(val).replace(/[$,¥円\s,()]/g, '');
 
@@ -139,6 +162,11 @@ export const yearlySettlementService = {
             const num = parseFloat(str);
             const absoluteValue = isNaN(num) ? 0 : num * multiplier;
             const finalValue = isNegative ? -absoluteValue : absoluteValue;
+            
+            if (isNaN(num)) {
+                console.warn(`parseNum: Could not parse "${originalVal}" as number`);
+            }
+            
             return Math.floor(finalValue);
         };
 
@@ -189,5 +217,21 @@ export const yearlySettlementService = {
         console.log('Mapped Settlement Data:', settlementData);
         console.log('--- AI Result Mapping End ---');
         return settlementData;
+    },
+
+    /**
+     * 決算データを削除
+     */
+    async delete(id: string): Promise<void> {
+        const { error } = await supabase
+            .from('yearly_settlements')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('deleteYearlySettlement Error:', error);
+            throw error;
+        }
     }
 };
+

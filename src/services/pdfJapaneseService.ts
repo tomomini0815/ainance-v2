@@ -74,6 +74,38 @@ export interface JpTaxFormData {
   netIncome: number;
   expensesByCategory: { category: string; amount: number }[];
 
+  // 貸借対照表（B/S）および損益計算書（P/L）詳細
+  costOfSales?: number;
+  grossProfit?: number;
+  operatingExpenses?: number;
+  operatingIncome?: number;
+  nonOperatingIncome?: number;
+  nonOperatingExpenses?: number;
+  ordinaryIncome?: number;
+  netIncomeBeforeTax?: number;
+  
+  cash?: number;
+  accountsReceivable?: number;
+  inventory?: number;
+  fixedAssets?: number;
+  totalAssets?: number;
+  accountsPayable?: number;
+  shortTermLoans?: number;
+  longTermLoans?: number;
+  totalLiabilities?: number;
+  estimatedCapital?: number;
+  retainedEarnings?: number;
+  beginningRetainedEarnings?: number;
+  beginningCapital?: number;
+  beginningCash?: number;
+  beginningReceivable?: number;
+  beginningInventory?: number;
+  beginningFixedAssets?: number;
+  beginningPayable?: number;
+  beginningShortTermLoans?: number;
+  beginningLongTermLoans?: number;
+  depreciation?: number;
+
   // 税額
   taxableIncome: number;
   estimatedTax: number;
@@ -353,27 +385,35 @@ export async function generateFinancialStatementPDF(data: JpTaxFormData): Promis
   y -= 12;
 
   // ===== 計算用データ =====
-  const operatingIncome = data.revenue - data.expenses;
-  const grossProfit = data.revenue - Math.floor(data.expenses * 0.4);
-  const ordinaryIncome = operatingIncome + Math.floor(data.revenue * 0.01) - Math.floor(data.expenses * 0.02);
+  const operatingIncome = data.operatingIncome ?? (data.revenue - data.expenses);
+  const costOfSales = data.costOfSales ?? 0;
+  const grossProfit = data.grossProfit ?? (data.revenue - costOfSales);
+  const nonOperatingIncome = data.nonOperatingIncome ?? 0;
+  const nonOperatingExpenses = data.nonOperatingExpenses ?? 0;
+  const ordinaryIncome = data.ordinaryIncome ?? (operatingIncome + nonOperatingIncome - nonOperatingExpenses);
 
-  // 概算B/Sデータ
-  const estimatedCash = Math.floor(data.revenue * 0.2);
-  const estimatedReceivables = Math.floor(data.revenue * 0.15);
-  const estimatedInventory = Math.floor(data.revenue * 0.1);
-  const estimatedFixedAssets = Math.floor(data.revenue * 0.2);
-  const totalAssets = estimatedCash + estimatedReceivables + estimatedInventory + estimatedFixedAssets;
-  const estimatedPayables = Math.floor(data.expenses * 0.2);
-  const estimatedLoans = Math.floor(data.expenses * 0.15);
-  const totalLiabilities = estimatedPayables + estimatedLoans;
-  const estimatedCapital = data.capital || 1000000;
-  const retainedEarnings = totalAssets - totalLiabilities - estimatedCapital;
+  // B/Sデータ (期首残高 + 今期増減)
+  const estimatedCash = data.cash ?? (data.beginningCash ?? 0); 
+  const estimatedReceivables = (data.accountsReceivable ?? 0) + (data.beginningReceivable ?? 0);
+  const estimatedInventory = (data.inventory ?? 0) + (data.beginningInventory ?? 0);
+  const estimatedFixedAssets = (data.fixedAssets ?? 0) + (data.beginningFixedAssets ?? 0);
+  
+  const totalAssets = data.totalAssets ?? (estimatedCash + estimatedReceivables + estimatedInventory + estimatedFixedAssets);
+  
+  const estimatedPayables = (data.accountsPayable ?? 0) + (data.beginningPayable ?? 0);
+  const estimatedLoans = (data.shortTermLoans ?? 0) + (data.beginningShortTermLoans ?? 0);
+  const longTermLoans = (data.longTermLoans ?? 0) + (data.beginningLongTermLoans ?? 0);
+  
+  const totalLiabilities = data.totalLiabilities ?? (estimatedPayables + estimatedLoans + longTermLoans);
+  const estimatedCapital = data.capital || data.beginningCapital || data.estimatedCapital || 0;
+  const beginningRetainedEarnings = data.beginningRetainedEarnings ?? 0;
+  const retainedEarnings = data.retainedEarnings ?? (beginningRetainedEarnings + data.netIncome);
 
-  // 概算C/Fデータ
-  const depreciation = Math.floor(data.expenses * 0.1);
+  // C/Fデータ
+  const depreciation = data.depreciation ?? 0;
   const operatingCF = data.netIncome + depreciation;
-  const investingCF = -Math.floor(data.revenue * 0.05);
-  const financingCF = -Math.floor(estimatedLoans * 0.1);
+  const investingCF = 0; // 実績データがないため0
+  const financingCF = 0; // 実績データがないため0
   const netCashChange = operatingCF + investingCF + financingCF;
 
   // ===== セクション1: 損益計算書（左側） =====
@@ -389,12 +429,12 @@ export async function generateFinancialStatementPDF(data: JpTaxFormData): Promis
   // P/L 項目
   const plItems = [
     { label: '売上高', value: data.revenue, isHighlight: true },
-    { label: '売上原価', value: Math.floor(data.expenses * 0.4) },
+    { label: '売上原価', value: costOfSales },
     { label: '売上総利益', value: grossProfit, isSubtotal: true },
-    { label: '販売費及び一般管理費', value: Math.floor(data.expenses * 0.6) },
+    { label: '販売費及び一般管理費', value: data.operatingExpenses || (data.expenses - costOfSales) },
     { label: '営業利益', value: operatingIncome, isSubtotal: true, color: operatingIncome >= 0 ? colors.green : colors.red },
-    { label: '営業外収益', value: Math.floor(data.revenue * 0.01) },
-    { label: '営業外費用', value: Math.floor(data.expenses * 0.02) },
+    { label: '営業外収益', value: nonOperatingIncome },
+    { label: '営業外費用', value: nonOperatingExpenses },
     { label: '経常利益', value: ordinaryIncome, isSubtotal: true },
     { label: '当期純利益', value: data.netIncome, isTotal: true, color: data.netIncome >= 0 ? colors.green : colors.red },
   ];
@@ -451,6 +491,8 @@ export async function generateFinancialStatementPDF(data: JpTaxFormData): Promis
     { label: '資産合計', value: totalAssets, isTotal: true },
   ];
 
+  const totalLiabilitiesAndNetAssets = totalLiabilities + estimatedCapital + retainedEarnings;
+
   const bsRightItems = [
     { label: '流動負債', isSection: true },
     { label: '　買掛金', value: estimatedPayables },
@@ -458,7 +500,7 @@ export async function generateFinancialStatementPDF(data: JpTaxFormData): Promis
     { label: '純資産の部', isSection: true },
     { label: '　資本金', value: estimatedCapital },
     { label: '　利益剰余金', value: retainedEarnings },
-    { label: '負債純資産合計', value: totalAssets, isTotal: true },
+    { label: '負債純資産合計', value: totalLiabilitiesAndNetAssets, isTotal: true },
   ];
 
   let leftY = y;
