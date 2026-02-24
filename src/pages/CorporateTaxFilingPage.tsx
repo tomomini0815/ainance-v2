@@ -1035,10 +1035,9 @@ const CorporateTaxFilingPage: React.FC = () => {
     // 決算データを計算
     const financialData = useMemo(() => {
         const beginningBalances = {
-            retainedEarnings: corporateInfo.beginningRetainedEarnings !== 0
-                ? (corporateInfo.beginningRetainedEarnings || 0)
-                : (prevYearBS?.net_assets_retained_earnings_total || prevYearSettlement?.balance_sheet?.retained_earnings || 0),
-            capital: prevYearBS?.net_assets_capital || (prevYearSettlement?.balance_sheet?.capital || corporateInfo.capital),
+            retainedEarnings: corporateInfo.beginningRetainedEarnings || 0,
+            capital: corporateInfo.capital || 0,
+            // 互換性のため残す
             cash: prevYearBS?.assets_current_cash || prevYearSettlement?.balance_sheet?.assets_current_cash || 0,
             receivable: prevYearBS?.assets_current_receivable || prevYearSettlement?.balance_sheet?.assets_current_receivable || 0,
             inventory: prevYearBS?.assets_current_inventory || prevYearSettlement?.balance_sheet?.assets_current_inventory || 0,
