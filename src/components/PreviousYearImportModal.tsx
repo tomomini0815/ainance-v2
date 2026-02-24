@@ -11,7 +11,8 @@ import {
     Sparkles,
     Check,
     ArrowRight,
-    ArrowLeft
+    ArrowLeft,
+    Scale
 } from 'lucide-react';
 import { analyzePLDocumentWithVision } from '../services/geminiAIService';
 import { yearlySettlementService, YearlySettlement } from '../services/yearlySettlementService';
@@ -246,9 +247,31 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
             income_before_tax: 0,
             net_income: 0,
             category_breakdown: [],
+            balance_sheet: {
+                assets_current_cash: 0,
+                assets_current_receivable: 0,
+                assets_current_inventory: 0,
+                assets_fixed_total: 0,
+                liabilities_current_payable: 0,
+                liabilities_short_term_loans: 0,
+                liabilities_long_term_loans: 0,
+                assets_total: 0,
+                liabilities_total: 0,
+                net_assets_total: 0
+            },
             document_path: undefined,
             status: 'draft'
         });
+    };
+
+    const handleBSInputChange = (field: string, value: number) => {
+        setFormData(prev => ({
+            ...prev,
+            balance_sheet: {
+                ...(prev.balance_sheet || {}),
+                [field]: value
+            }
+        }));
     };
 
     const handleInputChange = (field: string, value: any) => {
@@ -319,7 +342,7 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
                 <div className="px-6 py-4 border-b border-border flex items-center justify-between">
                     <h2 className="text-xl font-bold text-text-main flex items-center">
                         <FileText className="w-5 h-5 mr-2 text-primary" />
-                        前年度決算データのインポート
+                        {businessType === 'corporation' ? '前年度決算データのインポート' : '前年度申告データのインポート'}
                     </h2>
                     <button onClick={onClose} className="text-text-muted hover:text-text-main transition-colors">
                         <X className="w-6 h-6" />
@@ -360,7 +383,7 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
                                 </div>
 
                                 <h3 className="text-xl font-bold text-text-main mb-2">
-                                    {isAnalyzing ? 'AI解析中...' : '決算書をアップロード'}
+                                    {isAnalyzing ? 'AI解析中...' : (businessType === 'corporation' ? '決算書をアップロード' : '申告・決算書をアップロード')}
                                 </h3>
                                 <p className="text-text-muted mb-6">
                                     {isAnalyzing
@@ -528,6 +551,119 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
                                 </div>
                             </div>
 
+                            {/* Balance Sheet Verification Section (added for net assets) */}
+                            <div className="bg-primary/5 rounded-xl p-5 border border-primary/20 mt-6">
+                                <div className="flex items-center mb-4">
+                                    <h3 className="text-sm font-bold text-text-main flex items-center">
+                                        <Scale className="w-4 h-4 text-primary mr-2" />
+                                        資産・負債の状態（B/S）
+                                    </h3>
+                                    <span className="ml-2 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">AI抽出</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="md:col-span-3">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-text-muted mb-1">現預金</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.balance_sheet?.assets_current_cash || 0}
+                                                    onChange={(e) => handleBSInputChange('assets_current_cash', parseInt(e.target.value) || 0)}
+                                                    className="input-field h-8 text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-text-muted mb-1">売掛金</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.balance_sheet?.assets_current_receivable || 0}
+                                                    onChange={(e) => handleBSInputChange('assets_current_receivable', parseInt(e.target.value) || 0)}
+                                                    className="input-field h-8 text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-text-muted mb-1">棚卸資産</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.balance_sheet?.assets_current_inventory || 0}
+                                                    onChange={(e) => handleBSInputChange('assets_current_inventory', parseInt(e.target.value) || 0)}
+                                                    className="input-field h-8 text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-text-muted mb-1">固定資産</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.balance_sheet?.assets_fixed_total || 0}
+                                                    onChange={(e) => handleBSInputChange('assets_fixed_total', parseInt(e.target.value) || 0)}
+                                                    className="input-field h-8 text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-text-muted mb-1">買掛金</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.balance_sheet?.liabilities_current_payable || 0}
+                                                    onChange={(e) => handleBSInputChange('liabilities_current_payable', parseInt(e.target.value) || 0)}
+                                                    className="input-field h-8 text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-text-muted mb-1">短期借入</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.balance_sheet?.liabilities_short_term_loans || 0}
+                                                    onChange={(e) => handleBSInputChange('liabilities_short_term_loans', parseInt(e.target.value) || 0)}
+                                                    className="input-field h-8 text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-text-muted mb-1">長期借入</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.balance_sheet?.liabilities_long_term_loans || 0}
+                                                    onChange={(e) => handleBSInputChange('liabilities_long_term_loans', parseInt(e.target.value) || 0)}
+                                                    className="input-field h-8 text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-text-muted mb-1">資産合計</label>
+                                        <input
+                                            type="number"
+                                            value={formData.balance_sheet?.assets_total || 0}
+                                            onChange={(e) => handleBSInputChange('assets_total', parseInt(e.target.value) || 0)}
+                                            className="input-field"
+                                            placeholder="資産の部 合計"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-text-muted mb-1">負債合計</label>
+                                        <input
+                                            type="number"
+                                            value={formData.balance_sheet?.liabilities_total || 0}
+                                            onChange={(e) => handleBSInputChange('liabilities_total', parseInt(e.target.value) || 0)}
+                                            className="input-field"
+                                            placeholder="負債の部 合計"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-primary mb-1">純資産合計 (Net Assets)</label>
+                                        <input
+                                            type="number"
+                                            value={formData.balance_sheet?.net_assets_total || 0}
+                                            onChange={(e) => handleBSInputChange('net_assets_total', parseInt(e.target.value) || 0)}
+                                            className="input-field border-primary/50 bg-white font-bold"
+                                            placeholder="自己資本 / 元入金"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-text-muted mt-2">
+                                    ※ 損益計算書のみの書類でも、下部に「純資産」等の記載があればAIが自動的に抽出します。
+                                </p>
+                            </div>
+
                             <div className="border-t border-border pt-6 mt-6">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
@@ -570,7 +706,7 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
                             </div>
                             <h3 className="text-2xl font-bold text-text-main mb-2">インポート完了</h3>
                             <p className="text-text-muted mb-8 text-center max-w-md">
-                                前年度データの保存が完了しました。<br />
+                                前年度{businessType === 'corporation' ? '決算データ' : '申告データ'}の保存が完了しました。<br />
                                 経営分析の比較データとして利用されます。
                             </p>
                             <div className="flex gap-4">

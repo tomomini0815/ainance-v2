@@ -31,6 +31,7 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
     businessType,
     onImportSuccess
 }) => {
+    const isCorporation = businessType === 'corporation';
     // Step 1: Upload/Select, Step 2: Verify/Edit, Step 3: Complete
     const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
@@ -46,8 +47,14 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
         business_type: businessType,
         year: new Date().getFullYear() - 1,
         assets_current_cash: 0,
+        assets_current_receivable: 0,
+        assets_current_inventory: 0,
         assets_current_total: 0,
+        assets_fixed_total: 0,
         assets_total: 0,
+        liabilities_current_payable: 0,
+        liabilities_short_term_loans: 0,
+        liabilities_long_term_loans: 0,
         liabilities_total: 0,
         net_assets_capital: 0,
         net_assets_retained_earnings: 0,
@@ -71,8 +78,14 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
                 business_type: businessType,
                 year: new Date().getFullYear() - 1,
                 assets_current_cash: 0,
+                assets_current_receivable: 0,
+                assets_current_inventory: 0,
                 assets_current_total: 0,
+                assets_fixed_total: 0,
                 assets_total: 0,
+                liabilities_current_payable: 0,
+                liabilities_short_term_loans: 0,
+                liabilities_long_term_loans: 0,
                 liabilities_total: 0,
                 net_assets_capital: 0,
                 net_assets_retained_earnings: 0,
@@ -217,8 +230,14 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
             business_type: businessType,
             year: new Date().getFullYear() - 1,
             assets_current_cash: 0,
+            assets_current_receivable: 0,
+            assets_current_inventory: 0,
             assets_current_total: 0,
+            assets_fixed_total: 0,
             assets_total: 0,
+            liabilities_current_payable: 0,
+            liabilities_short_term_loans: 0,
+            liabilities_long_term_loans: 0,
             liabilities_total: 0,
             net_assets_capital: 0,
             net_assets_retained_earnings: 0,
@@ -345,7 +364,7 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
                 <div className="px-6 py-4 border-b border-border flex items-center justify-between">
                     <h2 className="text-xl font-bold text-text-main flex items-center">
                         <FileText className="w-5 h-5 mr-2 text-primary" />
-                        貸借対照表（BS）のインポート
+                        {isCorporation ? '貸借対照表（BS）のインポート' : '貸借対照表(BS)・所得金額のインポート'}
                     </h2>
                     <button onClick={onClose} className="text-text-muted hover:text-text-main transition-colors">
                         <X className="w-6 h-6" />
@@ -378,7 +397,7 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
                                     )}
                                 </div>
                                 <h3 className="text-xl font-bold text-text-main mb-2">
-                                    {isAnalyzing ? 'AI解析中...' : '貸借対照表をアップロード'}
+                                    {isAnalyzing ? 'AI解析中...' : (isCorporation ? '貸借対照表をアップロード' : '青色申告決算書(4枚目)等をアップロード')}
                                 </h3>
                                 <p className="text-text-muted mb-6">
                                     {isAnalyzing
@@ -429,7 +448,7 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
                             </div>
 
                             <div className="font-serif bg-white dark:bg-zinc-950 p-8 rounded-xl shadow-inner border border-border/50 text-zinc-900 dark:text-zinc-100">
-                                <h2 className="text-2xl text-center mb-2 font-bold">貸借対照表</h2>
+                                <h2 className="text-2xl text-center mb-2 font-bold">{isCorporation ? '貸借対照表' : '貸借対照表（元入金・所得）'}</h2>
                                 <div className="text-center text-sm mb-8 flex items-center justify-center gap-2">
                                     <input
                                         type="number"
@@ -437,7 +456,7 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
                                         onChange={(e) => handleInputChange('year', e.target.value)}
                                         className="w-20 bg-transparent border-b border-zinc-300 text-center font-bold outline-none"
                                     />
-                                    <span>年12月31日 現在</span>
+                                    <span>年12月31日時点</span>
                                 </div>
 
                                 <div className="space-y-8">
@@ -447,7 +466,11 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
                                         <div className="space-y-1">
                                             <div className="pl-4 text-xs font-bold text-zinc-500 mb-1">【流動資産】</div>
                                             <RenderBSField label="現金 及び 預金" value={formData.assets_current_cash} onChange={(val) => handleInputChange('assets_current_cash', val)} indent />
+                                            <RenderBSField label="売掛金" value={formData.assets_current_receivable} onChange={(val) => handleInputChange('assets_current_receivable', val)} indent />
+                                            <RenderBSField label="棚卸資産（在庫）" value={formData.assets_current_inventory} onChange={(val) => handleInputChange('assets_current_inventory', val)} indent />
                                             <RenderBSField label="流動資産合計" value={formData.assets_current_total} onChange={(val) => handleInputChange('assets_current_total', val)} indent />
+                                            <div className="pl-4 text-xs font-bold text-zinc-500 mb-1 mt-2">【固定資産】</div>
+                                            <RenderBSField label="固定資産合計" value={formData.assets_fixed_total} onChange={(val) => handleInputChange('assets_fixed_total', val)} indent />
                                             <RenderBSField label="資産の部合計" value={formData.assets_total} onChange={(val) => handleInputChange('assets_total', val)} isBold isTotal />
                                         </div>
                                     </div>
@@ -455,21 +478,28 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
                                     {/* 負債の部 */}
                                     <div>
                                         <h3 className="text-lg font-bold border-b-2 border-zinc-500 mb-4 pb-1">負債の部</h3>
-                                        <RenderBSField label="負債の部合計" value={formData.liabilities_total} onChange={(val) => handleInputChange('liabilities_total', val)} />
+                                        <div className="space-y-1">
+                                            <div className="pl-4 text-xs font-bold text-zinc-500 mb-1">【流動負債】</div>
+                                            <RenderBSField label="買掛金" value={formData.liabilities_current_payable} onChange={(val) => handleInputChange('liabilities_current_payable', val)} indent />
+                                            <RenderBSField label="短期借入金" value={formData.liabilities_short_term_loans} onChange={(val) => handleInputChange('liabilities_short_term_loans', val)} indent />
+                                            <div className="pl-4 text-xs font-bold text-zinc-500 mb-1 mt-2">【固定負債】</div>
+                                            <RenderBSField label="長期借入金" value={formData.liabilities_long_term_loans} onChange={(val) => handleInputChange('liabilities_long_term_loans', val)} indent />
+                                            <RenderBSField label="負債の部合計" value={formData.liabilities_total} onChange={(val) => handleInputChange('liabilities_total', val)} isBold isTotal />
+                                        </div>
                                     </div>
 
                                     {/* 純資産の部 */}
                                     <div>
-                                        <h3 className="text-lg font-bold border-b-2 border-zinc-500 mb-4 pb-1">純資産の部</h3>
+                                        <h3 className="text-lg font-bold border-b-2 border-zinc-500 mb-4 pb-1">{isCorporation ? '純資産の部' : '元入金・所得の部'}</h3>
                                         <div className="space-y-1">
-                                            <div className="pl-4 text-xs font-bold text-zinc-500 mb-1">【株主資本】</div>
-                                            <RenderBSField label="資 本 金" value={formData.net_assets_capital} onChange={(val) => handleInputChange('net_assets_capital', val)} indent />
-                                            <div className="pl-4 text-xs text-zinc-500 py-1">その他利益剰余金</div>
-                                            <RenderBSField label="繰越利益剰余金" value={formData.net_assets_retained_earnings} onChange={(val) => handleInputChange('net_assets_retained_earnings', val)} indentPlus />
-                                            <RenderBSField label="利益剰余金合計" value={formData.net_assets_retained_earnings_total} onChange={(val) => handleInputChange('net_assets_retained_earnings_total', val)} indent />
-                                            <RenderBSField label="株主資本合計" value={formData.net_assets_shareholders_equity} onChange={(val) => handleInputChange('net_assets_shareholders_equity', val)} indent isBold />
-                                            <RenderBSField label="純資産の部合計" value={formData.net_assets_total} onChange={(val) => handleInputChange('net_assets_total', val)} isBold />
-                                            <RenderBSField label="負債及び純資産の部合計" value={formData.liabilities_and_net_assets_total} onChange={(val) => handleInputChange('liabilities_and_net_assets_total', val)} isBold isTotal />
+                                            <div className="pl-4 text-xs font-bold text-zinc-500 mb-1">{isCorporation ? '【株主資本】' : '【元入金等】'}</div>
+                                            <RenderBSField label={isCorporation ? '資 本 金' : '元 入 金'} value={formData.net_assets_capital} onChange={(val) => handleInputChange('net_assets_capital', val)} indent />
+                                            <div className="pl-4 text-xs text-zinc-500 py-1">{isCorporation ? 'その他利益剰余金' : '所得金額'}</div>
+                                            <RenderBSField label={isCorporation ? '繰越利益剰余金' : '今期純利益'} value={formData.net_assets_retained_earnings} onChange={(val) => handleInputChange('net_assets_retained_earnings', val)} indentPlus />
+                                            <RenderBSField label={isCorporation ? '利益剰余金合計' : '元入金・所得合計'} value={formData.net_assets_retained_earnings_total} onChange={(val) => handleInputChange('net_assets_retained_earnings_total', val)} indent />
+                                            <RenderBSField label={isCorporation ? '株主資本合計' : '元入金・所得等合計'} value={formData.net_assets_shareholders_equity} onChange={(val) => handleInputChange('net_assets_shareholders_equity', val)} indent isBold />
+                                            <RenderBSField label={isCorporation ? '純資産の部合計' : '元入金・所得等の合計'} value={formData.net_assets_total} onChange={(val) => handleInputChange('net_assets_total', val)} isBold />
+                                            <RenderBSField label={isCorporation ? '負債及び純資産の部合計' : '負債及び元入金・所得等の合計'} value={formData.liabilities_and_net_assets_total} onChange={(val) => handleInputChange('liabilities_and_net_assets_total', val)} isBold isTotal />
                                         </div>
                                     </div>
                                 </div>

@@ -23,14 +23,18 @@ export interface YearlySettlement {
     document_path?: string;
     status: 'draft' | 'confirmed';
     balance_sheet?: {
-        cash?: number;
-        receivable?: number;
-        inventory?: number;
-        fixed_assets?: number;
-        short_term_loans?: number;
-        long_term_loans?: number;
+        assets_current_cash?: number;
+        assets_current_receivable?: number;
+        assets_current_inventory?: number;
+        assets_fixed_total?: number;
+        liabilities_current_payable?: number;
+        liabilities_short_term_loans?: number;
+        liabilities_long_term_loans?: number;
         retained_earnings?: number;
         capital?: number;
+        assets_total?: number;
+        liabilities_total?: number;
+        net_assets_total?: number;
     };
     created_at?: string;
     updated_at?: string;
@@ -219,17 +223,19 @@ export const yearlySettlementService = {
             income_before_tax: parseNum(findVal(['income_before_tax', '税引前当期純利益', '税金等調整前当期純利益'])),
             net_income: parseNum(findVal(['net_income', 'profit', 'net_profit', '当期純利益', '利益'])),
             balance_sheet: {
-                retained_earnings: parseNum(findVal(['retained_earnings', '利益剰余金', '繰越利益剰余金', '利益積立金'])),
-                capital: parseNum(findVal(['capital', '資本金', '資本金等の額'])),
-                cash: parseNum(findVal(['cash', 'cash_and_equivalents', '現金預金', '現預金'])),
-                receivable: parseNum(findVal(['receivable', 'accounts_receivable', '売掛金'])),
-                inventory: parseNum(findVal(['inventory', '棚卸資産', '商品'])),
-                fixed_assets: parseNum(findVal(['fixed_assets', 'tangible_fixed_assets', '有形固定資産'])),
-                short_term_loans: parseNum(findVal(['short_term_loans', '短期借入金'])),
-                long_term_loans: parseNum(findVal(['long_term_loans', '長期借入金'])),
+                retained_earnings: parseNum(findVal(['retained_earnings', 'net_assets_retained_earnings', '利益剰余金', '繰越利益剰余金', '利益積立金'])),
+                capital: parseNum(findVal(['capital', 'net_assets_capital', '資本金', '資本金等の額'])),
+                assets_current_cash: parseNum(findVal(['assets_current_cash', 'cash', 'cash_and_equivalents', '現金預金', '現預金'])),
+                assets_current_receivable: parseNum(findVal(['assets_current_receivable', 'receivable', 'accounts_receivable', '売掛金'])),
+                assets_current_inventory: parseNum(findVal(['assets_current_inventory', 'inventory', '棚卸資産', '商品'])),
+                assets_fixed_total: parseNum(findVal(['assets_fixed_total', 'fixed_assets', 'tangible_fixed_assets', '有形固定資産'])),
+                liabilities_current_payable: parseNum(findVal(['liabilities_current_payable', 'payable', 'accounts_payable', '買掛金'])),
+                liabilities_short_term_loans: parseNum(findVal(['liabilities_short_term_loans', 'short_term_loans', '短期借入金'])),
+                liabilities_long_term_loans: parseNum(findVal(['liabilities_long_term_loans', 'long_term_loans', '長期借入金'])),
+                assets_total: parseNum(findVal(['assets_total', '資産の部合計', '資産合計'])),
+                liabilities_total: parseNum(findVal(['liabilities_total', '負債の部合計', '負債合計'])),
+                net_assets_total: parseNum(findVal(['net_assets_total', '純資産の部合計', '純資産合計', '自己資本'])),
             },
-            net_assets_total: parseNum(findVal(['net_assets_total', '純資産の部合計', '純資産合計'])),
-            liabilities_and_net_assets_total: parseNum(findVal(['liabilities_and_net_assets_total', '負債及び純資産の部合計', '負債純資産合計'])),
             category_breakdown: normalizeBreakdown(aiResult.category_breakdown || aiResult.items || aiResult.内訳 || aiResult.項目別 || []),
             status: 'draft' as const,
             metadata: {

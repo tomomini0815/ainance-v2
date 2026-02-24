@@ -8,10 +8,16 @@ export interface YearlyBalanceSheet {
 
     // 資産の部
     assets_current_cash: number;
+    assets_current_receivable: number;
+    assets_current_inventory: number;
     assets_current_total: number;
+    assets_fixed_total: number;
     assets_total: number;
 
     // 負債の部
+    liabilities_current_payable: number;
+    liabilities_short_term_loans: number;
+    liabilities_long_term_loans: number;
     liabilities_total: number;
 
     // 純資産の部
@@ -138,14 +144,20 @@ export const yearlyBalanceSheetService = {
             return undefined;
         };
 
-        const result = {
+        const result: Omit<YearlyBalanceSheet, 'id' | 'created_at' | 'updated_at'> = {
             user_id: userId,
             business_type: businessType,
             year: parseNum(findVal(['year', '年度', '決算年度'])) || new Date().getFullYear() - 1,
             assets_current_cash: parseNum(findVal(['assets_current_cash', '現金及び預金', '現金預金'])),
+            assets_current_receivable: parseNum(findVal(['assets_current_receivable', '売掛金'])),
+            assets_current_inventory: parseNum(findVal(['assets_current_inventory', '棚卸資産', '商品'])),
             assets_current_total: parseNum(findVal(['assets_current_total', '流動資産合計'])),
+            assets_fixed_total: parseNum(findVal(['assets_fixed_total', '固定資産合計', '有形固定資産'])),
             assets_total: parseNum(findVal(['assets_total', '資産の部合計', '資産合計'])),
-            liabilities_total: parseNum(findVal(['liabilities_total', '負債の部合計', '負債合計'])),
+            liabilities_current_payable: parseNum(findVal(['liabilities_current_payable', '買掛金'])),
+            liabilities_short_term_loans: parseNum(findVal(['liabilities_short_term_loans', '短期借入金'])),
+            liabilities_long_term_loans: parseNum(findVal(['liabilities_long_term_loans', '長期借入金'])),
+            liabilities_total: parseNum(findVal(['liabilities_total', '負債の部合計', '負債合計', '負債及び欠損金合計'])),
             net_assets_capital: parseNum(findVal(['net_assets_capital', '資本金'])),
             net_assets_retained_earnings: parseNum(findVal(['net_assets_retained_earnings', '繰越利益剰余金'])),
             net_assets_retained_earnings_total: parseNum(findVal(['net_assets_retained_earnings_total', '利益剰余金合計', 'その他利益剰余金合計'])),

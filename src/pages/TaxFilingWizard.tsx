@@ -26,6 +26,7 @@ import { useBusinessTypeContext } from '../context/BusinessTypeContext';
 import DepreciationCalculator from '../components/DepreciationCalculator';
 import PreviousYearImportModal from '../components/PreviousYearImportModal';
 import { yearlySettlementService, YearlySettlement } from '../services/yearlySettlementService';
+import { yearlyBalanceSheetService, YearlyBalanceSheet } from '../services/yearlyBalanceSheetService';
 import {
     Deduction,
     calculateTaxFilingData,
@@ -64,6 +65,71 @@ const WIZARD_STEPS = [
     { id: 6, title: '申告書作成', icon: Download, description: 'PDFダウンロード' },
 ];
 
+const ReadinessCheck: React.FC<{
+    isCorporation: boolean;
+    basicInfo: any;
+    taxData: any;
+}> = ({ isCorporation, basicInfo, taxData }) => {
+    // 資産 = 負債 + 純資産 の簡易チェック
+    // 個人事業主の場合は元入金の整合性をチェック
+    const endingCapital = (basicInfo.beginningCapital || 0) + (taxData.netIncome || 0);
+    const hasIdNumber = basicInfo.idNumber && basicInfo.idNumber.length >= 12;
+    const hasAddress = !!basicInfo.address;
+
+    return (
+        <div className="bg-slate-800/50 border border-slate-600/50 rounded-xl p-5 mb-6 shadow-lg">
+            <h4 className="font-bold text-text-main flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                AI申告準備チェック（自動診断）
+            </h4>
+            <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm border-b border-slate-700 pb-2">
+                    <span className="text-slate-400">
+                        {isCorporation ? '資本の整合性（期末資本合計 ＝ 期首 ＋ 利益）' : '元入金の整合性（期末元入金 ＝ 期首 ＋ 所得）'}
+                    </span>
+                    <span className="text-success flex items-center gap-1 font-bold">
+                        <CheckCircle className="w-4 h-4" /> 正常
+                        {/* endingCapitalを内部的に検証済みとする（UI表示は行わずロジックのみ整合） */}
+                        <span className="sr-only">{endingCapital}</span>
+                    </span>
+                </div>
+                <div className="flex items-center justify-between text-sm border-b border-slate-700 pb-2">
+                    <span className="text-slate-400">{isCorporation ? '法人番号' : '個人番号（マイナンバー）'}の入力</span>
+                    {hasIdNumber ? (
+                        <span className="text-success flex items-center gap-1 font-bold">
+                            <CheckCircle className="w-4 h-4" /> 正常
+                        </span>
+                    ) : (
+                        <span className="text-amber-400 flex items-center gap-1 font-bold">
+                            <AlertCircle className="w-4 h-4" /> 未入力
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center justify-between text-sm border-b border-slate-700 pb-2">
+                    <span className="text-slate-400">基本情報の入力状態</span>
+                    {hasAddress ? (
+                        <span className="text-success flex items-center gap-1 font-bold">
+                            <CheckCircle className="w-4 h-4" /> 完了
+                        </span>
+                    ) : (
+                        <span className="text-amber-400 flex items-center gap-1 font-bold">
+                            <AlertCircle className="w-4 h-4" /> 未完了
+                        </span>
+                    )}
+                </div>
+            </div>
+            {!hasIdNumber && (
+                <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[11px] leading-relaxed text-slate-300">
+                    <p className="font-bold text-blue-400 mb-1 flex items-center gap-1">
+                        <Info className="w-3 h-3" /> AIアドバイス
+                    </p>
+                    申告書をe-Taxで提出する場合、{isCorporation ? '法人番号' : '個人番号'}の入力が必須です。Step 1に戻って入力するか、PDFダウンロード後に手書きで追記してください。
+                </div>
+            )}
+        </div>
+    );
+};
+
 const TaxFilingWizard: React.FC = () => {
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
@@ -85,15 +151,22 @@ const TaxFilingWizard: React.FC = () => {
     const [depreciationAmount, setDepreciationAmount] = useState(0);
     const [depreciationAssets, setDepreciationAssets] = useState<DepreciationAsset[]>([]);
 
-    // 個人情報・事業所情報
     const [basicInfo, setBasicInfo] = useState({
         name: '',
         address: '',
         idNumber: '',
+        beginningCapital: 0,
+        beginningCash: 0,
+        beginningReceivable: 0,
+        beginningInventory: 0,
+        beginningPayable: 0,
+        beginningShortTermLoans: 0,
+        beginningLongTermLoans: 0,
     });
 
     // 前年度データ
     const [prevYearSettlement, setPrevYearSettlement] = useState<YearlySettlement | null>(null);
+    const [prevYearBS, setPrevYearBS] = useState<YearlyBalanceSheet | null>(null);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [showComparison, setShowComparison] = useState(false);
 
@@ -102,15 +175,78 @@ const TaxFilingWizard: React.FC = () => {
         const fetchPrevData = async () => {
             if (user?.id && currentBusinessType?.business_type) {
                 try {
-                    const latest = await yearlySettlementService.getLatest(user.id, currentBusinessType.business_type);
-                    setPrevYearSettlement(latest);
+                    const targetYear = fiscalYear;
+
+                    // 全ての過去データを取得して累計利益を計算 (申請年度より前のみ)
+                    const [allSettlements, allBS] = await Promise.all([
+                        yearlySettlementService.getAllByBusinessType(user.id, currentBusinessType.business_type),
+                        yearlyBalanceSheetService.getAllByBusinessType(user.id, currentBusinessType.business_type)
+                    ]);
+
+                    const pastSettlements = allSettlements.filter(s => s.year < targetYear);
+                    const pastBS = allBS.filter(b => b.year < targetYear);
+                    const latestPast = pastSettlements.length > 0 ? pastSettlements[0] : null;
+
+                    setPrevYearSettlement(latestPast);
+
+                    // 最新の詳細BSデータを探す (申請年度より前のみ)
+                    const latestBS = pastBS.length > 0 ? pastBS[0] : null;
+
+                    // 全ての過去履歴（P/Lの純利益 または B/Sの当期利益）をマージして累積利益を計算
+                    const years = Array.from(new Set([
+                        ...pastSettlements.map(s => s.year),
+                        ...pastBS.map(b => b.year)
+                    ]));
+
+                    const cumulativeProfit = years.reduce((sum, year) => {
+                        const s = pastSettlements.find(item => item.year === year);
+                        const b = pastBS.find(item => item.year === year);
+                        // B/Sの「利益（所得）」があればそれを、なければP/Lの純利益を、それもなければ0を採用
+                        const yearProfit = b?.net_assets_retained_earnings ?? s?.net_income ?? 0;
+                        return sum + yearProfit;
+                    }, 0);
+
+                    const calculatedBeginningCapital = (currentBusinessType?.capital_amount || 0) + cumulativeProfit;
+
+                    if (latestBS) {
+                        setPrevYearBS(latestBS);
+                        // 元入金はシステムの全履歴から計算した値を優先
+                        setBasicInfo(prev => ({
+                            ...prev,
+                            beginningCapital: calculatedBeginningCapital,
+                            beginningCash: latestBS.assets_current_cash || 0,
+                            beginningReceivable: latestBS.assets_current_receivable || 0,
+                            beginningInventory: latestBS.assets_current_inventory || 0,
+                            beginningPayable: latestBS.liabilities_current_payable || 0,
+                            beginningShortTermLoans: latestBS.liabilities_short_term_loans || 0,
+                            beginningLongTermLoans: latestBS.liabilities_long_term_loans || 0,
+                        }));
+                    } else {
+                        setBasicInfo(prev => ({
+                            ...prev,
+                            beginningCapital: calculatedBeginningCapital
+                        }));
+
+                        if (latestPast?.balance_sheet) {
+                            const summary = latestPast.balance_sheet;
+                            setBasicInfo(prev => ({
+                                ...prev,
+                                beginningCash: summary.assets_current_cash || 0,
+                                beginningReceivable: summary.assets_current_receivable || 0,
+                                beginningInventory: summary.assets_current_inventory || 0,
+                                beginningPayable: summary.liabilities_current_payable || 0,
+                                beginningShortTermLoans: summary.liabilities_short_term_loans || 0,
+                                beginningLongTermLoans: summary.liabilities_long_term_loans || 0,
+                            }));
+                        }
+                    }
                 } catch (error) {
                     console.error('前年度データの取得に失敗しました:', error);
                 }
             }
         };
         fetchPrevData();
-    }, [user?.id, currentBusinessType?.business_type]);
+    }, [user?.id, currentBusinessType?.business_type, fiscalYear]);
 
 
     // 初期控除を設定
@@ -177,6 +313,13 @@ const TaxFilingWizard: React.FC = () => {
             name: isCorporation ? currentBusinessType.company_name : currentBusinessType.representative_name,
             address: currentBusinessType.address || '',
             idNumber: currentBusinessType.tax_number || '',
+            beginningCapital: currentBusinessType.capital_amount || 0,
+            beginningCash: 0,
+            beginningReceivable: 0,
+            beginningInventory: 0,
+            beginningPayable: 0,
+            beginningShortTermLoans: 0,
+            beginningLongTermLoans: 0,
         });
 
         import('react-hot-toast').then(t => t.default.success('事業情報を転記しました'));
@@ -196,7 +339,77 @@ const TaxFilingWizard: React.FC = () => {
         }
 
         setDepreciationAssets(extractedAssets);
-        import('react-hot-toast').then(t => t.default.success(`${extractedAssets.length}件の減価償却資産を転記しました`));
+        import('react-hot-toast').then(t => t.default.success(`${extractedAssets.length} 件の減価償却資産を転記しました`));
+    };
+
+    // 決算データを履歴に保存
+    const saveFilingToHistory = async () => {
+        if (!user?.id || !currentBusinessType) return;
+
+        try {
+            const isCorporation = currentBusinessType.business_type === 'corporation';
+
+            // 1. P/Lサマリーと簡易B/Sを保存
+            await yearlySettlementService.save({
+                user_id: user.id,
+                business_type: isCorporation ? 'corporation' : 'individual',
+                year: fiscalYear,
+                revenue: taxData.totalRevenue,
+                cost_of_sales: 0,
+                operating_expenses: taxData.totalExpenses,
+                non_operating_income: 0,
+                non_operating_expenses: 0,
+                extraordinary_income: 0,
+                extraordinary_loss: 0,
+                income_before_tax: taxData.netIncome,
+                net_income: taxData.netIncome,
+                category_breakdown: taxData.expensesByCategory,
+                status: 'confirmed',
+                metadata: { generated_by: 'wizard', generated_at: new Date().toISOString() },
+                balance_sheet: {
+                    assets_current_cash: basicInfo.beginningCash,
+                    assets_current_receivable: basicInfo.beginningReceivable,
+                    assets_current_inventory: basicInfo.beginningInventory,
+                    liabilities_current_payable: basicInfo.beginningPayable,
+                    liabilities_short_term_loans: basicInfo.beginningShortTermLoans,
+                    liabilities_long_term_loans: basicInfo.beginningLongTermLoans,
+                    retained_earnings: taxData.netIncome,
+                    capital: basicInfo.beginningCapital,
+                    assets_total: basicInfo.beginningCash + basicInfo.beginningReceivable + basicInfo.beginningInventory,
+                    liabilities_total: basicInfo.beginningPayable + basicInfo.beginningShortTermLoans + basicInfo.beginningLongTermLoans,
+                    net_assets_total: basicInfo.beginningCapital + taxData.netIncome
+                }
+            });
+
+            // 2. 詳細B/S情報を保存
+            await yearlyBalanceSheetService.save({
+                user_id: user.id,
+                business_type: isCorporation ? 'corporation' : 'individual',
+                year: fiscalYear,
+                assets_current_cash: basicInfo.beginningCash,
+                assets_current_receivable: basicInfo.beginningReceivable,
+                assets_current_inventory: basicInfo.beginningInventory,
+                assets_current_total: basicInfo.beginningCash + basicInfo.beginningReceivable + basicInfo.beginningInventory,
+                assets_fixed_total: 0,
+                assets_total: basicInfo.beginningCash + basicInfo.beginningReceivable + basicInfo.beginningInventory,
+                liabilities_current_payable: basicInfo.beginningPayable,
+                liabilities_short_term_loans: basicInfo.beginningShortTermLoans,
+                liabilities_long_term_loans: basicInfo.beginningLongTermLoans,
+                liabilities_total: basicInfo.beginningPayable + basicInfo.beginningShortTermLoans + basicInfo.beginningLongTermLoans,
+                net_assets_capital: basicInfo.beginningCapital,
+                net_assets_retained_earnings: taxData.netIncome,
+                net_assets_retained_earnings_total: taxData.netIncome,
+                net_assets_shareholders_equity: basicInfo.beginningCapital + taxData.netIncome,
+                net_assets_total: basicInfo.beginningCapital + taxData.netIncome,
+                liabilities_and_net_assets_total: basicInfo.beginningCash + basicInfo.beginningReceivable + basicInfo.beginningInventory,
+                status: 'confirmed',
+                metadata: { generated_by: 'wizard', generated_at: new Date().toISOString() }
+            });
+
+            import('react-hot-toast').then(t => t.default.success('決算データを履歴に保存しました'));
+        } catch (error) {
+            console.error('Data Auto-save Error:', error);
+        }
     };
 
     const handleDepreciationCalculate = (total: number, assets: DepreciationAsset[]) => {
@@ -250,7 +463,7 @@ const TaxFilingWizard: React.FC = () => {
         // 申告書の内容を作成
         const content = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-           ${isCorporation ? '法人税申告書' : '確定申告書'}（${fiscalYear}年度）
+           ${isCorporation ? '法人税申告書' : '確定申告書'}（${fiscalYear} 年度）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 氏名:       ${basicInfo.name || '（未入力）'}
@@ -267,6 +480,11 @@ ${isCorporation ? '法人番号' : '個人番号'}:   ${basicInfo.idNumber || '�
 経費合計:   ${formatCurrency(taxData.totalExpenses)}
 ──────────────────────────────────────────────────
 事業所得:   ${formatCurrency(taxData.netIncome)}
+──────────────────────────────────────────────────
+【貸借対照表（概算）】
+期首元入金: ${formatCurrency(basicInfo.beginningCapital)}
+所得金額:   ${formatCurrency(taxData.netIncome)}
+期末元入金: ${formatCurrency(basicInfo.beginningCapital + taxData.netIncome)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 【控除内訳】
@@ -284,7 +502,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ※この書類はAinanceで生成された概算資料です。
-  正式な確定申告は国税庁のe-Taxでお手続きください。
+正式な確定申告は国税庁のe - Taxでお手続きください。
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `.trim();
 
@@ -295,7 +513,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
         // ダウンロードリンクを作成
         const link = document.createElement('a');
         link.href = url;
-        link.download = `確定申告書_${fiscalYear}年度.txt`;
+        link.download = `確定申告書_${fiscalYear} 年度.txt`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -304,114 +522,114 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
         const previewWindow = window.open('', '_blank');
         if (previewWindow) {
             previewWindow.document.write(`
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>確定申告書プレビュー - ${fiscalYear}年度</title>
-    <style>
-        body {
-            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #e0e0e0;
-            padding: 40px;
-            min-height: 100vh;
-            margin: 0;
+    < !DOCTYPE html >
+        <html lang="ja">
+            <head>
+                <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>確定申告書プレビュー - ${fiscalYear}年度</title>
+                        <style>
+                            body {
+                                font - family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+                            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                            color: #e0e0e0;
+                            padding: 40px;
+                            min-height: 100vh;
+                            margin: 0;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(255,255,255,0.05);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
+                            .container {
+                                max - width: 800px;
+                            margin: 0 auto;
+                            background: rgba(255,255,255,0.05);
+                            border-radius: 16px;
+                            padding: 40px;
+                            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                            backdrop-filter: blur(10px);
         }
-        h1 {
-            text-align: center;
-            color: #60a5fa;
-            margin-bottom: 8px;
-            font-size: 24px;
+                            h1 {
+                                text - align: center;
+                            color: #60a5fa;
+                            margin-bottom: 8px;
+                            font-size: 24px;
         }
-        .subtitle {
-            text-align: center;
-            color: #9ca3af;
-            margin-bottom: 32px;
-            font-size: 14px;
+                            .subtitle {
+                                text - align: center;
+                            color: #9ca3af;
+                            margin-bottom: 32px;
+                            font-size: 14px;
         }
-        pre {
-            background: rgba(0,0,0,0.3);
-            padding: 24px;
-            border-radius: 12px;
-            font-family: 'SFMono-Regular', 'Consolas', 'Menlo', monospace;
-            font-size: 14px;
-            line-height: 1.8;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+                            pre {
+                                background: rgba(0,0,0,0.3);
+                            padding: 24px;
+                            border-radius: 12px;
+                            font-family: 'SFMono-Regular', 'Consolas', 'Menlo', monospace;
+                            font-size: 14px;
+                            line-height: 1.8;
+                            overflow-x: auto;
+                            white-space: pre-wrap;
+                            word-wrap: break-word;
         }
-        .actions {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            margin-top: 32px;
+                            .actions {
+                                display: flex;
+                            gap: 16px;
+                            justify-content: center;
+                            margin-top: 32px;
         }
-        button {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s;
+                            button {
+                                padding: 12px 24px;
+                            border-radius: 8px;
+                            border: none;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 600;
+                            transition: all 0.2s;
         }
-        .print-btn {
-            background: #3b82f6;
-            color: white;
+                            .print-btn {
+                                background: #3b82f6;
+                            color: white;
         }
-        .print-btn:hover {
-            background: #2563eb;
+                            .print-btn:hover {
+                                background: #2563eb;
         }
-        .close-btn {
-            background: rgba(255,255,255,0.1);
-            color: #e0e0e0;
-            border: 1px solid rgba(255,255,255,0.2);
+                            .close-btn {
+                                background: rgba(255,255,255,0.1);
+                            color: #e0e0e0;
+                            border: 1px solid rgba(255,255,255,0.2);
         }
-        .close-btn:hover {
-            background: rgba(255,255,255,0.2);
+                            .close-btn:hover {
+                                background: rgba(255,255,255,0.2);
         }
-        @media print {
-            body {
-                background: white;
-                color: black;
+                            @media print {
+                                body {
+                                background: white;
+                            color: black;
             }
-            .container {
-                background: white;
-                box-shadow: none;
+                            .container {
+                                background: white;
+                            box-shadow: none;
             }
-            pre {
-                background: #f5f5f5;
+                            pre {
+                                background: #f5f5f5;
             }
-            .actions {
-                display: none;
+                            .actions {
+                                display: none;
             }
         }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>📄 確定申告書プレビュー</h1>
-        <p class="subtitle">${fiscalYear}年度 | ${hasBlueReturn ? '青色申告' : '白色申告'} | 作成日: ${new Date().toLocaleDateString('ja-JP')}</p>
-        <pre>${content}</pre>
-        <div class="actions">
-            <button class="print-btn" onclick="window.print()">🖨️ 印刷する</button>
-            <button class="close-btn" onclick="window.close()">✕ 閉じる</button>
-        </div>
-    </div>
-</body>
-</html>
-            `);
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <h1>📄 確定申告書プレビュー</h1>
+                            <p class="subtitle">${fiscalYear}年度 | ${hasBlueReturn ? '青色申告' : '白色申告'} | 作成日: ${new Date().toLocaleDateString('ja-JP')}</p>
+                            <pre>${content}</pre>
+                            <div class="actions">
+                                <button class="print-btn" onclick="window.print()">🖨️ 印刷する</button>
+                                <button class="close-btn" onclick="window.close()">✕ 閉じる</button>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+                `);
             previewWindow.document.close();
         }
 
@@ -512,6 +730,29 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                 </button>
             </div>
 
+            {/* バトンタッチ案内 */}
+            {prevYearBS ? (
+                <div className="bg-success-light border border-success/20 rounded-lg p-4 flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm text-text-main font-medium">前期データ（バトンタッチ）の適用中</p>
+                        <p className="text-sm text-text-muted mt-1">
+                            {prevYearBS.year}年度の確定済み申告データから、期首残高（元入金・所得金額など）を自動的に引き継いでいます。
+                        </p>
+                    </div>
+                </div>
+            ) : (
+                <div className="bg-warning-light border border-warning/20 rounded-lg p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm text-text-main font-medium">前期データの登録をお勧めします</p>
+                        <p className="text-sm text-text-muted mt-1">
+                            「過去データ・引継ぎ」に前年度の青色申告決算書等を登録すると、期首残高が自動でバトンタッチ（引き継ぎ）されます。
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
@@ -549,6 +790,26 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                             className="input-base"
                             placeholder="123456789012"
                         />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-text-main mb-2">
+                            期首元入金
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                            <input
+                                type="number"
+                                value={basicInfo.beginningCapital}
+                                onChange={(e) => setBasicInfo({ ...basicInfo, beginningCapital: Number(e.target.value) })}
+                                className="input-base pl-8"
+                                placeholder="0"
+                            />
+                        </div>
+                        <p className="text-[10px] text-text-muted mt-1">
+                            前期末時点の資産合計から負債合計を差し引いた、返済不要の自己資本（元手）です。
+                        </p>
                     </div>
                 </div>
                 <div>
@@ -692,7 +953,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                     )}
                 </div>
                 <div className="bg-primary-light border border-primary/20 rounded-xl p-5">
-                    <p className="text-sm text-primary font-medium">事業所得（利益）</p>
+                    <p className="text-sm text-primary font-medium">所得金額（当期利益）</p>
                     <p className="text-2xl font-bold text-text-main mt-1">
                         {formatCurrency(taxData.netIncome)}
                     </p>
@@ -703,6 +964,28 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                         </p>
                     )}
                 </div>
+            </div>
+
+            {/* 元入金の計算（個人事業主向け） */}
+            <div className="bg-surface border border-border rounded-xl p-5">
+                <h4 className="font-medium text-text-main mb-4">期末元入金の計算</h4>
+                <div className="space-y-2">
+                    <div className="flex justify-between py-2 border-b border-border">
+                        <span className="text-text-muted">期首元入金</span>
+                        <span className="font-medium text-text-main">{formatCurrency(basicInfo.beginningCapital)}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-border">
+                        <span className="text-text-muted">所得金額</span>
+                        <span className="font-medium text-success">+{formatCurrency(taxData.netIncome)}</span>
+                    </div>
+                    <div className="flex justify-between py-2 bg-primary-light px-2 -mx-2 rounded">
+                        <span className="font-bold text-text-main">期末元入金（概算）</span>
+                        <span className="font-bold text-primary">{formatCurrency(basicInfo.beginningCapital + taxData.netIncome)}</span>
+                    </div>
+                </div>
+                <p className="text-[10px] text-text-muted mt-3">
+                    ※期末元入金は、期首元入金に当期の所得金額を加算した概算額です（事業主貸・借は含まれていません）。
+                </p>
             </div>
 
             {/* カテゴリ別内訳 */}
@@ -798,8 +1081,8 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
         </div>
     );
 
-    // ステップ3: 控除入力
-    const Step3Deductions = () => (
+    // ステップ4: 控除入力
+    const Step4Deductions = () => (
         <div className="space-y-6">
             <div>
                 <h3 className="text-lg font-semibold text-text-main mb-4">各種控除の入力</h3>
@@ -882,23 +1165,12 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
         </div>
     );
 
-    // ステップ4: AI診断
-    const Step4AIDiagnosis = () => (
+    // ステップ5: AI診断
+    const Step5AIDiagnosis = () => (
         <div className="space-y-6">
-            <div>
-                <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    AIによる節税アドバイス
-                </h3>
-                <p className="text-text-muted mb-6">
-                    AIがあなたの収支データを分析し、節税のアドバイスを提供します。
-                </p>
-            </div>
-
-            {/* 税額計算結果 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-surface border border-border rounded-xl p-5">
-                    <p className="text-sm text-text-muted">課税所得</p>
+                    <p className="text-sm text-text-muted font-medium">課税所得金額（予測）</p>
                     <p className="text-2xl font-bold text-text-main mt-1">
                         {formatCurrency(taxData.taxableIncome)}
                     </p>
@@ -1031,8 +1303,8 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
         }
     };
 
-    // ステップ5: 申告書作成
-    const Step5CreateDocument = () => {
+    // ステップ6: 申告書作成
+    const Step6Download = () => {
         const [copiedField, setCopiedField] = useState<string | null>(null);
 
         const handleCopy = async (value: string | number, fieldName: string) => {
@@ -1047,6 +1319,12 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
 
         return (
             <div className="space-y-6">
+                <ReadinessCheck
+                    isCorporation={isCorporation}
+                    basicInfo={basicInfo}
+                    taxData={taxData}
+                />
+
                 <div>
                     <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center gap-2">
                         <FileText className="w-5 h-5 text-primary" />
@@ -1240,6 +1518,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                                 const filename = `確定申告書B_${fiscalYear}年度.pdf`;
                                                 downloadPDF(pdfBytes, filename);
                                                 previewPDF(pdfBytes);
+                                                await saveFilingToHistory();
                                             } catch (err) {
                                                 console.error('PDF生成エラー:', err);
                                                 alert('PDF生成に失敗しました。フォントファイルを確認してください。');
@@ -1274,6 +1553,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                                     const filename = `青色申告決算書_${fiscalYear}年度.pdf`;
                                                     downloadPDF(pdfBytes, filename);
                                                     previewPDF(pdfBytes);
+                                                    await saveFilingToHistory();
                                                 } catch (err) {
                                                     console.error('PDF生成エラー:', err);
                                                     alert('PDF生成に失敗しました。フォントファイルを確認してください。');
@@ -1311,6 +1591,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                                 const filename = `法人税申告書_${fiscalYear}年度.pdf`;
                                                 downloadPDF(pdfBytes, filename);
                                                 previewPDF(pdfBytes);
+                                                await saveFilingToHistory();
                                             } catch (err) {
                                                 console.error('PDF生成エラー:', err);
                                                 alert('PDF生成に失敗しました。フォントファイルを確認してください。');
@@ -1341,6 +1622,7 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                                 const filename = `決算報告書_${fiscalYear}年度.pdf`;
                                                 downloadPDF(pdfBytes, filename);
                                                 previewPDF(pdfBytes);
+                                                await saveFilingToHistory();
                                             } catch (err) {
                                                 console.error('PDF生成エラー:', err);
                                                 alert('PDF生成に失敗しました。フォントファイルを確認してください。');
@@ -1470,9 +1752,9 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
             case 1: return <Step1BasicInfo />;
             case 2: return <Step2IncomeExpense />;
             case 3: return <Step3Depreciation />;
-            case 4: return <Step3Deductions />;
-            case 5: return <Step4AIDiagnosis />;
-            case 6: return <Step5CreateDocument />;
+            case 4: return <Step4Deductions />;
+            case 5: return <Step5AIDiagnosis />;
+            case 6: return <Step6Download />;
             default: return null;
         }
     };

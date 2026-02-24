@@ -89,6 +89,7 @@ export interface CorporateInfo {
   fiscalYearEnd: string;      // 事業年度終了日
   fiscalYear: number;         // 対象年度
   employeeCount?: number;     // 従業員数
+  beginningRetainedEarnings?: number; // 期首利益剰余金（または前期繰越欠損金）
 }
 
 // 決算データの型
@@ -520,7 +521,13 @@ export function generateFinancialDataFromTransactions(
   // カテゴリ別経費集計（全経費）
   const expensesByCategory = Object.entries(
     expenseTransactions.reduce((acc: Record<string, number>, t) => {
-      const category = t.category || '未分類';
+      let category = t.category || '未分類';
+      
+      // 名称の揺れを修正（ユーザー要望：交際費、食費を接待交際費に合算）
+      if (category === '交際費' || category === '食費') {
+        category = '接待交際費';
+      }
+      
       acc[category] = (acc[category] || 0) + Math.abs(Number(t.amount) || 0);
       return acc;
     }, {})
@@ -541,6 +548,10 @@ export function generateFinancialDataFromTransactions(
   const currentCash = totalIncome - totalOut;
   const cash = Math.max(0, (beginningBalances.cash || 0) + currentCash);
 
+  // 注意: ここでの retainedEarnings 算出にはまだ所得税/法人税が引かれていない。
+  // 本来は計算後の netIncome を加算すべきだが、この関数は損益計算の基礎データ生成を主目的とするため、
+  // 最終的な B/S バランスは呼び出し側（ CorporateTaxFilingPage 等）で税計算後に再調整することを推奨する。
+  
   return {
     revenue,
     costOfSales,
@@ -564,7 +575,7 @@ export function generateFinancialDataFromTransactions(
     shortTermLoans: shortTermLoans + (beginningBalances.shortTermLoans || 0),
     longTermLoans: beginningBalances.longTermLoans || 0,
     beginningRetainedEarnings: beginningBalances.retainedEarnings || 0,
-    retainedEarnings: (beginningBalances.retainedEarnings || 0) + incomeBeforeTax,
+    retainedEarnings: (beginningBalances.retainedEarnings || 0) + incomeBeforeTax, // 仮
     beginningCapital: beginningBalances.capital || 0,
     beginningCash: beginningBalances.cash || 0,
     beginningReceivable: beginningBalances.receivable || 0,

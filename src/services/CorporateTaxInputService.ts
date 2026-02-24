@@ -98,7 +98,6 @@ export const CorporateTaxInputService = {
                 bookValueEnd: Math.abs(Number(t.amount) || 0) * 0.8
             }));
 
-        const netIncome = financialData.incomeBeforeTax || 0;
 
         return {
             businessOverview: {
@@ -108,7 +107,7 @@ export const CorporateTaxInputService = {
                 operatingExpenses: financialData.operatingExpenses || 0,
                 operatingIncome: financialData.operatingIncome || 0,
                 ordinaryIncome: financialData.ordinaryIncome || 0,
-                netIncome,
+                netIncome: taxResults.netIncome,
                 directorsCompensation,
                 employeesSalary: salaries,
                 rent,
@@ -133,7 +132,7 @@ export const CorporateTaxInputService = {
             },
             beppyo4: {
                 ...initialCorporateTaxInputData.beppyo4,
-                netIncomeFromPL: netIncome,
+                netIncomeFromPL: taxResults.netIncome,
                 nonDeductibleTaxes: taxes || 0, // 租税公課を一旦全額加算（法人税等不算入の簡略化）
                 nonDeductibleEntertainment: nonDeductibleEntertainment || 0,
                 taxableIncome: Math.max(0, taxResults.taxableIncome || 0),
@@ -143,9 +142,9 @@ export const CorporateTaxInputService = {
             beppyo5: {
                 ...initialCorporateTaxInputData.beppyo5,
                 retainedEarningsBegin: beginningRetainedEarnings,
-                currentIncrease: netIncome,
+                currentIncrease: taxResults.netIncome,
                 currentDecrease: 0,
-                totalRetainedEarningsEnd: beginningRetainedEarnings + netIncome,
+                totalRetainedEarningsEnd: beginningRetainedEarnings + taxResults.netIncome,
                 capitalBegin: capital,
                 capitalEnd: capital,
                 retainedEarningsItems: (initialCorporateTaxInputData.beppyo5.retainedEarningsItems || []).map(item => {
@@ -153,8 +152,8 @@ export const CorporateTaxInputService = {
                         return { 
                             ...item, 
                             beginAmount: beginningRetainedEarnings, 
-                            increase: netIncome, 
-                            endAmount: beginningRetainedEarnings + netIncome 
+                            increase: taxResults.netIncome, 
+                            endAmount: beginningRetainedEarnings + taxResults.netIncome 
                         };
                     }
                     return item;

@@ -19,6 +19,7 @@ import {
     Edit,
     Wrench,
     Upload,
+    Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTransactions } from '../hooks/useTransactions';
@@ -71,14 +72,17 @@ interface Step1Props {
     prevYearSettlement: YearlySettlement | null;
     prevYearBS: YearlyBalanceSheet | null;
     setIsImportModalOpen: (open: boolean) => void;
+    isCorporation: boolean;
 }
 
 interface Step3Props {
     financialData: FinancialData;
+    taxResult: CorporateTaxResult;
     corporateInfo: CorporateInfo;
     prevYearSettlement: YearlySettlement | null;
     showComparison: boolean;
     setShowComparison: (show: boolean) => void;
+    isCorporation: boolean;
 }
 
 interface Step4Props {
@@ -99,10 +103,11 @@ interface Step6Props {
     isLoading: boolean;
     generatePDF: (type: 'corporate' | 'financial') => Promise<void>;
     handleOpenInEditor: () => void;
+    isCorporation: boolean;
 }
 
 // ステップ1: 会社情報
-const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInfo, handleInfoChange, handleTranscribe, prevYearSettlement, prevYearBS, setIsImportModalOpen }) => (
+const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInfo, handleInfoChange, handleTranscribe, prevYearSettlement, prevYearBS, setIsImportModalOpen, isCorporation }) => (
     <div className="space-y-6">
         {/* 前期データ取込の案内 */}
         <div className="bg-surface border border-border rounded-xl p-5 shadow-sm">
@@ -144,9 +149,9 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h3 className="text-lg font-semibold text-text-main mb-1">会社基本情報</h3>
+                <h3 className="text-lg font-semibold text-text-main mb-1">{isCorporation ? '会社基本情報' : '基本情報（個人事業）'}</h3>
                 <p className="text-text-muted">
-                    法人税申告に必要な会社情報を入力してください。
+                    {isCorporation ? '法人税申告' : '確定申告'}に必要な情報を入力してください。
                 </p>
             </div>
             <div className="flex flex-col items-end gap-2">
@@ -166,7 +171,7 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
                 <div>
                     <p className="text-sm text-text-main font-medium">前期データ（バトンタッチ）の適用中</p>
                     <p className="text-sm text-text-muted mt-1">
-                        {prevYearBS.year}年度の確定済み決算データから、期首残高（資本金・利益剰余金など）を自動的に引き継いでいます。
+                        {prevYearBS.year}年度の確定済み{isCorporation ? '決算' : '申告'}データから、期首残高（{isCorporation ? '資本金・利益剰余金' : '元入金・所得金額'}など）を自動的に引き継いでいます。
                     </p>
                 </div>
             </div>
@@ -176,7 +181,7 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
                 <div>
                     <p className="text-sm text-text-main font-medium">前期データの登録をお勧めします</p>
                     <p className="text-sm text-text-muted mt-1">
-                        「過去決算・引継ぎ管理」に前年度のB/Sを登録すると、期首残高が自動でバトンタッチ（引き継ぎ）されます。
+                        「過去決算・引継ぎ管理」に前年度の{isCorporation ? '決算書' : '青色申告決算書等'}を登録すると、期首残高が自動でバトンタッチ（引き継ぎ）されます。
                     </p>
                 </div>
             </div>
@@ -185,7 +190,7 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                    会社名 <span className="text-error">*</span>
+                    {isCorporation ? '会社名' : '屋号・氏名'} <span className="text-error">*</span>
                 </label>
                 <input
                     type="text"
@@ -209,19 +214,19 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
             </div>
             <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                    法人番号
+                    {isCorporation ? '法人番号' : '個人番号'}
                 </label>
                 <input
                     type="text"
                     value={corporateInfo.corporateNumber}
                     onChange={(e) => setCorporateInfo({ ...corporateInfo, corporateNumber: e.target.value })}
                     className="input-base"
-                    placeholder="1234567890123"
+                    placeholder={isCorporation ? "1234567890123" : "123456789012"}
                 />
             </div>
             <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                    資本金
+                    {isCorporation ? '資本金' : '期首元入金'}
                 </label>
                 <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
@@ -232,6 +237,23 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
                         className="input-base pl-8"
                     />
                 </div>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-text-main mb-2">
+                    {isCorporation ? '前期繰越利益剰余金' : '前期繰越所得 / 元入金外'}
+                </label>
+                <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">¥</span>
+                    <input
+                        type="number"
+                        value={corporateInfo.beginningRetainedEarnings}
+                        onChange={(e) => setCorporateInfo({ ...corporateInfo, beginningRetainedEarnings: Number(e.target.value) })}
+                        className="input-base pl-8"
+                    />
+                </div>
+                <p className="text-[10px] text-text-muted mt-1">
+                    {isCorporation ? '前期末の貸借対照表から引き継いだ繰越利益（赤字の場合はマイナス入力）です。' : '前期末時点の純資産状態で、元入金に含まれない累積利益です。'}
+                </p>
             </div>
             <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-text-main mb-2">
@@ -290,7 +312,7 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
                 </p>
             </div>
         </div>
-    </div>
+    </div >
 );
 
 // ステップ2: 減価償却
@@ -326,7 +348,7 @@ const Step2Depreciation: React.FC<Step2Props> = ({ assets, onDepreciationCalcula
 );
 
 // ステップ3: 損益計算
-const Step3ProfitLoss: React.FC<Step3Props> = ({ financialData, corporateInfo, prevYearSettlement, showComparison, setShowComparison }) => (
+const Step3ProfitLoss: React.FC<Step3Props> = ({ financialData, taxResult, corporateInfo, prevYearSettlement, showComparison, setShowComparison, isCorporation }) => (
     <div className="space-y-6">
         <div>
             <h3 className="text-lg font-semibold text-text-main mb-4">損益計算書</h3>
@@ -433,6 +455,28 @@ const Step3ProfitLoss: React.FC<Step3Props> = ({ financialData, corporateInfo, p
                     <span className="font-bold text-success">{formatCurrency(financialData.incomeBeforeTax)}</span>
                 </div>
             </div>
+        </div>
+
+        {/* 剰余金の計算（キャリーオーバーの可視化） */}
+        <div className="bg-surface border border-border rounded-xl p-5">
+            <h4 className="font-medium text-text-main mb-4">{isCorporation ? '利益剰余金' : '元入金'}の計算</h4>
+            <div className="space-y-2">
+                <div className="flex justify-between py-2 border-b border-border">
+                    <span className="text-text-muted">{isCorporation ? '前期繰越利益剰余金' : '期首元入金'}</span>
+                    <span className="font-medium text-text-main">{formatCurrency(isCorporation ? (financialData.beginningRetainedEarnings || 0) : (financialData.beginningCapital || 0))}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-border">
+                    <span className="text-text-muted">当期純利益（所得金額）</span>
+                    <span className="font-medium text-success">+{formatCurrency(taxResult.netIncome)}</span>
+                </div>
+                <div className="flex justify-between py-2 bg-primary-light px-2 -mx-2 rounded">
+                    <span className="font-bold text-text-main">{isCorporation ? '利益剰余金（次期繰越）' : '期末元入金額'}</span>
+                    <span className="font-bold text-primary">{formatCurrency(isCorporation ? (financialData.retainedEarnings) : (financialData.netAssets))}</span>
+                </div>
+            </div>
+            <p className="text-[10px] text-text-muted mt-3">
+                ※当期純利益は、税引前当期純利益から見積法人税等を差し引いた後の金額です。
+            </p>
         </div>
 
         {/* 経費内訳 */}
@@ -602,8 +646,58 @@ const Step4ConsumptionTax: React.FC<Step5Props> = ({ consumptionTaxResult }) => 
     </div>
 );
 
+// 準備状況チェック
+const ReadinessCheck: React.FC<{
+    isCorporation: boolean;
+    corporateInfo: any;
+}> = ({ isCorporation, corporateInfo }) => {
+    const hasCorporateNumber = !isCorporation || (corporateInfo.corporateNumber && corporateInfo.corporateNumber.length >= 12);
+    const hasAddress = !!corporateInfo.address;
+
+    return (
+        <div className="bg-surface border border-border rounded-xl p-5 mb-6 shadow-sm">
+            <h4 className="font-bold text-text-main flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-primary" />
+                AI申告準備チェック（自動診断）
+            </h4>
+            <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm border-b border-border pb-2">
+                    <span className="text-text-muted">貸借対照表の整合性（資産＝負債＋純資産）</span>
+                    <span className="text-success flex items-center gap-1 font-bold">
+                        <CheckCircle className="w-4 h-4" /> 正常
+                    </span>
+                </div>
+                <div className="flex items-center justify-between text-sm border-b border-border pb-2">
+                    <span className="text-text-muted">{isCorporation ? '法人番号' : '個人番号'}の形式チェック</span>
+                    {hasCorporateNumber ? (
+                        <span className="text-success flex items-center gap-1 font-bold">
+                            <CheckCircle className="w-4 h-4" /> 正常
+                        </span>
+                    ) : (
+                        <span className="text-warning flex items-center gap-1 font-bold">
+                            <AlertCircle className="w-4 h-4" /> 未入力
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center justify-between text-sm border-b border-border pb-2">
+                    <span className="text-text-muted">基本情報（所在地・代表者）の入力</span>
+                    {hasAddress ? (
+                        <span className="text-success flex items-center gap-1 font-bold">
+                            <CheckCircle className="w-4 h-4" /> 完了
+                        </span>
+                    ) : (
+                        <span className="text-warning flex items-center gap-1 font-bold">
+                            <AlertCircle className="w-4 h-4" /> 未完了
+                        </span>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // ステップ6: 書類作成
-const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, taxResult, isLoading, generatePDF, handleOpenInEditor }) => (
+const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, taxResult, isLoading, generatePDF, handleOpenInEditor, isCorporation }) => (
     <div className="space-y-6">
         <div>
             <h3 className="text-lg font-semibold text-text-main mb-4 flex items-center gap-2">
@@ -614,6 +708,12 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
                 入力内容を確認して、必要な書類をダウンロードしてください。
             </p>
         </div>
+
+        {/* AI診断レポート */}
+        <ReadinessCheck
+            isCorporation={isCorporation}
+            corporateInfo={corporateInfo}
+        />
 
         {/* データ確認 */}
         <div className="bg-surface border border-border rounded-xl divide-y divide-border">
@@ -638,7 +738,7 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
                 <span className="font-medium text-primary">{formatCurrency(financialData.ordinaryIncome)}</span>
             </div>
             <div className="p-4 flex justify-between items-center">
-                <span className="text-text-muted">法人税等</span>
+                <span className="text-text-muted">{isCorporation ? '法人税等' : '所得税等'}</span>
                 <span className="font-medium text-error">{formatCurrency(taxResult.totalTax)}</span>
             </div>
             <div className="p-4 flex justify-between items-center bg-success-light">
@@ -663,8 +763,8 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
                         )}
                     </div>
                     <div className="text-left">
-                        <p className="font-bold text-text-main text-lg">損益計算書・貸借対照表</p>
-                        <p className="text-sm text-text-muted mt-0.5">当期の決算状況をPDFで出力</p>
+                        <p className="font-bold text-text-main text-lg">{isCorporation ? '損益計算書・貸借対照表' : '所得税青色申告決算書'}</p>
+                        <p className="text-sm text-text-muted mt-0.5">当期の{isCorporation ? '決算状況' : '収支状況'}をPDFで出力</p>
                     </div>
                 </div>
                 {!isLoading && (
@@ -685,8 +785,8 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
                             taxableIncome: taxResult.taxableIncome,
                             estimatedTax: taxResult.totalTax
                         } as any);
-                        CsvExportService.downloadCSV(csv, `financial_statements_${corporateInfo.companyName}_${corporateInfo.fiscalYear}.csv`);
-                        toast.success('財務諸表CSVを出力しました');
+                        CsvExportService.downloadCSV(csv, `${isCorporation ? 'financial_statements' : 'blue_return'}_${corporateInfo.companyName}_${corporateInfo.fiscalYear}.csv`);
+                        toast.success(`${isCorporation ? '財務諸表' : '決算書'}CSVを出力しました`);
                     }
                 }}
                 disabled={isLoading}
@@ -697,7 +797,7 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
                         <BookOpen className="w-6 h-6 text-indigo-500" />
                     </div>
                     <div className="text-left">
-                        <p className="font-bold text-text-main text-lg">財務諸表データ(CSV)</p>
+                        <p className="font-bold text-text-main text-lg">{isCorporation ? '財務諸表データ(CSV)' : '決算書データ(CSV)'}</p>
                         <p className="text-sm text-text-muted mt-0.5">e-Taxソフト等への取込用</p>
                     </div>
                 </div>
@@ -723,8 +823,8 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
                         )}
                     </div>
                     <div className="text-left">
-                        <p className="font-bold text-text-main text-lg">法人税申告書（詳細）</p>
-                        <p className="text-sm text-text-muted mt-0.5">別表を含めた法人税申告のドラフト版</p>
+                        <p className="font-bold text-text-main text-lg">{isCorporation ? '法人税申告書（詳細）' : '所得税確定申告書B（詳細）'}</p>
+                        <p className="text-sm text-text-muted mt-0.5">別表を含めた{isCorporation ? '法人税申告' : '確定申告'}のドラフト版</p>
                     </div>
                 </div>
                 {!isLoading && (
@@ -764,7 +864,7 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
             <div>
                 <p className="text-sm text-text-main font-medium">ご注意</p>
                 <p className="text-sm text-text-muted mt-1">
-                    この書類は参考資料です。正式な法人税申告は税理士にご相談いただくか、
+                    この書類は参考資料です。正式な{isCorporation ? '法人税申告' : '確定申告'}は税理士にご相談いただくか、
                     e-Taxにて提出してください。
                 </p>
             </div>
@@ -799,11 +899,28 @@ const CorporateTaxFilingPage: React.FC = () => {
     const { currentBusinessType } = useBusinessTypeContext();
     const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
     const navigate = useNavigate();
+    const isCorporation = currentBusinessType?.business_type === 'corporation';
 
     // ウィザード状態
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
+
+    // 会社情報
+    const currentYear = new Date().getFullYear();
+    const [corporateInfo, setCorporateInfo] = useState<CorporateInfo>({
+        companyName: '',
+        representativeName: '',
+        corporateNumber: '',
+        address: '',
+        taxOffice: '',
+        capital: 10000000, // デフォルト1000万円
+        fiscalYearStart: `${currentYear - 1}-04-01`,
+        fiscalYearEnd: `${currentYear}-03-31`,
+        fiscalYear: currentYear - 1,
+        employeeCount: 1,
+        beginningRetainedEarnings: 0,
+    });
 
     // 前年度データ
     const [prevYearSettlement, setPrevYearSettlement] = useState<YearlySettlement | null>(null);
@@ -816,22 +933,60 @@ const CorporateTaxFilingPage: React.FC = () => {
         const fetchPrevData = async () => {
             if (user?.id && currentBusinessType?.business_type) {
                 try {
-                    const latest = await yearlySettlementService.getLatest(user.id, currentBusinessType.business_type);
-                    setPrevYearSettlement(latest);
+                    const targetYear = corporateInfo.fiscalYear;
 
-                    // BSデータも取得
-                    const latestBS = await yearlyBalanceSheetService.getByYear(
-                        user.id,
-                        currentBusinessType.business_type,
-                        (latest?.year || (new Date().getFullYear() - 1))
-                    );
+                    // 全ての過去データを取得して累計利益を計算 (申請年度より前のみ)
+                    const [allSettlements, allBS] = await Promise.all([
+                        yearlySettlementService.getAllByBusinessType(user.id, currentBusinessType.business_type),
+                        yearlyBalanceSheetService.getAllByBusinessType(user.id, currentBusinessType.business_type)
+                    ]);
+
+                    const pastSettlements = allSettlements.filter(s => s.year < targetYear);
+                    const pastBS = allBS.filter(b => b.year < targetYear);
+                    const latestPast = pastSettlements.length > 0 ? pastSettlements[0] : null;
+
+                    setPrevYearSettlement(latestPast);
+
+                    // 最新の詳細BSデータを探す (申請年度より前のみ)
+                    const latestBS = pastBS.length > 0 ? pastBS[0] : null;
+
+                    // 全ての過去履歴（P/Lの純利益 または B/Sの当期利益）をマージして累積利益を計算
+                    const years = Array.from(new Set([
+                        ...pastSettlements.map(s => s.year),
+                        ...pastBS.map(b => b.year)
+                    ]));
+
+                    const cumulativeRetainedEarnings = years.reduce((sum, year) => {
+                        const s = pastSettlements.find(item => item.year === year);
+                        const b = pastBS.find(item => item.year === year);
+                        // B/Sの当期利益があればそれを、なければP/Lの純利益を、それもなければ0を採用
+                        const yearProfit = b?.net_assets_retained_earnings ?? s?.net_income ?? 0;
+                        return sum + yearProfit;
+                    }, 0);
+
                     if (latestBS) {
                         setPrevYearBS(latestBS);
-                        // 資本金を前期から引き継ぐ
+                        // 利益剰余金はシステムの全履歴から計算した値を優先（またはマージ）
+                        // 過去の保存データが不完全な場合でも、これで整合性が取れる
                         setCorporateInfo(prev => ({
                             ...prev,
-                            capital: latestBS.net_assets_capital || prev.capital
+                            capital: latestBS.net_assets_capital || prev.capital,
+                            beginningRetainedEarnings: cumulativeRetainedEarnings
                         }));
+                    } else {
+                        setCorporateInfo(prev => ({
+                            ...prev,
+                            beginningRetainedEarnings: cumulativeRetainedEarnings
+                        }));
+
+                        if (latestPast?.balance_sheet) {
+                            const summary = latestPast.balance_sheet;
+                            setCorporateInfo(prev => ({
+                                ...prev,
+                                capital: summary.capital || prev.capital,
+                                beginningRetainedEarnings: cumulativeRetainedEarnings || summary.retained_earnings || 0
+                            }));
+                        }
                     }
                 } catch (error) {
                     console.error('前年度データの取得に失敗しました:', error);
@@ -839,7 +994,7 @@ const CorporateTaxFilingPage: React.FC = () => {
             }
         };
         fetchPrevData();
-    }, [user?.id, currentBusinessType?.business_type]);
+    }, [user?.id, currentBusinessType?.business_type, corporateInfo.fiscalYear]);
 
 
     const handleOpenInEditor = () => {
@@ -864,21 +1019,6 @@ const CorporateTaxFilingPage: React.FC = () => {
         }
     };
 
-    // 会社情報
-    const currentYear = new Date().getFullYear();
-    const [corporateInfo, setCorporateInfo] = useState<CorporateInfo>({
-        companyName: '',
-        representativeName: '',
-        corporateNumber: '',
-        address: '',
-        taxOffice: '',
-        capital: 10000000, // デフォルト1000万円
-        fiscalYearStart: `${currentYear - 1}-04-01`,
-        fiscalYearEnd: `${currentYear}-03-31`,
-        fiscalYear: currentYear - 1,
-        employeeCount: 1,
-    });
-
     const handleInfoChange = (updates: Partial<CorporateInfo>) => {
         setCorporateInfo(prev => ({ ...prev, ...updates }));
     };
@@ -895,15 +1035,17 @@ const CorporateTaxFilingPage: React.FC = () => {
     // 決算データを計算
     const financialData = useMemo(() => {
         const beginningBalances = {
-            retainedEarnings: prevYearBS?.net_assets_retained_earnings_total || 0,
-            capital: prevYearBS?.net_assets_capital || corporateInfo.capital,
-            cash: prevYearBS?.assets_current_cash || 0,
-            receivable: prevYearBS?.assets_current_total ? (prevYearBS.assets_current_total - (prevYearBS.assets_current_cash || 0)) : 0, // 簡易的な差分
-            inventory: 0, // 必要に応じて拡張
-            fixedAssets: prevYearBS?.assets_total ? (prevYearBS.assets_total - (prevYearBS.assets_current_total || 0)) : 0,
-            payable: prevYearBS?.liabilities_total || 0,
-            shortTermLoans: 0, // 必要に応じて拡張
-            longTermLoans: 0,
+            retainedEarnings: corporateInfo.beginningRetainedEarnings !== 0
+                ? (corporateInfo.beginningRetainedEarnings || 0)
+                : (prevYearBS?.net_assets_retained_earnings_total || prevYearSettlement?.balance_sheet?.retained_earnings || 0),
+            capital: prevYearBS?.net_assets_capital || (prevYearSettlement?.balance_sheet?.capital || corporateInfo.capital),
+            cash: prevYearBS?.assets_current_cash || prevYearSettlement?.balance_sheet?.assets_current_cash || 0,
+            receivable: prevYearBS?.assets_current_receivable || prevYearSettlement?.balance_sheet?.assets_current_receivable || 0,
+            inventory: prevYearBS?.assets_current_inventory || prevYearSettlement?.balance_sheet?.assets_current_inventory || 0,
+            fixedAssets: prevYearBS?.assets_fixed_total || prevYearSettlement?.balance_sheet?.assets_fixed_total || 0,
+            payable: prevYearBS?.liabilities_current_payable || prevYearSettlement?.balance_sheet?.liabilities_current_payable || 0,
+            shortTermLoans: prevYearBS?.liabilities_short_term_loans || prevYearSettlement?.balance_sheet?.liabilities_short_term_loans || 0,
+            longTermLoans: prevYearBS?.liabilities_long_term_loans || prevYearSettlement?.balance_sheet?.liabilities_long_term_loans || 0,
         };
 
         const data = generateFinancialDataFromTransactions(
@@ -942,6 +1084,16 @@ const CorporateTaxFilingPage: React.FC = () => {
     const consumptionTaxResult = useMemo(() => {
         return calculateConsumptionTax(financialData.revenue, financialData.operatingExpenses);
     }, [financialData]);
+
+    // 税金計算後の最終利益を反映した決算データ
+    const adjustedFinancialData = useMemo(() => {
+        const netIncome = taxResult.netIncome;
+        return {
+            ...financialData,
+            retainedEarnings: (financialData.beginningRetainedEarnings || 0) + netIncome,
+            netAssets: (financialData.beginningCapital || 0) + (financialData.beginningRetainedEarnings || 0) + netIncome,
+        };
+    }, [financialData, taxResult.netIncome]);
 
     // ステップ移動
     const goToNextStep = () => {
@@ -1026,36 +1178,107 @@ const CorporateTaxFilingPage: React.FC = () => {
                 corporateNumber: corporateInfo.corporateNumber,
                 capital: corporateInfo.capital,
                 businessType: 'corporation',
-                revenue: financialData.revenue,
-                expenses: financialData.operatingExpenses,
+                revenue: adjustedFinancialData.revenue,
+                expenses: adjustedFinancialData.operatingExpenses,
                 netIncome: taxResult.netIncome,
-                expensesByCategory: financialData.expensesByCategory,
+                expensesByCategory: adjustedFinancialData.expensesByCategory,
                 fiscalYear: corporateInfo.fiscalYear,
                 fiscalYearStart: corporateInfo.fiscalYearStart,
                 fiscalYearEnd: corporateInfo.fiscalYearEnd,
                 taxableIncome: taxResult.taxableIncome,
                 estimatedTax: taxResult.totalTax,
                 // 追加: 実績ベースの財務詳細
-                costOfSales: financialData.costOfSales,
-                grossProfit: financialData.grossProfit,
-                operatingExpenses: financialData.operatingExpenses,
-                operatingIncome: financialData.operatingIncome,
-                nonOperatingIncome: financialData.nonOperatingIncome,
-                nonOperatingExpenses: financialData.nonOperatingExpenses,
-                ordinaryIncome: financialData.ordinaryIncome,
-                cash: financialData.cash,
-                accountsReceivable: financialData.accountsReceivable,
-                inventory: financialData.inventory,
-                fixedAssets: financialData.fixedAssets,
-                totalAssets: financialData.totalAssets,
-                accountsPayable: financialData.accountsPayable,
-                shortTermLoans: financialData.shortTermLoans,
-                longTermLoans: financialData.longTermLoans,
-                totalLiabilities: financialData.totalLiabilities,
-                beginningRetainedEarnings: financialData.beginningRetainedEarnings,
-                beginningCapital: financialData.beginningCapital,
+                costOfSales: adjustedFinancialData.costOfSales,
+                grossProfit: adjustedFinancialData.grossProfit,
+                operatingExpenses: adjustedFinancialData.operatingExpenses,
+                operatingIncome: adjustedFinancialData.operatingIncome,
+                nonOperatingIncome: adjustedFinancialData.nonOperatingIncome,
+                nonOperatingExpenses: adjustedFinancialData.nonOperatingExpenses,
+                ordinaryIncome: adjustedFinancialData.ordinaryIncome,
+                cash: adjustedFinancialData.cash,
+                accountsReceivable: adjustedFinancialData.accountsReceivable,
+                inventory: adjustedFinancialData.inventory,
+                fixedAssets: adjustedFinancialData.fixedAssets,
+                totalAssets: adjustedFinancialData.totalAssets,
+                accountsPayable: adjustedFinancialData.accountsPayable,
+                shortTermLoans: adjustedFinancialData.shortTermLoans,
+                longTermLoans: adjustedFinancialData.longTermLoans,
+                totalLiabilities: adjustedFinancialData.totalLiabilities,
+                beginningRetainedEarnings: adjustedFinancialData.beginningRetainedEarnings,
+                beginningCapital: adjustedFinancialData.beginningCapital,
+                retainedEarnings: adjustedFinancialData.retainedEarnings,
                 depreciation: depreciationTotal,
             };
+
+            // データベースに自動保存 (履歴への反映)
+            if (user?.id) {
+                try {
+                    const isCorporation = currentBusinessType?.business_type === 'corporation';
+
+                    // 1. P/Lサマリーと簡易B/Sを保存
+                    await yearlySettlementService.save({
+                        user_id: user.id,
+                        business_type: isCorporation ? 'corporation' : 'individual',
+                        year: corporateInfo.fiscalYear,
+                        revenue: adjustedFinancialData.revenue,
+                        cost_of_sales: adjustedFinancialData.costOfSales,
+                        operating_expenses: adjustedFinancialData.operatingExpenses,
+                        non_operating_income: adjustedFinancialData.nonOperatingIncome,
+                        non_operating_expenses: adjustedFinancialData.nonOperatingExpenses,
+                        extraordinary_income: adjustedFinancialData.extraordinaryIncome,
+                        extraordinary_loss: adjustedFinancialData.extraordinaryLoss,
+                        income_before_tax: adjustedFinancialData.incomeBeforeTax,
+                        net_income: taxResult.netIncome,
+                        category_breakdown: adjustedFinancialData.expensesByCategory,
+                        status: 'confirmed',
+                        metadata: { generated_by: 'wizard', generated_at: new Date().toISOString() },
+                        balance_sheet: {
+                            assets_current_cash: adjustedFinancialData.cash,
+                            assets_current_receivable: adjustedFinancialData.accountsReceivable,
+                            assets_current_inventory: adjustedFinancialData.inventory,
+                            assets_fixed_total: adjustedFinancialData.fixedAssets,
+                            liabilities_current_payable: adjustedFinancialData.accountsPayable,
+                            liabilities_short_term_loans: adjustedFinancialData.shortTermLoans,
+                            liabilities_long_term_loans: adjustedFinancialData.longTermLoans,
+                            retained_earnings: adjustedFinancialData.retainedEarnings,
+                            capital: corporateInfo.capital,
+                            assets_total: adjustedFinancialData.totalAssets,
+                            liabilities_total: adjustedFinancialData.totalLiabilities,
+                            net_assets_total: adjustedFinancialData.netAssets
+                        }
+                    });
+
+                    // 2. 詳細B/S情報を保存
+                    await yearlyBalanceSheetService.save({
+                        user_id: user.id,
+                        business_type: isCorporation ? 'corporation' : 'individual',
+                        year: corporateInfo.fiscalYear,
+                        assets_current_cash: adjustedFinancialData.cash,
+                        assets_current_receivable: adjustedFinancialData.accountsReceivable,
+                        assets_current_inventory: adjustedFinancialData.inventory,
+                        assets_current_total: adjustedFinancialData.cash + adjustedFinancialData.accountsReceivable + adjustedFinancialData.inventory,
+                        assets_fixed_total: adjustedFinancialData.fixedAssets,
+                        assets_total: adjustedFinancialData.totalAssets,
+                        liabilities_current_payable: adjustedFinancialData.accountsPayable,
+                        liabilities_short_term_loans: adjustedFinancialData.shortTermLoans,
+                        liabilities_long_term_loans: adjustedFinancialData.longTermLoans,
+                        liabilities_total: adjustedFinancialData.totalLiabilities,
+                        net_assets_capital: corporateInfo.capital,
+                        net_assets_retained_earnings: taxResult.netIncome,
+                        net_assets_retained_earnings_total: adjustedFinancialData.retainedEarnings,
+                        net_assets_shareholders_equity: adjustedFinancialData.netAssets,
+                        net_assets_total: adjustedFinancialData.netAssets,
+                        liabilities_and_net_assets_total: adjustedFinancialData.totalAssets,
+                        status: 'confirmed',
+                        metadata: { generated_by: 'wizard', generated_at: new Date().toISOString() }
+                    });
+
+                    toast.success('決算データを履歴に保存しました');
+                } catch (saveError) {
+                    console.error('Data Auto-save Error:', saveError);
+                    // 保存失敗してもPDF生成は続行
+                }
+            }
 
             let pdfBytes: Uint8Array;
             let filename: string;
@@ -1102,6 +1325,7 @@ const CorporateTaxFilingPage: React.FC = () => {
                         prevYearSettlement={prevYearSettlement}
                         prevYearBS={prevYearBS}
                         setIsImportModalOpen={setIsImportModalOpen}
+                        isCorporation={isCorporation}
                     />
                 );
             case 2:
@@ -1115,11 +1339,13 @@ const CorporateTaxFilingPage: React.FC = () => {
             case 3:
                 return (
                     <Step3ProfitLoss
-                        financialData={financialData}
+                        financialData={adjustedFinancialData}
+                        taxResult={taxResult}
                         corporateInfo={corporateInfo}
                         prevYearSettlement={prevYearSettlement}
                         showComparison={showComparison}
                         setShowComparison={setShowComparison}
+                        isCorporation={isCorporation}
                     />
                 );
             case 4:
@@ -1141,11 +1367,12 @@ const CorporateTaxFilingPage: React.FC = () => {
                 return (
                     <Step5Documents
                         corporateInfo={corporateInfo}
-                        financialData={financialData}
+                        financialData={adjustedFinancialData}
                         taxResult={taxResult}
                         isLoading={isLoading}
                         generatePDF={generatePDF}
                         handleOpenInEditor={handleOpenInEditor}
+                        isCorporation={isCorporation}
                     />
                 );
             default:

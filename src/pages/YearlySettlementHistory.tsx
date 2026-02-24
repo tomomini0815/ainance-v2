@@ -29,6 +29,7 @@ interface YearlyHistoryItem {
     year: number;
     pl?: YearlySettlement;
     bs?: YearlyBalanceSheet;
+    cumulativeProfit: number;
 }
 
 const YearlySettlementHistory: React.FC = () => {
@@ -42,7 +43,8 @@ const YearlySettlementHistory: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
 
     const businessType = currentBusinessType?.business_type || 'individual';
-    const businessLabel = businessType === 'corporation' ? '法人' : '個人事業主';
+    const isCorporation = businessType === 'corporation';
+    const businessLabel = isCorporation ? '法人' : '個人事業主';
 
     const fetchHistory = async () => {
         if (!user?.id) return;
@@ -59,11 +61,27 @@ const YearlySettlementHistory: React.FC = () => {
                 ...bsData.map(d => d.year)
             ])).sort((a, b) => b - a);
 
-            const items: YearlyHistoryItem[] = years.map(year => ({
-                year,
-                pl: plData.find(d => d.year === year),
-                bs: bsData.find(d => d.year === year)
-            }));
+            const items: YearlyHistoryItem[] = years.map(year => {
+                const pl = plData.find(d => d.year === year);
+                const bs = bsData.find(d => d.year === year);
+
+                // その年を含む過去の全履歴（P/LまたはB/S）を合算
+                const cumulativeProfit = years
+                    .filter(y => y <= year)
+                    .reduce((sum, y) => {
+                        const s = plData.find(d => d.year === y);
+                        const b = bsData.find(d => d.year === y);
+                        const yearProfit = b?.net_assets_retained_earnings ?? s?.net_income ?? 0;
+                        return sum + yearProfit;
+                    }, 0);
+
+                return {
+                    year,
+                    pl,
+                    bs,
+                    cumulativeProfit
+                };
+            });
 
             setHistoryItems(items);
         } catch (error) {
@@ -154,10 +172,10 @@ const YearlySettlementHistory: React.FC = () => {
                         <div>
                             <h1 className="text-2xl font-bold flex items-center gap-2">
                                 <Layout className="w-7 h-7 text-primary" />
-                                過去決算データ・引継ぎ管理
+                                {isCorporation ? '過去決算データ・引継ぎ管理' : '過去の申告データ・引継ぎ管理'}
                             </h1>
                             <p className="text-text-muted mt-1">
-                                {businessLabel}としての過去の決算履歴を確認・管理できます
+                                {businessLabel}としての過去の{isCorporation ? '決算履歴' : '申告履歴'}を確認・管理できます
                             </p>
                         </div>
                     </div>
@@ -167,14 +185,14 @@ const YearlySettlementHistory: React.FC = () => {
                             className="flex items-center gap-2 px-4 py-2 bg-surface border border-primary/20 text-primary rounded-xl hover:bg-primary/5 transition-all font-bold"
                         >
                             <Plus className="w-5 h-5" />
-                            貸借対照表(B/S)追加
+                            {isCorporation ? '貸借対照表(B/S)追加' : '貸借対照表を追加'}
                         </button>
                         <button
                             onClick={() => setIsPLModalOpen(true)}
                             className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 font-bold"
                         >
                             <Plus className="w-5 h-5" />
-                            損益計算書(P/L)追加
+                            {isCorporation ? '損益計算書(P/L)追加' : '収支データを追加'}
                         </button>
                     </div>
                 </div>
@@ -216,12 +234,16 @@ const YearlySettlementHistory: React.FC = () => {
                             </div>
                             <h3 className="text-xl font-bold mb-2">履歴がありません</h3>
                             <p className="text-text-muted mb-6">
-                                過去の決算書をアップロードするか、手動で入力して<br />
+                                過去の{isCorporation ? '決算書' : '申告・決算書'}をアップロードするか、手動で入力して<br />
                                 前期からの数値引き継ぎや経営分析を可能にしましょう。
                             </p>
                             <div className="flex justify-center gap-4">
-                                <button onClick={() => setIsPLModalOpen(true)} className="btn-primary px-8 py-3 rounded-xl font-bold">P/Lを登録</button>
-                                <button onClick={() => setIsBSModalOpen(true)} className="btn-ghost px-8 py-3 rounded-xl font-bold border border-border">B/Sを登録</button>
+                                <button onClick={() => setIsPLModalOpen(true)} className="btn-primary px-8 py-3 rounded-xl font-bold">
+                                    {isCorporation ? 'P/Lを登録' : '収支データを登録'}
+                                </button>
+                                <button onClick={() => setIsBSModalOpen(true)} className="btn-ghost px-8 py-3 rounded-xl font-bold border border-border">
+                                    {isCorporation ? 'B/Sを登録' : '貸借対照表を登録'}
+                                </button>
                             </div>
                         </div>
                     ) : (
@@ -230,8 +252,8 @@ const YearlySettlementHistory: React.FC = () => {
                                 <thead className="bg-surface-highlight/50 border-b border-border">
                                     <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">年度</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">損益 (P/L)</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">貸借 (B/S)</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{isCorporation ? '損益 (P/L)' : '収支・決算 (P/L)'}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{isCorporation ? '貸借 (B/S)' : '貸借対照表 (B/S)'}</th>
                                         <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">書類</th>
                                         <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">状態</th>
                                         <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider text-right">操作</th>
@@ -248,7 +270,7 @@ const YearlySettlementHistory: React.FC = () => {
                                                     <div>
                                                         <div className="font-bold text-text-main">{item.year}年度</div>
                                                         <div className="text-xs text-text-muted">
-                                                            P/L: {item.pl ? 'あり' : 'なし'} | B/S: {item.bs ? 'あり' : 'なし'}
+                                                            {isCorporation ? 'P/L' : '収支'}: {item.pl ? 'あり' : 'なし'} | {isCorporation ? 'B/S' : '貸借'}: {item.bs ? 'あり' : 'なし'}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -260,9 +282,20 @@ const YearlySettlementHistory: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-xs text-text-muted mb-1">資産: {formatCurrency(item.bs?.assets_total)}</div>
+                                                <div className="text-xs text-text-muted mb-1">資産: {formatCurrency(item.bs?.assets_total || item.pl?.balance_sheet?.assets_total)}</div>
                                                 <div className="font-bold text-text-main text-sm">
-                                                    純資産: {formatCurrency(item.bs?.net_assets_total)}
+                                                    純資産: {
+                                                        item.bs?.net_assets_total
+                                                            ? formatCurrency(item.bs.net_assets_total)
+                                                            : item.pl?.balance_sheet?.net_assets_total
+                                                                ? formatCurrency(item.pl.balance_sheet.net_assets_total)
+                                                                : (
+                                                                    <span className="text-text-muted italic flex items-center gap-1" title="資本金 + 過去累計利益（推定）">
+                                                                        {formatCurrency((currentBusinessType?.capital_amount || 0) + item.cumulativeProfit)}
+                                                                        <span className="text-[10px] text-primary bg-primary/10 px-1 rounded">推定</span>
+                                                                    </span>
+                                                                )
+                                                    }
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -272,7 +305,7 @@ const YearlySettlementHistory: React.FC = () => {
                                                             onClick={() => handleDownload(item.pl?.document_path)}
                                                             className="flex items-center gap-1.5 text-xs text-primary hover:underline"
                                                         >
-                                                            <Download className="w-3 h-3" /> P/L書類
+                                                            <Download className="w-3 h-3" /> {isCorporation ? 'P/L書類' : '収支決算書'}
                                                         </button>
                                                     )}
                                                     {item.bs?.document_path && (
@@ -280,7 +313,7 @@ const YearlySettlementHistory: React.FC = () => {
                                                             onClick={() => handleDownload(item.bs?.document_path)}
                                                             className="flex items-center gap-1.5 text-xs text-secondary hover:underline"
                                                         >
-                                                            <Download className="w-3 h-3" /> B/S書類
+                                                            <Download className="w-3 h-3" /> {isCorporation ? 'B/S書類' : '貸借対照表'}
                                                         </button>
                                                     )}
                                                     {!item.pl?.document_path && !item.bs?.document_path && (
@@ -354,7 +387,7 @@ const YearlySettlementHistory: React.FC = () => {
                         <CheckCircle className="w-8 h-8 text-success mb-4" />
                         <h4 className="font-bold mb-2">自動転記の連携</h4>
                         <p className="text-sm text-text-muted leading-relaxed">
-                            決算書PDFからAIが自動で数値を抽出するため、手入力の手間を最小限に抑えられます。
+                            {isCorporation ? '決算書PDF' : '申告・決算書PDF'}からAIが自動で数値を抽出するため、手入力の手間を最小限に抑えられます。
                         </p>
                     </div>
                     <div className="bg-gradient-to-br from-amber-500/5 to-red-500/5 border border-amber-500/10 rounded-2xl p-6">

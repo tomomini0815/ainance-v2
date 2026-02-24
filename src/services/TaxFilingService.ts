@@ -163,7 +163,13 @@ export const calculateTaxFilingData = (
   // カテゴリ別経費集計
   const expensesByCategory = Object.entries(
     expenseTransactions.reduce((acc: Record<string, number>, t) => {
-      const category = t.category || '未分類';
+      let category = t.category || '未分類';
+      
+      // 名称の揺れを修正（ユーザー要望：交際費、食費を接待交際費に合算）
+      if (category === '交際費' || category === '食費') {
+        category = '接待交際費';
+      }
+      
       acc[category] = (acc[category] || 0) + Math.abs(Number(t.amount) || 0);
       return acc;
     }, {})

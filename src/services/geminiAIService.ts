@@ -95,6 +95,19 @@ export interface AIPLSettlementAnalysis {
     category: string;
     amount: number;
   }[];
+  // 貸借対照表（BS）項目（オプション：P/L書類に含まれる場合があるため）
+  net_assets_total?: number | null;
+  assets_total?: number | null;
+  liabilities_total?: number | null;
+  assets_current_cash?: number | null;
+  assets_current_receivable?: number | null;
+  assets_current_inventory?: number | null;
+  assets_fixed_total?: number | null;
+  liabilities_current_payable?: number | null;
+  liabilities_short_term_loans?: number | null;
+  liabilities_long_term_loans?: number | null;
+  net_assets_capital?: number | null;
+  net_assets_retained_earnings?: number | null;
   confidence: number;
 }
 
@@ -104,8 +117,14 @@ export interface AIPLSettlementAnalysis {
 export interface AIBSAnalysis {
   year: number | null;
   assets_current_cash: number | null;
+  assets_current_receivable: number | null;
+  assets_current_inventory: number | null;
   assets_current_total: number | null;
+  assets_fixed_total: number | null;
   assets_total: number | null;
+  liabilities_current_payable: number | null;
+  liabilities_short_term_loans: number | null;
+  liabilities_long_term_loans: number | null;
   liabilities_total: number | null;
   net_assets_capital: number | null;
   net_assets_retained_earnings: number | null;
@@ -994,6 +1013,7 @@ async function analyzePLWithModelInternal(
 4. 営業外収益/費用: それぞれの合計金額
 5. 特別利益/損失: それぞれの合計金額
 6. 当期純利益: 最終的な純利益
+7. 貸借対照表（BS）項目（もしあれば）: 「純資産合計（自己資本）」「資産合計」「負債合計」
 
 ### 出力形式（Strict JSON）:
 {
@@ -1007,6 +1027,18 @@ async function analyzePLWithModelInternal(
   "extraordinary_loss": number,
   "income_before_tax": number,
   "net_income": number,
+  "net_assets_total": number | null,
+  "assets_total": number | null,
+  "liabilities_total": number | null,
+  "assets_current_cash": number | null,
+  "assets_current_receivable": number | null,
+  "assets_current_inventory": number | null,
+  "assets_fixed_total": number | null,
+  "liabilities_current_payable": number | null,
+  "liabilities_short_term_loans": number | null,
+  "liabilities_long_term_loans": number | null,
+  "net_assets_capital": number | null,
+  "net_assets_retained_earnings": number | null,
   "category_breakdown": [
     { "category": "カテゴリ名", "amount": 数値 }
   ],
@@ -1034,6 +1066,7 @@ ${ocrText}
 9. **特別損失**: 「特別損失」の合計。
 10. **税引前当期純利益**: 「税引前当期純利益」または「税金等調整前当期純利益」。
 11. **当期純利益**: 「当期純利益」または「当期純損失」。
+12. **貸借対照表（BS）項目（重要）**: OCRテキスト内に「資産合計」「負債合計」「純資産合計（または自己資本）」などの記載がある場合、それらも抽出してください。特に個人事業主の「青色申告決算書」には通常含まれています。
 
 ### 注意事項:
 - 金額が「千円」「百万円」単位の場合は必ず円単位に換算してください。
@@ -1052,6 +1085,18 @@ ${ocrText}
   "extraordinary_loss": number,
   "income_before_tax": number,
   "net_income": number,
+  "net_assets_total": number | null,
+  "assets_total": number | null,
+  "liabilities_total": number | null,
+  "assets_current_cash": number | null,
+  "assets_current_receivable": number | null,
+  "assets_current_inventory": number | null,
+  "assets_fixed_total": number | null,
+  "liabilities_current_payable": number | null,
+  "liabilities_short_term_loans": number | null,
+  "liabilities_long_term_loans": number | null,
+  "net_assets_capital": number | null,
+  "net_assets_retained_earnings": number | null,
   "category_breakdown": [
     { "category": "カテゴリ名", "amount": 数値 }
   ],
@@ -1165,8 +1210,14 @@ async function analyzeBSWithModelInternal(
 {
   "year": number,
   "assets_current_cash": number,
+  "assets_current_receivable": number,
+  "assets_current_inventory": number,
   "assets_current_total": number,
+  "assets_fixed_total": number,
   "assets_total": number,
+  "liabilities_current_payable": number,
+  "liabilities_short_term_loans": number,
+  "liabilities_long_term_loans": number,
   "liabilities_total": number,
   "net_assets_capital": number,
   "net_assets_retained_earnings": number,

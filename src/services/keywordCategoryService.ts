@@ -23,7 +23,6 @@ export type StandardCategory =
   | '地代家賃'
   | '租税公課'
   | '保険料'
-  | '食費'
   | '雑費'
   | '仕入'
   | '売上'
@@ -50,7 +49,6 @@ export const STANDARD_CATEGORIES: StandardCategory[] = [
   '地代家賃',
   '租税公課',
   '保険料',
-  '食費',
   '雑費',
   '仕入',
   '売上',
@@ -312,16 +310,15 @@ const KEYWORD_RULES: { keyword: string; category: StandardCategory }[] = [
   { keyword: 'お土産', category: '接待交際費' },
   { keyword: '菓子折り', category: '接待交際費' },
 
-  // 食費
-  // 食費（自分用の食費としてのキーワード）
-  { keyword: 'スーパー', category: '食費' },
-  { keyword: 'コンビニ', category: '食費' },
-  { keyword: 'セブンイレブン', category: '食費' },
-  { keyword: 'ローソン', category: '食費' },
-  { keyword: 'ファミリーマート', category: '食費' },
-  { keyword: 'ファミマ', category: '食費' },
-  { keyword: '食品', category: '食費' },
-  { keyword: '飲料', category: '食費' },
+  // 接待交際費（飲食関連）
+  { keyword: 'スーパー', category: '接待交際費' },
+  { keyword: 'コンビニ', category: '接待交際費' },
+  { keyword: 'セブンイレブン', category: '接待交際費' },
+  { keyword: 'ローソン', category: '接待交際費' },
+  { keyword: 'ファミリーマート', category: '接待交際費' },
+  { keyword: 'ファミマ', category: '接待交際費' },
+  { keyword: '食品', category: '接待交際費' },
+  { keyword: '飲料', category: '接待交際費' },
 
   // 支払手数料
   { keyword: 'Fee', category: '支払手数料' },
