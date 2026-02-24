@@ -69,6 +69,7 @@ interface Step1Props {
     handleInfoChange: (updates: Partial<CorporateInfo>) => void;
     handleTranscribe: () => void;
     prevYearSettlement: YearlySettlement | null;
+    prevYearBS: YearlyBalanceSheet | null;
     setIsImportModalOpen: (open: boolean) => void;
 }
 
@@ -101,7 +102,7 @@ interface Step6Props {
 }
 
 // ステップ1: 会社情報
-const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInfo, handleInfoChange, handleTranscribe, prevYearSettlement, setIsImportModalOpen }) => (
+const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInfo, handleInfoChange, handleTranscribe, prevYearSettlement, prevYearBS, setIsImportModalOpen }) => (
     <div className="space-y-6">
         {/* 前期データ取込の案内 */}
         <div className="bg-surface border border-border rounded-xl p-5 shadow-sm">
@@ -148,14 +149,38 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
                     法人税申告に必要な会社情報を入力してください。
                 </p>
             </div>
-            <button
-                onClick={handleTranscribe}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors text-primary text-sm font-medium whitespace-nowrap"
-            >
-                <RefreshCw className="w-4 h-4" />
-                登録データから転記
-            </button>
+            <div className="flex flex-col items-end gap-2">
+                <button
+                    onClick={handleTranscribe}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors text-primary text-sm font-medium whitespace-nowrap"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    登録データから転記
+                </button>
+            </div>
         </div>
+
+        {prevYearBS ? (
+            <div className="bg-success-light border border-success/20 rounded-lg p-4 flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                <div>
+                    <p className="text-sm text-text-main font-medium">前期データ（バトンタッチ）の適用中</p>
+                    <p className="text-sm text-text-muted mt-1">
+                        {prevYearBS.year}年度の確定済み決算データから、期首残高（資本金・利益剰余金など）を自動的に引き継いでいます。
+                    </p>
+                </div>
+            </div>
+        ) : (
+            <div className="bg-warning-light border border-warning/20 rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                <div>
+                    <p className="text-sm text-text-main font-medium">前期データの登録をお勧めします</p>
+                    <p className="text-sm text-text-muted mt-1">
+                        「過去決算・引継ぎ管理」に前年度のB/Sを登録すると、期首残高が自動でバトンタッチ（引き継ぎ）されます。
+                    </p>
+                </div>
+            </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -627,22 +652,32 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
             <button
                 onClick={() => generatePDF('financial')}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 p-6 bg-surface border border-border rounded-xl hover:border-primary hover:bg-primary-light transition-colors"
+                className="flex items-center justify-between p-6 bg-surface border border-border rounded-xl hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all group w-full"
             >
-                {isLoading ? (
-                    <RefreshCw className="w-6 h-6 animate-spin text-primary" />
-                ) : (
-                    <FileText className="w-6 h-6 text-primary" />
-                )}
-                <div className="text-left">
-                    <p className="text-sm text-text-muted">損益計算書・貸借対照表</p>
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        {isLoading ? (
+                            <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+                        ) : (
+                            <FileText className="w-6 h-6 text-primary" />
+                        )}
+                    </div>
+                    <div className="text-left">
+                        <p className="font-bold text-text-main text-lg">損益計算書・貸借対照表</p>
+                        <p className="text-sm text-text-muted mt-0.5">当期の決算状況をPDFで出力</p>
+                    </div>
                 </div>
+                {!isLoading && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-bold shadow-sm transition-transform group-hover:scale-105">
+                        <Download className="w-4 h-4" />
+                        <span>ダウンロード</span>
+                    </div>
+                )}
             </button>
+
             <button
                 onClick={() => {
-                    // JpTaxFormData から CSV生成
                     if (financialData) {
-                        // JpTaxFormData型に合わせるための変換が必要なら行うが、ここでは簡易的にキャスト
                         const csv = CsvExportService.generateFinancialStatementCSV({
                             ...corporateInfo,
                             ...financialData,
@@ -655,28 +690,49 @@ const Step5Documents: React.FC<Step6Props> = ({ corporateInfo, financialData, ta
                     }
                 }}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 p-6 bg-surface border border-border rounded-xl hover:border-primary hover:bg-primary-light transition-colors"
+                className="flex items-center justify-between p-6 bg-surface border border-border rounded-xl hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all group w-full"
             >
-                <BookOpen className="w-6 h-6 text-primary" />
-                <div className="text-left">
-                    <p className="font-medium text-text-main">財務諸表データ(CSV)</p>
-                    <p className="text-sm text-text-muted">e-Tax取込用</p>
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
+                        <BookOpen className="w-6 h-6 text-indigo-500" />
+                    </div>
+                    <div className="text-left">
+                        <p className="font-bold text-text-main text-lg">財務諸表データ(CSV)</p>
+                        <p className="text-sm text-text-muted mt-0.5">e-Taxソフト等への取込用</p>
+                    </div>
                 </div>
+                {!isLoading && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-sm transition-transform group-hover:scale-105">
+                        <Download className="w-4 h-4" />
+                        <span>CSV出力</span>
+                    </div>
+                )}
             </button>
+
             <button
                 onClick={() => generatePDF('corporate')}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 p-6 bg-surface border border-border rounded-xl hover:border-primary hover:bg-primary-light transition-colors"
+                className="flex items-center justify-between p-6 bg-surface border border-border rounded-xl hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all group w-full lg:col-span-2"
             >
-                {isLoading ? (
-                    <RefreshCw className="w-6 h-6 animate-spin text-primary" />
-                ) : (
-                    <Building2 className="w-6 h-6 text-primary" />
-                )}
-                <div className="text-left">
-                    <p className="font-medium text-text-main">法人税申告書</p>
-                    <p className="text-sm text-text-muted">法人税の概要</p>
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        {isLoading ? (
+                            <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+                        ) : (
+                            <Building2 className="w-6 h-6 text-primary" />
+                        )}
+                    </div>
+                    <div className="text-left">
+                        <p className="font-bold text-text-main text-lg">法人税申告書（詳細）</p>
+                        <p className="text-sm text-text-muted mt-0.5">別表を含めた法人税申告のドラフト版</p>
+                    </div>
                 </div>
+                {!isLoading && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-bold shadow-sm transition-transform group-hover:scale-105">
+                        <Download className="w-4 h-4" />
+                        <span>ダウンロード</span>
+                    </div>
+                )}
             </button>
         </div>
 
@@ -788,7 +844,7 @@ const CorporateTaxFilingPage: React.FC = () => {
 
     const handleOpenInEditor = () => {
         if (window.confirm('現在の計算結果を詳細エディタに転記して開きますか？\n（エディタの既存データは上書きされます）')) {
-            const calculatedData = CorporateTaxInputService.calculateDataFromTransactions(transactions, corporateInfo);
+            const calculatedData = CorporateTaxInputService.calculateDataFromTransactions(transactions, corporateInfo, prevYearSettlement?.balance_sheet || null);
             CorporateTaxInputService.saveData({
                 ...initialCorporateTaxInputData,
                 ...calculatedData,
@@ -902,17 +958,30 @@ const CorporateTaxFilingPage: React.FC = () => {
 
     // 登録データから転記
     const handleTranscribe = () => {
-        if (!currentBusinessType) {
+        const business = currentBusinessType;
+        if (!business) {
             toast.error('登録された事業情報が見つかりません。連携設定で登録してください。');
             return;
         }
 
+        const startMonth = business.fiscal_year_start_month || (business.business_type === 'corporation' ? 4 : 1);
+
+        // 事業年度の期間を計算
+        const startDate = `${currentYear - 1}-${String(startMonth).padStart(2, '0')}-01`;
+        const endDateObj = new Date(currentYear - 1, startMonth - 1, 1);
+        endDateObj.setFullYear(endDateObj.getFullYear() + 1);
+        endDateObj.setDate(endDateObj.getDate() - 1);
+        const endDate = `${endDateObj.getFullYear()}-${String(endDateObj.getMonth() + 1).padStart(2, '0')}-${String(endDateObj.getDate()).padStart(2, '0')}`;
+
         setCorporateInfo(prev => ({
             ...prev,
-            companyName: currentBusinessType.company_name || prev.companyName,
-            representativeName: currentBusinessType.representative_name || prev.representativeName,
-            corporateNumber: currentBusinessType.tax_number || prev.corporateNumber,
-            address: currentBusinessType.address || prev.address,
+            companyName: business?.company_name || prev.companyName || '',
+            representativeName: business?.representative_name || prev.representativeName || '',
+            corporateNumber: (business?.tax_number || prev.corporateNumber || '').replace(/^T/, ''),
+            address: business?.address || prev.address || '',
+            capital: business?.capital_amount || prev.capital || 0,
+            fiscalYearStart: startDate,
+            fiscalYearEnd: endDate,
         }));
 
         toast.success('事業情報を転記しました');
@@ -962,6 +1031,8 @@ const CorporateTaxFilingPage: React.FC = () => {
                 netIncome: taxResult.netIncome,
                 expensesByCategory: financialData.expensesByCategory,
                 fiscalYear: corporateInfo.fiscalYear,
+                fiscalYearStart: corporateInfo.fiscalYearStart,
+                fiscalYearEnd: corporateInfo.fiscalYearEnd,
                 taxableIncome: taxResult.taxableIncome,
                 estimatedTax: taxResult.totalTax,
                 // 追加: 実績ベースの財務詳細
@@ -1029,6 +1100,7 @@ const CorporateTaxFilingPage: React.FC = () => {
                         handleInfoChange={handleInfoChange}
                         handleTranscribe={handleTranscribe}
                         prevYearSettlement={prevYearSettlement}
+                        prevYearBS={prevYearBS}
                         setIsImportModalOpen={setIsImportModalOpen}
                     />
                 );
