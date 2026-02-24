@@ -13,6 +13,8 @@ interface BusinessType {
   email: string
   representative_name: string
   established_date?: string | null
+  fiscal_year_start_month?: number | null
+  capital_amount?: number | null
   is_active: boolean
   created_at: string
   updated_at: string

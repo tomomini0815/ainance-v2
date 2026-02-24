@@ -21,6 +21,17 @@ export interface YearlySettlement {
     }[];
     metadata: any;
     document_path?: string;
+    status: 'draft' | 'confirmed';
+    balance_sheet?: {
+        cash?: number;
+        receivable?: number;
+        inventory?: number;
+        fixed_assets?: number;
+        short_term_loans?: number;
+        long_term_loans?: number;
+        retained_earnings?: number;
+        capital?: number;
+    };
     created_at?: string;
     updated_at?: string;
 }
@@ -207,7 +218,20 @@ export const yearlySettlementService = {
             extraordinary_loss: parseNum(findVal(['extraordinary_loss', '特別損失', '特別支出'])),
             income_before_tax: parseNum(findVal(['income_before_tax', '税引前当期純利益', '税金等調整前当期純利益'])),
             net_income: parseNum(findVal(['net_income', 'profit', 'net_profit', '当期純利益', '利益'])),
+            balance_sheet: {
+                retained_earnings: parseNum(findVal(['retained_earnings', '利益剰余金', '繰越利益剰余金', '利益積立金'])),
+                capital: parseNum(findVal(['capital', '資本金', '資本金等の額'])),
+                cash: parseNum(findVal(['cash', 'cash_and_equivalents', '現金預金', '現預金'])),
+                receivable: parseNum(findVal(['receivable', 'accounts_receivable', '売掛金'])),
+                inventory: parseNum(findVal(['inventory', '棚卸資産', '商品'])),
+                fixed_assets: parseNum(findVal(['fixed_assets', 'tangible_fixed_assets', '有形固定資産'])),
+                short_term_loans: parseNum(findVal(['short_term_loans', '短期借入金'])),
+                long_term_loans: parseNum(findVal(['long_term_loans', '長期借入金'])),
+            },
+            net_assets_total: parseNum(findVal(['net_assets_total', '純資産の部合計', '純資産合計'])),
+            liabilities_and_net_assets_total: parseNum(findVal(['liabilities_and_net_assets_total', '負債及び純資産の部合計', '負債純資産合計'])),
             category_breakdown: normalizeBreakdown(aiResult.category_breakdown || aiResult.items || aiResult.内訳 || aiResult.項目別 || []),
+            status: 'draft' as const,
             metadata: {
                 ...metadata,
                 confidence: aiResult.confidence
@@ -230,6 +254,21 @@ export const yearlySettlementService = {
 
         if (error) {
             console.error('deleteYearlySettlement Error:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * ステータスを更新
+     */
+    async updateStatus(id: string, status: 'draft' | 'confirmed'): Promise<void> {
+        const { error } = await supabase
+            .from('yearly_settlements')
+            .update({ status, updated_at: new Date().toISOString() })
+            .eq('id', id);
+
+        if (error) {
+            console.error('updateStatus Settlement Error:', error);
             throw error;
         }
     }

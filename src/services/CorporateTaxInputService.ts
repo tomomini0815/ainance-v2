@@ -46,19 +46,19 @@ export const CorporateTaxInputService = {
     },
 
     // 取引データから自動計算（転記）
-    calculateDataFromTransactions: (transactions: any[], companyInfo?: any): Partial<CorporateTaxInputData> => {
+    calculateDataFromTransactions: (transactions: any[], companyInfo?: any, beginningBalances?: any): Partial<CorporateTaxInputData> => {
         const currentYear = new Date().getFullYear();
         // 前年度をデフォルトとする（申告年度）
         const fiscalYear = currentYear - 1;
 
         // 共通の計算ロジックを使用
-        const financialData = generateFinancialDataFromTransactions(transactions, fiscalYear);
+        const financialData = generateFinancialDataFromTransactions(transactions, fiscalYear, beginningBalances);
 
         // 資本金の取得（デフォルト100万円、既存データがあればそれを使用）
         const existingData = CorporateTaxInputService.getData();
-        const capital = companyInfo?.capital || existingData.companyInfo.capitalAmount || 1000000;
+        const capital = companyInfo?.capital || beginningBalances?.capital || existingData.companyInfo.capitalAmount || 1000000;
+        const beginningRetainedEarnings = beginningBalances?.retainedEarnings || 0;
 
-        // 共通計算サービスで税額を一括計算
         // 共通計算サービスで税額を一括計算
         const taxResults = calculateAllCorporateTaxes(financialData, {
             ...existingData.companyInfo,
@@ -98,6 +98,8 @@ export const CorporateTaxInputService = {
                 bookValueEnd: Math.abs(Number(t.amount) || 0) * 0.8
             }));
 
+        const netIncome = financialData.incomeBeforeTax || 0;
+
         return {
             businessOverview: {
                 sales: financialData.revenue || 0,
@@ -106,7 +108,7 @@ export const CorporateTaxInputService = {
                 operatingExpenses: financialData.operatingExpenses || 0,
                 operatingIncome: financialData.operatingIncome || 0,
                 ordinaryIncome: financialData.ordinaryIncome || 0,
-                netIncome: financialData.incomeBeforeTax || 0,
+                netIncome,
                 directorsCompensation,
                 employeesSalary: salaries,
                 rent,
@@ -127,13 +129,36 @@ export const CorporateTaxInputService = {
                 localTaxPayable: Math.max(0, taxResults.localCorporateTax || 0),
                 inhabitantTaxPayable: Math.max(0, (taxResults.prefecturalTax || 0) + (taxResults.municipalTax || 0)),
                 enterpriseTaxPayable: Math.max(0, taxResults.businessTax || 0),
+                interimPayment: 0,
             },
             beppyo4: {
                 ...initialCorporateTaxInputData.beppyo4,
-                netIncomeFromPL: financialData.incomeBeforeTax || 0,
+                netIncomeFromPL: netIncome,
                 nonDeductibleTaxes: taxes || 0, // 租税公課を一旦全額加算（法人税等不算入の簡略化）
                 nonDeductibleEntertainment: nonDeductibleEntertainment || 0,
                 taxableIncome: Math.max(0, taxResults.taxableIncome || 0),
+                additions: [],
+                subtractions: [],
+            },
+            beppyo5: {
+                ...initialCorporateTaxInputData.beppyo5,
+                retainedEarningsBegin: beginningRetainedEarnings,
+                currentIncrease: netIncome,
+                currentDecrease: 0,
+                totalRetainedEarningsEnd: beginningRetainedEarnings + netIncome,
+                capitalBegin: capital,
+                capitalEnd: capital,
+                retainedEarningsItems: (initialCorporateTaxInputData.beppyo5.retainedEarningsItems || []).map(item => {
+                    if (item.description === '繰越利益剰余金') {
+                        return { 
+                            ...item, 
+                            beginAmount: beginningRetainedEarnings, 
+                            increase: netIncome, 
+                            endAmount: beginningRetainedEarnings + netIncome 
+                        };
+                    }
+                    return item;
+                })
             },
             beppyo15: {
                 ...initialCorporateTaxInputData.beppyo15,
@@ -141,6 +166,8 @@ export const CorporateTaxInputService = {
                 foodAndDrinkExpenses: foodAndDrink || 0,
                 otherEntertainmentExpenses: (entertainment || 0) - (foodAndDrink || 0),
                 capitalAmount: capital || 1000000,
+                socialExpenses: entertainment || 0,
+                deductibleExpenses: foodAndDrink || 0,
                 excessAmount: nonDeductibleEntertainment || 0
             },
             beppyo16: {

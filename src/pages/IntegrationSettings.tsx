@@ -45,6 +45,13 @@ const IntegrationSettings: React.FC = () => {
   // フォーム用ステート
   const [taxNumber, setTaxNumber] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [representativeName, setRepresentativeName] = useState('');
+  const [establishedDate, setEstablishedDate] = useState('');
+  const [fiscalYearStartMonth, setFiscalYearStartMonth] = useState<number>(4);
+  const [capitalAmount, setCapitalAmount] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
 
   // 保存済みデータ
@@ -93,6 +100,13 @@ const IntegrationSettings: React.FC = () => {
     if (currentBusinessType) {
       setTaxNumber(currentBusinessType.tax_number || '');
       setCompanyName(currentBusinessType.company_name || '');
+      setAddress(currentBusinessType.address || '');
+      setPhone(currentBusinessType.phone || '');
+      setEmail(currentBusinessType.email || '');
+      setRepresentativeName(currentBusinessType.representative_name || '');
+      setEstablishedDate(currentBusinessType.established_date || '');
+      setFiscalYearStartMonth(currentBusinessType.fiscal_year_start_month || (currentBusinessType.business_type === 'individual' ? 1 : 4));
+      setCapitalAmount(currentBusinessType.capital_amount || 0);
     }
   }, [currentBusinessType]);
 
@@ -102,7 +116,14 @@ const IntegrationSettings: React.FC = () => {
     try {
       await updateBusinessType(currentBusinessType.id, {
         tax_number: taxNumber,
-        company_name: companyName
+        company_name: companyName,
+        address,
+        phone,
+        email,
+        representative_name: representativeName,
+        established_date: establishedDate || null,
+        fiscal_year_start_month: fiscalYearStartMonth,
+        capital_amount: capitalAmount
       });
       toast.success('設定を保存しました');
     } catch (error) {
@@ -736,20 +757,112 @@ const IntegrationSettings: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-text-main mb-2">決算開始月（会計初月）</label>
-                  <select
-                    className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-text-main focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-                    defaultValue={currentBusinessType?.business_type === 'individual' ? "1" : "4"}
-                  >
-                    {[...Array(12)].map((_, i) => (
-                      <option key={i + 1} value={i + 1}>{i + 1}月</option>
-                    ))}
-                  </select>
-                  <p className="mt-2 text-xs text-text-muted">
-                    {currentBusinessType?.business_type === 'individual'
-                      ? '個人事業主は通常1月開始です。'
-                      : '法人の定款に定められた会計年度の開始月を選択してください。'}
-                  </p>
+                  <label className="block text-sm font-medium text-text-main mb-2">基本情報</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-text-muted mb-1">屋号・会社名</label>
+                      <input
+                        type="text"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2 text-text-main focus:ring-2 focus:ring-primary/50 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-muted mb-1">代表者名</label>
+                      <input
+                        type="text"
+                        value={representativeName}
+                        onChange={(e) => setRepresentativeName(e.target.value)}
+                        className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2 text-text-main focus:ring-2 focus:ring-primary/50 outline-none"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs text-text-muted mb-1">所在地</label>
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2 text-text-main focus:ring-2 focus:ring-primary/50 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-muted mb-1">電話番号</label>
+                      <input
+                        type="text"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2 text-text-main focus:ring-2 focus:ring-primary/50 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-muted mb-1">メールアドレス</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2 text-text-main focus:ring-2 focus:ring-primary/50 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-muted mb-1">設立日・事業開始日</label>
+                      <input
+                        type="date"
+                        value={establishedDate}
+                        onChange={(e) => setEstablishedDate(e.target.value)}
+                        className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2 text-text-main focus:ring-2 focus:ring-primary/50 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-muted mb-1">
+                        {currentBusinessType?.business_type === 'corporation' ? '法人番号' : '登録番号 (インボイス番号)'}
+                      </label>
+                      <div className="relative">
+                        {currentBusinessType?.business_type === 'individual' && (
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted font-medium text-sm">T</span>
+                        )}
+                        <input
+                          type="text"
+                          placeholder="13桁の数字"
+                          value={taxNumber.replace(/^T/, '')}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 13);
+                            if (currentBusinessType?.business_type === 'individual') {
+                              setTaxNumber('T' + val);
+                            } else {
+                              setTaxNumber(val);
+                            }
+                          }}
+                          className={`w-full bg-surface-highlight border border-border rounded-lg ${currentBusinessType?.business_type === 'individual' ? 'pl-7' : 'px-4'} pr-4 py-2 text-text-main focus:ring-2 focus:ring-primary/50 outline-none`}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-muted mb-1">決算開始月（会計初月）</label>
+                      <select
+                        className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2 text-text-main focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                        value={fiscalYearStartMonth}
+                        onChange={(e) => setFiscalYearStartMonth(parseInt(e.target.value))}
+                      >
+                        {[...Array(12)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>{i + 1}月</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-muted mb-1">資本金</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted font-medium text-sm">¥</span>
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={capitalAmount}
+                          onChange={(e) => setCapitalAmount(Number(e.target.value))}
+                          className="w-full bg-surface-highlight border border-border rounded-lg pl-7 pr-4 py-2 text-text-main focus:ring-2 focus:ring-primary/50 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 

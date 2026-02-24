@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mic, Send, Save, Trash2, Edit, CheckCircle, ArrowLeft, ArrowUpDown, Circle, Info, AlertCircle, Square, ChevronDown } from 'lucide-react';
 import TransactionIcon from '../components/TransactionIcon';
@@ -44,10 +44,58 @@ const ChatToBook: React.FC = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
+  const [isAutoMode, setIsAutoMode] = useState(false);
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState<number>(() => {
+    const now = new Date();
+    return now.getFullYear(); // 仮。useEffectで現在の会計年度に補正する
+  });
+  const [shouldBeListening, setShouldBeListening] = useState(false);
 
   // const recognitionRef = useRef<any>(null); // Removed: Handled by hook
   const { user } = useAuth();
   const { currentBusinessType } = useBusinessType(user?.id);
+
+  // 会計年度に基づいた現在年度の初期設定
+  useEffect(() => {
+    if (currentBusinessType?.fiscal_year_start_month) {
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const startMonth = currentBusinessType.fiscal_year_start_month;
+
+      let initialFY = currentYear;
+      if (currentMonth < startMonth) {
+        initialFY = currentYear - 1;
+      }
+      setSelectedFiscalYear(initialFY);
+    }
+  }, [currentBusinessType]);
+
+  // 会計年度の範囲（min/max）を計算
+  const fiscalRange = useMemo(() => {
+    if (!currentBusinessType?.fiscal_year_start_month) {
+      return { min: undefined, max: undefined };
+    }
+    const startMonth = currentBusinessType.fiscal_year_start_month;
+    const startMonthStr = String(startMonth).padStart(2, '0');
+
+    const min = `${selectedFiscalYear}-${startMonthStr}-01`;
+
+    // 終了日は開始日の1年後の前日
+    const endDate = new Date(selectedFiscalYear + 1, startMonth - 1, 0); // startMonth-1は次の開始月、それの0日は前月の末日
+    const max = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
+    return { min, max };
+  }, [selectedFiscalYear, currentBusinessType]);
+
+  // 年度切り替え時に、現在の選択日が範囲外なら調整
+  useEffect(() => {
+    if (fiscalRange.min && fiscalRange.max) {
+      if (selectedDate < fiscalRange.min || selectedDate > fiscalRange.max) {
+        setSelectedDate(fiscalRange.min);
+      }
+    }
+  }, [fiscalRange, selectedDate]);
   // currentBusinessType?.business_typeを明示的に渡す
   const {
     transactions: dbTransactions,
@@ -97,7 +145,46 @@ const ChatToBook: React.FC = () => {
     startListening: startSpeechRecognition,
     stopListening: stopSpeechRecognition,
     isSupported
-  } = useSpeechRecognition();
+  } = useSpeechRecognition({
+    onResult: (text) => {
+      if (isAutoMode && text.trim()) {
+        processSingleSentence(text);
+      }
+    }
+  });
+
+  // 1つの文章（セグメント）を取引として処理
+  const processSingleSentence = async (text: string) => {
+    if (!user?.id || !text.trim()) return;
+
+    // 金額が含まれているかチェック
+    const amountPattern = /(\d+(?:万)?(?:千)?(?:円)?)/;
+    if (!text.match(amountPattern)) return;
+
+    try {
+      const transactionData = extractTransactionData(text);
+      if (transactionData.amount > 0) {
+        console.log('ChatToBook - 自動登録を実行:', transactionData);
+
+        await createTransaction({
+          item: transactionData.description,
+          amount: transactionData.amount,
+          date: transactionData.date,
+          category: selectedCategory || transactionData.category,
+          type: transactionData.type,
+          creator: user.id,
+          approval_status: 'approved', // オートモードは即時承認
+          tags: ['voice', 'auto-mode']
+        });
+
+        toast.success(`${transactionData.description}を自動登録しました`);
+        fetchTransactions();
+        window.dispatchEvent(new CustomEvent('transactionRecorded'));
+      }
+    } catch (error) {
+      console.error('Auto Process Error:', error);
+    }
+  };
 
   // エラーが変更されたら表示
   useEffect(() => {
@@ -111,12 +198,27 @@ const ChatToBook: React.FC = () => {
 
   const startListening = () => {
     setErrorMessage(null);
+    setShouldBeListening(true);
     startSpeechRecognition();
   };
 
   const stopListening = () => {
+    setShouldBeListening(false);
     stopSpeechRecognition();
   };
+
+  // オート記録機能（連続録音時）
+  useEffect(() => {
+    if (isAutoMode && !isListening && shouldBeListening) {
+      const timer = setTimeout(() => {
+        if (shouldBeListening) {
+          console.log('ChatToBook - 音声認識を自動再開します');
+          startSpeechRecognition();
+        }
+      }, 300); // 少し待機してから再開
+      return () => clearTimeout(timer);
+    }
+  }, [isAutoMode, isListening, shouldBeListening, startSpeechRecognition]);
 
   // DBから取引データを取得
   useEffect(() => {
@@ -854,12 +956,25 @@ const ChatToBook: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* 音声入力セクション */}
-          <div className="lg:col-span-2 bg-surface rounded-xl shadow-sm border border-border p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-text-main">音声で記録</h2>
+          <div className="lg:col-span-2 bg-surface rounded-xl shadow-sm border border-border p-3 md:p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-text-main">音声で記録</h2>
+                {/* 連続記録モードトグル */}
+                <label className="relative inline-flex items-center cursor-pointer scale-75 origin-left">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={isAutoMode}
+                    onChange={(e) => setIsAutoMode(e.target.checked)}
+                  />
+                  <div className="w-11 h-6 bg-surface-highlight peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  <span className="ml-2 text-sm font-medium text-text-muted whitespace-nowrap">連続モード</span>
+                </label>
+              </div>
               <button
                 onClick={isMobileUsageOpen ? () => setIsMobileUsageOpen(false) : () => setIsMobileUsageOpen(true)}
-                className="lg:hidden flex items-center text-xs text-primary hover:text-primary/80 transition-colors bg-primary/10 px-3 py-1.5 rounded-full"
+                className="lg:hidden flex items-center text-[10px] text-primary hover:text-primary/80 transition-colors bg-primary/10 px-2.5 py-1 rounded-full"
               >
                 <Info className="w-3.5 h-3.5 mr-1.5" />
                 使い方
@@ -982,13 +1097,31 @@ const ChatToBook: React.FC = () => {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-muted mb-2">日付</label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary mb-4"
-              />
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-2">年度</label>
+                  <select
+                    value={selectedFiscalYear}
+                    onChange={(e) => setSelectedFiscalYear(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    {[selectedFiscalYear + 1, selectedFiscalYear, selectedFiscalYear - 1, selectedFiscalYear - 2].map(y => (
+                      <option key={y} value={y}>{y}年度</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-2">日付</label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    min={fiscalRange.min}
+                    max={fiscalRange.max}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-md text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
 
               <label className="block text-sm font-medium text-text-muted mb-2">
                 認識テキスト
@@ -1066,70 +1199,39 @@ const ChatToBook: React.FC = () => {
           </div>
 
           {/* 使い方セクション */}
-          <div className="hidden lg:block bg-surface rounded-xl shadow-sm border border-border p-4">
-            <h2 className="text-md font-semibold text-text-main mb-3">使い方</h2>
-            <div className="space-y-3">
-              <div className="border border-border rounded-lg p-3">
-                <div className="flex items-start">
-                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                    <span className="text-primary font-bold text-xs">1</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-text-main group-hover:text-primary transition-colors">音声記録開始</h3>
-                    <p className="text-xs text-text-muted">マイクボタンをクリックして、取引内容を話してください。</p>
-                  </div>
-                </div>
-              </div>
-              <div className="border border-border rounded-lg p-3">
-                <div className="flex items-start">
-                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                    <span className="text-primary font-bold text-xs">2</span>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-text-main text-sm mb-1">日付選択</h3>
-                    <p className="text-xs text-text-muted">必要に応じてカレンダーから日付を選択してください。</p>
-                  </div>
-                </div>
-              </div>
-              <div className="border border-border rounded-lg p-3">
-                <div className="flex items-start">
-                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                    <span className="text-primary font-bold text-xs">3</span>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-text-main text-sm mb-1">テキスト確認</h3>
-                    <p className="text-xs text-text-muted">認識されたテキストを確認・編集してください。</p>
+          <div className="hidden lg:block bg-surface rounded-xl shadow-sm border border-border p-6 h-fit sticky top-24">
+            <div className="flex items-center gap-2 mb-4">
+              <Info className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold text-text-main">使い方</h2>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                { step: 1, title: '音声記録開始', desc: 'マイクボタンをクリックして、取引内容を話してください。' },
+                { step: 2, title: '日付選択', desc: '必要に応じてカレンダーから日付を選択してください。' },
+                { step: 3, title: 'テキスト確認', desc: '認識されたテキストを確認・編集してください。' },
+                { step: 4, title: 'カテゴリ選択', desc: '未選択でもAIが自動認識しますが、選択した方が確実です。' },
+                { step: 5, title: '取引に変換', desc: '「取引に変換」ボタンをクリックして、取引を登録してください。' }
+              ].map((item) => (
+                <div key={item.step} className="group border border-border rounded-xl p-4 bg-background hover:bg-surface-highlight transition-all duration-300">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-primary transition-colors duration-300">
+                      <span className="text-primary font-bold text-sm group-hover:text-white">{item.step}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-text-main text-sm mb-1 group-hover:text-primary transition-colors">{item.title}</h3>
+                      <p className="text-xs text-text-muted leading-relaxed">{item.desc}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="border border-border rounded-lg p-3">
-                <div className="flex items-start">
-                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                    <span className="text-primary font-bold text-xs">4</span>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-text-main text-sm mb-1">カテゴリ選択</h3>
-                    <p className="text-xs text-text-muted">未選択でもAIが自動認識しますが、選択した方が確実です。</p>
-                  </div>
-                </div>
-              </div>
-              <div className="border border-border rounded-lg p-3">
-                <div className="flex items-start">
-                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                    <span className="text-primary font-bold text-xs">5</span>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-text-main text-sm mb-1">取引に変換</h3>
-                    <p className="text-xs text-text-muted">「取引に変換」ボタンをクリックして、取引を登録してください。</p>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
 
+
         {/* 取引一覧セクション */}
-        <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mb-6">
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-3 md:p-6 mb-6">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-text-main">取引一覧</h2>
             <p className="text-sm text-text-muted mt-1">
@@ -1483,7 +1585,7 @@ const ChatToBook: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </div >
       </main >
     </div >
   );

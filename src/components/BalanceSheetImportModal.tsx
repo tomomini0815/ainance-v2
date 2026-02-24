@@ -56,7 +56,8 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
         net_assets_total: 0,
         liabilities_and_net_assets_total: 0,
         metadata: {},
-        document_path: undefined
+        document_path: undefined,
+        status: 'draft'
     });
 
     useEffect(() => {
@@ -80,7 +81,8 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
                 net_assets_total: 0,
                 liabilities_and_net_assets_total: 0,
                 metadata: {},
-                document_path: undefined
+                document_path: undefined,
+                status: 'draft'
             });
         }
     }, [isOpen, userId, businessType]);
@@ -225,7 +227,8 @@ const BalanceSheetImportModal: React.FC<BalanceSheetImportModalProps> = ({
             net_assets_total: 0,
             liabilities_and_net_assets_total: 0,
             metadata: {},
-            document_path: undefined
+            document_path: undefined,
+            status: 'draft'
         });
     };
 

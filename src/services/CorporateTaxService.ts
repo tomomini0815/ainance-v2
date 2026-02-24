@@ -118,6 +118,7 @@ export interface FinancialData {
   shortTermLoans: number;     // 短期借入金
   longTermLoans: number;      // 長期借入金
   beginningRetainedEarnings: number; // 期首利益剰余金
+  retainedEarnings: number;          // 期末利益剰余金
   beginningCapital: number;          // 期首資本金
   beginningCash: number;             // 期首現金預金
   beginningReceivable: number;       // 期首売掛金
@@ -563,6 +564,7 @@ export function generateFinancialDataFromTransactions(
     shortTermLoans: shortTermLoans + (beginningBalances.shortTermLoans || 0),
     longTermLoans: beginningBalances.longTermLoans || 0,
     beginningRetainedEarnings: beginningBalances.retainedEarnings || 0,
+    retainedEarnings: (beginningBalances.retainedEarnings || 0) + incomeBeforeTax,
     beginningCapital: beginningBalances.capital || 0,
     beginningCash: beginningBalances.cash || 0,
     beginningReceivable: beginningBalances.receivable || 0,

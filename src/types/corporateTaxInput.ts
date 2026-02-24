@@ -29,6 +29,7 @@ export interface Beppyo1Data {
     corporateTaxAmount: number;
     specialTaxCredit: number;
     nationalInterimPayment: number;
+    interimPayment: number; // Added for compatibility
     nationalTaxPayable: number;
 
     // Local Corporate Tax
@@ -68,12 +69,14 @@ export interface Beppyo4Data {
     inhabitantTax?: number;      // 住民税 (Specific for B4 mapping if split from total)
     nonDeductibleEntertainment: number; // 交際費等の損金不算入額
     excessDepreciation: number; // 償却超過額
+    additions: Beppyo4Item[]; // Renamed from otherAdditions to match usage
     otherAdditions: Beppyo4Item[];
 
     // Subtractions (減算)
     deductibleEnterpriseTax: number; // 事業税等の損金算入額
     dividendExclusion: number; // 受取配当等の益金不算入額
     taxRefunds?: number;        // 法人税等還付金
+    subtractions: Beppyo4Item[]; // Renamed from otherSubtractions to match usage
     otherSubtractions: Beppyo4Item[];
 
     taxableIncome: number; // 所得金額または欠損金額
@@ -145,6 +148,8 @@ export interface Beppyo15Data {
     foodAndDrinkExpenses: number; // うち接待飲食費の額
     otherEntertainmentExpenses: number; // その他の交際費
     capitalAmount: number; // 資本金の額
+    socialExpenses: number; // Added to match usage
+    deductibleExpenses: number; // Added to match usage
     deductionLimit: number; // 損金算入限度額
     excessAmount: number; // 損金不算入額
 }
@@ -223,6 +228,7 @@ export const initialCorporateTaxInputData: CorporateTaxInputData = {
         corporateTaxAmount: 0,
         specialTaxCredit: 0,
         nationalInterimPayment: 0,
+        interimPayment: 0,
         nationalTaxPayable: 0,
         localCorporateTaxAmount: 0,
         localInterimPayment: 0,
@@ -243,9 +249,11 @@ export const initialCorporateTaxInputData: CorporateTaxInputData = {
         nonDeductibleTaxes: 0,
         nonDeductibleEntertainment: 0,
         excessDepreciation: 0,
+        additions: [],
         otherAdditions: [],
         deductibleEnterpriseTax: 0,
         dividendExclusion: 0,
+        subtractions: [],
         otherSubtractions: [],
         taxableIncome: 0,
     },
@@ -287,6 +295,8 @@ export const initialCorporateTaxInputData: CorporateTaxInputData = {
         foodAndDrinkExpenses: 0,
         otherEntertainmentExpenses: 0,
         capitalAmount: 1000000,
+        socialExpenses: 0,
+        deductibleExpenses: 0,
         deductionLimit: 8000000,
         excessAmount: 0
     },

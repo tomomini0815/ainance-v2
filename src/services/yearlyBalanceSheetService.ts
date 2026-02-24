@@ -26,6 +26,7 @@ export interface YearlyBalanceSheet {
 
     metadata: any;
     document_path?: string;
+    status: 'draft' | 'confirmed';
     created_at?: string;
     updated_at?: string;
 }
@@ -151,6 +152,7 @@ export const yearlyBalanceSheetService = {
             net_assets_shareholders_equity: parseNum(findVal(['net_assets_shareholders_equity', '株主資本合計'])),
             net_assets_total: parseNum(findVal(['net_assets_total', '純資産の部合計', '純資産合計'])),
             liabilities_and_net_assets_total: parseNum(findVal(['liabilities_and_net_assets_total', '負債及び純資産の部合計', '負債純資産合計'])),
+            status: 'draft' as const,
             metadata: {
                 ...metadata,
                 confidence: aiResult.confidence
@@ -159,5 +161,35 @@ export const yearlyBalanceSheetService = {
 
         console.log('Mapped BS Data:', result);
         return result;
+    },
+
+    /**
+     * ステータスを更新
+     */
+    async updateStatus(id: string, status: 'draft' | 'confirmed'): Promise<void> {
+        const { error } = await supabase
+            .from('yearly_balance_sheets')
+            .update({ status, updated_at: new Date().toISOString() })
+            .eq('id', id);
+
+        if (error) {
+            console.error('updateStatus BS Error:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * データを削除
+     */
+    async delete(id: string): Promise<void> {
+        const { error } = await supabase
+            .from('yearly_balance_sheets')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('deleteYearlyBS Error:', error);
+            throw error;
+        }
     }
 };

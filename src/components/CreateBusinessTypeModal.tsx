@@ -59,7 +59,9 @@ const CreateBusinessTypeModal: React.FC<CreateBusinessTypeModalProps> = ({ isOpe
                 phone: formData.get('phone') as string || '',
                 email: formData.get('email') as string || '',
                 representative_name: representativeName,
-                established_date: establishedDate || undefined
+                established_date: establishedDate || undefined,
+                capital_amount: formData.get('capital_amount') ? Number(formData.get('capital_amount')) : undefined,
+                fiscal_year_start_month: formData.get('fiscal_year_start_month') ? Number(formData.get('fiscal_year_start_month')) : undefined
             }
 
             const result = await createBusinessType(businessTypeData)
@@ -226,6 +228,36 @@ const CreateBusinessTypeModal: React.FC<CreateBusinessTypeModalProps> = ({ isOpe
                             className="input-base"
                             placeholder={selectedBusinessType === 'individual' ? '山田太郎' : '田中太郎'}
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="capital_amount" className="block text-sm font-medium text-text-secondary mb-1.5">資本金</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">¥</span>
+                                <input
+                                    id="capital_amount"
+                                    type="number"
+                                    name="capital_amount"
+                                    className="input-base pl-7"
+                                    placeholder="1000000"
+                                    defaultValue={selectedBusinessType === 'corporation' ? 10000000 : 0}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="fiscal_year_start_month" className="block text-sm font-medium text-text-secondary mb-1.5">決算月（開始）</label>
+                            <select
+                                id="fiscal_year_start_month"
+                                name="fiscal_year_start_month"
+                                className="input-base"
+                                defaultValue={selectedBusinessType === 'corporation' ? 4 : 1}
+                            >
+                                {[...Array(12)].map((_, i) => (
+                                    <option key={i + 1} value={i + 1}>{i + 1}月</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     <div className="flex justify-end space-x-3 pt-4 border-t border-border mt-6">

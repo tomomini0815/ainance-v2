@@ -304,6 +304,8 @@ export interface TaxFormData {
 
   // 年度
   fiscalYear: number;
+  fiscalYearStart?: string;
+  fiscalYearEnd?: string;
   isBlueReturn: boolean;
 }
 

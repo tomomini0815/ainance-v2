@@ -59,7 +59,8 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
         net_income: 0,
         category_breakdown: [],
         metadata: {},
-        document_path: undefined
+        document_path: undefined,
+        status: 'draft'
     });
 
     useEffect(() => {
@@ -93,7 +94,8 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
                     net_income: 0,
                     category_breakdown: [],
                     metadata: {},
-                    document_path: undefined
+                    document_path: undefined,
+                    status: 'draft'
                 });
             }
             setIsAnalyzing(false);
@@ -244,7 +246,8 @@ const PreviousYearImportModal: React.FC<PreviousYearImportModalProps> = ({
             income_before_tax: 0,
             net_income: 0,
             category_breakdown: [],
-            document_path: undefined
+            document_path: undefined,
+            status: 'draft'
         });
     };
 

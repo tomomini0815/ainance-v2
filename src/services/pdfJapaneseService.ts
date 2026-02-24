@@ -57,6 +57,8 @@ export const EXPENSE_CATEGORIES_JP: { [key: string]: string } = {
 export interface JpTaxFormData {
   // 基本情報
   companyName?: string;
+  fiscalYearStart?: string;
+  fiscalYearEnd?: string;
   representativeName?: string;
   address?: string;
   phone?: string;
@@ -322,6 +324,37 @@ export async function generateCorporateTaxPDF(data: JpTaxFormData): Promise<Uint
   draw.line(40, y, 555, y, 1.5);
   draw.text('税額合計（概算）', 55, y - ROW_HEIGHT - 1, { size: 13, font: bold });
   draw.text(`${formatCurrency(totalTax)}円`, 430, y - ROW_HEIGHT - 1, { size: 13, font: bold, color: colors.red });
+  y -= ROW_HEIGHT + 35;
+
+  // ===== セクション4: 別表五(一)相当：利益積立金の計算 =====
+  draw.rect(40, y - SECTION_TITLE_HEIGHT, 515, SECTION_TITLE_HEIGHT, colors.secondary);
+  draw.text('第4部　別表五(一)相当：利益積立金の計算', 50, y - 17, { size: 12, font: bold, color: rgb(1, 1, 1) });
+  y -= SECTION_TITLE_HEIGHT + 8;
+
+  const beginningRetainedEarnings = data.beginningRetainedEarnings || 0;
+  const currentNetIncome = data.netIncome;
+  const endingRetainedEarnings = beginningRetainedEarnings + currentNetIncome;
+
+  const retainedEarningsRows = [
+    ['期首利益積立金（前期末残高）', formatCurrency(beginningRetainedEarnings) + '円'],
+    ['当期の純利益（増加額）', formatCurrency(currentNetIncome) + '円'],
+    ['期末利益積立金（当期末残高）', formatCurrency(endingRetainedEarnings) + '円'],
+  ];
+
+  retainedEarningsRows.forEach(([label, value], idx) => {
+    const isTotal = idx === 2;
+    if (isTotal) {
+      draw.rect(40, y - ROW_HEIGHT - 2, 515, ROW_HEIGHT + 2, colors.highlight);
+    } else if (idx % 2 === 0) {
+      draw.rect(40, y - ROW_HEIGHT, 515, ROW_HEIGHT, rgb(0.98, 0.98, 0.98));
+    }
+    draw.line(40, y - ROW_HEIGHT, 555, y - ROW_HEIGHT);
+    draw.text(label, 55, y - ROW_HEIGHT + 5, { size: 10, font: isTotal ? bold : regular });
+    draw.text(value, 430, y - ROW_HEIGHT + 5, { size: 10, font: isTotal ? bold : regular });
+    y -= ROW_HEIGHT + (isTotal ? 2 : 0);
+  });
+  y -= 10;
+  draw.text('※ 利益剰余金（期末）＝ 期首残高 ＋ 当期純利益（税引後）', 55, y, { size: 8, color: colors.muted });
 
   // ===== フッター =====
   draw.line(40, 75, 555, 75);
@@ -378,8 +411,16 @@ export async function generateFinancialStatementPDF(data: JpTaxFormData): Promis
 
   let y = height - 72;
   draw.text(`${data.companyName || '会社名'}`, 50, y, { size: 12, font: bold });
-  draw.text(`${data.fiscalYear}年度（${getJapaneseYear(data.fiscalYear)}度）`, 280, y, { size: 10 });
-  draw.text(`作成日: ${new Date().toLocaleDateString('ja-JP')}`, 450, y, { size: 9, color: colors.muted });
+  
+  // 自 至 表示
+  if (data.fiscalYearStart && data.fiscalYearEnd) {
+    draw.text(`自 ${data.fiscalYearStart}　至 ${data.fiscalYearEnd}`, 210, y, { size: 10 });
+  } else {
+    draw.text(`${data.fiscalYear}年度（${getJapaneseYear(data.fiscalYear)}度）`, 280, y, { size: 10 });
+  }
+  
+  draw.text(`（単位：円）`, 400, y, { size: 10 });
+  draw.text(`作成日: ${new Date().toLocaleDateString('ja-JP')}`, 480, y, { size: 9, color: colors.muted });
   y -= 18;
   draw.line(40, y, 555, y, 1.5);
   y -= 12;
@@ -663,6 +704,8 @@ export async function generateTaxReturnBPDF(data: JpTaxFormData): Promise<Uint8A
     taxableIncome: data.taxableIncome,
     estimatedTax: data.estimatedTax,
     fiscalYear: data.fiscalYear,
+    fiscalYearStart: data.fiscalYearStart,
+    fiscalYearEnd: data.fiscalYearEnd,
     isBlueReturn: !!data.isBlueReturn,
     expensesByCategory: data.expensesByCategory,
     deductions: {
@@ -1103,7 +1146,7 @@ export async function generateCompleteCorporateTaxPDF(data: CorporateTaxInputDat
   drawGridRow51('期首利益積立金額', data.beppyo5.retainedEarningsBegin, y); y -= 20;
   drawGridRow51('当期増加額', data.beppyo5.currentIncrease, y); y -= 20;
   drawGridRow51('当期減少額', data.beppyo5.currentDecrease, y); y -= 20;
-  drawGridRow51('期末利益積立金額', data.beppyo5.retainedEarningsEnd, y, true); y -= 20;
+  drawGridRow51('期末利益積立金額', data.beppyo5.totalRetainedEarningsEnd, y, true); y -= 20;
 
   y -= 20;
   drawSectionBox(d51, '資本金等の額', y, pageWidth, colors, bold);

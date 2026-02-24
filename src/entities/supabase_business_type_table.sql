@@ -10,6 +10,8 @@ CREATE TABLE business_type (
   email VARCHAR(255),
   representative_name VARCHAR(255),
   established_date DATE,
+  fiscal_year_start_month INT DEFAULT 4,
+  capital_amount BIGINT DEFAULT 0,
   is_active BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -35,11 +35,11 @@ export type StandardCategory =
   | '雑損益';
 
 export const STANDARD_CATEGORIES: StandardCategory[] = [
-  '旅費交通費',
-  '通信費',
-  '消耗品費',
   '接待交際費',
   '会議費',
+  '消耗品費',
+  '旅費交通費',
+  '通信費',
   '水道光熱費',
   '広告宣伝費',
   '外注費',
@@ -205,6 +205,8 @@ const KEYWORD_RULES: { keyword: string; category: StandardCategory }[] = [
   { keyword: '東京電力', category: '水道光熱費' },
   { keyword: '東京ガス', category: '水道光熱費' },
   { keyword: '水道', category: '水道光熱費' },
+  { keyword: '光熱費', category: '水道光熱費' },
+  { keyword: '水道光熱費', category: '水道光熱費' },
   { keyword: 'Water', category: '水道光熱費' },
   { keyword: '電気代', category: '水道光熱費' },
   { keyword: 'ガス代', category: '水道光熱費' },

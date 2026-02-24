@@ -359,7 +359,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                     )}
                                 </div>
                             </div>
-                            <div className="relative h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <div className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                 <div
                                     className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ${budgetData.projected > budget ? 'bg-red-500' : 'bg-primary'
                                         }`}
@@ -387,7 +387,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded bg-gray-300"></div>目安</div>
                                 </div>
                             </div>
-                            <div className="relative" style={{ height: `${Math.max(150, budgetData.chartData.labels.length * 50)}px` }}>
+                            <div className="relative" style={{ height: `${Math.max(120, budgetData.chartData.labels.length * 35)}px` }}>
                                 <Bar data={budgetData.chartData} options={chartOptions} />
                             </div>
                         </div>
@@ -426,9 +426,9 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                     )}
                                 </div>
                             </div>
-                            <div className="h-1.5 bg-surface-highlight rounded-full overflow-hidden">
+                            <div className="h-2 bg-surface-highlight rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full transition-all duration-1000 ${totalBudgetData.progress > 90 ? 'bg-red-500' : totalBudgetData.progress > 70 ? 'bg-orange-400' : 'bg-emerald-500'}`}
+                                    className={`h-full rounded-full transition-all duration-1000 ${totalBudgetData.progress > 90 ? 'bg-red-500' : totalBudgetData.progress > 70 ? 'bg-orange-400' : 'bg-emerald-500'}`}
                                     style={{ width: `${totalBudgetData.progress}%` }}
                                 />
                             </div>
@@ -446,7 +446,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded bg-emerald-500"></div>累計実績</div>
                                 </div>
                             </div>
-                            <div className="relative" style={{ height: `${Math.max(150, totalBudgetData.chartData.labels.length * 50)}px` }}>
+                            <div className="relative" style={{ height: `${Math.max(120, totalBudgetData.chartData.labels.length * 35)}px` }}>
                                 <Bar data={totalBudgetData.chartData} options={chartOptions} />
                             </div>
                         </div>
@@ -464,7 +464,7 @@ const BudgetControlCard: React.FC<BudgetControlCardProps> = ({ transactions, rec
                                     </div>
                                 </div>
                             </div>
-                            <div className="relative h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden flex">
+                            <div className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden flex">
                                 {taxData.chartData.datasets[0].data.map((val, idx) => (
                                     <div
                                         key={idx}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-    Home, Receipt, FileText, BarChart3, MessageSquare, Sparkles, Target,
+    Home, ReceiptJapaneseYen, FileText, BarChart3, MessageSquare, Sparkles, Target,
     Settings, LogOut, ChevronLeft, ChevronRight, X, Upload, Edit, Sun, Moon,
     History as HistoryIcon
 } from 'lucide-react';
@@ -38,10 +38,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     const navItems = [
         { path: '/dashboard', label: 'ダッシュボード', icon: Home },
         { path: '/chat-to-book', label: '音声で記録', icon: MessageSquare },
-        { path: '/receipt-processing', label: 'レシート処理', icon: Receipt },
+        { path: '/receipt-processing', label: 'レシート処理', icon: ReceiptJapaneseYen },
         { path: '/invoice-creation', label: '書類作成管理', icon: FileText },
         { path: '/csv-import', label: 'CSV入出力管理', icon: Upload },
-        { path: '/subsidy-matching', label: '補助金マッチ', icon: Target },
         { path: '/business-analysis', label: '経営分析', icon: BarChart3 },
         { path: '/settlement-history', label: '過去データ・引継ぎ', icon: HistoryIcon },
         // 法人の場合は法人税申告サポート、個人の場合は確定申告サポート
@@ -62,6 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             label: '申告書直接編集',
             icon: Edit
         }] : []),
+        { path: '/subsidy-matching', label: '補助金マッチング', icon: Target },
     ];
 
     const handleSignOut = async () => {
@@ -109,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
                 <div className={`flex flex-col h-full overflow-visible ${(isExpanded || isOpen) ? 'p-4' : 'px-1 py-4'}`}>
                     {/* Header / Logo Area */}
-                    <div className={`flex items-center h-16 mb-6 ${(isExpanded || isOpen) ? 'justify-between' : 'justify-center'}`}>
+                    <div className={`flex items-center h-16 mb-2 ${(isExpanded || isOpen) ? 'justify-between' : 'justify-center'}`}>
                         {(isExpanded || isOpen) ? (
                             <div className="flex items-center space-x-3">
                                 <img src="/ainance-logo-header.png" alt="Ainance" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
@@ -133,7 +133,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </div>
 
                     {/* Navigation */}
-                    <nav className={`flex-1 space-y-4 overflow-y-auto overflow-x-visible pt-10 pb-16 scrollbar-hide ${(isExpanded || isOpen) ? 'px-4' : 'px-0'}`}>
+                    <nav className={`flex-1 space-y-4 overflow-y-auto overflow-x-visible pt-2 pb-16 scrollbar-hide ${(isExpanded || isOpen) ? 'px-4' : 'px-0'}`}>
                         {navItems.map((item) => (
                             <Link
                                 key={item.path}
