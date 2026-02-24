@@ -1072,7 +1072,7 @@ const CorporateTaxFilingPage: React.FC = () => {
         }
 
         return data;
-    }, [transactions, corporateInfo.fiscalYear, depreciationTotal]);
+    }, [transactions, corporateInfo.fiscalYear, depreciationTotal, corporateInfo.beginningRetainedEarnings, corporateInfo.capital, prevYearBS, prevYearSettlement]);
 
     // 法人税計算結果
     const taxResult = useMemo(() => {
