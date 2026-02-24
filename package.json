@@ -11,8 +11,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server.js",
-    "test-api": "node test-api.js",
-    "deploy": "gh-pages -d dist"
+    "test-api": "node test-api.js"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.2.8",
