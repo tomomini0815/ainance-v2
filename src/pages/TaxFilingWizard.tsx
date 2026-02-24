@@ -287,7 +287,7 @@ const TaxFilingWizard: React.FC = () => {
             netIncome: baseData.netIncome - depreciationAmount,
             taxableIncome: Math.max(0, baseData.taxableIncome - depreciationAmount),
         };
-    }, [transactions, fiscalYear, currentBusinessType, deductions, depreciationAmount]);
+    }, [transactions, fiscalYear, currentBusinessType, deductions, depreciationAmount, basicInfo]);
 
     // ステップ移動
     const goToNextStep = () => {
