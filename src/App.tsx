@@ -39,6 +39,7 @@ const TransactionInbox = React.lazy(() => import('./pages/TransactionInbox'));
 const CumulativeAnalysisPage = React.lazy(() => import('./pages/CumulativeAnalysisPage'));
 const TaxReportPage = React.lazy(() => import('./pages/TaxReportPage'));
 const YearlySettlementHistory = React.lazy(() => import('./pages/YearlySettlementHistory'));
+const LP_Test = React.lazy(() => import('./pages/LP_Test'));
 
 const Login = React.lazy(() => import('./pages/Login'));
 const DatabaseTestPage = React.lazy(() => import('./pages/DatabaseTestPage'));
@@ -419,6 +420,7 @@ function App() {
                 <Route path="/support/troubleshooting/clear-cache" element={<ClearCache />} />
                 <Route path="/support/troubleshooting/bug-report" element={<BugReport />} />
                 <Route path="/legal" element={<LegalNotice />} />
+                <Route path="/lp-test" element={<LP_Test />} />
 
                 {/* デフォルトルート */}
                 <Route path="/" element={<LandingPage />} />

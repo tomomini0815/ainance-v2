@@ -186,19 +186,123 @@ export interface BusinessOverviewData {
     depreciation: number; // 減価償却費
 }
 
+// 別表七（一）欠損金の繰越控除
+export interface LossCarryforwardItem {
+    fiscalYear: string;     // 欠損事業年度
+    originalLoss: number;   // 欠損金額
+    usedPrior: number;      // 前期以前の控除済額
+    usedCurrent: number;    // 当期控除額
+    remaining: number;      // 翌期繰越額
+}
+
+export interface Beppyo7Data {
+    preDeductionIncome: number;       // 控除前所得金額
+    deductionLimit: number;           // 損金算入限度額（中小法人は100%）
+    items: LossCarryforwardItem[];    // 年度別欠損金明細
+    totalDeduction: number;           // 当期損金算入合計
+    totalCarryforward: number;        // 翌期繰越合計
+}
+
+// 第六号様式（都道府県民税・事業税・特別法人事業税）
+export interface Form6Data {
+    // 事業税（所得割）
+    incomeForBusinessTax: number;     // 課税標準所得
+    businessTax400: number;           // 400万以下の部分
+    businessTax800: number;           // 400万超800万以下の部分
+    businessTaxOver: number;          // 800万超の部分
+    businessTaxAmount: number;        // 事業税合計
+    // 特別法人事業税
+    specialBusinessTaxRate: number;   // 特別法人事業税率（37%）
+    specialBusinessTaxAmount: number; // 特別法人事業税額
+    // 都道府県民税
+    corporateTaxBase: number;         // 法人税額（課税標準）
+    prefecturalTaxRate: number;       // 都道府県民税率
+    prefecturalTaxAmount: number;     // 都道府県民税（法人税割）
+    prefecturalPerCapita: number;     // 均等割額
+    totalPrefecturalTax: number;      // 都道府県民税合計
+    // 中間・予定納付
+    interimBusinessTax: number;
+    interimPrefecturalTax: number;
+    // 差引納付額
+    businessTaxPayable: number;
+    prefecturalTaxPayable: number;
+}
+
+// 第二十号様式（市町村民税）
+export interface Form20Data {
+    corporateTaxBase: number;         // 法人税額（課税標準）
+    municipalTaxRate: number;         // 市町村民税率
+    municipalTaxAmount: number;       // 市町村民税（法人税割）
+    municipalPerCapita: number;       // 均等割額
+    totalMunicipalTax: number;        // 市町村民税合計
+    interimMunicipalTax: number;      // 中間納付額
+    municipalTaxPayable: number;      // 差引納付額
+}
+
+// 財務諸表（貸借対照表・損益計算書）
+export interface BalanceSheetData {
+    currentAssets: number;            // 流動資産
+    fixedAssets: number;              // 固定資産
+    deferredAssets: number;           // 繰延資産
+    totalAssets: number;              // 資産合計
+    
+    currentLiabilities: number;       // 流動負債
+    fixedLiabilities: number;         // 固定負債
+    totalLiabilities: number;         // 負債合計
+    
+    capitalStock: number;             // 資本金
+    capitalSurplus: number;           // 資本剰余金
+    retainedEarnings: number;         // 利益剰余金
+    treasuryStock: number;            // 自己株式
+    totalNetAssets: number;           // 純資産合計
+    
+    totalLiabilitiesAndNetAssets: number; // 負債純資産合計
+}
+
+export interface IncomeStatementData {
+    netSales: number;                 // 売上高
+    costOfSales: number;              // 売上原価
+    grossProfit: number;              // 売上総利益
+    
+    sellingGeneralAdminExpenses: number; // 販売費及び一般管理費
+    operatingIncome: number;          // 営業利益
+    
+    nonOperatingIncome: number;       // 営業外収益
+    nonOperatingExpenses: number;     // 営業外費用
+    ordinaryIncome: number;           // 経常利益
+    
+    extraordinaryIncome: number;      // 特別利益
+    extraordinaryLoss: number;        // 特別損失
+    incomeBeforeTax: number;          // 税引前当期純利益
+    
+    incomeTaxes: number;              // 法人税、住民税及び事業税等
+    netIncome: number;                // 当期純利益
+}
+
+export interface FinancialStatementsData {
+    balanceSheet: BalanceSheetData;
+    incomeStatement: IncomeStatementData;
+}
+
 export interface CorporateTaxInputData {
     companyInfo: CompanyInfo;        // 法人基本情報
     beppyo1: Beppyo1Data;
+    beppyo2: Beppyo2Data;
     beppyo4: Beppyo4Data;
     beppyo5: Beppyo5Data;
     beppyo5_2: Beppyo5_2Data;
-    beppyo16: Beppyo16Data;
+    beppyo7: Beppyo7Data;
     beppyo15: Beppyo15Data;
-    beppyo2: Beppyo2Data;
+    beppyo16: Beppyo16Data;
     businessOverview: BusinessOverviewData;
+    form6: Form6Data;
+    form20: Form20Data;
+    financialStatements: FinancialStatementsData;
     calibration?: {
         globalShiftX: number;
         globalShiftY: number;
+        digitCenterOffsetX?: number;
+        digitCenterOffsetY?: number;
     };
 }
 
@@ -323,5 +427,71 @@ export const initialCorporateTaxInputData: CorporateTaxInputData = {
     calibration: {
         globalShiftX: 0,
         globalShiftY: 0,
-    }
+    },
+    beppyo7: {
+        preDeductionIncome: 0,
+        deductionLimit: 0,
+        items: [],
+        totalDeduction: 0,
+        totalCarryforward: 0,
+    },
+    form6: {
+        incomeForBusinessTax: 0,
+        businessTax400: 0,
+        businessTax800: 0,
+        businessTaxOver: 0,
+        businessTaxAmount: 0,
+        specialBusinessTaxRate: 0.37,
+        specialBusinessTaxAmount: 0,
+        corporateTaxBase: 0,
+        prefecturalTaxRate: 0.01,
+        prefecturalTaxAmount: 0,
+        prefecturalPerCapita: 20000,
+        totalPrefecturalTax: 0,
+        interimBusinessTax: 0,
+        interimPrefecturalTax: 0,
+        businessTaxPayable: 0,
+        prefecturalTaxPayable: 0,
+    },
+    form20: {
+        corporateTaxBase: 0,
+        municipalTaxRate: 0.06,
+        municipalTaxAmount: 0,
+        municipalPerCapita: 50000,
+        totalMunicipalTax: 0,
+        interimMunicipalTax: 0,
+        municipalTaxPayable: 0,
+    },
+    financialStatements: {
+        balanceSheet: {
+            currentAssets: 0,
+            fixedAssets: 0,
+            deferredAssets: 0,
+            totalAssets: 0,
+            currentLiabilities: 0,
+            fixedLiabilities: 0,
+            totalLiabilities: 0,
+            capitalStock: 1000000,
+            capitalSurplus: 0,
+            retainedEarnings: 0,
+            treasuryStock: 0,
+            totalNetAssets: 1000000,
+            totalLiabilitiesAndNetAssets: 1000000,
+        },
+        incomeStatement: {
+            netSales: 0,
+            costOfSales: 0,
+            grossProfit: 0,
+            sellingGeneralAdminExpenses: 0,
+            operatingIncome: 0,
+            nonOperatingIncome: 0,
+            nonOperatingExpenses: 0,
+            ordinaryIncome: 0,
+            extraordinaryIncome: 0,
+            extraordinaryLoss: 0,
+            incomeBeforeTax: 0,
+            incomeTaxes: 0,
+            netIncome: 0,
+        },
+    },
 };

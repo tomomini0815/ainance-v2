@@ -27,7 +27,7 @@ const Step2Income: React.FC<Step2IncomeProps> = ({ data, onChange, onNext, onBac
     const [showMonthlyInput, setShowMonthlyInput] = useState(false);
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
-    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
+    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type || 'individual');
 
     const handleChange = (field: keyof IncomeInfo, value: any) => {
         onChange({ ...data, [field]: value });

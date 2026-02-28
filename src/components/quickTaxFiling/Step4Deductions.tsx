@@ -327,7 +327,7 @@ const Step4Deductions: React.FC<Step4DeductionsProps> = ({
                     </span>
                 </div>
                 <p className="text-xs sm:text-sm text-text-muted mt-2">
-                    基礎控除48万円に加えて、上記の控除が適用されます
+                    基礎控除（最大95万円）に加えて、上記の控除が適用されます
                 </p>
             </div>
 

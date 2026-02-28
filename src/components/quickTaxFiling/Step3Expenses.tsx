@@ -35,7 +35,7 @@ const Step3Expenses: React.FC<Step3ExpensesProps> = ({
 }) => {
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
-    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
+    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type || 'individual');
 
     const handleChange = (field: keyof ExpensesInfo, value: string) => {
         onChange({ ...data, [field]: parseInt(value) || 0 });

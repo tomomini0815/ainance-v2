@@ -94,7 +94,7 @@ const ReadinessCheck: React.FC<{
                     </span>
                 </div>
                 <div className="flex items-center justify-between text-sm border-b border-slate-700 pb-2">
-                    <span className="text-slate-400">{isCorporation ? '法人番号' : '個人番号（マイナンバー）'}の入力</span>
+                    <span className="text-slate-400">{isCorporation ? '法人番号' : 'インボイス登録番号'}の入力</span>
                     {hasIdNumber ? (
                         <span className="text-success flex items-center gap-1 font-bold">
                             <CheckCircle className="w-4 h-4" /> 正常
@@ -123,7 +123,7 @@ const ReadinessCheck: React.FC<{
                     <p className="font-bold text-blue-400 mb-1 flex items-center gap-1">
                         <Info className="w-3 h-3" /> AIアドバイス
                     </p>
-                    申告書をe-Taxで提出する場合、{isCorporation ? '法人番号' : '個人番号'}の入力が必須です。Step 1に戻って入力するか、PDFダウンロード後に手書きで追記してください。
+                    申告書をe-Taxで提出する場合、{isCorporation ? '法人番号' : 'インボイス登録番号'}等の入力が必要です（インボイス未登録の場合は空欄または適宜修正可）。Step 1に戻って入力するか、PDFダウンロード後に手書きで追記してください。
                 </div>
             )}
         </div>
@@ -633,8 +633,8 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
             previewWindow.document.close();
         }
 
-        // メモリ解放（少し遅延させて確実にダウンロードを完了させる）
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        // メモリ解放（ユーザーがダイアログを操作する時間を確保）
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
     };
 
     // 進捗バー
@@ -741,23 +741,13 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                         </p>
                     </div>
                 </div>
-            ) : (
-                <div className="bg-warning-light border border-warning/20 rounded-lg p-4 flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                    <div>
-                        <p className="text-sm text-text-main font-medium">前期データの登録をお勧めします</p>
-                        <p className="text-sm text-text-muted mt-1">
-                            「過去データ・引継ぎ」に前年度の青色申告決算書等を登録すると、期首残高が自動でバトンタッチ（引き継ぎ）されます。
-                        </p>
-                    </div>
-                </div>
-            )}
+            ) : null}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-text-main mb-2">
-                            氏名 / 氏名（名称）
+                            {isCorporation ? '会社名（名称）' : '氏名（屋号）'}
                         </label>
                         <input
                             type="text"
@@ -781,14 +771,14 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-text-main mb-2">
-                            {isCorporation ? '法人番号' : '個人番号'}
+                            {isCorporation ? '法人番号 / インボイス番号' : 'インボイス登録番号'}
                         </label>
                         <input
                             type="text"
                             value={basicInfo.idNumber}
                             onChange={(e) => setBasicInfo({ ...basicInfo, idNumber: e.target.value })}
                             className="input-base"
-                            placeholder="123456789012"
+                            placeholder="T1234567890123"
                         />
                     </div>
                 </div>
@@ -990,7 +980,24 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
 
             {/* カテゴリ別内訳 */}
             <div className="bg-surface border border-border rounded-xl p-5">
-                <h4 className="font-medium text-text-main mb-4">経費カテゴリ内訳</h4>
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium text-text-main">経費カテゴリ内訳</h4>
+                    {taxData.expensesByCategory.length > 0 && (
+                        <button
+                            onClick={() => {
+                                const copyText = taxData.expensesByCategory
+                                    .map(cat => `${cat.category}\t${cat.amount}`)
+                                    .join('\n');
+                                navigator.clipboard.writeText(copyText);
+                                import('react-hot-toast').then(t => t.default.success('経費内訳をコピーしました'));
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-md transition-colors"
+                        >
+                            <Copy className="w-3.5 h-3.5" />
+                            コピー
+                        </button>
+                    )}
+                </div>
                 {taxData.expensesByCategory.length > 0 ? (
                     <div className="space-y-4">
                         {taxData.expensesByCategory.map((cat, index) => {
@@ -1002,9 +1009,19 @@ ${deductions.filter(d => d.isApplicable).map(d => `${d.name.padEnd(20, '　')}: 
                                             <div className="w-2 h-2 rounded-full bg-primary"></div>
                                             <span className="text-text-main">{cat.category}</span>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="text-right flex items-center justify-end gap-1.5 w-[200px]">
                                             <span className="font-medium text-text-main">{formatCurrency(cat.amount)}</span>
-                                            <span className="text-text-muted text-sm ml-2">({formatPercentage(cat.percentage)})</span>
+                                            <span className="text-text-muted text-sm shrink-0">({formatPercentage(cat.percentage)})</span>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(cat.amount.toString());
+                                                    import('react-hot-toast').then(t => t.default.success(`${cat.category}の金額をコピーしました`));
+                                                }}
+                                                className="p-1 hover:bg-surface border border-transparent hover:border-border rounded text-text-muted hover:text-primary transition-colors flex-shrink-0"
+                                                title={`${cat.category}の金額をコピー`}
+                                            >
+                                                <Copy className="w-3.5 h-3.5" />
+                                            </button>
                                         </div>
                                     </div>
                                     <div className="w-full bg-surface-highlight h-2 rounded-full overflow-hidden mb-1">

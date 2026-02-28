@@ -1251,11 +1251,11 @@ export interface TextFieldConfig {
 
             // Beppyo 1
             output += `
-export const BEPPYO1_FIELDS: { [key: string]: DigitBoxConfig } = {
+export const BEPPYO1_PAGE1_FIELDS: { [key: string]: DigitBoxConfig } = {
 ${generateFieldConfig(corporateForms.beppyo1.fields[1].filter(f => f.type === 'digit'))}
 };
 
-export const BEPPYO1_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
+export const BEPPYO1_PAGE1_TEXT: { [key: string]: TextFieldConfig } = {
 ${generateFieldConfig(corporateForms.beppyo1.fields[1].filter(f => f.type === 'text'))}
 };
 `;
@@ -1263,11 +1263,11 @@ ${generateFieldConfig(corporateForms.beppyo1.fields[1].filter(f => f.type === 't
             // Beppyo 4
             output += `
 // ===== BEPPYO4 COORDINATE CONFIG =====
-export const BEPPYO4_FIELDS: { [key: string]: DigitBoxConfig } = {
+export const BEPPYO4_PAGE1_FIELDS: { [key: string]: DigitBoxConfig } = {
 ${generateFieldConfig(corporateForms.beppyo4.fields[1].filter(f => f.type === 'digit'))}
 };
 
-export const BEPPYO4_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
+export const BEPPYO4_PAGE1_TEXT: { [key: string]: TextFieldConfig } = {
 ${generateFieldConfig(corporateForms.beppyo4.fields[1].filter(f => f.type === 'text'))}
 };
 `;
@@ -1283,35 +1283,35 @@ export const BEPPYO5_PAGE1_TEXT: { [key: string]: TextFieldConfig } = {
 ${generateFieldConfig(corporateForms.beppyo5.fields[1].filter(f => f.type === 'text'))}
 };
 
-// ===== BEPPYO5 (2) (租税公課) COORDINATE CONFIG =====
-export const BEPPYO5_PAGE2_FIELDS: { [key: string]: DigitBoxConfig } = {
+// ===== BEPPYO5_2 COORDINATE CONFIG =====
+export const BEPPYO5_2_PAGE1_FIELDS: { [key: string]: DigitBoxConfig } = {
 ${generateFieldConfig(corporateForms.beppyo5_2.fields[1].filter(f => f.type === 'digit'))}
 };
-export const BEPPYO5_PAGE2_TEXT: { [key: string]: TextFieldConfig } = {
+export const BEPPYO5_2_PAGE1_TEXT: { [key: string]: TextFieldConfig } = {
 ${generateFieldConfig(corporateForms.beppyo5_2.fields[1].filter(f => f.type === 'text'))}
 };
 
 // ===== BEPPYO15 (交際費) COORDINATE CONFIG =====
-export const BEPPYO15_FIELDS: { [key: string]: DigitBoxConfig } = {
+export const BEPPYO15_PAGE1_FIELDS: { [key: string]: DigitBoxConfig } = {
 ${generateFieldConfig(corporateForms.beppyo15.fields[1].filter(f => f.type === 'digit'))}
 };
-export const BEPPYO15_TEXT: { [key: string]: TextFieldConfig } = {
+export const BEPPYO15_PAGE1_TEXT: { [key: string]: TextFieldConfig } = {
 ${generateFieldConfig(corporateForms.beppyo15.fields[1].filter(f => f.type === 'text'))}
 };
 
 // ===== BEPPYO16 (1) (減価償却 定額法) COORDINATE CONFIG =====
-export const BEPPYO16_1_FIELDS: { [key: string]: DigitBoxConfig } = {
+export const BEPPYO16_1_PAGE1_FIELDS: { [key: string]: DigitBoxConfig } = {
 ${generateFieldConfig(corporateForms.beppyo16.fields[1].filter(f => f.type === 'digit'))}
 };
-export const BEPPYO16_1_TEXT: { [key: string]: TextFieldConfig } = {
+export const BEPPYO16_1_PAGE1_TEXT: { [key: string]: TextFieldConfig } = {
 ${generateFieldConfig(corporateForms.beppyo16.fields[1].filter(f => f.type === 'text'))}
 };
 
 // ===== BEPPYO16 (2) (減価償却 定率法) COORDINATE CONFIG =====
-export const BEPPYO16_2_FIELDS: { [key: string]: DigitBoxConfig } = {
+export const BEPPYO16_2_PAGE1_FIELDS: { [key: string]: DigitBoxConfig } = {
 ${generateFieldConfig(corporateForms.beppyo16_2.fields[1].filter(f => f.type === 'digit'))}
 };
-export const BEPPYO16_2_TEXT: { [key: string]: TextFieldConfig } = {
+export const BEPPYO16_2_PAGE1_TEXT: { [key: string]: TextFieldConfig } = {
 ${generateFieldConfig(corporateForms.beppyo16_2.fields[1].filter(f => f.type === 'text'))}
 };
 `;

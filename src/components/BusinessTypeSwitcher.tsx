@@ -4,6 +4,7 @@ import { useBusinessTypeContext } from '../context/BusinessTypeContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { ChevronDown, ChevronUp, Building, User, Plus, Edit, Trash2, Check, X } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
 
 interface BusinessTypeSwitcherProps {
   userId?: string
@@ -20,6 +21,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
 }) => {
   const { user } = useAuth();
   const userId = propUserId || user?.id;
+  const navigate = useNavigate();
 
   console.log('BusinessTypeSwitcher rendered with userId:', userId);
 
@@ -109,6 +111,9 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
     if (selectedBusinessType) {
       setLocalBusinessType(selectedBusinessType)
       onBusinessTypeChange?.(selectedBusinessType)
+
+      // 切り替え後にダッシュボードへ遷移
+      navigate('/dashboard')
     }
   }
 
@@ -232,7 +237,7 @@ const BusinessTypeSwitcher: React.FC<BusinessTypeSwitcherProps> = ({
           <p className="text-text-muted text-sm mb-3">業態形態が設定されていません</p>
           <button
             onClick={() => {
-              setShowCreateModal(true)
+              if (onCreateClick) onCreateClick();
               setShowDropdown(false)
             }}
             className="btn-primary text-xs"

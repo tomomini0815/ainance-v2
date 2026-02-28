@@ -1,105 +1,67 @@
-# AInance会計アプリ
+# Ainance v2 (AInance会計アプリ)
 
-AInanceは、音声認識機能を搭載したスマート会計アプリケーションです。
+Ainanceは、AIと音声認識を最大限に活用した、次世代型のスマート会計・税務支援プラットフォームです。
+複雑な会計業務や税務申告を、対話形式や自動化によって「もっと身近に、もっと簡単に」することを目指しています。
 
-## 機能
+## 🚀 主要機能
 
-- 音声入力による取引登録
-- ダッシュボードでの収支分析
-- 取引履歴の管理
-- AIによる自動仕訳
-- レシートのOCR読み取り
+### 🤖 AIアシスタント & 自動化
+- **AIチャット registro**: Gemini APIを活用し、自然な会話（テキスト・音声）から取引を自動的に判別・登録。
+- **インテリジェント仕訳**: 過去のデータやキーワードに基づき、勘定科目を高精度で自動推論。
+- **レシートOCR**: 写真をアップロードするだけで、日付・金額・店舗名を瞬時にデータ化。
 
-## セットアップ手順
+### 📄 税務・決算支援
+- **法人税申告ウィザード**: 複雑な法人税申告をステップバイステップでナビゲート。
+- **申告書PDF自動生成**: 入力データに基づき、税務署提出用のPDF（別表、決算書等）を自動作成。
+- **e-Tax連携**: 電子申告に必要なデータフォーマットへの書き出しに対応。
+
+### 💼 業務管理
+- **インボイス作成・管理**: 適格請求書の作成、管理、およびPDF出力。
+- **助成金マッチング**: 事業内容に適した助成金・補助金をAIが提案。
+- **キャッシュフロー分析**: 収支の推移をリアルタイムで可視化するモダンなダッシュボード。
+
+## 🛠 技術スタック
+
+- **Frontend**: React 18, Vite, TypeScript
+- **Styling**: Tailwind CSS, Framer Motion (アニメーション)
+- **State Management**: Zustand, React Hook Form
+- **AI**: Google Gemini Pro 1.5 / Flash
+- **Database**: Supabase (cloud), Firebase
+- **PDF**: pdf-lib, jspdf (日本語フォント埋め込み対応)
+- **OCR**: Tesseract.js / Google Cloud Vision
+
+## 📦 セットアップ
 
 ### 1. 依存関係のインストール
-
 ```bash
 npm install
 ```
 
-または
-
-```bash
-pnpm install
-```
-
 ### 2. 環境変数の設定
-
-`.env`ファイルに以下の環境変数を設定してください：
-
+`.env`ファイルをルートディレクトリに作成し、`.env.example`を参考に以下の情報を設定してください。
 ```env
-# MySQL接続情報
-MYSQL_HOST=localhost
-MYSQL_USER=root
-MYSQL_PASSWORD=your_password
-MYSQL_DATABASE=ainance
-MYSQL_PORT=3306
+# Gemini API Key
+VITE_GEMINI_API_KEY=your_key_here
+
+# Supabase
+VITE_SUPABASE_URL=your_url
+VITE_SUPABASE_ANON_KEY=your_key
 ```
 
-### 3. MySQLデータベースのセットアップ
-
-1. MySQLサーバーを起動してください
-2. `src/entities/mysql_tables.sql`ファイルのSQLを実行して、必要なテーブルを作成してください
-
-### 4. アプリケーションの起動
-
+### 3. アプリケーションの起動
 ```bash
+# クライアント(Vite)
 npm run dev
 ```
 
-または
+## 📂 ディレクトリ構成
+- `src/pages`: 各機能のメイン画面（法人税、インボイス、分析など）
+- `src/services`: ビジネスロジック・外部API連携（AI, PDF生成, DB操作）
+- `src/components`: 再利用可能なUIコンポーネント
+- `src/types`: TypeScriptの型定義
 
-```bash
-pnpm dev
-```
+## 📜 ライセンス
+MIT License
 
-## データベース設計
-
-### transactionsテーブル
-
-| カラム名 | 型 | 説明 |
-|---------|---|-----|
-| id | INT AUTO_INCREMENT PRIMARY KEY | 一意の識別子 |
-| item | VARCHAR(255) | 取引項目 |
-| amount | DECIMAL(10, 2) | 金額 |
-| date | DATE | 取引日 |
-| category | VARCHAR(100) | カテゴリ |
-| type | VARCHAR(100) | 収支タイプ（income/expense） |
-| description | TEXT | 説明 |
-| receipt_url | VARCHAR(500) | レシート画像のURL |
-| creator | VARCHAR(255) | 作成者 |
-| created_at | TIMESTAMP | 作成日時 |
-| updated_at | TIMESTAMP | 更新日時 |
-| tags | TEXT | タグ |
-| location | VARCHAR(255) | 場所 |
-| recurring | BOOLEAN | 繰り返し取引フラグ |
-| recurring_frequency | VARCHAR(20) | 繰り返し頻度 |
-
-### ai_transactionsテーブル
-
-AIによる自動仕訳用のテーブルです。
-
-## デプロイ
-
-```bash
-npm run build
-```
-
-または
-
-```bash
-pnpm build
-```
-
-## ライセンス
-
-MIT
-# Ainance v2
-Updated: Sat Oct 18 17:31:15 JST 2025
-
-npm ciエラー解決: Sat Oct 18 17:34:14 JST 2025
-
-ワークフロー開始: Sat Oct 18 17:41:33 JST 2025
-
-ワークフロー再実行: Sat Oct 18 19:00:44 JST 2025
+---
+*Updated: 2026-02-25*

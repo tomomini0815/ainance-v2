@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, Brain, CheckCircle, AlertCircle } from 'lucide-react'
-import { useMySQLAITransactions } from '../hooks/useMySQLAITransactions'
+import { useAITransactions } from '../hooks/useAITransactions'
 
 interface AITransaction {
   id: string | number
@@ -28,7 +28,7 @@ interface AITransactionTableProps {
 }
 
 const AITransactionTable: React.FC<AITransactionTableProps> = ({ aiTransactions, loading }) => {
-  const { fetchAITransactions } = useMySQLAITransactions();
+  const { fetchAITransactions } = useAITransactions();
 
   // カスタムイベントリスナーを追加して、取引が記録されたときにデータを再取得
   useEffect(() => {

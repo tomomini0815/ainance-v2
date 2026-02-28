@@ -107,58 +107,81 @@ export function generateCorporateTaxXTX(data: CorporateTaxInputData): string {
   const now = new Date();
   const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0];
 
-  // 簡易的なマッピング（実際には国税庁の仕様に準拠したタグ名が必要）
+  const formatItems = (items: { description: string, amount: number }[]) => {
+    if (items.length === 0) return '';
+    return '\n' + items.map(item => `      <項目>\n        <摘要>${item.description}</摘要>\n        <金額>${item.amount}</金額>\n      </項目>`).join('\n') + '\n    ';
+  };
+
+  const formatAssets = (assets: { name: string, acquisitionCost: number, currentDepreciation: number }[]) => {
+    if (assets.length === 0) return '';
+    return '\n' + assets.map(asset => `      <資産>\n        <名称>${asset.name}</名称>\n        <取得価額>${asset.acquisitionCost}</取得価額>\n        <当期償却額>${asset.currentDepreciation}</当期償却額>\n      </資産>`).join('\n') + '\n    ';
+  };
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <法人税申告書等データ>
-    <作成日時>${timestamp}</作成日時>
-    <ファイル種別>法人税申告書</ファイル種別>
-    
-    <別表一>
-        <課税標準額>${data.beppyo1.taxableIncome}</課税標準額>
-        <法人税額>${data.beppyo1.corporateTaxAmount}</法人税額>
-        <特別控除額>${data.beppyo1.specialTaxCredit}</特別控除額>
-        <中間納付額>${data.beppyo1.interimPayment}</中間納付額>
-        <差引確定法人税額>${data.beppyo1.corporateTaxAmount - data.beppyo1.specialTaxCredit - data.beppyo1.interimPayment}</差引確定法人税額>
-    </别表一>
+  <作成日時>${timestamp}</作成日時>
+  <ファイル種別>法人税申告書</ファイル種別>
+  
+  <別表一>
+    <課税標準額>${data.beppyo1.taxableIncome}</課税標準額>
+    <法人税額>${data.beppyo1.corporateTaxAmount}</法人税額>
+    <特別控除額>${data.beppyo1.specialTaxCredit}</特別控除額>
+    <中間納付額>${data.beppyo1.interimPayment}</中間納付額>
+    <差引確定法人税額>${data.beppyo1.corporateTaxAmount - data.beppyo1.specialTaxCredit - data.beppyo1.interimPayment}</差引確定法人税額>
+  </別表一>
 
-    <別表四>
-        <当期純利益>${data.beppyo4.netIncomeFromPL}</当期純利益>
-        <加算項目>
-            ${data.beppyo4.additions.map(a => `
-            <項目>
-                <摘要>${a.description}</摘要>
-                <金額>${a.amount}</金額>
-            </項目>`).join('')}
-        </加算項目>
-        <減算項目>
-            ${data.beppyo4.subtractions.map(s => `
-            <項目>
-                <摘要>${s.description}</摘要>
-                <金額>${s.amount}</金額>
-            </項目>`).join('')}
-        </減算項目>
-        <所得金額>${data.beppyo4.taxableIncome}</所得金額>
-    </別表四>
+  <別表四>
+    <当期純利益>${data.beppyo4.netIncomeFromPL}</当期純利益>
+    <加算項目>${formatItems(data.beppyo4.additions)}</加算項目>
+    <減算項目>${formatItems(data.beppyo4.subtractions)}</減算項目>
+    <所得金額>${data.beppyo4.taxableIncome}</所得金額>
+  </別表四>
 
-    <別表十五>
-        <交際費等の支出額>${data.beppyo15.socialExpenses}</交際費等の支出額>
-        <接待飲食費の額>${data.beppyo15.deductibleExpenses}</接待飲食費の額>
-        <損金不算入額>${data.beppyo15.excessAmount}</損金不算入額>
-    </別表十五>
+  <別表十五>
+    <交際費等の支出額>${data.beppyo15.socialExpenses}</交際費等の支出額>
+    <接待飲食費の額>${data.beppyo15.deductibleExpenses}</接待飲食費の額>
+    <損金不算入額>${data.beppyo15.excessAmount}</損金不算入額>
+  </別表十五>
 
-    <別表十六>
-        <資産一覧>
-            ${data.beppyo16.assets.map(asset => `
-            <資産>
-                <名称>${asset.name}</名称>
-                <取得価額>${asset.acquisitionCost}</取得価額>
-                <当期償却額>${asset.currentDepreciation}</当期償却額>
-            </資産>`).join('')}
-        </資産一覧>
-        <償却超過額>${data.beppyo16.excessAmount}</償却超過額>
-    </別表十六>
-    
-    <備考>Ainanceにて生成 (Corporate Tax Return Draft)</備考>
+  <別表十六>
+    <資産一覧>${formatAssets(data.beppyo16.assets)}</資産一覧>
+    <償却超過額>${data.beppyo16.excessAmount}</償却超過額>
+  </別表十六>
+
+  <財務諸表>
+    <貸借対照表>
+      <流動資産>${data.financialStatements.balanceSheet.currentAssets}</流動資産>
+      <固定資産>${data.financialStatements.balanceSheet.fixedAssets}</固定資産>
+      <繰延資産>${data.financialStatements.balanceSheet.deferredAssets}</繰延資産>
+      <資産合計>${data.financialStatements.balanceSheet.totalAssets}</資産合計>
+      <流動負債>${data.financialStatements.balanceSheet.currentLiabilities}</流動負債>
+      <固定負債>${data.financialStatements.balanceSheet.fixedLiabilities}</固定負債>
+      <負債合計>${data.financialStatements.balanceSheet.totalLiabilities}</負債合計>
+      <資本金>${data.financialStatements.balanceSheet.capitalStock}</資本金>
+      <資本剰余金>${data.financialStatements.balanceSheet.capitalSurplus}</資本剰余金>
+      <利益剰余金>${data.financialStatements.balanceSheet.retainedEarnings}</利益剰余金>
+      <自己株式>${data.financialStatements.balanceSheet.treasuryStock}</自己株式>
+      <純資産合計>${data.financialStatements.balanceSheet.totalNetAssets}</純資産合計>
+      <負債純資産合計>${data.financialStatements.balanceSheet.totalLiabilitiesAndNetAssets}</負債純資産合計>
+    </貸借対照表>
+    <損益計算書>
+      <売上高>${data.financialStatements.incomeStatement.netSales}</売上高>
+      <売上原価>${data.financialStatements.incomeStatement.costOfSales}</売上原価>
+      <売上総利益>${data.financialStatements.incomeStatement.grossProfit}</売上総利益>
+      <販売費及び一般管理費>${data.financialStatements.incomeStatement.sellingGeneralAdminExpenses}</販売費及び一般管理費>
+      <営業利益>${data.financialStatements.incomeStatement.operatingIncome}</営業利益>
+      <営業外収益>${data.financialStatements.incomeStatement.nonOperatingIncome}</営業外収益>
+      <営業外費用>${data.financialStatements.incomeStatement.nonOperatingExpenses}</営業外費用>
+      <経常利益>${data.financialStatements.incomeStatement.ordinaryIncome}</経常利益>
+      <特別利益>${data.financialStatements.incomeStatement.extraordinaryIncome}</特別利益>
+      <特別損失>${data.financialStatements.incomeStatement.extraordinaryLoss}</特別損失>
+      <税引前当期純利益>${data.financialStatements.incomeStatement.incomeBeforeTax}</税引前当期純利益>
+      <法人税住民税及事業税>${data.financialStatements.incomeStatement.incomeTaxes}</法人税住民税及事業税>
+      <当期純利益>${data.financialStatements.incomeStatement.netIncome}</当期純利益>
+    </損益計算書>
+  </財務諸表>
+  
+  <備考>Ainanceにて生成 (Corporate Tax Return Draft)</備考>
 </法人税申告書等データ>`;
 
   return xml;
@@ -206,18 +229,20 @@ export function generateCopyableText(info: TaxFilingInfo): {
 }
 
 /**
- * ファイルをダウンロード
+ * ファイルを強制ダウンロード
  */
-export function downloadFile(content: string, filename: string, type: string = 'application/xml;charset=utf-8'): void {
+export function downloadFile(content: string, filename: string, type: string = 'application/octet-stream'): void {
+  // \ufeff はUTF-8 BOM。これと application/octet-stream を組み合わせることで文字化けせずに強制ダウンロードさせる
   const blob = new Blob(['\ufeff' + content], { type });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = filename;
+  link.setAttribute('download', filename);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // URLはすぐに破棄せず、ユーザーが「名前を付けて保存」ダイアログを操作する時間を確保する
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 /**

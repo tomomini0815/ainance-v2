@@ -111,7 +111,8 @@ export function downloadCSVTemplate(): void {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // URLはすぐに破棄せず、ユーザーがダイアログを操作する時間を確保する
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 /**

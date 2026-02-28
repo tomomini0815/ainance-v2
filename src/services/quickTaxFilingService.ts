@@ -81,8 +81,17 @@ export const calculateTax = (data: QuickTaxFilingData): TaxCalculationResult => 
   // 所得金額（収入 - 経費）
   const netIncome = totalIncome - totalExpenses;
   
-  // 基礎控除（48万円）
-  const basicDeduction = 480000;
+  // 基礎控除（令和7年度からの新ルール：最大95万円）
+  let basicDeduction = 0;
+  if (netIncome <= 1320000) basicDeduction = 950000;
+  else if (netIncome <= 3360000) basicDeduction = 880000;
+  else if (netIncome <= 4890000) basicDeduction = 680000;
+  else if (netIncome <= 6550000) basicDeduction = 630000;
+  else if (netIncome <= 23500000) basicDeduction = 580000;
+  else if (netIncome <= 24000000) basicDeduction = 480000;
+  else if (netIncome <= 24500000) basicDeduction = 320000;
+  else if (netIncome <= 25000000) basicDeduction = 160000;
+  else basicDeduction = 0;
   
   // その他の控除合計
   const totalDeductions = basicDeduction + Object.entries(data.deductions).reduce((sum, [key, val]) => {

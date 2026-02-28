@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { initialCorporateTaxInputData, CorporateTaxInputData } from '../../types/corporateTaxInput';
 import { CorporateTaxInputService } from '../../services/CorporateTaxInputService';
 import { generateCompleteCorporateTaxPDF, fillOfficialCorporateTaxPDF, fillSingleOfficialCorporateTaxPDF } from '../../services/pdfJapaneseService';
+import { downloadPDF } from '../../services/pdfAutoFillService';
 import { CsvExportService } from '../../services/CsvExportService';
+import { exportAllToExcel } from '../../services/excelExportService';
 import { Beppyo1Input } from './Beppyo1Input';
 import { Beppyo4Input } from './Beppyo4Input';
 import { Beppyo5_1Input } from './Beppyo5_1Input';
@@ -12,6 +14,9 @@ import { Beppyo15Input } from './Beppyo15Input';
 import { Beppyo16Input } from './Beppyo16Input';
 import { Beppyo2Input } from './Beppyo2Input';
 import { BusinessOverviewInput } from './BusinessOverviewInput';
+import { Beppyo7Input } from './Beppyo7Input';
+import { LocalTaxInput } from './LocalTaxInput';
+import { FinancialStatementsInput } from './FinancialStatementsInput';
 import { generateCorporateTaxXTX, downloadFile } from '../../services/eTaxExportService';
 import { Save, RefreshCw, Download, Activity, Calculator, PieChart, Landmark, Box, Coffee, Users, FileText, BookOpen, Eye, X, Share2, Wrench, Upload } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -21,7 +26,7 @@ import toast from 'react-hot-toast';
 
 export const CorporateTaxInputForm: React.FC = () => {
     const [data, setData] = useState<CorporateTaxInputData>(initialCorporateTaxInputData);
-    const [activeTab, setActiveTab] = useState<'overview' | 'beppyo4' | 'beppyo16' | 'beppyo15' | 'beppyo5' | 'beppyo5_2' | 'beppyo2' | 'beppyo1'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'beppyo4' | 'beppyo16' | 'beppyo15' | 'beppyo5' | 'beppyo5_2' | 'beppyo2' | 'beppyo1' | 'beppyo7' | 'local_tax' | 'financial_statements'>('overview');
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -30,7 +35,7 @@ export const CorporateTaxInputForm: React.FC = () => {
 
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
-    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
+    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type || 'corporation');
 
     // Load data
     useEffect(() => {
@@ -102,11 +107,7 @@ export const CorporateTaxInputForm: React.FC = () => {
         setIsGeneratingPdf(true);
         try {
             const pdfBytes = await generateCompleteCorporateTaxPDF(data);
-            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `法人税申告書_${new Date().toISOString().split('T')[0]}.pdf`;
-            link.click();
+            downloadPDF(new Uint8Array(pdfBytes as any), `法人税申告書_${new Date().toISOString().split('T')[0]}.pdf`);
             toast.success('PDFを出力しました');
         } catch (error) {
             console.error('PDF generation failed', error);
@@ -116,15 +117,161 @@ export const CorporateTaxInputForm: React.FC = () => {
         }
     };
 
+    const getProcessedData = (): CorporateTaxInputData => {
+        // Recalculate Beppyo 4
+        const totalAdditions = data.beppyo4.nonDeductibleTaxes +
+            data.beppyo4.nonDeductibleEntertainment +
+            data.beppyo4.excessDepreciation +
+            data.beppyo4.otherAdditions.reduce((sum, item) => sum + item.amount, 0);
+
+        const totalSubtractions = data.beppyo4.deductibleEnterpriseTax +
+            data.beppyo4.dividendExclusion +
+            data.beppyo4.otherSubtractions.reduce((sum, item) => sum + item.amount, 0);
+
+        const beppyo4TaxableIncome = data.beppyo4.netIncomeFromPL + totalAdditions - totalSubtractions;
+        const baseIncome = Math.floor(Math.max(0, beppyo4TaxableIncome) / 1000) * 1000;
+
+        // Recalculate Beppyo 1
+        const capital = data.companyInfo?.capitalAmount || 1000000;
+        let corporateTaxAmount = 0;
+        if (capital <= 100000000) {
+            const lowerRate = 0.15;
+            const upperRate = 0.232;
+            const threshold = 8000000;
+            if (baseIncome <= threshold) {
+                corporateTaxAmount = Math.floor(baseIncome * lowerRate);
+            } else {
+                const lowerPart = Math.floor(threshold * lowerRate);
+                const upperPart = Math.floor((baseIncome - threshold) * upperRate);
+                corporateTaxAmount = lowerPart + upperPart;
+            }
+        } else {
+            corporateTaxAmount = Math.floor(baseIncome * 0.232);
+        }
+        corporateTaxAmount = Math.floor(corporateTaxAmount / 100) * 100;
+
+        // 地方法人税 (10.3% of corporate tax)
+        const baseTaxForLocal = Math.floor(corporateTaxAmount / 1000) * 1000;
+        const localCorporateTaxAmount = Math.floor(Math.floor(baseTaxForLocal * 0.103) / 100) * 100;
+        const finalNationalTax = corporateTaxAmount - data.beppyo1.specialTaxCredit - data.beppyo1.nationalInterimPayment;
+
+        // 事業税（累進税率: 3.5% / 5.2% / 7.0%）
+        const enterpriseTaxAmount = (() => {
+            let rawTax = 0;
+            if (baseIncome <= 4000000) {
+                rawTax = Math.floor(baseIncome * 0.035);
+            } else if (baseIncome <= 8000000) {
+                rawTax = Math.floor(4000000 * 0.035) + Math.floor((baseIncome - 4000000) * 0.052);
+            } else {
+                rawTax = Math.floor(4000000 * 0.035) + Math.floor(4000000 * 0.052) + Math.floor((baseIncome - 8000000) * 0.070);
+            }
+            return Math.floor(rawTax / 100) * 100;
+        })();
+
+        // 住民税（法人税割: 都道府県1% + 市町村6%、均等割: 70,000円）
+        const baseTaxForInhabitant = Math.floor(corporateTaxAmount / 1000) * 1000;
+        const prefecturalTaxAmount = Math.floor(Math.floor(baseTaxForInhabitant * 0.01) / 100) * 100;
+        const municipalTaxAmount = Math.floor(Math.floor(baseTaxForInhabitant * 0.06) / 100) * 100;
+        const perCapitaLevy = 70000;
+        const inhabitantTaxAmount = prefecturalTaxAmount + municipalTaxAmount + perCapitaLevy;
+
+        // 税額合計
+        const totalTaxAmount = corporateTaxAmount + localCorporateTaxAmount + inhabitantTaxAmount + enterpriseTaxAmount;
+
+        // 別表十五: 交際費の損金不算入額を自動計算
+        const isSmallBiz = capital <= 100000000;
+        const totalEntertainment = data.beppyo15.socialExpenses || data.beppyo15.totalEntertainmentExpenses || 0;
+        const foodDrink = data.beppyo15.deductibleExpenses || data.beppyo15.foodAndDrinkExpenses || 0;
+        let beppyo15ExcessAmount = totalEntertainment; // デフォルト: 全額不算入
+        if (isSmallBiz) {
+            const method1 = Math.max(0, totalEntertainment - 8000000); // 定額控除800万円
+            const method2 = totalEntertainment - Math.floor(foodDrink * 0.5); // 飲食費50%
+            beppyo15ExcessAmount = Math.min(method1, method2); // 有利な方を選択
+        }
+        beppyo15ExcessAmount = Math.max(0, beppyo15ExcessAmount);
+
+        return {
+            ...data,
+            beppyo4: {
+                ...data.beppyo4,
+                taxableIncome: beppyo4TaxableIncome,
+            },
+            beppyo1: {
+                ...data.beppyo1,
+                taxableIncome: beppyo4TaxableIncome,
+                corporateTaxAmount: corporateTaxAmount,
+                localCorporateTaxAmount: localCorporateTaxAmount,
+                nationalTaxPayable: Math.max(0, finalNationalTax),
+                prefecturalTax: prefecturalTaxAmount,
+                municipalTax: municipalTaxAmount,
+                enterpriseTax: enterpriseTaxAmount,
+                inhabitantTaxPayable: inhabitantTaxAmount,
+                enterpriseTaxPayable: enterpriseTaxAmount,
+                totalTaxAmount: totalTaxAmount,
+            },
+            beppyo5_2: {
+                ...data.beppyo5_2,
+                taxesPayable: {
+                    corporate: Math.max(0, finalNationalTax),
+                    localCorporate: localCorporateTaxAmount,
+                    inhabitant: inhabitantTaxAmount,
+                    enterprise: enterpriseTaxAmount,
+                }
+            },
+            beppyo15: {
+                ...data.beppyo15,
+                excessAmount: beppyo15ExcessAmount,
+                deductionLimit: isSmallBiz ? 8000000 : 0,
+            },
+            // 別表七: 合計を自動計算
+            beppyo7: {
+                ...data.beppyo7,
+                preDeductionIncome: beppyo4TaxableIncome,
+                deductionLimit: isSmallBiz ? beppyo4TaxableIncome : Math.floor(beppyo4TaxableIncome * 0.5),
+                totalDeduction: data.beppyo7.items.reduce((sum, item) => sum + item.usedCurrent, 0),
+                totalCarryforward: data.beppyo7.items.reduce((sum, item) => sum + item.remaining, 0),
+            },
+            // 第六号様式: 事業税・特別法人事業税・都道府県民税
+            form6: {
+                ...data.form6,
+                incomeForBusinessTax: Math.max(0, beppyo4TaxableIncome),
+                businessTax400: Math.min(Math.max(0, beppyo4TaxableIncome), 4000000) * 0.035,
+                businessTax800: Math.max(0, Math.min(beppyo4TaxableIncome, 8000000) - 4000000) * 0.052,
+                businessTaxOver: Math.max(0, beppyo4TaxableIncome - 8000000) * 0.070,
+                businessTaxAmount: enterpriseTaxAmount,
+                specialBusinessTaxAmount: Math.floor(enterpriseTaxAmount * data.form6.specialBusinessTaxRate),
+                corporateTaxBase: corporateTaxAmount,
+                prefecturalTaxAmount: Math.floor(corporateTaxAmount * data.form6.prefecturalTaxRate),
+                totalPrefecturalTax: Math.floor(corporateTaxAmount * data.form6.prefecturalTaxRate) + data.form6.prefecturalPerCapita,
+                businessTaxPayable: Math.max(0, enterpriseTaxAmount - data.form6.interimBusinessTax),
+                prefecturalTaxPayable: Math.max(0, Math.floor(corporateTaxAmount * data.form6.prefecturalTaxRate) + data.form6.prefecturalPerCapita - data.form6.interimPrefecturalTax),
+            },
+            // 第二十号様式: 市町村民税
+            form20: {
+                ...data.form20,
+                corporateTaxBase: corporateTaxAmount,
+                municipalTaxAmount: Math.floor(corporateTaxAmount * data.form20.municipalTaxRate),
+                totalMunicipalTax: Math.floor(corporateTaxAmount * data.form20.municipalTaxRate) + data.form20.municipalPerCapita,
+                municipalTaxPayable: Math.max(0, Math.floor(corporateTaxAmount * data.form20.municipalTaxRate) + data.form20.municipalPerCapita - data.form20.interimMunicipalTax),
+            },
+            // 財務諸表の税金計算結果を反映
+            financialStatements: {
+                ...data.financialStatements,
+                incomeStatement: {
+                    ...data.financialStatements.incomeStatement,
+                    incomeTaxes: totalTaxAmount,
+                    netIncome: (data.financialStatements.incomeStatement.incomeBeforeTax || 0) - totalTaxAmount,
+                }
+            }
+        };
+    };
+
     const handleDownloadOfficialPDF = async () => {
         setIsGeneratingPdf(true);
+        const processedData = getProcessedData();
         try {
-            const { pdfBytes, successes, errors } = await fillOfficialCorporateTaxPDF(data);
-            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `公式法人税申告書_一括_${new Date().toISOString().split('T')[0]}.pdf`;
-            link.click();
+            const { pdfBytes, successes, errors } = await fillOfficialCorporateTaxPDF(processedData);
+            downloadPDF(new Uint8Array(pdfBytes as any), `公式法人税申告書_一括_${new Date().toISOString().split('T')[0]}.pdf`);
 
             toast.success(
                 <div>
@@ -142,19 +289,43 @@ export const CorporateTaxInputForm: React.FC = () => {
     };
 
     const handleDownloadSingleOfficialPDF = async (templateId: string, name: string) => {
-        console.log('Generating PDF for', templateId, 'with data:', data);
+        const processedData = getProcessedData();
+        console.log('Generating PDF for', templateId, 'with data:', processedData);
+        const templateFileName = (templateId === 'beppyo2' || templateId === 'business_overview')
+            ? `${templateId}_official_v2.pdf`
+            : `${templateId}_official.pdf`;
+        const gaikyoFileName = templateId === 'business_overview' ? 'hojin_gaikyo_v2.pdf' : templateFileName;
+
+        console.log('Template URL:', `/templates/${gaikyoFileName}`);
+        console.log('Font URL:', `/fonts/NotoSansCJKjp-Regular.ttf`);
+
         setIsGeneratingPdf(true);
         try {
-            const pdfBytes = await fillSingleOfficialCorporateTaxPDF(data, templateId);
-            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `${name}_${new Date().toISOString().split('T')[0]}.pdf`;
-            link.click();
+            let pdfBytes;
+            if (templateId === 'financial_statements') {
+                const { generateFinancialStatementsPDF } = await import('../../services/pdfFinancialStatementService');
+                pdfBytes = await generateFinancialStatementsPDF(processedData);
+            } else {
+                pdfBytes = await fillSingleOfficialCorporateTaxPDF(processedData, templateId);
+            }
+
+            if (!pdfBytes || pdfBytes.length === 0) {
+                throw new Error('PDFデータの生成に失敗しました（データが空です）');
+            }
+
+            downloadPDF(new Uint8Array(pdfBytes as any), `${name}_${new Date().toISOString().split('T')[0]}.pdf`);
             toast.success(`${name}を出力しました`);
         } catch (error: any) {
             console.error(`Single PDF filling failed for ${templateId}`, error);
-            toast.error(`${name}の作成に失敗しました: ${error.message}`);
+            const errorMsg = error.message?.includes('WinAnsi')
+                ? '日本語フォントの読み込みに失敗しました。ブラウザのキャッシュをクリアして再試行してください。'
+                : error.message;
+            toast.error(`${name}の作成に失敗しました: ${errorMsg}`);
+
+            // Helpful URLs for the user in console
+            console.info('If you keep seeing font errors, check if these are accessible:');
+            console.info('- http://localhost:5173/fonts/NotoSansCJKjp-Regular.ttf');
+            console.info(`- http://localhost:5173/templates/${templateId}_official.pdf`);
         } finally {
             setIsGeneratingPdf(false);
         }
@@ -162,15 +333,16 @@ export const CorporateTaxInputForm: React.FC = () => {
 
     const handlePreviewPDF = async () => {
         setIsGeneratingPdf(true);
+        const processedData = getProcessedData();
         try {
-            const pdfBytes = await generateCompleteCorporateTaxPDF(data);
-            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            setPreviewBlobUrl(url);
-            setShowPreviewModal(true);
+            const pdfBytes = await generateCompleteCorporateTaxPDF(processedData);
+            // プレビューモーダル（iframe）はブラウザのPDF拡張機能と競合してエラーになるケースが多いため、
+            // 強制的にダウンロードさせる形に変更します。
+            downloadPDF(new Uint8Array(pdfBytes as any), `法人税申告書プレビュー_${new Date().toISOString().split('T')[0]}.pdf`);
+            toast.success('プレビュー用PDFをダウンロードしました');
         } catch (error) {
             console.error('PDF preview failed', error);
-            toast.error('プレビューの作成に失敗しました');
+            toast.error('プレビューPDFの作成に失敗しました');
         } finally {
             setIsGeneratingPdf(false);
         }
@@ -186,14 +358,24 @@ export const CorporateTaxInputForm: React.FC = () => {
 
     const handleExportXTX = () => {
         try {
-            const xtx = generateCorporateTaxXTX(data);
-            const fileName = `corporate_tax_return_${new Date().getFullYear()}.xtx`;
+            const processedData = getProcessedData();
+            const xtx = generateCorporateTaxXTX(processedData);
+
+            // .xml 拡張子でダウンロード（.xtxだとAdobe Acrobatに横取りされるため）
+            const fileName = `corporate_tax_return_${new Date().getFullYear()}.xml`;
             downloadFile(xtx, fileName);
+
+            // プレビュー用にBlobURLを生成し、モーダルで表示
+            const blob = new Blob([xtx], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            setPreviewBlobUrl(url);
+            setShowPreviewModal(true);
+
             toast.success(
                 <div>
-                    <p className="font-bold">e-Tax用ファイルを書き出しました</p>
+                    <p className="font-bold">e-Tax用XMLを書き出しました</p>
                     <p className="text-xs mt-1">
-                        国税庁のe-Taxソフト等でインポートできます。
+                        .xml ファイルをダウンロードしました。e-Taxソフトに取り込む際は拡張子を .xtx に変更してください。
                     </p>
                 </div>
             );
@@ -212,6 +394,9 @@ export const CorporateTaxInputForm: React.FC = () => {
         beppyo5_2: { label: '別表五(二)（租税公課）', icon: Landmark, title: '別表五(二)（租税公課の納付状況等に関する明細書）', description: '法人税、住民税、事業税などの納付状況および納税充当金の計算を行います。' },
         beppyo5: { label: '別表五(一)（利益積立金）', icon: PieChart, title: '別表五(一)（利益積立金額及び資本金等の額の計算に関する明細書）', description: '税務上の純資産（利益積立金、資本金等）の増減を管理します。' },
         beppyo1: { label: '別表一（申告書）', icon: FileText, title: '別表一（各事業年度の所得に係る申告書）', description: '計算された所得金額に基づき、法人税額を計算・申告します。' },
+        beppyo7: { label: '別表七（欠損金）', icon: Calculator, title: '別表七（一）（欠損金の損金算入に関する明細書）', description: '過年度の欠損金の繰越控除を管理します。' },
+        local_tax: { label: '地方税（eLTAX）', icon: Landmark, title: '地方税申告書（第六号様式・第二十号様式）', description: '都道府県民税・事業税・市町村民税の申告書です。' },
+        financial_statements: { label: '財務諸表（B/S・P/L）', icon: BookOpen, title: '財務諸表（貸借対照表・損益計算書）', description: 'e-Tax申告用の詳細な貸借対照表および損益計算書の勘定科目を入力します。' },
     };
 
     return (
@@ -296,7 +481,7 @@ export const CorporateTaxInputForm: React.FC = () => {
                                 <BusinessOverviewInput
                                     data={data}
                                     onChange={handleDataChange}
-                                    currentBusinessType={currentBusinessType}
+                                    currentBusinessType={currentBusinessType as any}
                                 />
                             )}
                             {activeTab === 'beppyo4' && (
@@ -319,6 +504,15 @@ export const CorporateTaxInputForm: React.FC = () => {
                             )}
                             {activeTab === 'beppyo16' && (
                                 <Beppyo16Input data={data} onChange={handleDataChange} />
+                            )}
+                            {activeTab === 'beppyo7' && (
+                                <Beppyo7Input data={data} onChange={handleDataChange} />
+                            )}
+                            {activeTab === 'local_tax' && (
+                                <LocalTaxInput data={data} onChange={handleDataChange} />
+                            )}
+                            {activeTab === 'financial_statements' && (
+                                <FinancialStatementsInput data={data} onChange={handleDataChange} />
                             )}
                         </div>
 
@@ -391,10 +585,13 @@ export const CorporateTaxInputForm: React.FC = () => {
                                                 {[
                                                     { id: 'beppyo1', name: '別表一' },
                                                     { id: 'beppyo4', name: '別表四' },
+                                                    { id: 'beppyo2', name: '別表二' },
                                                     { id: 'beppyo5_1', name: '別表五(一)' },
                                                     { id: 'beppyo5_2', name: '別表五(二)' },
                                                     { id: 'beppyo15', name: '別表十五' },
-                                                    { id: 'beppyo16', name: '別表十六' }
+                                                    { id: 'beppyo16', name: '別表十六' },
+                                                    { id: 'business_overview', name: '概況説明書' },
+                                                    { id: 'financial_statements', name: '財務諸表 (公式PDF)' }
                                                 ].map(item => (
                                                     <div key={item.id} className="flex divide-x divide-border">
                                                         <button
@@ -420,22 +617,39 @@ export const CorporateTaxInputForm: React.FC = () => {
                                     </div>
 
                                     <button
+                                        onClick={() => {
+                                            try {
+                                                const processedData = getProcessedData();
+                                                exportAllToExcel(processedData);
+                                                toast.success('Excelファイルを出力しました');
+                                            } catch (error: any) {
+                                                console.error('Excel export failed', error);
+                                                toast.error(error.message || 'Excel出力に失敗しました');
+                                            }
+                                        }}
+                                        className="w-full py-2.5 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-600/20"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        Excel一括出力 (全書類)
+                                    </button>
+
+                                    <button
                                         onClick={handleExportXTX}
                                         className="w-full py-2.5 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                                     >
                                         <Share2 className="w-4 h-4" />
-                                        e-Tax出力 (提出用)
+                                        e-Tax出力 (財務諸表含む)
                                     </button>
                                     <button
                                         onClick={() => {
                                             const csv = CsvExportService.generateFinancialStatementCSV(data);
-                                            CsvExportService.downloadCSV(csv, `financial_statements_draft.csv`);
-                                            toast.success('財務諸表CSVを出力しました');
+                                            CsvExportService.downloadCSV(csv, `financial_statements_${new Date().getFullYear()}.csv`);
+                                            toast.success('財務諸表CSVを出力しました（会計ソフト参照用）');
                                         }}
                                         className="w-full py-2.5 px-4 bg-surface border border-border text-text-main rounded-lg font-medium hover:bg-surface-highlight transition-colors flex items-center justify-center gap-2"
                                     >
                                         <BookOpen className="w-4 h-4" />
-                                        財務諸表CSV (提出用)
+                                        財務諸表CSV (参照用)
                                     </button>
                                     <div className="border-t border-border my-2"></div>
                                     <button

@@ -16,19 +16,22 @@ const Step5Confirmation: React.FC<Step5ConfirmationProps> = ({ data, onBack, onC
 
     // 駆け込み申告データをPDF生成用データへ変換
     const mapQuickDataToPdfData = (quickData: QuickTaxFilingData, result: TaxCalculationResult): JpTaxFormData => {
-        // 経費カテゴリのマッピング
-        const expensesByCategory = Object.entries(quickData.expenses)
-            .filter(([_, amount]) => amount > 0)
-            .map(([key, amount]) => {
-                let categoryName = '雑費';
-                if (key === 'supplies') categoryName = '消耗品費';
-                if (key === 'communication') categoryName = '通信費';
-                if (key === 'transportation') categoryName = '旅費交通費';
-                if (key === 'entertainment') categoryName = '接待交際費';
-                if (key === 'rent') categoryName = '地代家賃';
-                if (key === 'utilities') categoryName = '水道光熱費';
-                return { category: categoryName, amount };
-            });
+        // 経費カテゴリのマッピング（カテゴリ名で集計して重複を防ぐ）
+        const expensesMap: Record<string, number> = {};
+        Object.entries(quickData.expenses).forEach(([key, amount]) => {
+            if (amount <= 0) return;
+            let categoryName = '雑費';
+            if (key === 'supplies') categoryName = '消耗品費';
+            if (key === 'communication') categoryName = '通信費';
+            if (key === 'transportation') categoryName = '旅費交通費';
+            if (key === 'entertainment') categoryName = '接待交際費';
+            if (key === 'rent') categoryName = '地代家賃';
+            if (key === 'utilities') categoryName = '水道光熱費';
+
+            expensesMap[categoryName] = (expensesMap[categoryName] || 0) + amount;
+        });
+
+        const expensesByCategory = Object.entries(expensesMap).map(([category, amount]) => ({ category, amount }));
 
         // 減価償却費も追加
         if (quickData.depreciation && quickData.depreciation > 0) {

@@ -90,9 +90,22 @@ export const useTaxCalculation = (transactions: Transaction[], receipts: Receipt
         const monthsPassed = currentMonth + 1;
         const projectedAnnualProfit = (ytdProfit / monthsPassed) * 12;
 
-        // Deduction Logic
-        const basicDeduction = 480000;
+        // Calculate Income for Basic Deduction purposes (Profit - Blue Return if applicable)
         const blueReturnDeduction = options.enableBlueReturn ? 650000 : 0;
+        const totalIncomeForBasic = Math.max(0, projectedAnnualProfit - blueReturnDeduction);
+
+        // 令和7年度からの新・基礎控除ルールの適用（最大95万円）
+        let basicDeduction = 0;
+        if (totalIncomeForBasic <= 1320000) basicDeduction = 950000;
+        else if (totalIncomeForBasic <= 3360000) basicDeduction = 880000;
+        else if (totalIncomeForBasic <= 4890000) basicDeduction = 680000;
+        else if (totalIncomeForBasic <= 6550000) basicDeduction = 630000;
+        else if (totalIncomeForBasic <= 23500000) basicDeduction = 580000;
+        else if (totalIncomeForBasic <= 24000000) basicDeduction = 480000;
+        else if (totalIncomeForBasic <= 24500000) basicDeduction = 320000;
+        else if (totalIncomeForBasic <= 25000000) basicDeduction = 160000;
+        else basicDeduction = 0;
+
         const totalDeduction = basicDeduction + blueReturnDeduction;
 
         // Taxable Income (cannot be negative)

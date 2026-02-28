@@ -58,15 +58,15 @@ const TAX_BRACKETS = [
 // 青色申告特別控除
 const BLUE_RETURN_DEDUCTION = 650000;
 
-// 基礎控除（2024/2025年度）
-const BASIC_DEDUCTION = 480000;
+// 基礎控除の初期値（令和7年度以降は最大95万円）
+const DEFAULT_BASIC_DEDUCTION = 480000;
 
 // 利用可能な控除一覧
 export const AVAILABLE_DEDUCTIONS: Omit<Deduction, 'id' | 'amount' | 'isApplicable'>[] = [
   {
     type: 'basic',
     name: '基礎控除',
-    description: '全ての納税者が受けられる控除（48万円）',
+    description: '全ての納税者が受けられる控除（最大95万円）',
     documents: [],
   },
   {
@@ -179,8 +179,29 @@ export const calculateTaxFilingData = (
     percentage: totalExpenses > 0 ? ((amount as number) / totalExpenses) * 100 : 0,
   })).sort((a, b) => b.amount - a.amount);
 
+  // 基礎控除の動的計算（令和7年度改正対応：最大95万円）
+  const appliedBlueReturn = deductions.find(d => d.type === 'blue_return' && d.isApplicable)?.amount || 0;
+  const incomeForBasic = Math.max(0, netIncome - appliedBlueReturn);
+  let dynamicBasicDeduction = 0;
+  if (incomeForBasic <= 1320000) dynamicBasicDeduction = 950000;
+  else if (incomeForBasic <= 3360000) dynamicBasicDeduction = 880000;
+  else if (incomeForBasic <= 4890000) dynamicBasicDeduction = 680000;
+  else if (incomeForBasic <= 6550000) dynamicBasicDeduction = 630000;
+  else if (incomeForBasic <= 23500000) dynamicBasicDeduction = 580000;
+  else if (incomeForBasic <= 24000000) dynamicBasicDeduction = 480000;
+  else if (incomeForBasic <= 24500000) dynamicBasicDeduction = 320000;
+  else if (incomeForBasic <= 25000000) dynamicBasicDeduction = 160000;
+
+  // 動的に計算した基礎控除を適用
+  const updatedDeductions = deductions.map(d => {
+    if (d.type === 'basic') {
+      return { ...d, amount: dynamicBasicDeduction };
+    }
+    return d;
+  });
+
   // 控除合計
-  const totalDeductions = deductions
+  const totalDeductions = updatedDeductions
     .filter(d => d.isApplicable)
     .reduce((sum, d) => sum + d.amount, 0);
 
@@ -198,7 +219,7 @@ export const calculateTaxFilingData = (
     totalExpenses,
     netIncome,
     expensesByCategory,
-    deductions,
+    deductions: updatedDeductions,
     totalDeductions,
     taxableIncome,
     estimatedTax,
@@ -225,7 +246,7 @@ export const generateInitialDeductions = (
       id: 'basic',
       type: 'basic',
       name: '基礎控除',
-      amount: BASIC_DEDUCTION,
+      amount: DEFAULT_BASIC_DEDUCTION,
       description: '全ての納税者が受けられる控除',
       isApplicable: true,
     },

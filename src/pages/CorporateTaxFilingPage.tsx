@@ -175,17 +175,7 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
                     </p>
                 </div>
             </div>
-        ) : (
-            <div className="bg-warning-light border border-warning/20 rounded-lg p-4 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                <div>
-                    <p className="text-sm text-text-main font-medium">前期データの登録をお勧めします</p>
-                    <p className="text-sm text-text-muted mt-1">
-                        「過去決算・引継ぎ管理」に前年度の{isCorporation ? '決算書' : '青色申告決算書等'}を登録すると、期首残高が自動でバトンタッチ（引き継ぎ）されます。
-                    </p>
-                </div>
-            </div>
-        )}
+        ) : null}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -214,14 +204,14 @@ const Step1CompanyInfo: React.FC<Step1Props> = ({ corporateInfo, setCorporateInf
             </div>
             <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                    {isCorporation ? '法人番号' : '個人番号'}
+                    {isCorporation ? '法人番号 / インボイス番号' : 'インボイス登録番号'}
                 </label>
                 <input
                     type="text"
                     value={corporateInfo.corporateNumber}
                     onChange={(e) => setCorporateInfo({ ...corporateInfo, corporateNumber: e.target.value })}
                     className="input-base"
-                    placeholder={isCorporation ? "1234567890123" : "123456789012"}
+                    placeholder={isCorporation ? "T1234567890123" : "T1234567890123"}
                 />
             </div>
             <div>
@@ -668,7 +658,7 @@ const ReadinessCheck: React.FC<{
                     </span>
                 </div>
                 <div className="flex items-center justify-between text-sm border-b border-border pb-2">
-                    <span className="text-text-muted">{isCorporation ? '法人番号' : '個人番号'}の形式チェック</span>
+                    <span className="text-text-muted">{isCorporation ? '法人番号' : 'インボイス登録番号'}の形式チェック</span>
                     {hasCorporateNumber ? (
                         <span className="text-success flex items-center gap-1 font-bold">
                             <CheckCircle className="w-4 h-4" /> 正常

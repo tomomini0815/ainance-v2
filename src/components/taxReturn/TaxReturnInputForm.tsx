@@ -21,10 +21,9 @@ export const TaxReturnInputForm: React.FC = () => {
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
-
     const { user } = useAuth();
     const { currentBusinessType } = useBusinessTypeContext();
-    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type);
+    const { transactions } = useTransactions(user?.id, currentBusinessType?.business_type || 'individual');
 
     // データ読み込み
     useEffect(() => {
@@ -67,10 +66,36 @@ export const TaxReturnInputForm: React.FC = () => {
                     });
                     newData.deductions = newDeductions;
                 }
+
+                // 第二表データの転記
+                if (calculatedData.withholding_tax_details && calculatedData.withholding_tax_details.length > 0) {
+                    newData.withholding_tax_details = [
+                        ...newData.withholding_tax_details,
+                        ...calculatedData.withholding_tax_details
+                    ];
+                }
+
+                if (calculatedData.insurance_premium_details) {
+                    newData.insurance_premium_details = {
+                        social_insurance: [
+                            ...newData.insurance_premium_details.social_insurance,
+                            ...(calculatedData.insurance_premium_details.social_insurance || [])
+                        ],
+                        life_insurance: [
+                            ...newData.insurance_premium_details.life_insurance,
+                            ...(calculatedData.insurance_premium_details.life_insurance || [])
+                        ],
+                        earthquake_insurance: [
+                            ...newData.insurance_premium_details.earthquake_insurance,
+                            ...(calculatedData.insurance_premium_details.earthquake_insurance || [])
+                        ]
+                    };
+                }
+
                 return newData;
             });
             setHasUnsavedChanges(true);
-            toast.success('取引データを転記しました');
+            toast.success('取引データを転記しました（第二表の詳細含む）');
         } catch (error) {
             console.error('Import failed:', error);
             toast.error('データの転記に失敗しました');
@@ -117,6 +142,7 @@ export const TaxReturnInputForm: React.FC = () => {
                 basic: data.deductions.basic || 480000,
                 medicalExpenses: data.deductions.medical_expenses || 0,
                 blueReturn: isBlueReturn ? 650000 : 0,
+                withholdingTax: data.tax_calculation.withholding_tax || 0,
             },
             businessIncome: data.income.business_agriculture || 0,
             salaryIncome: data.income.employment || 0,
@@ -126,6 +152,46 @@ export const TaxReturnInputForm: React.FC = () => {
             estimatedTax: 0,
             fiscalYear: data.fiscalYear,
             isBlueReturn: isBlueReturn,
+
+            // 第二表データ
+            withholdingTaxDetails: data.withholding_tax_details
+                .filter(d => d.payer_name || d.revenue_amount > 0)
+                .map(d => ({
+                    incomeCategory: d.income_category,
+                    payerName: d.payer_name,
+                    revenueAmount: d.revenue_amount,
+                    taxAmount: d.tax_amount,
+                })),
+            socialInsuranceDetails: data.insurance_premium_details.social_insurance
+                .filter(d => d.type || d.amount > 0)
+                .map(d => ({
+                    type: d.type,
+                    amount: d.amount,
+                })),
+            lifeInsuranceDetails: data.insurance_premium_details.life_insurance
+                .filter(d => d.insurance_company || d.payment_amount > 0)
+                .map(d => ({
+                    companyName: d.insurance_company,
+                    paymentAmount: d.payment_amount,
+                })),
+            earthquakeInsuranceDetails: data.insurance_premium_details.earthquake_insurance
+                .filter(d => d.insurance_company || d.payment_amount > 0)
+                .map(d => ({
+                    companyName: d.insurance_company,
+                    paymentAmount: d.payment_amount,
+                })),
+            spouseName: data.family_details.spouse?.name || undefined,
+            dependentNames: data.family_details.dependents
+                .filter(d => d.name)
+                .map(d => `${d.name}（${d.relationship}）`),
+            residentTaxMethod: data.resident_tax.collection_method,
+            employeeSalaries: data.employee_salaries?.map(emp => ({
+                name: emp.name,
+                monthsWorked: emp.months_worked,
+                salaryAmount: emp.salary_amount,
+                bonusAmount: emp.bonus_amount,
+                withholdingTax: emp.withholding_tax,
+            })) || [],
         };
     };
 
@@ -186,12 +252,7 @@ export const TaxReturnInputForm: React.FC = () => {
                 throw new Error(`テンプレートの読み込みに失敗: ${response.statusText}`);
             }
             const pdfBytes = await response.arrayBuffer();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `${displayName}_${data.fiscalYear}年度.pdf`;
-            link.click();
-            window.URL.revokeObjectURL(link.href);
+            downloadPDF(new Uint8Array(pdfBytes), `${displayName}_${data.fiscalYear}年度.pdf`);
             toast.success(`${displayName}を出力しました`);
         } catch (error: any) {
             console.error('PDF download failed', error);

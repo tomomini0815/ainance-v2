@@ -133,8 +133,11 @@ export const CorporateTaxInputService = {
             beppyo4: {
                 ...initialCorporateTaxInputData.beppyo4,
                 netIncomeFromPL: taxResults.netIncome,
-                nonDeductibleTaxes: taxes || 0, // 租税公課を一旦全額加算（法人税等不算入の簡略化）
+                // 損金不算入の法人税等 = 法人税 + 地方法人税 + 住民税（法人税割+均等割）
+                nonDeductibleTaxes: (taxResults.corporateTax || 0) + (taxResults.localCorporateTax || 0) + (taxResults.corporateInhabitantTax || 0),
                 nonDeductibleEntertainment: nonDeductibleEntertainment || 0,
+                // 事業税は損金算入（減算項目）
+                deductibleEnterpriseTax: taxResults.businessTax || 0,
                 taxableIncome: Math.max(0, taxResults.taxableIncome || 0),
                 additions: [],
                 subtractions: [],
@@ -174,6 +177,41 @@ export const CorporateTaxInputService = {
                 assets: depAssets.length > 0 ? depAssets : initialCorporateTaxInputData.beppyo16.assets,
                 totalDepreciation: depAssets.reduce((sum, a) => sum + (a.currentDepreciation || 0), 0),
                 totalAllowable: depAssets.reduce((sum, a) => sum + (a.allowableLimit || 0), 0)
+            },
+            financialStatements: {
+                ...initialCorporateTaxInputData.financialStatements,
+                balanceSheet: {
+                    ...initialCorporateTaxInputData.financialStatements.balanceSheet,
+                    currentAssets: financialData.cash + financialData.accountsReceivable + financialData.inventory,
+                    fixedAssets: financialData.fixedAssets,
+                    deferredAssets: 0,
+                    totalAssets: financialData.totalAssets,
+                    currentLiabilities: financialData.accountsPayable + financialData.shortTermLoans,
+                    fixedLiabilities: financialData.longTermLoans,
+                    totalLiabilities: financialData.totalLiabilities,
+                    capitalStock: capital,
+                    capitalSurplus: 0,
+                    retainedEarnings: financialData.retainedEarnings,
+                    treasuryStock: 0,
+                    totalNetAssets: financialData.netAssets,
+                    totalLiabilitiesAndNetAssets: financialData.totalLiabilities + financialData.netAssets,
+                },
+                incomeStatement: {
+                    ...initialCorporateTaxInputData.financialStatements.incomeStatement,
+                    netSales: financialData.revenue,
+                    costOfSales: financialData.costOfSales,
+                    grossProfit: financialData.grossProfit,
+                    sellingGeneralAdminExpenses: financialData.operatingExpenses,
+                    operatingIncome: financialData.operatingIncome,
+                    nonOperatingIncome: financialData.nonOperatingIncome,
+                    nonOperatingExpenses: financialData.nonOperatingExpenses,
+                    ordinaryIncome: financialData.ordinaryIncome,
+                    extraordinaryIncome: financialData.extraordinaryIncome,
+                    extraordinaryLoss: financialData.extraordinaryLoss,
+                    incomeBeforeTax: financialData.incomeBeforeTax,
+                    incomeTaxes: (taxResults.corporateTax || 0) + (taxResults.localCorporateTax || 0) + (taxResults.prefecturalTax || 0) + (taxResults.municipalTax || 0) + (taxResults.businessTax || 0),
+                    netIncome: taxResults.netIncome,
+                }
             }
         };
     }

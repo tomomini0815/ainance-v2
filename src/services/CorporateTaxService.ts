@@ -190,59 +190,64 @@ export function calculateCorporateTax(
   capital: number
 ): { tax: number; breakdown: { lowerBracket: number; upperBracket: number } } {
   const isSmallBusiness = capital <= 100000000; // 資本金1億円以下
+  // 課税標準額（所得）は1,000円未満切り捨て
+  const baseIncome = Math.floor(taxableIncome / 1000) * 1000;
+
+  let tax = 0;
+  let lowerBracket = 0;
+  let upperBracket = 0;
 
   if (isSmallBusiness) {
     const { lowerRate, upperRate, threshold } = CORPORATE_TAX_RATES.smallBusiness;
 
-    if (taxableIncome <= threshold) {
-      return {
-        tax: Math.floor(taxableIncome * lowerRate),
-        breakdown: {
-          lowerBracket: Math.floor(taxableIncome * lowerRate),
-          upperBracket: 0,
-        },
-      };
+    if (baseIncome <= threshold) {
+      lowerBracket = Math.floor(baseIncome * lowerRate);
+      tax = lowerBracket;
     } else {
-      const lowerPart = Math.floor(threshold * lowerRate);
-      const upperPart = Math.floor((taxableIncome - threshold) * upperRate);
-      return {
-        tax: lowerPart + upperPart,
-        breakdown: {
-          lowerBracket: lowerPart,
-          upperBracket: upperPart,
-        },
-      };
+      lowerBracket = Math.floor(threshold * lowerRate);
+      upperBracket = Math.floor((baseIncome - threshold) * upperRate);
+      tax = lowerBracket + upperBracket;
     }
   } else {
-    const tax = Math.floor(taxableIncome * CORPORATE_TAX_RATES.largeBusiness.rate);
-    return {
-      tax,
-      breakdown: {
-        lowerBracket: 0,
-        upperBracket: tax,
-      },
-    };
+    upperBracket = Math.floor(baseIncome * CORPORATE_TAX_RATES.largeBusiness.rate);
+    tax = upperBracket;
   }
+
+  // 算出税額は100円未満切り捨て
+  tax = Math.floor(tax / 100) * 100;
+
+  return {
+    tax,
+    breakdown: {
+      lowerBracket,
+      upperBracket,
+    },
+  };
 }
 
-/**
- * 地方法人税を計算
- */
 export function calculateLocalCorporateTax(corporateTax: number): number {
-  return Math.floor(corporateTax * LOCAL_CORPORATE_TAX_RATE);
+  // 課税標準となる法人税額は1000円未満切り捨て
+  const baseTax = Math.floor(corporateTax / 1000) * 1000;
+  const rawTax = Math.floor(baseTax * LOCAL_CORPORATE_TAX_RATE);
+  // 算出税額は100円未満切り捨て
+  return Math.floor(rawTax / 100) * 100;
 }
 
-/**
- * 法人住民税を計算
- */
 export function calculateCorporateInhabitantTax(corporateTax: number): {
   prefecturalTax: number;
   municipalTax: number;
   perCapitaLevy: number;
   total: number;
 } {
-  const prefecturalTax = Math.floor(corporateTax * CORPORATE_INHABITANT_TAX.prefectural);
-  const municipalTax = Math.floor(corporateTax * CORPORATE_INHABITANT_TAX.municipal);
+  // 課税標準となる法人税額は1000円未満切り捨て
+  const baseTax = Math.floor(corporateTax / 1000) * 1000;
+
+  const rawPrefecturalTax = Math.floor(baseTax * CORPORATE_INHABITANT_TAX.prefectural);
+  const prefecturalTax = Math.floor(rawPrefecturalTax / 100) * 100;
+
+  const rawMunicipalTax = Math.floor(baseTax * CORPORATE_INHABITANT_TAX.municipal);
+  const municipalTax = Math.floor(rawMunicipalTax / 100) * 100;
+
   const perCapitaLevy = CORPORATE_INHABITANT_TAX.perCapitaLevy;
 
   return {
@@ -253,26 +258,26 @@ export function calculateCorporateInhabitantTax(corporateTax: number): {
   };
 }
 
-/**
- * 法人事業税を計算
- */
 export function calculateBusinessTax(taxableIncome: number): number {
   if (taxableIncome <= 0) return 0;
 
-  let tax = 0;
+  // 課税標準額（所得）は1,000円未満切り捨て
+  const baseIncome = Math.floor(taxableIncome / 1000) * 1000;
+  let rawTax = 0;
 
-  if (taxableIncome <= 4000000) {
-    tax = Math.floor(taxableIncome * BUSINESS_TAX_RATES.income400);
-  } else if (taxableIncome <= 8000000) {
-    tax = Math.floor(4000000 * BUSINESS_TAX_RATES.income400);
-    tax += Math.floor((taxableIncome - 4000000) * BUSINESS_TAX_RATES.income800);
+  if (baseIncome <= 4000000) {
+    rawTax = Math.floor(baseIncome * BUSINESS_TAX_RATES.income400);
+  } else if (baseIncome <= 8000000) {
+    rawTax = Math.floor(4000000 * BUSINESS_TAX_RATES.income400);
+    rawTax += Math.floor((baseIncome - 4000000) * BUSINESS_TAX_RATES.income800);
   } else {
-    tax = Math.floor(4000000 * BUSINESS_TAX_RATES.income400);
-    tax += Math.floor(4000000 * BUSINESS_TAX_RATES.income800);
-    tax += Math.floor((taxableIncome - 8000000) * BUSINESS_TAX_RATES.incomeOver);
+    rawTax = Math.floor(4000000 * BUSINESS_TAX_RATES.income400);
+    rawTax += Math.floor(4000000 * BUSINESS_TAX_RATES.income800);
+    rawTax += Math.floor((baseIncome - 8000000) * BUSINESS_TAX_RATES.incomeOver);
   }
 
-  return tax;
+  // 100円未満切り捨て
+  return Math.floor(rawTax / 100) * 100;
 }
 
 /**

@@ -121,7 +121,78 @@ const TAX_RETURN_B_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
   '電話番号': { x: 480, y: 692.6, fontSize: 9 },
 };
 
-// 以前使用していた第2表用定数（現在は未使用のため整理）
+// ===== 確定申告書第二表 - テキストフィールド =====
+// 第二表はテキスト中心のフォーム（自由記入欄が多い）
+// ページサイズはA4 (595x842pt)、座標は左下原点
+
+// 第二表ヘッダー
+const TAX_RETURN_TABLE2_TEXT_FIELDS: { [key: string]: TextFieldConfig } = {
+  '住所': { x: 89, y: 787, fontSize: 8 },
+  '氏名': { x: 340, y: 787, fontSize: 8 },
+};
+
+// 第二表「所得の内訳」エリア（最大4行）
+// 各行: 所得の種類(x:46), 種目・所得の生ずる場所(x:110), 給与などの収入金額(x:310), 源泉徴収税額(x:460)
+interface Table2IncomeRowConfig {
+  categoryX: number;
+  payerX: number;
+  amountX: number;
+  taxX: number;
+  y: number;
+  fontSize: number;
+}
+
+const TABLE2_INCOME_ROWS: Table2IncomeRowConfig[] = [
+  { categoryX: 46, payerX: 135, amountX: 330, taxX: 478, y: 693, fontSize: 7 },
+  { categoryX: 46, payerX: 135, amountX: 330, taxX: 478, y: 679, fontSize: 7 },
+  { categoryX: 46, payerX: 135, amountX: 330, taxX: 478, y: 665, fontSize: 7 },
+  { categoryX: 46, payerX: 135, amountX: 330, taxX: 478, y: 651, fontSize: 7 },
+];
+
+// 第二表「所得の内訳」合計行の座標
+const TABLE2_INCOME_TOTAL: DigitFieldConfig = {
+  anchorX: 540, anchorY: 625, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 9, maxDigits: 10,
+};
+
+// 第二表「社会保険料控除」エリア（最大3行）
+// 各行: 社会保険の種類(x:46), 支払保険料(x:200)
+interface Table2InsuranceRowConfig {
+  typeX: number;
+  amountX: number;
+  y: number;
+  fontSize: number;
+}
+
+const TABLE2_SOCIAL_INSURANCE_ROWS: Table2InsuranceRowConfig[] = [
+  { typeX: 46, amountX: 220, y: 509, fontSize: 7 },
+  { typeX: 46, amountX: 220, y: 496, fontSize: 7 },
+  { typeX: 46, amountX: 220, y: 483, fontSize: 7 },
+];
+
+// 第二表「生命保険料控除」エリア（最大2行）
+// 各行: 保険会社名(x:300), 保険料種別(x:380), 支払金額(x:510)
+const TABLE2_LIFE_INSURANCE_ROWS: Table2InsuranceRowConfig[] = [
+  { typeX: 300, amountX: 510, y: 509, fontSize: 7 },
+  { typeX: 300, amountX: 510, y: 496, fontSize: 7 },
+];
+
+// 第二表「地震保険料控除」エリア（最大1行）
+const TABLE2_EARTHQUAKE_INSURANCE_ROWS: Table2InsuranceRowConfig[] = [
+  { typeX: 300, amountX: 510, y: 460, fontSize: 7 },
+];
+
+// 第二表「配偶者・扶養親族」テキスト座標
+const TABLE2_SPOUSE_FIELD: TextFieldConfig = { x: 60, y: 355, fontSize: 7 };
+const TABLE2_DEPENDENT_ROWS: TextFieldConfig[] = [
+  { x: 60, y: 322, fontSize: 7 },
+  { x: 60, y: 309, fontSize: 7 },
+  { x: 60, y: 296, fontSize: 7 },
+];
+
+// 第二表「住民税」徴収方法チェック座標
+const TABLE2_RESIDENT_TAX_SPECIAL: TextFieldConfig = { x: 91, y: 176, fontSize: 9 };
+const TABLE2_RESIDENT_TAX_ORDINARY: TextFieldConfig = { x: 176, y: 176, fontSize: 9 };
+
 
 // ===== 青色申告決算書 - 数値フィールド =====
 const BLUE_RETURN_DIGIT_FIELDS: { [key: string]: DigitFieldConfig } = {
@@ -307,6 +378,48 @@ export interface TaxFormData {
   fiscalYearStart?: string;
   fiscalYearEnd?: string;
   isBlueReturn: boolean;
+
+  // 第二表：所得の内訳（源泉徴収税額に関する事項）
+  withholdingTaxDetails?: {
+    incomeCategory: string; // 所得の種類
+    payerName: string;      // 種目・所得の生ずる場所
+    revenueAmount: number;  // 収入金額
+    taxAmount: number;      // 源泉徴収税額
+  }[];
+
+  // 第二表：社会保険料控除の明細
+  socialInsuranceDetails?: {
+    type: string;   // 社会保険の種類
+    amount: number; // 支払金額
+  }[];
+
+  // 第二表：生命保険料控除の明細
+  lifeInsuranceDetails?: {
+    companyName: string;    // 保険会社名
+    paymentAmount: number;  // 支払金額
+  }[];
+
+  // 第二表：地震保険料控除の明細
+  earthquakeInsuranceDetails?: {
+    companyName: string;
+    paymentAmount: number;
+  }[];
+
+  // 第二表：配偶者・扶養情報
+  spouseName?: string;
+  dependentNames?: string[];
+
+  // 第二表：住民税徴収方法
+  residentTaxMethod?: 'special' | 'ordinary';
+
+  // 青色申告：給与の内訳等
+  employeeSalaries?: {
+    name: string;
+    monthsWorked: number;
+    salaryAmount: number;
+    bonusAmount: number;
+    withholdingTax: number;
+  }[];
 }
 
 /**
@@ -340,32 +453,32 @@ export async function fillTaxReturnB(
   fillDigitBox(data.totalIncome || data.netIncome, TAX_RETURN_B_DIGIT_FIELDS['所得_12_合計']);
 
   // === 第一表 - 所得控除 ===
-  if (data.deductions.socialInsurance) {
+  if (data.deductions?.socialInsurance) {
     fillDigitBox(data.deductions.socialInsurance, TAX_RETURN_B_DIGIT_FIELDS['控除_13_社会保険料']);
   }
-  if (data.deductions.smallBusinessMutual) {
+  if (data.deductions?.smallBusinessMutual) {
     fillDigitBox(data.deductions.smallBusinessMutual, TAX_RETURN_B_DIGIT_FIELDS['控除_14_小規模企業共済']);
   }
-  if (data.deductions.lifeInsurance) {
+  if (data.deductions?.lifeInsurance) {
     fillDigitBox(data.deductions.lifeInsurance, TAX_RETURN_B_DIGIT_FIELDS['控除_15_生命保険料']);
   }
-  if (data.deductions.earthquakeInsurance) {
+  if (data.deductions?.earthquakeInsurance) {
     fillDigitBox(data.deductions.earthquakeInsurance, TAX_RETURN_B_DIGIT_FIELDS['控除_16_地震保険料']);
   }
 
-  if ((data.deductions as any).widow) {
+  if ((data.deductions as any)?.widow) {
     fillDigitBox((data.deductions as any).widow, TAX_RETURN_B_DIGIT_FIELDS['控除_17_寡婦ひとり親']);
   }
-  if ((data.deductions as any).workingStudent) {
+  if ((data.deductions as any)?.workingStudent) {
     fillDigitBox((data.deductions as any).workingStudent, TAX_RETURN_B_DIGIT_FIELDS['控除_18_勤労学生障害者']);
   }
-  if (data.deductions.spouse) {
+  if (data.deductions?.spouse) {
     fillDigitBox(data.deductions.spouse, TAX_RETURN_B_DIGIT_FIELDS['控除_19_配偶者']);
   }
-  if (data.deductions.dependents) {
+  if (data.deductions?.dependents) {
     fillDigitBox(data.deductions.dependents, TAX_RETURN_B_DIGIT_FIELDS['控除_23_扶養']);
   }
-  if (data.deductions.basic) {
+  if (data.deductions?.basic) {
     fillDigitBox(data.deductions.basic, TAX_RETURN_B_DIGIT_FIELDS['控除_25_基礎控除']);
   }
   if (data.medicalExpenses) {
@@ -373,7 +486,7 @@ export async function fillTaxReturnB(
   }
 
   // 所得控除合計 (26)
-  const deductionEntries = Object.entries(data.deductions).filter(([key]) => key !== 'withholdingTax');
+  const deductionEntries = Object.entries(data.deductions || {}).filter(([key]) => key !== 'withholdingTax');
   const totalDeductions = deductionEntries.reduce((sum, [_, val]) => sum + (Number(val) || 0), 0);
   fillDigitBox(totalDeductions, TAX_RETURN_B_DIGIT_FIELDS['控除_26_合計']);
 
@@ -414,8 +527,101 @@ export async function fillTaxReturnB(
   if (data.tradeName) drawText(data.tradeName, TAX_RETURN_B_TEXT_FIELDS['屋号']);
   if (data.phone) drawText(data.phone, TAX_RETURN_B_TEXT_FIELDS['電話番号']);
 
+  // ================================================
+  // === 第二表（ページ2）への転記 ===
+  // ================================================
+  if (pages.length >= 2) {
+    const secondPage = pages[1];
+    const drawText2 = (val: string, cfg: TextFieldConfig) => drawLabel(secondPage, font, val, cfg);
+    const fillDigitBox2 = (val: any, cfg: DigitFieldConfig) => drawDigitInBox(secondPage, font, val, cfg);
+
+    // --- ヘッダー（住所・氏名） ---
+    drawText2(data.address || '', TAX_RETURN_TABLE2_TEXT_FIELDS['住所']);
+    drawText2(data.name || '', TAX_RETURN_TABLE2_TEXT_FIELDS['氏名']);
+
+    // --- 所得の内訳（源泉徴収税額に関する事項） ---
+    if (data.withholdingTaxDetails && data.withholdingTaxDetails.length > 0) {
+      let totalWithholdingTax = 0;
+      data.withholdingTaxDetails.slice(0, TABLE2_INCOME_ROWS.length).forEach((detail, i) => {
+        const row = TABLE2_INCOME_ROWS[i];
+        drawLabel(secondPage, font, detail.incomeCategory, { x: row.categoryX, y: row.y, fontSize: row.fontSize });
+        drawLabel(secondPage, font, detail.payerName, { x: row.payerX, y: row.y, fontSize: row.fontSize });
+        if (detail.revenueAmount > 0) {
+          drawLabel(secondPage, font, detail.revenueAmount.toLocaleString(), { x: row.amountX, y: row.y, fontSize: row.fontSize });
+        }
+        if (detail.taxAmount > 0) {
+          drawLabel(secondPage, font, detail.taxAmount.toLocaleString(), { x: row.taxX, y: row.y, fontSize: row.fontSize });
+        }
+        totalWithholdingTax += detail.taxAmount || 0;
+      });
+      // 合計行
+      if (totalWithholdingTax > 0) {
+        fillDigitBox2(totalWithholdingTax, TABLE2_INCOME_TOTAL);
+      }
+    }
+
+    // --- 社会保険料控除の内訳 ---
+    if (data.socialInsuranceDetails && data.socialInsuranceDetails.length > 0) {
+      data.socialInsuranceDetails.slice(0, TABLE2_SOCIAL_INSURANCE_ROWS.length).forEach((detail, i) => {
+        const row = TABLE2_SOCIAL_INSURANCE_ROWS[i];
+        drawLabel(secondPage, font, detail.type, { x: row.typeX, y: row.y, fontSize: row.fontSize });
+        if (detail.amount > 0) {
+          drawLabel(secondPage, font, detail.amount.toLocaleString(), { x: row.amountX, y: row.y, fontSize: row.fontSize });
+        }
+      });
+    }
+
+    // --- 生命保険料控除の内訳 ---
+    if (data.lifeInsuranceDetails && data.lifeInsuranceDetails.length > 0) {
+      data.lifeInsuranceDetails.slice(0, TABLE2_LIFE_INSURANCE_ROWS.length).forEach((detail, i) => {
+        const row = TABLE2_LIFE_INSURANCE_ROWS[i];
+        drawLabel(secondPage, font, detail.companyName, { x: row.typeX, y: row.y, fontSize: row.fontSize });
+        if (detail.paymentAmount > 0) {
+          drawLabel(secondPage, font, detail.paymentAmount.toLocaleString(), { x: row.amountX, y: row.y, fontSize: row.fontSize });
+        }
+      });
+    }
+
+    // --- 地震保険料控除の内訳 ---
+    if (data.earthquakeInsuranceDetails && data.earthquakeInsuranceDetails.length > 0) {
+      data.earthquakeInsuranceDetails.slice(0, TABLE2_EARTHQUAKE_INSURANCE_ROWS.length).forEach((detail, i) => {
+        const row = TABLE2_EARTHQUAKE_INSURANCE_ROWS[i];
+        drawLabel(secondPage, font, detail.companyName, { x: row.typeX, y: row.y, fontSize: row.fontSize });
+        if (detail.paymentAmount > 0) {
+          drawLabel(secondPage, font, detail.paymentAmount.toLocaleString(), { x: row.amountX, y: row.y, fontSize: row.fontSize });
+        }
+      });
+    }
+
+    // --- 配偶者に関する事項 ---
+    if (data.spouseName) {
+      drawText2(data.spouseName, TABLE2_SPOUSE_FIELD);
+    }
+
+    // --- 扶養親族に関する事項 ---
+    if (data.dependentNames && data.dependentNames.length > 0) {
+      data.dependentNames.slice(0, TABLE2_DEPENDENT_ROWS.length).forEach((name, i) => {
+        drawText2(name, TABLE2_DEPENDENT_ROWS[i]);
+      });
+    }
+
+    // --- 住民税徴収方法 ---
+    if (data.residentTaxMethod === 'special') {
+      drawText2('○', TABLE2_RESIDENT_TAX_SPECIAL);
+    } else if (data.residentTaxMethod === 'ordinary') {
+      drawText2('○', TABLE2_RESIDENT_TAX_ORDINARY);
+    }
+  }
+
   return pdfDoc.save();
 }
+
+// 青色申告：給料賃金の内訳テーブル座標 (Page 2 & Page 4)
+const BLUE_RETURN_SALARY_ROWS = [
+  { y: 569, nameX: 95, monthsX: 205, salaryBox: { anchorX: 412, anchorY: 569, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 }, bonusBox: { anchorX: 495, anchorY: 569, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 }, taxBox: { anchorX: 565, anchorY: 569, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 } },
+  { y: 554, nameX: 95, monthsX: 205, salaryBox: { anchorX: 412, anchorY: 554, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 }, bonusBox: { anchorX: 495, anchorY: 554, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 }, taxBox: { anchorX: 565, anchorY: 554, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 } },
+  { y: 539, nameX: 95, monthsX: 205, salaryBox: { anchorX: 412, anchorY: 539, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 }, bonusBox: { anchorX: 495, anchorY: 539, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 }, taxBox: { anchorX: 565, anchorY: 539, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 } },
+];
 
 /**
  * 青色申告決算書にAinanceのデータを自動転記
@@ -428,18 +634,49 @@ export async function fillBlueReturnForm(
   const pdfDoc = await PDFDocument.load(templateBytes, { ignoreEncryption: true });
   const font = await loadNotoSans(pdfDoc);
   const pages = pdfDoc.getPages();
-  const firstPage = pages[0];
 
-  drawDigitInBox(firstPage, font, data.revenue, BLUE_RETURN_DIGIT_FIELDS['売上金額']);
-  drawDigitInBox(firstPage, font, data.expenses, BLUE_RETURN_DIGIT_FIELDS['経費合計']);
-  if (data.deductions?.blueReturn) {
-    drawDigitInBox(firstPage, font, data.deductions.blueReturn, BLUE_RETURN_DIGIT_FIELDS['青色申告特別控除']);
-  }
-  drawDigitInBox(firstPage, font, data.netIncome, BLUE_RETURN_DIGIT_FIELDS['所得金額']);
+  // Page 1とPage 3 (提出用と控用) に損益表を描画
+  const fillPage1 = (page: any) => {
+    drawDigitInBox(page, font, data.revenue, BLUE_RETURN_DIGIT_FIELDS['売上金額']);
+    drawDigitInBox(page, font, data.expenses, BLUE_RETURN_DIGIT_FIELDS['経費合計']);
+    if (data.deductions?.blueReturn) {
+      drawDigitInBox(page, font, data.deductions.blueReturn, BLUE_RETURN_DIGIT_FIELDS['青色申告特別控除']);
+    }
+    drawDigitInBox(page, font, data.netIncome, BLUE_RETURN_DIGIT_FIELDS['所得金額']);
 
-  drawLabel(firstPage, font, data.name || '', BLUE_RETURN_TEXT_FIELDS['氏名']);
-  drawLabel(firstPage, font, data.address || '', BLUE_RETURN_TEXT_FIELDS['住所']);
-  if (data.tradeName) drawLabel(firstPage, font, data.tradeName, BLUE_RETURN_TEXT_FIELDS['屋号']);
+    drawLabel(page, font, data.name || '', BLUE_RETURN_TEXT_FIELDS['氏名']);
+    drawLabel(page, font, data.address || '', BLUE_RETURN_TEXT_FIELDS['住所']);
+    if (data.tradeName) drawLabel(page, font, data.tradeName, BLUE_RETURN_TEXT_FIELDS['屋号']);
+  };
+
+  // Page 2とPage 4 (提出用と控用) に給料テーブルを描画
+  const fillPage2 = (page: any) => {
+    if (data.employeeSalaries && data.employeeSalaries.length > 0) {
+      data.employeeSalaries.slice(0, BLUE_RETURN_SALARY_ROWS.length).forEach((emp, i) => {
+        const row = BLUE_RETURN_SALARY_ROWS[i];
+        drawLabel(page, font, emp.name, { x: row.nameX, y: row.y, fontSize: 9 });
+        drawLabel(page, font, emp.monthsWorked.toString(), { x: row.monthsX, y: row.y, fontSize: 9 });
+        drawDigitInBox(page, font, emp.salaryAmount, row.salaryBox);
+        if (emp.bonusAmount) drawDigitInBox(page, font, emp.bonusAmount, row.bonusBox);
+        if (emp.withholdingTax) drawDigitInBox(page, font, emp.withholdingTax, row.taxBox);
+      });
+
+      // 合計を算出して一番下の計(y: 494くらい)に入れる簡易対応
+      const totalSal = data.employeeSalaries.reduce((sum, e) => sum + (e.salaryAmount || 0), 0);
+      const totalBonus = data.employeeSalaries.reduce((sum, e) => sum + (e.bonusAmount || 0), 0);
+      const totalTax = data.employeeSalaries.reduce((sum, e) => sum + (e.withholdingTax || 0), 0);
+      
+      const totalRow = { y: 494, salaryBox: { anchorX: 412, anchorY: 494, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 }, bonusBox: { anchorX: 495, anchorY: 494, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 }, taxBox: { anchorX: 565, anchorY: 494, boxSpacing: CALIBRATED_BOX_SPACING, fontSize: 10, maxDigits: 10 } };
+      if (totalSal > 0) drawDigitInBox(page, font, totalSal, totalRow.salaryBox);
+      if (totalBonus > 0) drawDigitInBox(page, font, totalBonus, totalRow.bonusBox);
+      if (totalTax > 0) drawDigitInBox(page, font, totalTax, totalRow.taxBox);
+    }
+  };
+
+  if (pages.length > 0) fillPage1(pages[0]);          // Page 1: 提出用 (事業/不動産)
+  if (pages.length > 1) fillPage2(pages[1]);          // Page 2: 提出用 (内訳)
+  if (pages.length > 2) fillPage1(pages[2]);          // Page 3: 控用   (事業/不動産)
+  if (pages.length > 3) fillPage2(pages[3]);          // Page 4: 控用   (内訳)
 
   return pdfDoc.save();
 }
@@ -484,7 +721,7 @@ export async function generateFilledTaxForm(
   }
 
   const templatePath = formType === 'tax_return_b'
-    ? '/templates/kakutei1&2.pdf'
+    ? '/templates/kakutei_1_2.pdf'
     : formType === 'blue_return'
       ? '/templates/aoirokessansyo.pdf'
       : '/templates/syotokuuchiwakesyo.pdf';
@@ -919,15 +1156,19 @@ async function generateFallbackPDF(
  * PDFをダウンロード
  */
 export function downloadPDF(pdfBytes: Uint8Array, filename: string): void {
-  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+  // `application/pdf` の代わりに `application/octet-stream` を使用することで、
+  // ブラウザのPDFビューアプラグインや外部PDFツールが `blob:` URLを傍受して
+  // 中身が見れないエラーを起こすのを防ぎ、強制的にダウンロードさせます。
+  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = filename;
+  link.setAttribute('download', filename);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // URLはすぐに破棄せず、ユーザーが「名前を付けて保存」ダイアログを操作する時間を確保する
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 /**
