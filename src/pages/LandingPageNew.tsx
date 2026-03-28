@@ -4,7 +4,6 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, Menu, X, Play, Receipt, MessageSquare, Zap, Globe } from 'lucide-react';
 import { SmoothScroll } from '../components/ui/SmoothScroll';
 import { useAuth } from '../hooks/useAuth';
-import { DashboardMockup } from '../components/hero/DashboardMockup';
 
 const LandingPageNew: React.FC = () => {
     const navigate = useNavigate();
@@ -110,26 +109,25 @@ const LandingPageNew: React.FC = () => {
                         </motion.div>
 
                         {/* Abstract 3D/Spatial Visual Representation - Holographic Command Center */}
-                        <div className="relative h-[600px] w-full hidden lg:block perspective-1000">
+                        <div className="relative h-[600px] w-full hidden lg:block perspective-1000 mt-10">
                             <motion.div
                                 animate={{
-                                    rotateY: [0, 5, 0, -5, 0],
-                                    rotateX: [0, -2, 0, 2, 0],
+                                    y: [0, -15, 0],
                                 }}
                                 transition={{
-                                    duration: 15,
+                                    duration: 6,
                                     repeat: Infinity,
                                     ease: "easeInOut"
                                 }}
-                                className="relative w-full h-full transform-style-3d"
+                                className="relative w-full h-full flex items-center justify-center drop-shadow-2xl"
                             >
                                 <motion.div
-                                    initial={{ opacity: 0, scale: 0.9, z: 0 }}
-                                    animate={{ opacity: 1, scale: 1, z: 20 }}
-                                    transition={{ duration: 1, delay: 0.2 }}
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] origin-center"
+                                    initial={{ opacity: 0, scale: 0.9, y: 50 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
+                                    className="w-full max-w-[900px]"
                                 >
-                                    <DashboardMockup />
+                                    <img src="/hero-mockup.png" alt="Ainance Dashboard" className="w-full h-auto object-contain p-4 drop-shadow-[0_20px_50px_rgba(6,182,212,0.15)]" />
                                 </motion.div>
                             </motion.div>
                         </div>

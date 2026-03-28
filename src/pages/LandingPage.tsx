@@ -322,19 +322,16 @@ const LandingPage: React.FC = () => {
               transition={{ delay: 0.7 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-6"
             >
-              <button
-                onClick={() => navigate('/signup')}
-                className="group relative w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-2xl font-bold text-lg text-white shadow-2xl shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 flex items-center justify-center space-x-3 overflow-hidden active:scale-95"
+              <button 
+                onClick={() => {
+                  document.getElementById('features-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="group relative w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center space-x-3 backdrop-blur-sm active:scale-95"
               >
-                <span className="relative z-10">無料で始める</span>
-                <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1.5 transition-transform duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </button>
-              <button className="group relative w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center space-x-3 backdrop-blur-sm active:scale-95">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
                   <Play className="w-4 h-4 fill-white text-white" />
                 </div>
-                <span>使い方を見る</span>
+                <span>機能を見る</span>
               </button>
             </motion.div>
 
@@ -362,41 +359,24 @@ const LandingPage: React.FC = () => {
             transition={{ delay: 1, duration: 1.2, ease: "easeOut" }}
             className="mt-16 sm:mt-24 max-w-[1200px] mx-auto relative z-10"
           >
-            <div className="relative">
+            <div className="relative flex justify-center items-center">
               {/* Glow effect - Indigo/Emerald */}
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/15 via-blue-500/15 to-emerald-500/15 blur-[80px] rounded-full transform scale-110"></div>
 
-              {/* Browser frame */}
-              <div className="relative bg-slate-900 rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-black/50">
-                {/* Browser header */}
-                <div className="flex items-center space-x-2 px-4 py-3 bg-slate-900/80 border-b border-white/5">
-                  <div className="flex space-x-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
-                  </div>
-                  <div className="flex-1 flex justify-center">
-                    <div className="px-4 py-1.5 bg-slate-800 rounded-lg text-xs text-slate-500 font-mono">
-                      ainance.jp/dashboard
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dashboard content */}
-                <div className="aspect-[16/9] bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-                  <img
-                    src="/assets/hero_devices_v4.png"
-                    alt="Ainance Dashboard"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+              {/* Mockup image */}
+              <div className="relative w-full overflow-hidden flex justify-center">
+                <img
+                  src="/hero-mockup.png"
+                  alt="Ainance Dashboard Mockup"
+                  className="w-full h-auto object-contain max-h-[800px] drop-shadow-[0_20px_50px_rgba(99,102,241,0.2)]"
+                />
               </div>
             </div>
           </motion.div>
         </section>
 
         {/* Features Section */}
-        <section className="py-24 sm:py-32 px-6 relative">
+        <section id="features-section" className="py-24 sm:py-32 px-6 relative">
           <div className="max-w-[1200px] mx-auto">
             {/* Section Header */}
             <div className="text-center mb-16 sm:mb-20">
