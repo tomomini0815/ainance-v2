@@ -7,6 +7,7 @@ import { CustomCursor } from '../components/ui/CustomCursor';
 import { MagneticButton } from '../components/ui/MagneticButton';
 import { useAuth } from '../hooks/useAuth';
 import { TaxReturnIllustration, CorporateAccountingIllustration, ExpenseSettlementIllustration, InvoiceIllustration, DashboardIllustration, SubsidyIllustration } from '../components/illustrations/FeatureIllustrations';
+import HowItWorksSection from '../components/landing/HowItWorksSection';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -80,37 +81,67 @@ const LandingPage: React.FC = () => {
     {
       badge: '経理財務',
       title: 'AIレシート読取',
-      description: 'スマホで撮影するだけで、日付・金額・支払先をAIが自動認識。面倒な手入力を99%削減し、CSV出力も可能です。',
+      description: 'スマホやPCから画像をアップロードするだけで、高精度AIが日付・金額・店舗名を自動抽出。最適な勘定科目もAIが推測します。',
+      details: [
+        'スマホやPCから画像をアップロード',
+        '日付・金額・店舗名をAIが自動抽出',
+        '内容から最適な勘定科目をAIが推測'
+      ],
       Illustration: ExpenseSettlementIllustration,
     },
     {
       badge: '経理業務',
       title: '音声・チャット経理',
-      description: '「タクシー代 1500円」と話しかけるだけで記帳完了。LINE感覚で、移動中や隙間時間にサクッと経理処理ができます。',
+      description: '「カフェで会議、コーヒー代800円」と話しかけるだけ。自然言語処理で文章から取引内容を自動抽出し、手軽に経費を記録します。',
+      details: [
+        'マイクを使ったシンプルな音声入力対応',
+        'チャット形式で日々の経費を手軽に記録',
+        '曖昧な表現でもAIが補正して自動仕訳'
+      ],
       Illustration: CorporateAccountingIllustration,
     },
     {
       badge: '確定申告',
       title: '確定申告サポート',
-      description: '質問に答えるだけのウィザード形式で、青色・白色申告書類を自動作成。控除の計算からe-Tax用データ出力まで対応。',
+      description: '質問に答えるだけのウィザード形式で、青色・白色申告書類を自動作成。控除の計算からe-Tax用データ出力まで一気通貫。',
+      details: [
+        '青色申告・白色申告の両方に完全対応',
+        '各種控除や減価償却費の計算ナビゲート',
+        'e-Tax提出用ファイル(xtx形式)の出力'
+      ],
       Illustration: TaxReturnIllustration,
     },
     {
       badge: '請求管理',
       title: '請求書・見積書作成',
-      description: 'インボイス制度対応の請求書・見積書をワンクリックで作成。PDF変換機能も標準搭載し、業務時間を大幅短縮。',
+      description: 'インボイス制度対応の請求書・見積書をスムーズに作成。プレビューを確認しながら入力でき、PDF出力も標準搭載しています。',
+      details: [
+        '請求書と見積書のフォーマットを簡単切り替え',
+        'インボイス適格請求書フォーマットに完全対応',
+        '顧客や品目を入力してPDFを即座に発行保存'
+      ],
       Illustration: InvoiceIllustration,
     },
     {
       badge: '経営分析',
       title: '経営分析ダッシュボード',
-      description: '売上・経費・利益の推移をリアルタイムでグラフ化。月ごとの収支状況を一目で把握し、データに基づいた経営判断を。',
+      description: '売上・経費・利益の推移をリアルタイムでグラフ化。月ごとの予算と実績の比較など、データに基づいた経営状態の把握をサポートします。',
+      details: [
+        '全体のリアルタイムな収支をグラフで可視化',
+        '月ごとの予算と実績の比較を行う目標管理',
+        '前期決算書のAI取り込みによる簡単移行'
+      ],
       Illustration: DashboardIllustration,
     },
     {
       badge: '資金調達',
       title: '補助金マッチング',
-      description: 'あなたの事業プロフィールに基づき、受給可能な補助金・助成金をAIが提案。申請に必要な情報の整理もサポート。',
+      description: 'あなたの事業プロフィールに基づき、受給可能な補助金・助成金をAIが提案。申請書のドラフト作成による支援も行います。',
+      details: [
+        '事業プロフィールに基づくAI最適マッチング',
+        '補助金の推定受給額や難易度、確率を算出',
+        '申請書ドラフトの自動作成と戦略的アドバイス'
+      ],
       Illustration: SubsidyIllustration,
     },
   ];
@@ -152,13 +183,19 @@ const LandingPage: React.FC = () => {
 
             <div className="hidden md:flex items-center space-x-1">
               {[
-                { label: '機能', path: '/features' },
-                { label: '使い方', path: '/how-to-use' },
+                { label: '機能', path: '#features-section' },
+                { label: '使い方', path: '#how-it-works-section' },
                 { label: 'サポート', path: '/support' }
               ].map((item) => (
                 <button
                   key={item.label}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    if (item.path.startsWith('#')) {
+                      document.getElementById(item.path.substring(1))?.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      navigate(item.path);
+                    }
+                  }}
                   className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-all rounded-full hover:bg-white/5 active:scale-95"
                 >
                   {item.label}
@@ -209,8 +246,8 @@ const LandingPage: React.FC = () => {
                 >
                   <div className="flex flex-col space-y-6">
                     {[
-                      { label: '機能', path: '/features', icon: Sparkles },
-                      { label: '使い方', path: '/how-to-use', icon: Play },
+                      { label: '機能', path: '#features-section', icon: Sparkles },
+                      { label: '使い方', path: '#how-it-works-section', icon: Play },
                       { label: 'サポート', path: '/support', icon: MessageSquare },
                       { label: 'ログイン', path: '/login', icon: LogIn }
                     ].map((item, idx) => (
@@ -220,7 +257,11 @@ const LandingPage: React.FC = () => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.1 + idx * 0.05 }}
                         onClick={() => {
-                          navigate(item.path);
+                          if (item.path.startsWith('#')) {
+                            document.getElementById(item.path.substring(1))?.scrollIntoView({ behavior: 'smooth' });
+                          } else {
+                            navigate(item.path);
+                          }
                           setIsMenuOpen(false);
                         }}
                         className="flex items-center space-x-4 text-slate-300 hover:text-white transition-colors group"
@@ -439,18 +480,27 @@ const LandingPage: React.FC = () => {
 
                   {/* Content */}
                   <h3 className="text-base sm:text-lg font-bold mb-2 text-white group-hover:text-indigo-100 transition-colors">{feature.title}</h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-4 flex-grow">{feature.description}</p>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-5 flex-grow text-left w-full px-2">{feature.description}</p>
 
-                  {/* Learn more link */}
-                  <div className="flex items-center text-sm font-bold text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-auto pt-2 border-t border-white/5 w-full justify-center">
-                    <span>詳しく見る</span>
-                    <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                  </div>
+                  {/* Feature List */}
+                  <ul className="w-full space-y-2 mb-6 px-2 text-left">
+                    {feature.details.map((detail, detailIdx) => (
+                      <li key={detailIdx} className="flex items-start text-xs sm:text-sm text-slate-300">
+                        <Check className="w-4 h-4 text-emerald-400 mr-2 flex-shrink-0 mt-0.5" />
+                        <span className="leading-tight">{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
+
+        {/* How It Works Section */}
+        <HowItWorksSection />
 
         {/* CTA Section */}
         <section className="py-24 sm:py-32 px-6 relative overflow-hidden">
@@ -505,8 +555,8 @@ const LandingPage: React.FC = () => {
               <div>
                 <h4 className="text-white font-bold mb-6">サービス</h4>
                 <ul className="space-y-4">
-                  <li><Link to="/features" className="text-slate-400 hover:text-white transition-colors text-sm">機能紹介</Link></li>
-                  <li><Link to="/how-to-use" className="text-slate-400 hover:text-white transition-colors text-sm">使い方</Link></li>
+                  <li><button onClick={() => document.getElementById('features-section')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-400 hover:text-white transition-colors text-sm">機能紹介</button></li>
+                  <li><button onClick={() => document.getElementById('how-it-works-section')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-400 hover:text-white transition-colors text-sm">使い方</button></li>
                 </ul>
               </div>
 

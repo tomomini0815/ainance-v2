@@ -48,8 +48,6 @@ const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
 const Contact = React.lazy(() => import('./pages/Contact'));
 const LegalNotice = React.lazy(() => import('./pages/LegalNotice'));
 const Signup = React.lazy(() => import('./pages/Signup'));
-const Features = React.lazy(() => import('./pages/Features'));
-const HowToUse = React.lazy(() => import('./pages/HowToUse'));
 const Pricing = React.lazy(() => import('./pages/Pricing'));
 const Support = React.lazy(() => import('./pages/Support'));
 const ReceiptTips = React.lazy(() => import('./pages/support/ReceiptTips'));
@@ -357,8 +355,6 @@ function App() {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/contact" element={<Contact />} />
-                <Route path="/features" element={<Features />} />
-                <Route path="/how-to-use" element={<HowToUse />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/support/receipt-tips" element={<ReceiptTips />} />
