@@ -226,30 +226,39 @@ const LandingPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Mobile Menu Overlay */}
+          {/* Mobile Menu */}
           <AnimatePresence>
             {isMenuOpen && (
               <>
+                {/* Backdrop */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setIsMenuOpen(false)}
-                  className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[101]"
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[101]"
                 />
+                {/* Sidebar */}
                 <motion.div
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="fixed top-0 right-0 bottom-0 w-[65vw] bg-slate-950/98 backdrop-blur-3xl z-[102] flex flex-col p-8 pt-24 border-l border-white/10 shadow-2xl relative overflow-hidden"
+                  transition={{ type: 'spring', damping: 30, stiffness: 250 }}
+                  className="fixed top-0 right-0 bottom-0 w-[70vw] max-w-[280px] bg-slate-950 z-[102] flex flex-col shadow-2xl border-l border-white/10 overflow-y-auto"
                 >
-                  {/* Unified LP Background decorations inside the menu */}
-                  <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 blur-[120px] rounded-full pointer-events-none"></div>
-                  <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-emerald-600/15 blur-[100px] rounded-full pointer-events-none"></div>
-                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:72px_72px] opacity-20 pointer-events-none"></div>
+                  {/* Sidebar header */}
+                  <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+                    <span className="text-base font-bold text-white tracking-tight">メニュー</span>
+                    <button
+                      onClick={() => setIsMenuOpen(false)}
+                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-white"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
 
-                  <div className="w-full flex flex-col space-y-6 relative z-10 items-end">
+                  {/* Nav items */}
+                  <div className="flex flex-col flex-1 px-4 py-6 space-y-1">
                     {[
                       { label: '機能', path: '#features-section', icon: Sparkles },
                       { label: '使い方', path: '#how-it-works-section', icon: Play },
@@ -258,9 +267,9 @@ const LandingPage: React.FC = () => {
                     ].map((item, idx) => (
                       <motion.button
                         key={item.label}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 + idx * 0.05 }}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.05 + idx * 0.05 }}
                         onClick={() => {
                           if (item.path.startsWith('#')) {
                             document.getElementById(item.path.substring(1))?.scrollIntoView({ behavior: 'smooth' });
@@ -269,32 +278,28 @@ const LandingPage: React.FC = () => {
                           }
                           setIsMenuOpen(false);
                         }}
-                        className="flex items-center space-x-6 text-slate-300 hover:text-white transition-all group p-3 rounded-2xl hover:bg-white/5 active:scale-95"
+                        className="flex items-center space-x-3 text-slate-300 hover:text-white px-4 py-3.5 rounded-xl hover:bg-white/5 transition-all group text-left w-full"
                       >
-                        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-all group-hover:scale-110">
-                          <item.icon className="w-5 h-5" />
+                        <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors flex-shrink-0">
+                          <item.icon className="w-4 h-4" />
                         </div>
-                        <span className="text-xl font-bold tracking-tight">{item.label}</span>
+                        <span className="text-base font-semibold">{item.label}</span>
                       </motion.button>
                     ))}
- 
-                    <motion.div
-                      initial={{ opacity: 0, y: 30 }}
+                  </div>
+
+                  {/* CTA */}
+                  <div className="px-4 pb-8 pt-4 border-t border-white/10">
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.35 }}
-                      className="pt-8 border-t border-white/10 w-full flex justify-end"
+                      transition={{ delay: 0.3 }}
+                      onClick={() => { navigate('/signup'); setIsMenuOpen(false); }}
+                      className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-xl font-bold text-white text-base shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
                     >
-                      <button
-                        onClick={() => {
-                          navigate('/signup');
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full sm:w-64 py-4 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-2xl font-bold text-lg text-white shadow-2xl shadow-indigo-500/25 active:scale-[0.98] transition-all flex items-center justify-center space-x-3"
-                      >
-                        <span>無料で始める</span>
-                        <ArrowRight className="w-5 h-5" />
-                      </button>
-                    </motion.div>
+                      <span>無料で始める</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </motion.button>
                   </div>
                 </motion.div>
               </>
