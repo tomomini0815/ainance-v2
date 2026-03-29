@@ -222,90 +222,87 @@ const LandingPage: React.FC = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2.5 text-white z-[110] bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
             >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <Menu className="w-6 h-6" />
             </button>
           </div>
-
-          {/* Mobile Menu */}
-          <AnimatePresence>
-            {isMenuOpen && (
-              <>
-                {/* Backdrop */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[101]"
-                />
-                {/* Sidebar */}
-                <motion.div
-                  initial={{ x: '100%' }}
-                  animate={{ x: 0 }}
-                  exit={{ x: '100%' }}
-                  transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-                  className="fixed top-0 right-0 bottom-0 w-[70vw] max-w-[280px] bg-slate-950 z-[102] flex flex-col shadow-2xl border-l border-white/10 overflow-y-auto"
-                >
-                  {/* Sidebar header */}
-                  <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
-                    <span className="text-base font-bold text-white tracking-tight">メニュー</span>
-                    <button
-                      onClick={() => setIsMenuOpen(false)}
-                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-white"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Nav items */}
-                  <div className="flex flex-col flex-1 px-4 py-6 space-y-1">
-                    {[
-                      { label: '機能', path: '#features-section', icon: Sparkles },
-                      { label: '使い方', path: '#how-it-works-section', icon: Play },
-                      { label: 'サポート', path: '/support', icon: MessageSquare },
-                      { label: 'ログイン', path: '/login', icon: LogIn }
-                    ].map((item, idx) => (
-                      <motion.button
-                        key={item.label}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.05 + idx * 0.05 }}
-                        onClick={() => {
-                          if (item.path.startsWith('#')) {
-                            document.getElementById(item.path.substring(1))?.scrollIntoView({ behavior: 'smooth' });
-                          } else {
-                            navigate(item.path);
-                          }
-                          setIsMenuOpen(false);
-                        }}
-                        className="flex items-center space-x-3 text-slate-300 hover:text-white px-4 py-3.5 rounded-xl hover:bg-white/5 transition-all group text-left w-full"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors flex-shrink-0">
-                          <item.icon className="w-4 h-4" />
-                        </div>
-                        <span className="text-base font-semibold">{item.label}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-
-                  {/* CTA */}
-                  <div className="px-4 pb-8 pt-4 border-t border-white/10">
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      onClick={() => { navigate('/signup'); setIsMenuOpen(false); }}
-                      className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-xl font-bold text-white text-base shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
-                    >
-                      <span>無料で始める</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
         </nav>
+
+        {/* Mobile Menu - outside nav to ensure correct fixed positioning */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMenuOpen(false)}
+                className="fixed inset-0 bg-black/60 z-[200]"
+              />
+              {/* Sidebar */}
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="fixed top-0 right-0 bottom-0 w-[75vw] max-w-[300px] bg-slate-950 z-[201] flex flex-col border-l border-white/10 shadow-2xl"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 h-16 border-b border-white/10 flex-shrink-0">
+                  <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Menu</span>
+                  <button
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Nav items */}
+                <div className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+                  {[
+                    { label: '機能', path: '#features-section', icon: Sparkles },
+                    { label: '使い方', path: '#how-it-works-section', icon: Play },
+                    { label: 'サポート', path: '/support', icon: MessageSquare },
+                    { label: 'ログイン', path: '/login', icon: LogIn }
+                  ].map((item, idx) => (
+                    <motion.button
+                      key={item.label}
+                      initial={{ opacity: 0, x: 16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.04 * idx }}
+                      onClick={() => {
+                        if (item.path.startsWith('#')) {
+                          document.getElementById(item.path.substring(1))?.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                          navigate(item.path);
+                        }
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center space-x-3 w-full text-slate-300 hover:text-white px-3 py-3.5 rounded-xl hover:bg-white/5 transition-all text-left group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors flex-shrink-0">
+                        <item.icon className="w-4 h-4" />
+                      </div>
+                      <span className="text-base font-medium">{item.label}</span>
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* CTA Button */}
+                <div className="px-4 py-5 border-t border-white/10 flex-shrink-0">
+                  <button
+                    onClick={() => { navigate('/signup'); setIsMenuOpen(false); }}
+                    className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-xl font-bold text-white flex items-center justify-center space-x-2 shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-transform"
+                  >
+                    <span>無料で始める</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Hero Section */}
         <section className="relative pt-32 sm:pt-40 pb-20 sm:pb-32 px-6 overflow-hidden">
