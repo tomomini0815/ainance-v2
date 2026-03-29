@@ -83,19 +83,19 @@ const QuickActions: React.FC = () => {
   ];
 
   return (
-    <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-4 mb-8">
+    <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-2 sm:gap-4 mb-6 sm:mb-8">
       {actions.map((action, index) => (
         <Link
           key={index}
           to={action.link}
-          className="bg-white dark:bg-surface rounded-xl p-2.5 hover:bg-surface-highlight transition-all duration-300 group border border-border hover:border-border-strong hover:-translate-y-1 shadow-sm hover:shadow-md"
+          className="bg-white dark:bg-surface rounded-xl p-1.5 sm:p-2.5 hover:bg-surface-highlight transition-all duration-300 group border border-border hover:border-border-strong hover:-translate-y-1 shadow-sm hover:shadow-md"
         >
-          <div className="flex flex-col items-center text-center h-full">
-            <div className={`w-10 h-10 ${action.color} rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300`}>
-              <action.icon className={`w-5 h-5 ${action.iconColor}`} />
+          <div className="flex flex-col items-center text-center h-full justify-start sm:justify-center">
+            <div className={`w-8 h-8 sm:w-10 sm:h-10 ${action.color} rounded-full flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-110 transition-transform duration-300`}>
+              <action.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${action.iconColor}`} />
             </div>
-            <h3 className="font-medium text-text-main mb-1 text-xs">{action.title}</h3>
-            <p className="text-[10px] text-text-muted leading-tight">{action.description}</p>
+            <h3 className="font-medium text-text-main mb-0 sm:mb-1 text-[10px] sm:text-xs leading-tight">{action.title}</h3>
+            <p className="hidden sm:block text-[10px] text-text-muted leading-tight">{action.description}</p>
           </div>
         </Link>
       ))}

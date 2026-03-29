@@ -33,10 +33,12 @@ interface APIKey {
 }
 
 const IntegrationSettings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { currentBusinessType, businessTypes, switchBusinessType, updateBusinessType } = useBusinessTypeContext();
-  const [activeTab, setActiveTab] = useState<'integrations' | 'api' | 'sync' | 'setup' | 'invoice'>('setup')
+  const [activeTab, setActiveTab] = useState<'integrations' | 'api' | 'sync' | 'setup' | 'invoice' | 'account'>('setup')
   const [showApiKey, setShowApiKey] = useState<{ [key: string]: boolean }>({})
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // モーダル管理
   const [isPLModalOpen, setIsPLModalOpen] = useState(false);
@@ -134,68 +136,22 @@ const IntegrationSettings: React.FC = () => {
     }
   };
 
-  const [integrations] = useState<Integration[]>([
-    {
-      id: '1',
-      name: '三菱UFJ銀行',
-      type: 'bank',
-      status: 'connected',
-      lastSync: '2024-01-15 09:30',
-      description: '普通預金口座の取引履歴を自動取得',
-      logo: '🏦',
-      features: ['残高照会', '取引履歴', '自動仕訳']
-    },
-    {
-      id: '2',
-      name: '楽天カード',
-      type: 'credit',
-      status: 'connected',
-      lastSync: '2024-01-15 08:45',
-      description: 'クレジットカード利用明細を自動取得',
-      logo: '💳',
-      features: ['利用明細', '自動分類', 'レシート連携']
-    },
-    {
-      id: '3',
-      name: 'Amazon',
-      type: 'ecommerce',
-      status: 'error',
-      lastSync: '2024-01-14 15:20',
-      description: 'Amazon販売データの自動取得',
-      logo: '📦',
-      features: ['売上データ', '手数料計算', '在庫管理']
-    },
-    {
-      id: '4',
-      name: 'Square POS',
-      type: 'pos',
-      status: 'disconnected',
-      lastSync: '未接続',
-      description: 'POS売上データの自動取得',
-      logo: '🛒',
-      features: ['売上データ', '商品管理', 'レシート発行']
-    },
-    {
-      id: '5',
-      name: 'PayPal',
-      type: 'payment',
-      status: 'connected',
-      lastSync: '2024-01-15 10:15',
-      description: 'PayPal決済データの自動取得',
-      logo: '💰',
-      features: ['決済履歴', '手数料計算', '返金処理']
-    },
-    {
-      id: '6',
-      name: 'freee',
-      type: 'accounting',
-      status: 'pending',
-      lastSync: '設定中',
-      description: '会計ソフトとのデータ連携',
-      logo: '📊',
-      features: ['仕訳同期', 'レポート', '税務申告']
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      // 実際にはアカウント削除APIを呼び出します
+      await new Promise(resolve => setTimeout(resolve, 1500)); 
+      toast.success('アカウントを削除しました（退会完了）');
+      await signOut();
+    } catch (error) {
+      toast.error('アカウントの削除に失敗しました');
+    } finally {
+      setIsDeletingAccount(false);
+      setShowDeleteConfirm(false);
     }
-  ])
+  };
+
+  const [integrations] = useState<Integration[]>([])
 
   const [apiKeys] = useState<APIKey[]>([
     {
@@ -228,24 +184,13 @@ const IntegrationSettings: React.FC = () => {
   ])
 
   const availableIntegrations = [
-    { name: 'みずほ銀行', type: 'bank', logo: '🏦' },
-    { name: 'りそな銀行', type: 'bank', logo: '🏦' },
-    { name: 'イオンカード', type: 'credit', logo: '💳' },
-    { name: 'JCBカード', type: 'credit', logo: '💳' },
     { name: 'Shopify', type: 'ecommerce', logo: '🛍️' },
     { name: 'BASE', type: 'ecommerce', logo: '🛍️' },
     { name: 'Airレジ', type: 'pos', logo: '📱' },
-    { name: 'Stripe', type: 'payment', logo: '💳' },
-    { name: 'マネーフォワード', type: 'accounting', logo: '📈' }
+    { name: 'Stripe', type: 'payment', logo: '💳' }
   ]
 
-  const syncHistory = [
-    { time: '2024-01-15 10:15', source: 'PayPal', type: '決済データ', count: 15, status: 'success' },
-    { time: '2024-01-15 09:30', source: '三菱UFJ銀行', type: '取引履歴', count: 8, status: 'success' },
-    { time: '2024-01-15 08:45', source: '楽天カード', type: '利用明細', count: 23, status: 'success' },
-    { time: '2024-01-14 15:20', source: 'Amazon', type: '売上データ', count: 0, status: 'error' },
-    { time: '2024-01-14 14:30', source: '三菱UFJ銀行', type: '取引履歴', count: 12, status: 'success' }
-  ]
+  const syncHistory: any[] = []
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -370,6 +315,15 @@ const IntegrationSettings: React.FC = () => {
               >
                 同期履歴
               </button>
+              <button
+                onClick={() => setActiveTab('account')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'account'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-main'
+                  }`}
+              >
+                アカウント設定
+              </button>
             </nav>
           </div>
         </div>
@@ -380,8 +334,13 @@ const IntegrationSettings: React.FC = () => {
             {/* 接続済みサービス */}
             <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
               <h2 className="text-lg font-semibold mb-4 text-text-main">接続済みサービス</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {integrations.map((integration) => (
+              {integrations.length === 0 ? (
+                <div className="bg-surface-highlight border border-border rounded-lg p-8 text-center mt-2">
+                  <p className="text-text-muted text-sm">現在接続済みのサービスはありません。<br/>下の「利用可能なサービス」から設定してください。</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {integrations.map((integration) => (
                   <div key={integration.id} className="border border-border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center">
@@ -439,6 +398,7 @@ const IntegrationSettings: React.FC = () => {
                   </div>
                 ))}
               </div>
+              )}
             </div>
 
             {/* 利用可能なサービス */}
@@ -641,9 +601,15 @@ const IntegrationSettings: React.FC = () => {
               </button>
             </div>
 
-            {/* モバイル用カード表示 */}
-            <div className="block md:hidden space-y-4">
-              {syncHistory.map((sync, index) => (
+            {syncHistory.length === 0 ? (
+              <div className="bg-surface-highlight border border-border rounded-lg p-8 text-center mt-4">
+                <p className="text-text-muted text-sm">完了した同期履歴はありません。</p>
+              </div>
+            ) : (
+              <>
+                {/* モバイル用カード表示 */}
+                <div className="block md:hidden space-y-4">
+                  {syncHistory.map((sync, index) => (
                 <div key={index} className="bg-surface p-4 rounded-lg shadow-sm border border-border">
                   <div className="flex justify-between items-start mb-2">
                     <div className="font-medium text-text-main">{sync.source}</div>
@@ -722,6 +688,8 @@ const IntegrationSettings: React.FC = () => {
                 </tbody>
               </table>
             </div>
+            </>
+            )}
           </div>
         )}
 
@@ -1037,6 +1005,75 @@ const IntegrationSettings: React.FC = () => {
                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                     {currentBusinessType?.business_type === 'individual' ? '個人事業主' : '法人'}のインボイス設定を保存
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* アカウント設定タブ (退会処理など) */}
+        {activeTab === 'account' && (
+          <div className="space-y-6">
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold mb-6 text-text-main border-b border-border pb-4">
+                アカウント設定
+              </h2>
+              
+              <div className="space-y-6 max-w-2xl">
+                <div>
+                  <h3 className="text-md font-medium text-text-main mb-2">ログイン情報</h3>
+                  <div className="bg-surface-highlight border border-border rounded-lg p-4">
+                    <p className="text-sm text-text-muted mb-1">メールアドレス</p>
+                    <p className="font-medium text-text-main">{user?.email || '未設定'}</p>
+                  </div>
+                </div>
+
+                <div className="pt-8 mt-8 border-t border-border">
+                  <h3 className="text-md font-medium text-red-500 mb-2 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    危険な操作 (アカウントの削除)
+                  </h3>
+                  <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-6">
+                    <p className="text-sm text-text-main mb-4 leading-relaxed">
+                      アカウントを削除すると、以下のデータが<strong>完全に削除され、復元することはできません。</strong>
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-text-muted space-y-2 mb-6 ml-2">
+                      <li>すべての事業所の仕訳・取引データ</li>
+                      <li>作成された請求書・決算書・各種設定</li>
+                      <li>アップロードされた画像や書類ファイル</li>
+                      <li>外部サービスとの連携情報</li>
+                    </ul>
+                    
+                    {!showDeleteConfirm ? (
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+                      >
+                        退会手続きへ進む
+                      </button>
+                    ) : (
+                      <div className="space-y-4 animate-in fade-in zoom-in duration-300">
+                        <p className="font-medium text-red-500">本当にアカウントを削除して退会しますか？この操作は取り消せません。</p>
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            onClick={handleDeleteAccount}
+                            disabled={isDeletingAccount}
+                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2"
+                          >
+                            {isDeletingAccount ? <Loader2 size={18} className="animate-spin" /> : null}
+                            {isDeletingAccount ? '削除中...' : '完全に削除する'}
+                          </button>
+                          <button
+                            onClick={() => setShowDeleteConfirm(false)}
+                            disabled={isDeletingAccount}
+                            className="bg-surface hover:bg-surface-highlight border border-border text-text-main px-6 py-2.5 rounded-lg font-medium transition-colors"
+                          >
+                            キャンセル
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

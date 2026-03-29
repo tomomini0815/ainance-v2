@@ -21,7 +21,9 @@ const Support: React.FC = () => {
             description: 'プラン変更、請求書の確認、決済方法について',
             color: 'text-emerald-400',
             bg: 'bg-emerald-500/10',
-            path: '/support/payment'
+            path: '/support/payment',
+            disabled: true,
+            badge: '現在ベータ版のため無料でご利用いただけます。'
         },
         {
             icon: Settings,
@@ -114,15 +116,26 @@ const Support: React.FC = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
-                            onClick={() => navigate(cat.path)}
-                            className="bg-slate-900/50 p-6 rounded-2xl border border-white/5 hover:border-white/10 hover:bg-slate-900 transition-all cursor-pointer group"
+                            onClick={() => !cat.disabled && navigate(cat.path)}
+                            className={`p-6 rounded-2xl border transition-all ${
+                                cat.disabled 
+                                    ? 'bg-slate-900/20 border-white/5 cursor-not-allowed opacity-60' 
+                                    : 'bg-slate-900/50 border-white/5 hover:border-white/10 hover:bg-slate-900 cursor-pointer group'
+                            }`}
                         >
                             <div className="flex items-start space-x-4">
-                                <div className={`w-12 h-12 rounded-xl ${cat.bg} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                                <div className={`w-12 h-12 rounded-xl ${cat.bg} flex items-center justify-center flex-shrink-0 ${!cat.disabled ? 'group-hover:scale-110' : 'grayscale opacity-50'} transition-transform`}>
                                     <cat.icon className={`w-6 h-6 ${cat.color}`} />
                                 </div>
-                                <div>
-                                    <h3 className="text-lg font-bold mb-2 group-hover:text-indigo-400 transition-colors">{cat.title}</h3>
+                                <div className="flex-1">
+                                    <div className="flex flex-col sm:flex-row sm:items-center flex-wrap gap-2 mb-2">
+                                        <h3 className={`text-lg font-bold ${!cat.disabled && 'group-hover:text-indigo-400'} transition-colors`}>{cat.title}</h3>
+                                        {cat.badge && (
+                                            <span className="text-[11px] leading-none font-medium bg-slate-800 text-slate-400 border border-slate-700 px-2 py-1 rounded inline-block">
+                                                {cat.badge}
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-slate-400 text-sm leading-relaxed">{cat.description}</p>
                                 </div>
                             </div>

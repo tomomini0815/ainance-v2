@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Sparkles, Menu, X, Play, FileText, MessageSquare, Receipt, TrendingUp, Check, ChevronRight, Calculator, LogIn } from 'lucide-react';
+import { ArrowRight, Sparkles, Menu, X, Play, MessageSquare, Check, ChevronRight, LogIn } from 'lucide-react';
 import { SmoothScroll } from '../components/ui/SmoothScroll';
 import { CustomCursor } from '../components/ui/CustomCursor';
 import { MagneticButton } from '../components/ui/MagneticButton';
 import { useAuth } from '../hooks/useAuth';
+import { TaxReturnIllustration, CorporateAccountingIllustration, ExpenseSettlementIllustration, InvoiceIllustration, DashboardIllustration, SubsidyIllustration } from '../components/illustrations/FeatureIllustrations';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -77,52 +78,40 @@ const LandingPage: React.FC = () => {
 
   const features = [
     {
-      icon: Receipt,
+      badge: '経理財務',
       title: 'AIレシート読取',
       description: 'スマホで撮影するだけで、日付・金額・支払先をAIが自動認識。面倒な手入力を99%削減し、CSV出力も可能です。',
-      color: 'from-indigo-500 to-blue-600',
-      bgColor: 'bg-indigo-500/10',
-      iconColor: 'text-indigo-400',
+      Illustration: ExpenseSettlementIllustration,
     },
     {
-      icon: MessageSquare,
+      badge: '経理業務',
       title: '音声・チャット経理',
       description: '「タクシー代 1500円」と話しかけるだけで記帳完了。LINE感覚で、移動中や隙間時間にサクッと経理処理ができます。',
-      color: 'from-emerald-500 to-teal-600',
-      bgColor: 'bg-emerald-500/10',
-      iconColor: 'text-emerald-400',
+      Illustration: CorporateAccountingIllustration,
     },
     {
-      icon: Calculator,
+      badge: '確定申告',
       title: '確定申告サポート',
       description: '質問に答えるだけのウィザード形式で、青色・白色申告書類を自動作成。控除の計算からe-Tax用データ出力まで対応。',
-      color: 'from-purple-500 to-pink-600',
-      bgColor: 'bg-purple-500/10',
-      iconColor: 'text-purple-400',
+      Illustration: TaxReturnIllustration,
     },
     {
-      icon: FileText,
+      badge: '請求管理',
       title: '請求書・見積書作成',
       description: 'インボイス制度対応の請求書・見積書をワンクリックで作成。PDF変換機能も標準搭載し、業務時間を大幅短縮。',
-      color: 'from-blue-500 to-cyan-600',
-      bgColor: 'bg-blue-500/10',
-      iconColor: 'text-blue-400',
+      Illustration: InvoiceIllustration,
     },
     {
-      icon: TrendingUp,
+      badge: '経営分析',
       title: '経営分析ダッシュボード',
       description: '売上・経費・利益の推移をリアルタイムでグラフ化。月ごとの収支状況を一目で把握し、データに基づいた経営判断を。',
-      color: 'from-amber-500 to-orange-600',
-      bgColor: 'bg-amber-500/10',
-      iconColor: 'text-amber-400',
+      Illustration: DashboardIllustration,
     },
     {
-      icon: Sparkles,
+      badge: '資金調達',
       title: '補助金マッチング',
       description: 'あなたの事業プロフィールに基づき、受給可能な補助金・助成金をAIが提案。申請に必要な情報の整理もサポート。',
-      color: 'from-rose-500 to-red-600',
-      bgColor: 'bg-rose-500/10',
-      iconColor: 'text-rose-400',
+      Illustration: SubsidyIllustration,
     },
   ];
 
@@ -340,7 +329,7 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
-              className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-3"
+              className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-3"
             >
               {benefits.slice(0, 3).map((benefit, index) => (
                 <div key={index} className="flex items-center space-x-2 text-sm text-slate-500">
@@ -357,18 +346,29 @@ const LandingPage: React.FC = () => {
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 1.2, ease: "easeOut" }}
-            className="mt-16 sm:mt-24 max-w-[1200px] mx-auto relative z-10"
+            className="mt-0 sm:mt-2 max-w-[1200px] mx-auto relative z-10"
           >
             <div className="relative flex justify-center items-center">
               {/* Glow effect - Indigo/Emerald */}
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/15 via-blue-500/15 to-emerald-500/15 blur-[80px] rounded-full transform scale-110"></div>
 
-              {/* Mockup image */}
-              <div className="relative w-full overflow-hidden flex justify-center">
+              {/* Mockup images */}
+              <div className="relative w-full overflow-visible flex justify-center max-w-5xl mx-auto px-4">
+                {/* PC Mockup */}
                 <img
                   src="/hero-mockup.png"
-                  alt="Ainance Dashboard Mockup"
-                  className="w-full h-auto object-contain max-h-[800px] drop-shadow-[0_20px_50px_rgba(99,102,241,0.2)]"
+                  alt="Ainance Dashboard Mockup PC"
+                  className="w-full md:w-[85%] h-auto object-contain max-h-[800px] drop-shadow-[0_20px_50px_rgba(99,102,241,0.3)] relative z-10"
+                />
+                
+                {/* Mobile Mockup */}
+                <motion.img
+                  src="/mobile-mockup.png"
+                  alt="Ainance Dashboard Mockup Mobile"
+                  initial={{ opacity: 0, y: 50, x: 20 }}
+                  animate={{ opacity: 1, y: 0, x: 0 }}
+                  transition={{ delay: 1.5, duration: 1, type: "spring", bounce: 0.4 }}
+                  className="absolute right-0 md:right-[5%] bottom-[-10%] md:bottom-[-15%] w-[35%] sm:w-[30%] md:w-[25%] max-w-[300px] h-auto object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)] z-20"
                 />
               </div>
             </div>
@@ -376,10 +376,10 @@ const LandingPage: React.FC = () => {
         </section>
 
         {/* Features Section */}
-        <section id="features-section" className="py-24 sm:py-32 px-6 relative">
+        <section id="features-section" className="-mt-8 sm:-mt-16 pt-16 sm:pt-24 pb-24 sm:pb-32 px-6 relative z-20">
           <div className="max-w-[1200px] mx-auto">
             {/* Section Header */}
-            <div className="text-center mb-16 sm:mb-20">
+            <div className="text-center mb-10 sm:mb-12">
               <motion.span
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -420,22 +420,29 @@ const LandingPage: React.FC = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className="group relative p-8 rounded-3xl bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 hover:border-white/10 transition-all duration-500 overflow-hidden"
+                  className="group relative p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-slate-800/90 to-slate-900/90 backdrop-blur-xl border-t border-l border-white/20 border-r border-b border-black/50 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.7)] hover:border-indigo-400/50 hover:shadow-[0_0_50px_rgba(99,102,241,0.25)] transition-all duration-500 flex flex-col items-center text-center overflow-hidden"
                 >
-                  {/* Hover gradient */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-500`}></div>
+                  {/* Spotlight Effect inside card */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.12)_0%,transparent_70%)] opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-                  {/* Icon */}
-                  <div className={`w-14 h-14 rounded-2xl ${feature.bgColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className={`w-7 h-7 ${feature.iconColor}`} />
+                  {/* Badge */}
+                  <div className="absolute top-4 left-4 sm:top-5 sm:left-5 z-10">
+                    <span className="inline-block px-3 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-xs font-bold rounded-full">
+                      {feature.badge}
+                    </span>
+                  </div>
+
+                  {/* Illustration */}
+                  <div className="w-full max-w-[160px] mt-10 mb-4 transform group-hover:-translate-y-2 transition-transform duration-500">
+                    <feature.Illustration className="w-full h-auto drop-shadow-[0_0_15px_rgba(99,102,241,0.2)]" />
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl sm:text-2xl font-bold mb-3 text-white group-hover:text-white transition-colors">{feature.title}</h3>
-                  <p className="text-slate-400 leading-relaxed">{feature.description}</p>
+                  <h3 className="text-base sm:text-lg font-bold mb-2 text-white group-hover:text-indigo-100 transition-colors">{feature.title}</h3>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-4 flex-grow">{feature.description}</p>
 
                   {/* Learn more link */}
-                  <div className="mt-6 flex items-center text-sm font-medium text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="flex items-center text-sm font-bold text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-auto pt-2 border-t border-white/5 w-full justify-center">
                     <span>詳しく見る</span>
                     <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -457,12 +464,8 @@ const LandingPage: React.FC = () => {
             viewport={{ once: true }}
             className="relative z-10 max-w-3xl mx-auto text-center"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-500 mb-8 shadow-lg shadow-indigo-500/30">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
-              さあ、始めましょう。
+              さぁ、経理業務をもっと楽に。
             </h2>
             <p className="text-xl text-slate-400 mb-10 max-w-xl mx-auto">
               今すぐ無料で登録して、Ainanceの全ての機能をお試しください。
@@ -488,8 +491,8 @@ const LandingPage: React.FC = () => {
         <footer className="py-16 sm:py-20 border-t border-white/5 bg-slate-950/50 backdrop-blur-3xl relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/5 to-transparent pointer-events-none"></div>
           <div className="max-w-[1400px] mx-auto px-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-              <div className="col-span-1 md:col-span-1">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-x-2 gap-y-10 md:gap-12 mb-16">
+              <div className="col-span-3 md:col-span-1">
                 <div className="flex items-center space-x-3 mb-6">
                   <img src="/ainance-logo-header.png" alt="Ainance Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] rounded-lg" />
                   <span className="text-xl font-bold text-white tracking-tight">Ainance</span>
@@ -504,7 +507,6 @@ const LandingPage: React.FC = () => {
                 <ul className="space-y-4">
                   <li><Link to="/features" className="text-slate-400 hover:text-white transition-colors text-sm">機能紹介</Link></li>
                   <li><Link to="/how-to-use" className="text-slate-400 hover:text-white transition-colors text-sm">使い方</Link></li>
-                  <li><Link to="/pricing" className="text-slate-400 hover:text-white transition-colors text-sm">料金プラン</Link></li>
                 </ul>
               </div>
 
@@ -513,7 +515,6 @@ const LandingPage: React.FC = () => {
                 <ul className="space-y-4">
                   <li><Link to="/support" className="text-slate-400 hover:text-white transition-colors text-sm">ヘルプセンター</Link></li>
                   <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors text-sm">お問い合わせ</Link></li>
-                  <li><Link to="/tax-filing-guide" className="text-slate-400 hover:text-white transition-colors text-sm">公式ガイド</Link></li>
                 </ul>
               </div>
 
@@ -522,14 +523,13 @@ const LandingPage: React.FC = () => {
                 <ul className="space-y-4">
                   <li><Link to="/terms" className="text-slate-400 hover:text-white transition-colors text-sm">利用規約</Link></li>
                   <li><Link to="/privacy" className="text-slate-400 hover:text-white transition-colors text-sm">プライバシーポリシー</Link></li>
-                  <li><Link to="/legal" className="text-slate-400 hover:text-white transition-colors text-sm">特定商取引法に基づく表記</Link></li>
                 </ul>
               </div>
             </div>
 
             <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-white/5 gap-6">
               <div className="text-sm text-slate-500">
-                © 2025 Ainance. All rights reserved.
+                © 2025-2026 Ainance. All rights reserved.
               </div>
               <div className="flex items-center space-x-6">
                 {/* Social icons could go here */}

@@ -13,7 +13,7 @@ const DashboardChatbot: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const dateInputRef = useRef<HTMLInputElement>(null);
     const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
-        { role: 'assistant', content: 'こんにちは！AIアシスタントです。\n「タクシー代 2500円」のように入力すると、自動で家計簿に記録します。' }
+        { role: 'assistant', content: 'こんにちは！AIアシスタントです。\n「タクシー代 2500円」のように入力すると、自動で帳簿に記録します。' }
     ]);
 
     const { user } = useAuth();
