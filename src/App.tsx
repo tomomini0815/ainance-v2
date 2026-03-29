@@ -98,13 +98,13 @@ const CashFlowForecast = React.lazy(() => import('./pages/support/CashFlowForeca
 const CustomReport = React.lazy(() => import('./pages/support/CustomReport'));
 const LoginFailedError = React.lazy(() => import('./pages/support/LoginFailedError'));
 const ImageUploadError = React.lazy(() => import('./pages/support/ImageUploadError'));
-const ButtonNotResponding = React.lazy(() => import('./pages/support/ButtonNotResponding'));
+
 const WhiteScreen = React.lazy(() => import('./pages/support/WhiteScreen'));
 const OfflineMode = React.lazy(() => import('./pages/support/OfflineMode'));
 const SyncError = React.lazy(() => import('./pages/support/SyncError'));
-const BankLinkageError = React.lazy(() => import('./pages/support/BankLinkageError'));
+
 const SlowPerformance = React.lazy(() => import('./pages/support/SlowPerformance'));
-const AppUpdate = React.lazy(() => import('./pages/support/AppUpdate'));
+
 const SystemRequirements = React.lazy(() => import('./pages/support/SystemRequirements'));
 const ClearCache = React.lazy(() => import('./pages/support/ClearCache'));
 const BugReport = React.lazy(() => import('./pages/support/BugReport'));
@@ -405,13 +405,13 @@ function App() {
                 <Route path="/support/features/custom-report" element={<CustomReport />} />
                 <Route path="/support/troubleshooting/login-failed" element={<LoginFailedError />} />
                 <Route path="/support/troubleshooting/image-upload" element={<ImageUploadError />} />
-                <Route path="/support/troubleshooting/button-not-responding" element={<ButtonNotResponding />} />
+
                 <Route path="/support/troubleshooting/white-screen" element={<WhiteScreen />} />
                 <Route path="/support/troubleshooting/offline-mode" element={<OfflineMode />} />
                 <Route path="/support/troubleshooting/sync-error" element={<SyncError />} />
-                <Route path="/support/troubleshooting/bank-linkage" element={<BankLinkageError />} />
+
                 <Route path="/support/troubleshooting/slow-performance" element={<SlowPerformance />} />
-                <Route path="/support/troubleshooting/app-update" element={<AppUpdate />} />
+
                 <Route path="/support/troubleshooting/system-requirements" element={<SystemRequirements />} />
                 <Route path="/support/troubleshooting/clear-cache" element={<ClearCache />} />
                 <Route path="/support/troubleshooting/bug-report" element={<BugReport />} />

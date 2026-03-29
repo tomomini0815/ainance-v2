@@ -731,10 +731,10 @@ const BusinessAnalysis: React.FC = () => {
             </div>
 
             {/* カテゴリ別業績 */}
-            <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-6 mt-6">
               <h2 className="text-lg font-semibold text-text-main mb-4">カテゴリ別業績</h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-8">
                 {/* 売上カテゴリ */}
                 <div>
                   <h3 className="text-md font-medium text-text-main mb-3 flex items-center">
@@ -774,7 +774,7 @@ const BusinessAnalysis: React.FC = () => {
                     経費カテゴリ
                   </h3>
                   {categoryData.expense.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {categoryData.expense.map((cat, index) => (
                         <div key={index} className="bg-surface-highlight rounded-lg p-3">
                           <div className="flex justify-between items-center mb-2">

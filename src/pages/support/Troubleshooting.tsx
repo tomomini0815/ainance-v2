@@ -72,21 +72,6 @@ const Troubleshooting: React.FC = () => {
                     )
                 },
                 {
-                    title: '連携ボタンが反応しない',
-                    content: (
-                        <div className="space-y-4">
-                            <p className="text-slate-400">外部サービスとの連携ボタンが動作しない場合の対処法です。</p>
-                            <ol className="list-decimal list-inside text-slate-300 space-y-3 ml-2">
-                                <li>ページを再読み込み（Ctrl+R / Cmd+R）してください</li>
-                                <li>別のブラウザ（Chrome, Safari, Edge）で試してください</li>
-                                <li>広告ブロッカーを一時的に無効化してください</li>
-                                <li>ブラウザのキャッシュとCookieをクリアしてください</li>
-                                <li>アプリの場合は最新版にアップデートしてください</li>
-                            </ol>
-                        </div>
-                    )
-                },
-                {
                     title: '画面が真っ白になる',
                     content: (
                         <div className="space-y-4">
@@ -139,28 +124,6 @@ const Troubleshooting: React.FC = () => {
                     )
                 },
                 {
-                    title: '銀行口座との連携エラー',
-                    content: (
-                        <div className="space-y-4">
-                            <p className="text-slate-400">銀行連携でエラーが発生する場合の原因と対処法です。</p>
-                            <div className="space-y-3">
-                                <div className="bg-slate-800/50 rounded-xl p-3">
-                                    <h4 className="font-bold text-white text-sm mb-1">パスワード変更</h4>
-                                    <p className="text-slate-400 text-sm">金融機関でパスワードを変更した場合は、再連携が必要です。</p>
-                                </div>
-                                <div className="bg-slate-800/50 rounded-xl p-3">
-                                    <h4 className="font-bold text-white text-sm mb-1">二段階認証の追加</h4>
-                                    <p className="text-slate-400 text-sm">金融機関で2FAを追加した場合も再連携が必要です。</p>
-                                </div>
-                                <div className="bg-slate-800/50 rounded-xl p-3">
-                                    <h4 className="font-bold text-white text-sm mb-1">対処方法</h4>
-                                    <p className="text-slate-400 text-sm">「設定」→「外部連携」→該当の銀行で「再連携」をお試しください。</p>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                },
-                {
                     title: '動作が遅い・重い',
                     content: (
                         <div className="space-y-4">
@@ -182,34 +145,6 @@ const Troubleshooting: React.FC = () => {
             icon: RefreshCw,
             title: 'アプリ・システム',
             items: [
-                {
-                    title: 'アプリのアップデート方法',
-                    content: (
-                        <div className="space-y-4">
-                            <div className="space-y-3">
-                                <div className="bg-slate-800/50 rounded-xl p-4">
-                                    <h4 className="font-bold text-white text-sm mb-2">iOSの場合</h4>
-                                    <ol className="list-decimal list-inside text-slate-400 text-sm space-y-1">
-                                        <li>App Storeを開く</li>
-                                        <li>右上のプロフィールアイコンをタップ</li>
-                                        <li>Ainanceを探して「アップデート」をタップ</li>
-                                    </ol>
-                                </div>
-                                <div className="bg-slate-800/50 rounded-xl p-4">
-                                    <h4 className="font-bold text-white text-sm mb-2">Androidの場合</h4>
-                                    <ol className="list-decimal list-inside text-slate-400 text-sm space-y-1">
-                                        <li>Google Playストアを開く</li>
-                                        <li>Ainanceを検索</li>
-                                        <li>「更新」をタップ</li>
-                                    </ol>
-                                </div>
-                            </div>
-                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
-                                <p className="text-emerald-400 text-sm">💡 自動更新を有効にすると、常に最新版を利用できます。</p>
-                            </div>
-                        </div>
-                    )
-                },
                 {
                     title: '推奨環境について',
                     content: (

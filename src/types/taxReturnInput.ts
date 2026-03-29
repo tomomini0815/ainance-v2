@@ -108,7 +108,6 @@ export interface FamilyMember {
     name: string;
     relationship: string; // 続柄
     birth_date: string;
-    my_number?: string; // マイナンバー（保存時はセキュリティに注意、今回はモックのみ）
     income: number; // 所得金額
     disability_type?: 'none' | 'general' | 'special'; // 障害者区分
     living_separately: boolean; // 別居

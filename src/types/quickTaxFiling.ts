@@ -3,7 +3,6 @@
 export interface BasicInfo {
   name: string;
   address: string;
-  myNumber: string;
   businessType: string;
   filingType: 'blue' | 'white';
 }

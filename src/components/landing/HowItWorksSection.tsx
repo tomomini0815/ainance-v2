@@ -32,8 +32,8 @@ const steps = [
   },
   {
     icon: FileText,
-    title: 'STEP 4: 書類作成・e-Tax申告まで',
-    description: '請求書の発行もワンクリック。確定申告の時期には、蓄積されたデータから必要な書類を自動生成しそのまま申告できます。',
+    title: 'STEP 4: 書類作成・e-Tax申告準備まで',
+    description: '蓄積した取引データから確定申告に必要な計算を自動化し、e-Tax用の申告データを作成します。請求書も専用フォームからスムーズに作成可能です。',
     color: 'text-blue-400',
     bg: 'bg-blue-500/10',
     border: 'border-blue-500/30',

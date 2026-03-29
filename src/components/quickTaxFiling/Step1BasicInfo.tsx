@@ -62,25 +62,7 @@ const Step1BasicInfo: React.FC<Step1BasicInfoProps> = ({ data, onChange, onNext 
                     />
                 </div>
 
-                {/* マイナンバー */}
-                <div>
-                    <label className="block text-sm font-medium text-text-main mb-2">
-                        マイナンバー（任意）
-                    </label>
-                    <input
-                        type="text"
-                        value={data.myNumber}
-                        onChange={(e) => handleChange('myNumber', e.target.value)}
-                        placeholder="123456789012"
-                        maxLength={12}
-                        pattern="\d*"
-                        inputMode="numeric"
-                        className="w-full px-4 py-3 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base text-text-main placeholder:text-text-muted/50"
-                    />
-                    <p className="text-xs text-text-muted mt-1.5">
-                        12桁の数字を入力してください（後から入力することもできます）
-                    </p>
-                </div>
+
 
                 {/* 事業の種類 */}
                 <div>

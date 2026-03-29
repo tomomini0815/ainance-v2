@@ -32,7 +32,6 @@ const QuickTaxFilingPage: React.FC = () => {
         basicInfo: {
             name: '',
             address: '',
-            myNumber: '',
             businessType: '',
             filingType: 'blue'
         },
