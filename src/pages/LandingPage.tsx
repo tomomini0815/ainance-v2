@@ -238,11 +238,11 @@ const LandingPage: React.FC = () => {
                   className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[101]"
                 />
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3, ease: 'easeOut' }}
-                  className="fixed inset-0 bg-slate-950/98 backdrop-blur-3xl z-[102] flex flex-col items-center justify-center p-8 overflow-hidden"
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="fixed top-0 right-0 bottom-0 w-[65vw] bg-slate-950/98 backdrop-blur-3xl z-[102] flex flex-col p-8 pt-24 border-l border-white/10 shadow-2xl relative overflow-hidden"
                 >
                   {/* Unified LP Background decorations inside the menu */}
                   <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 blur-[120px] rounded-full pointer-events-none"></div>
@@ -269,12 +269,12 @@ const LandingPage: React.FC = () => {
                           }
                           setIsMenuOpen(false);
                         }}
-                        className="flex items-center space-x-6 text-slate-300 hover:text-white transition-all group p-4 rounded-2xl hover:bg-white/5 active:scale-95"
+                        className="flex items-center space-x-6 text-slate-300 hover:text-white transition-all group p-3 rounded-2xl hover:bg-white/5 active:scale-95"
                       >
-                        <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-all group-hover:scale-110">
-                          <item.icon className="w-6 h-6" />
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-all group-hover:scale-110">
+                          <item.icon className="w-5 h-5" />
                         </div>
-                        <span className="text-2xl font-bold tracking-tight">{item.label}</span>
+                        <span className="text-xl font-bold tracking-tight">{item.label}</span>
                       </motion.button>
                     ))}
  
@@ -361,10 +361,10 @@ const LandingPage: React.FC = () => {
                 onClick={() => {
                   document.getElementById('features-section')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="group relative w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center space-x-3 backdrop-blur-sm active:scale-95"
+                className="group relative w-auto px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-base hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center space-x-3 backdrop-blur-sm active:scale-95 mx-auto sm:mx-0"
               >
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <Play className="w-4 h-4 fill-white text-white" />
+                <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <Play className="w-3 h-3 fill-white text-white" />
                 </div>
                 <span>機能を見る</span>
               </button>
