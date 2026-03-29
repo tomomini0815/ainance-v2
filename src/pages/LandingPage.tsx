@@ -172,7 +172,7 @@ const LandingPage: React.FC = () => {
         </div>
 
         {/* Navigation */}
-        <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'bg-slate-950/40 backdrop-blur-2xl border-b border-white/5 py-3' : 'bg-transparent py-5'}`}>
+        <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${(scrolled || isMenuOpen) ? 'bg-slate-950/80 backdrop-blur-2xl border-b border-white/5 py-3' : 'bg-transparent py-5'}`}>
           <div className="max-w-[1400px] mx-auto px-6 flex justify-between items-center">
             <MagneticButton className="cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <div className="flex items-center space-x-3">
@@ -249,7 +249,7 @@ const LandingPage: React.FC = () => {
                   <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-emerald-600/15 blur-[100px] rounded-full pointer-events-none"></div>
                   <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:72px_72px] opacity-20 pointer-events-none"></div>
 
-                  <div className="w-full max-w-sm flex flex-col space-y-8 relative z-10">
+                  <div className="w-full flex flex-col space-y-6 relative z-10 items-end">
                     {[
                       { label: '機能', path: '#features-section', icon: Sparkles },
                       { label: '使い方', path: '#how-it-works-section', icon: Play },
@@ -282,17 +282,17 @@ const LandingPage: React.FC = () => {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.35 }}
-                      className="pt-8 border-t border-white/10"
+                      className="pt-8 border-t border-white/10 w-full flex justify-end"
                     >
                       <button
                         onClick={() => {
                           navigate('/signup');
                           setIsMenuOpen(false);
                         }}
-                        className="w-full py-5 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-2xl font-bold text-xl text-white shadow-2xl shadow-indigo-500/25 active:scale-[0.98] transition-all flex items-center justify-center space-x-3"
+                        className="w-full sm:w-64 py-4 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-2xl font-bold text-lg text-white shadow-2xl shadow-indigo-500/25 active:scale-[0.98] transition-all flex items-center justify-center space-x-3"
                       >
                         <span>無料で始める</span>
-                        <ArrowRight className="w-6 h-6" />
+                        <ArrowRight className="w-5 h-5" />
                       </button>
                     </motion.div>
                   </div>
