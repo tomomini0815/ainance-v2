@@ -238,13 +238,18 @@ const LandingPage: React.FC = () => {
                   className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[101]"
                 />
                 <motion.div
-                  initial={{ x: '100%' }}
-                  animate={{ x: 0 }}
-                  exit={{ x: '100%' }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="fixed top-0 right-0 bottom-0 w-[280px] bg-slate-900/90 backdrop-blur-3xl border-l border-white/10 z-[102] p-8 pt-24 shadow-2xl"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="fixed inset-0 bg-slate-950/98 backdrop-blur-3xl z-[102] flex flex-col items-center justify-center p-8 overflow-hidden"
                 >
-                  <div className="flex flex-col space-y-6">
+                  {/* Unified LP Background decorations inside the menu */}
+                  <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 blur-[120px] rounded-full pointer-events-none"></div>
+                  <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-emerald-600/15 blur-[100px] rounded-full pointer-events-none"></div>
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:72px_72px] opacity-20 pointer-events-none"></div>
+
+                  <div className="w-full max-w-sm flex flex-col space-y-8 relative z-10">
                     {[
                       { label: '機能', path: '#features-section', icon: Sparkles },
                       { label: '使い方', path: '#how-it-works-section', icon: Play },
@@ -253,8 +258,8 @@ const LandingPage: React.FC = () => {
                     ].map((item, idx) => (
                       <motion.button
                         key={item.label}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 + idx * 0.05 }}
                         onClick={() => {
                           if (item.path.startsWith('#')) {
@@ -264,18 +269,18 @@ const LandingPage: React.FC = () => {
                           }
                           setIsMenuOpen(false);
                         }}
-                        className="flex items-center space-x-4 text-slate-300 hover:text-white transition-colors group"
+                        className="flex items-center space-x-6 text-slate-300 hover:text-white transition-all group p-4 rounded-2xl hover:bg-white/5 active:scale-95"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                          <item.icon className="w-5 h-5" />
+                        <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-all group-hover:scale-110">
+                          <item.icon className="w-6 h-6" />
                         </div>
-                        <span className="text-lg font-medium">{item.label}</span>
+                        <span className="text-2xl font-bold tracking-tight">{item.label}</span>
                       </motion.button>
                     ))}
-
+ 
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.35 }}
                       className="pt-8 border-t border-white/10"
                     >
@@ -284,10 +289,10 @@ const LandingPage: React.FC = () => {
                           navigate('/signup');
                           setIsMenuOpen(false);
                         }}
-                        className="w-full py-4 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-2xl font-bold text-white shadow-xl shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
+                        className="w-full py-5 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-2xl font-bold text-xl text-white shadow-2xl shadow-indigo-500/25 active:scale-[0.98] transition-all flex items-center justify-center space-x-3"
                       >
                         <span>無料で始める</span>
-                        <ArrowRight className="w-5 h-5" />
+                        <ArrowRight className="w-6 h-6" />
                       </button>
                     </motion.div>
                   </div>
