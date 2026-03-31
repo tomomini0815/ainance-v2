@@ -305,7 +305,7 @@ const LandingPage: React.FC = () => {
         </AnimatePresence>
 
         {/* Hero Section */}
-        <section className="relative pt-32 sm:pt-40 pb-20 sm:pb-32 px-6 overflow-hidden">
+        <section className="relative pt-24 sm:pt-40 pb-16 sm:pb-32 px-6 overflow-hidden">
           <motion.div
             style={{ y: yHero, opacity: opacityHero }}
             className="max-w-[1000px] mx-auto text-center relative z-10"
@@ -315,13 +315,13 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-indigo-500/10 to-emerald-500/10 border border-indigo-500/20 rounded-full mb-8 backdrop-blur-sm"
+              className="inline-flex items-center space-x-1.5 px-3 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-indigo-500/10 to-emerald-500/10 border border-indigo-500/20 rounded-full mb-3 sm:mb-8 backdrop-blur-sm"
             >
-              <span className="flex h-2 w-2 relative">
+              <span className="flex h-1.5 w-1.5 sm:h-2 sm:w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-emerald-500"></span>
               </span>
-              <span className="text-sm font-medium text-indigo-300">次世代AI経理プラットフォーム</span>
+              <span className="text-xs sm:text-sm font-medium text-indigo-300">次世代AI経理プラットフォーム</span>
             </motion.div>
 
             {/* Main Heading */}
@@ -329,7 +329,7 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-8"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-4 sm:mb-8"
             >
               <span className="bg-gradient-to-b from-white via-white to-slate-400 bg-clip-text text-transparent">
                 経理を、
@@ -345,7 +345,7 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed"
+              className="text-base sm:text-xl text-slate-400 max-w-2xl mx-auto mb-6 sm:mb-12 leading-relaxed"
             >
               レシート処理から請求書作成、経営分析まで。
               <br className="hidden sm:block" />
@@ -363,7 +363,7 @@ const LandingPage: React.FC = () => {
                 onClick={() => {
                   document.getElementById('features-section')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="group relative w-auto px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-base hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center space-x-3 backdrop-blur-sm active:scale-95 mx-auto sm:mx-0"
+                className="group relative w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-sm sm:text-base hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center justify-center space-x-3 backdrop-blur-sm active:scale-95 mx-auto sm:mx-0"
               >
                 <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
                   <Play className="w-3 h-3 fill-white text-white" />
@@ -377,10 +377,10 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
-              className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-3"
+              className="mt-3 sm:mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-1.5 sm:gap-y-3"
             >
               {benefits.slice(0, 3).map((benefit, index) => (
-                <div key={index} className="flex items-center space-x-2 text-sm text-slate-500">
+                <div key={index} className="flex items-center space-x-2 text-xs sm:text-sm text-slate-500">
                   <Check className="w-4 h-4 text-emerald-500" />
                   <span>{benefit}</span>
                 </div>
@@ -394,19 +394,19 @@ const LandingPage: React.FC = () => {
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 1.2, ease: "easeOut" }}
-            className="mt-0 sm:mt-2 max-w-[1200px] mx-auto relative z-10"
+            className="-mt-2 sm:mt-2 max-w-[1400px] mx-auto relative z-10"
           >
             <div className="relative flex justify-center items-center">
               {/* Glow effect - Indigo/Emerald */}
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/15 via-blue-500/15 to-emerald-500/15 blur-[80px] rounded-full transform scale-110"></div>
 
               {/* Mockup images */}
-              <div className="relative w-full overflow-visible flex justify-center max-w-5xl mx-auto px-4">
+              <div className="relative w-full overflow-visible flex justify-center max-w-7xl mx-auto px-4">
                 {/* PC Mockup */}
                 <img
                   src="/hero-mockup.png"
                   alt="Ainance Dashboard Mockup PC"
-                  className="w-full md:w-[85%] h-auto object-contain max-h-[800px] drop-shadow-[0_20px_50px_rgba(99,102,241,0.3)] relative z-10"
+                  className="w-full h-auto object-contain max-h-[340px] sm:max-h-[800px] drop-shadow-[0_20px_50px_rgba(99,102,241,0.3)] relative z-10"
                 />
                 
                 {/* Mobile Mockup */}
@@ -416,7 +416,7 @@ const LandingPage: React.FC = () => {
                   initial={{ opacity: 0, y: 50, x: 20 }}
                   animate={{ opacity: 1, y: 0, x: 0 }}
                   transition={{ delay: 1.5, duration: 1, type: "spring", bounce: 0.4 }}
-                  className="absolute right-0 md:right-[5%] bottom-[-10%] md:bottom-[-15%] w-[35%] sm:w-[30%] md:w-[25%] max-w-[300px] h-auto object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)] z-20"
+                  className="absolute -right-2 md:right-[2%] bottom-[-12%] md:bottom-[-18%] w-[45%] sm:w-[40%] md:w-[32%] max-w-[400px] h-auto object-contain drop-shadow-[0_40px_80px_rgba(0,0,0,0.7)] z-20"
                 />
               </div>
             </div>
@@ -445,7 +445,7 @@ const LandingPage: React.FC = () => {
               >
                 経理業務を、
                 <br className="sm:hidden" />
-                <span className="bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">まるごとサポート。</span>
+                <span className="text-2xl sm:text-4xl lg:text-5xl bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">まるごとサポート。</span>
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
